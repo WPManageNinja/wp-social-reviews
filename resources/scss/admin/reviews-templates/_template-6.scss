@@ -1,0 +1,72 @@
+.wpsr-review-template-six{
+  margin-top: 0;
+  margin-left: 30px;
+  .wpsr-recommends {
+    justify-content: flex-start;
+  }
+  .wpsr-reviewer-image{
+    position: absolute;
+    top: 40px;
+    left: -25px;
+    .wpsr-reviewer-image-url{
+      display: block;
+    }
+    img{
+      max-height: 50px;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+    }
+    @media screen and (max-width: 1024px) {
+      left: -20px;
+      img{
+        max-height: 40px;
+      }
+    }
+  }
+
+  @media screen and (max-width: 1024px) {
+    padding: 25px 15px;
+  }
+
+  .wpsr-review-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 15px;
+    padding-top: 15px;
+    .wpsr-review-info{
+      margin-right: auto;
+      text-align: inherit;
+      padding-top: 0;
+      .wpsr-reviewer-name-url{
+        .wpsr-reviewer-name{
+          font-size: 15px;
+        }
+      }
+    }
+  }
+  .wpsr-review-platform{
+    left: auto;
+    bottom: 15px;
+    right: 15px;
+    top: auto;
+    @media screen and (max-width: 1024px) {
+      top: 5px;
+      img{
+        max-height: 18px;
+      }
+    }
+  }
+  .wpsr-review-title,
+  .wpsr-review-content{
+    padding-left: 15px;
+  }
+  .wpsr-review-title {
+    margin-bottom: 5px;
+    margin-top: 0;
+  }
+  .wpsr-review-date{
+    padding-top: 5px;
+  }
+}

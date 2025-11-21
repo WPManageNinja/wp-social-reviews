@@ -1,0 +1,26 @@
+.wpsr-feed-wrap .wpsr-twitter-user-follow-btn{
+    background-color: #000000;
+    font-size: 14px;
+    padding: 0 20px;
+    border-radius: 15px;
+    color: #fff;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    height: 30px;
+    transition: 0.3s ease;
+    margin-top: 10px;
+    text-decoration: none;
+    &:hover,
+    &:focus{
+        color: #fff;
+        outline: none;
+        background: #000000;
+        text-decoration: none;
+    }
+    svg{
+        fill: #fff;
+        height: 16px;
+        margin-right: 5px;
+    }
+}

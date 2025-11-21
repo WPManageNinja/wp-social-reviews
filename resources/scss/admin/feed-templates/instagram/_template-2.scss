@@ -1,0 +1,123 @@
+.wpsr-ig-feed-template2{
+  .wpsr-instagram-masonry-activate{
+    .wpsr-ig-post{
+      height: initial;
+    }
+  }
+  //.wpsr-column-gap-no_gap{
+  //  [class*="wpsr-col"]{
+  //    margin-bottom: 0;
+  //  }
+  //}
+  //.wpsr-column-gap-narrow{
+  //  [class*="wpsr-col"]{
+  //    margin-bottom: 10px;
+  //  }
+  //}
+  //.wpsr-column-gap-small{
+  //  [class*="wpsr-col"]{
+  //    margin-bottom: 20px;
+  //  }
+  //}
+  //.wpsr-column-gap-wide{
+  //  [class*="wpsr-col"]{
+  //    margin-bottom: 40px;
+  //  }
+  //}
+  //.wpsr-column-gap-wider{
+  //  [class*="wpsr-col"]{
+  //    margin-bottom: 50px;
+  //  }
+  //}
+
+  .wpsr-ig-post{
+    margin-bottom: initial;
+    background-color: #fff;
+    height: 100%;
+    box-shadow: 0 0 10px 4px rgb(0 0 0 / 4%);
+    .wpsr-ig-post-media{
+      img{
+        position: absolute;
+        width: auto;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        height: 100%;
+        min-width: 100%;
+        max-width: inherit;
+        object-fit: cover;
+      }
+    }
+
+    .wpsr-shoppable-button {
+      display: flex;
+      position: inherit;
+      background-color: #241717;
+      padding: 8px 15px;
+      cursor: pointer;
+      color: #FFFFFF;
+      font-weight: 400;
+      font-size: 14px;
+      pointer-events: auto;
+      text-decoration: none;
+      justify-content: space-between;
+      align-items: center;
+      transition: 0.3s;
+      &:hover,
+      &:focus{
+        text-decoration: none;
+        box-shadow: none;
+        outline: none;
+        border: none;
+        i{
+          margin-right: -5px;
+        }
+      }
+      i{
+        font-size: 18px;
+        transition: 0.3s;
+      }
+    }
+
+    .wpsr-ig-post-info{
+      position: inherit;
+      background-color: transparent;
+      opacity: initial;
+      visibility: initial;
+      padding: 15px;
+      .wpsr-ig-post-statistics{
+        display: flex;
+        align-items: center;
+        .wpsr-ig-post-single-statistic{
+          display: flex;
+          align-items: center;
+          margin-right: 15px;
+          &:last-child{
+            margin-right: 0;
+          }
+          span{
+            font-weight: 700;
+            color: #262626;
+          }
+          color: #000;
+          svg{
+            height: 20px;
+            width: 20px;
+            fill: #000;
+            margin-right: 5px;
+          }
+        }
+
+
+      }
+      .wpsr-ig-post-caption{
+        margin-top: 5px;
+        p{
+          color: #000;
+        }
+      }
+    }
+
+  }
+
+}

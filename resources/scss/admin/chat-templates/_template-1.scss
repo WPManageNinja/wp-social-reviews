@@ -1,0 +1,1052 @@
+@import "channels";
+.wpsr_full_screen{
+  .wpsr-fm-chat-wrapper{
+    &.wpsr-fm-bubble-position-top-left{
+      left: 30px;
+      .wpsr-fm-chat-box{
+        left: 40px;
+      }
+      .wpsr-channels-icons{
+        left: 20px;
+      }
+    }
+    &.wpsr-fm-bubble-position-bottom-left{
+      left: 30px;
+      .wpsr-fm-chat-box{
+        left: 40px;
+      }
+      .wpsr-channels-icons{
+        left: 30px;
+      }
+    }
+  }
+}
+.wpsr-fm-chat-wrapper{
+  position: fixed;
+  right: 360px;
+  bottom: 30px;
+  z-index: 9999;
+  margin: 20px 0 0;
+  transition: 0.5s;
+  &.wpsr-fm-bubble-position-bottom-left{
+    right: auto;
+    left: 190px;
+    .wpsr-fm-chat-box{
+      right: auto;
+      left: 180px;
+    }
+    .wpsr-fm-chat-bubble{
+      right: 0;
+    }
+  }
+  &.wpsr-fm-bubble-position-top-left{
+    right: auto;
+    left: 190px;
+    top: 100px;
+    bottom: auto;
+    .wpsr-fm-chat-box{
+      right: auto;
+      left: 180px;
+      top: 0;
+      bottom: auto;
+      transition: 0.5s;
+      &.wpsr-fm-chat-box-display{
+        top: 200px;
+      }
+    }
+    .wpsr-channels-icons{
+      left: 180px;
+      right: auto;
+      top: 190px;
+    }
+    .wpsr-fm-chat-bubble{
+      right: 10px;
+    }
+  }
+  &.wpsr-fm-bubble-position-top-right{
+    right: 280px;
+    left: auto;
+    top: 100px;
+    bottom: auto;
+    .wpsr-fm-chat-box{
+      right: 420px;
+      left: auto;
+      top: 0;
+      bottom: auto;
+      transition: 0.5s;
+      &.wpsr-fm-chat-box-display{
+        top: 200px;
+      }
+    }
+    .wpsr-fm-chat-bubble{
+      right: 132px;
+    }
+  }
+  &.wpsr-chat-icons-layout{
+    .wpsr-fm-chat-bubble{
+      .wpsr-fm-bubble-btn{
+        -moz-transform: rotate(0deg);
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+        -moz-transition: all 0.6s linear;
+        -webkit-transition: all 0.6s linear;
+        transition: all 0.6s linear;
+      }
+      &.active{
+        .wpsr-fm-bubble-btn {
+          -moz-transform: rotate(-180deg);
+          -webkit-transform: rotate(-180deg);
+          transform: rotate(-180deg);
+          //img{
+            //display: none;
+          //}
+          span + span{
+            -moz-transform: rotate(180deg);
+            -webkit-transform: rotate(180deg);
+            transform: rotate(180deg);
+          }
+        }
+      }
+    }
+  }
+
+  .wpsr-fm-chat-box{
+    opacity: 0;
+    box-shadow: 0 12px 20px 0 rgba(0, 0, 0, 0.2);
+    background-color: #fff;
+    border-radius: 10px;
+    transition: 0.5s;
+    width: 360px;
+    position: fixed;
+    right: 420px;
+    bottom: 0;
+    top: auto;
+    @media screen and (max-width: 767px) {
+      width: 320px;
+    }
+    .wpsr-fm-chat-close{
+      position: absolute;
+      top: 15px;
+      right: 0;
+      width: 25px;
+      height: 25px;
+      opacity: 0.4;
+      cursor: pointer;
+      display: flex;
+      &:before,
+      &:after{
+        content: "";
+        position: absolute;
+        width: 12px;
+        height: 2px;
+        background-color: var(--wpsn-chat-close-btn-color, #1d2129);
+        display: block;
+        border-radius: 2px
+      }
+      &:before{
+        transform: rotate(45deg);
+      }
+      &:after{
+        transform: rotate(-45deg);
+      }
+    }
+    .wpsr-fm-chat-header{
+      background-color: #f4f5f7;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      border-radius: 10px 10px 0 0;
+      &.wpsr-online,
+      &.wpsr-offline{
+        .wpsr-chat-user-img {
+          position: relative;
+          &:before {
+            display: block;
+            position: absolute;
+            content: "";
+            bottom: 5px;
+            right: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+          }
+        }
+      }
+      &.wpsr-offline{
+        .wpsr-chat-user-img {
+          &:before {
+            background-color: #e2d6d6;
+            border: 2px solid #e2d6d6;
+          }
+        }
+        .wpsr-fm-caption{
+          display: none;
+        }
+        .wpsr-fm-offline-caption {
+          display: block;
+        }
+      }
+      &.wpsr-online{
+        .wpsr-chat-user-img{
+          &:before{
+            background-color: #4ad505;
+            border: 2px solid #4ad505;
+          }
+        }
+        .wpsr-fm-offline-caption{
+          display: none;
+        }
+      }
+      .wpsr-fm-offline-caption{
+        display: none;
+      }
+      img{
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+
+      text-align: left;
+      .wpsr-fm-group-details{
+        padding-left: 15px;
+        h3{
+          margin: 0;
+          padding: 0 0 5px;
+          font-size: 18px;
+          line-height: 1.4;
+          font-weight: 700;
+        }
+        p{
+          margin: 0;
+          font-size: 14px;
+          line-height: 1.6;
+          color: #000;
+          padding: 0;
+          font-weight: 400;
+          opacity: 0.8;
+        }
+      }
+
+    }
+    .wpsr-fm-chat-room{
+      padding: 30px 20px 20px;
+      .wpsr-fm-time{
+        font-size: 12px;
+        line-height: 1.5;
+        color: rgba(0, 0, 0, 0.4);
+        padding-bottom: 5px;
+        display: block;
+        text-align: center;
+      }
+      .wpsr-fm-conversation{
+        display: flex;
+        align-items: center;
+        .wpsr-fm-user-picture{
+          img{
+            height: 40px;
+            width: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-right: 10px;
+          }
+        }
+        .wpsr-fm-greeting-msg{
+          background-color: #f1f0f0;
+          border-radius: 10px;
+          padding: 10px 10px;
+          text-align: left;
+          max-width: 250px;
+          width: 100%;
+          display: none;
+          transition: 0.4s;
+          .wpsr-fm-msg-text,
+          p{
+            margin: 0;
+            padding: 0;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #000000;
+          }
+        }
+      }
+      .wpsr-fm-chat-btn-wrapper{
+        margin: 30px 0 0;
+        cursor: pointer;
+        //.wpsr-fm-btn-icon{
+        //  display: flex;
+        //  flex-wrap: wrap;
+        //  justify-content: center;
+        //  background-color: #0084ff;
+        //  padding: 10px 20px;
+        //  color: #fff;
+        //  border-radius: 10px;
+        //  font-size: 14px;
+        //  font-weight: 700;
+        //  text-decoration: none;
+        //  align-items: center;
+        //  cursor: pointer;
+        //  .wpsr-channels{
+        //    margin-top: 3px;
+        //    display: initial;
+        //    .wpsr-channel-item{
+        //      a{
+        //        height: initial;
+        //        width: initial;
+        //        line-height: initial;
+        //        padding: initial;
+        //        text-align: initial;
+        //        border-radius: initial;
+        //        box-shadow: none;
+        //        &:active,
+        //        &:focus{
+        //          outline: none;
+        //          box-shadow: none;
+        //        }
+        //        &:hover{
+        //          text-decoration: underline;
+        //          outline: none;
+        //        }
+        //        svg{
+        //          width: 20px;
+        //          max-width: 100%;
+        //          height: 20px;
+        //          .wpsr-fm-btn-icon-path-1{
+        //            fill: #ffffff;
+        //          }
+        //          .wpsr-fm-btn-icon-path-2{
+        //            fill: #0084ff;
+        //          }
+        //
+        //        }
+        //        span{
+        //          padding-left: 10px;
+        //        }
+        //      }
+        //    }
+        //  }
+        //  span{
+        //    order: 1;
+        //    margin-bottom: 0;
+        //    padding: 0;
+        //    margin-left: 5px;
+        //  }
+        //}
+        .wpsr-fm-btn-icon{
+          a{
+            background-color: #0084ff;
+            display: flex;
+            padding: 10px 20px;
+            color: #fff;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            align-items: center;
+            img{
+              height: 26px;
+            }
+
+            &:active,
+            &:focus{
+              outline: none;
+              box-shadow: none;
+            }
+            &:hover{
+              text-decoration: underline;
+              outline: none;
+            }
+            svg{
+              width: 20px;
+              max-width: 100%;
+              height: 20px;
+              .wpsr-fm-btn-icon-path-1{
+                fill: #ffffff;
+              }
+              .wpsr-fm-btn-icon-path-2{
+                fill: #0084ff;
+              }
+
+            }
+            span{
+              padding-right: 5px;
+            }
+          }
+          .wpsr-prefilled-input-container{
+            display: flex;
+            align-items: center;
+            margin-top: 8px;
+            border-radius: 10px;
+            cursor: default;
+            background-color: #f4f5f7;
+            .wpsr-prefilled-input-container-inner{
+              flex: 1;
+              padding: 5px;
+              .wpsr-prefilled-input {
+                flex: 1;
+                border: none!important;
+                outline: none;
+                padding: 8px;
+                border-radius: 15px;
+                background-color: transparent!important;
+                height: 40px;
+                width: 100%;
+                &:focus {
+                  border: none;
+                }
+              }
+            }
+          }
+          .wpsr-prefilled-send-button {
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            background-color: #23D366;
+            margin-right:10px;
+            height: 30px;
+            width: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            svg {
+              fill: white;
+              height: 15px;
+              width: 15px;
+              margin-left: 4px;
+            }
+          }
+        }
+        .wpsr-fm-multiple-btn{
+          font-size: 16px;
+          text-align: center;
+          display: block;
+          font-weight: 600;
+          padding-bottom: 10px;
+        }
+        .wpsr-channels{
+          > div{
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+          }
+          .wpsr-channel-item{
+            margin-right: 8px;
+            &:last-child{
+              margin-right: 0;
+            }
+            a{
+              border-radius: 6px;
+              height: 50px;
+              width: 50px;
+              line-height: 60px;
+              padding: 0;
+              display: flex;
+              text-align: center;
+              img{
+                height: 40px;
+                width: auto;
+              }
+              &.messenger{
+                @extend .messenger;
+              }
+              &.whatsapp{
+                @extend .whatsapp;
+              }
+              &.telegram{
+                @extend .telegram;
+              }
+              &.instagram{
+                @extend .instagram;
+              }
+              &.instagram-dm{
+                @extend .instagram-dm;
+              }
+              &.sms{
+                @extend .sms;
+              }
+              &.twitter{
+                @extend .twitter;
+              }
+              &.slack{
+                @extend .slack;
+              }
+              &.microsoft-teams{
+                @extend .microsoft-teams;
+              }
+              &.phone{
+                @extend .phone;
+              }
+              &.email{
+                @extend .email;
+              }
+              &.wechat{
+                @extend .wechat;
+              }
+              &.line{
+                @extend .line;
+              }
+              &.snapchat{
+                @extend .snapchat;
+              }
+              &.linkedin{
+                @extend .linkedin;
+              }
+              &.viber{
+                @extend .viber;
+              }
+              &.fluent_forms{
+                @extend .fluent_forms;
+              }
+            }
+          }
+        }
+        p{
+          margin: 0;
+          padding: 10px 0 0;
+          font-size: 10px;
+          line-height: 1.5;
+          color: rgba(0, 0, 0, 0.4);
+          text-align: center;
+        }
+      }
+    }
+
+  }
+  .wpsr-fm-chat-bubble{
+    display: block;
+    position: relative;
+    z-index: 999999;
+    right: 55px;
+    .wpsr-fm-bubble-btn{
+      background-color: #0084ff;
+      cursor: pointer;
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+      img{
+        height: 40px;
+        width: auto;
+      }
+      .wpsr-chat-icons-closee{
+        width: 25px;
+        margin-top: 2px;
+      }
+      &.messenger{
+        @extend .messenger;
+      }
+      &.whatsapp{
+        @extend .whatsapp;
+      }
+      &.telegram{
+        @extend .telegram;
+      }
+      &.instagram{
+        @extend .instagram;
+      }
+      &.instagram-dm{
+        @extend .instagram-dm;
+      }
+      &.sms{
+        @extend .sms;
+      }
+      &.twitter{
+        @extend .twitter;
+      }
+      &.slack{
+        @extend .slack;
+      }
+      &.microsoft-teams{
+        @extend .microsoft-teams;
+      }
+      &.phone{
+        @extend .phone;
+      }
+      &.email{
+        @extend .email;
+      }
+      &.wechat{
+        @extend .wechat;
+      }
+      &.line{
+        @extend .line;
+      }
+      &.snapchat{
+        @extend .snapchat;
+      }
+      &.linkedin{
+        @extend .linkedin;
+      }
+      &.viber{
+        @extend .viber;
+      }
+      &.fluent_forms{
+        @extend .fluent_forms;
+      }
+      .wpsr-icon-whatsapp{
+        .wpsr-fm-bubble-btn-svg-path-2 {
+          fill: #fff;
+        }
+      }
+
+      &.wpsr-fm-bubble-btn-has-text{
+        width: auto;
+        height: auto;
+        border-radius: 50px;
+        padding: 8px 20px;
+        img{
+          height: 30px;
+          width: auto;
+        }
+        span{
+          padding-left: 10px;
+          color: #fff;
+          font-size: 16px;
+          font-weight: 700;
+        }
+
+      }
+      .wpsr-fm-bubble-btn-svg-path-1{
+        fill: #ffffff;
+      }
+      .wpsr-fm-bubble-btn-svg-path-2{
+        fill: #0084ff;
+      }
+    }
+  }
+  .wpsr-channel-item{
+    margin-bottom: 10px;
+    position: relative;
+    &:hover{
+      .wpsr-channel-name{
+        visibility: visible;
+      }
+    }
+    a{
+      img{
+        height: 40px;
+        width: auto;
+      }
+    }
+    .wpsr-channel-name{
+      visibility: hidden;
+      width: 120px;
+      background-color: black;
+      color: #fff;
+      font-size: 14px;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px 0;
+      position: absolute;
+      z-index: 1;
+      top: 15px;
+      right: 70px;
+      &:after{
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 100%;
+        margin-top: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: transparent transparent transparent black;
+      }
+    }
+    &:last-child{
+      margin-bottom: 0;
+    }
+  }
+  .wpsr-channel-btn{
+    cursor: pointer;
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 12px rgb(0 0 0 / 20%);
+    svg{
+      width: 30px;
+      height: 30px;
+    }
+    &.messenger{
+      background-color: #0084ff;
+      svg{
+        .wpsr-path-1{
+          fill: #ffffff;
+        }
+        .wpsr-path-2{
+          fill: #0084ff;
+        }
+      }
+    }
+    &.whatsapp{
+      background-color: #4FCE65;
+      //svg{
+      //  .wpsr-path-1{
+      //    fill: #ffffff;
+      //  }
+      //  .wpsr-path-2{
+      //    fill: #ffffff;
+      //  }
+      //}
+    }
+    &.telegram{
+      background-color: #0088cc;
+      //svg{
+      //  .wpsr-path-1{
+      //    fill: #ffffff;
+      //  }
+      //  .wpsr-path-2{
+      //    fill: #ffffff;
+      //  }
+      //}
+    }
+  }
+  .wpsr-channel-icon,
+  .wpsr-channels-icons{
+    position: fixed;
+    right: 320px;
+    bottom: -200px;
+    top: auto;
+    transition: 0.3s;
+    margin-bottom: 95px !important;
+  }
+  .wpsr-channels-icons{
+    opacity: 0;
+  }
+  .wpsr-channel-icon{
+    bottom: 0;
+    opacity: 1;
+    margin-bottom: 25px !important;
+  }
+  .wpsr-fm-chat-box-display{
+    bottom: 0;
+    opacity: 1;
+    margin-bottom: 100px;
+  }
+
+  &.wpsr-chat-whatsapp{
+    .wpsr-fm-chat-close{
+      &:before,
+      &:after{
+        background-color: var(--wpsn-chat-close-btn-color, #fff);
+      }
+    }
+    .wpsr-fm-chat-header{
+      background-color: #1c6058;
+      .wpsr-fm-group-details{
+        h3, p {
+          color: #fff;
+
+        }
+      }
+    }
+    .wpsr-fm-chat-room{
+      padding: 0;
+      .wpsr-fm-conversation{
+        background-image: url("../../../images/chat-imgs/whatsapp-bg.png");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        padding: 30px 20px 20px;
+        .wpsr-fm-time{
+          text-align: right;
+        }
+        .wpsr-fm-greeting-msg{
+          border-radius: 0 8px 8px;
+          position: relative;
+          &:after {
+            position: absolute;
+            left: -15px;
+            content: "";
+            top: 0;
+            width: 0;
+            height: 0;
+            border-right: 15px solid #f1f0f0;
+            border-bottom: 15px solid transparent;
+          }
+          h3{
+            margin: 0;
+            padding: 0 0 5px;
+            font-size: 14px;
+            line-height: 1.4;
+            font-weight: 500;
+            color: #1c6058;
+          }
+           .wpsr-fm-time{
+            text-align: right;
+            padding-bottom: 0;
+            display: inline-block;
+            float: right;
+            padding-top: 8px;
+          }
+        }
+      }
+      .wpsr-fm-chat-btn-wrapper{
+        margin: 0;
+        padding: 25px 20px;
+        .wpsr-fm-btn-icon{
+          a{
+            background-color: #00e676;
+            color: #ffffff;
+            svg{
+              path{
+                fill: #ffffff;
+              }
+            }
+          }
+        }
+        p{
+          margin: 0;
+          padding: 10px 0 0;
+          font-size: 11px;
+          line-height: 1.5;
+          color: rgba(0, 0, 0, 0.4);
+          text-align: center;
+        }
+      }
+    }
+    .wpsr-fm-chat-bubble{
+      .wpsr-fm-bubble-btn{
+        background-color: #00e676;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+        svg{
+          .wpsr-fm-bubble-btn-svg-path-1{
+            fill: #ffffff;
+          }
+          .wpsr-fm-bubble-btn-svg-path-2{
+            fill: #ffffff;
+          }
+
+        }
+        .wpsr-icon-messenger{
+          .wpsr-fm-bubble-btn-svg-path-2 {
+            fill: #4ee776;
+          }
+        }
+
+      }
+    }
+  }
+  &.wpsr-chat-telegram{
+    .wpsr-fm-chat-close{
+      &:before,
+      &:after{
+        background-color: var(--wpsn-chat-close-btn-color, #fff);
+      }
+    }
+    .wpsr-fm-chat-header{
+      background-color: #2ba7e9;
+      .wpsr-fm-group-details{
+        h3, p {
+          color: #fff;
+        }
+        p{
+          opacity: 1;
+        }
+      }
+    }
+    .wpsr-fm-chat-room{
+      padding: 0;
+      .wpsr-fm-conversation{
+        background-color: #f5f5f5;
+        padding: 30px 20px 20px;
+        .wpsr-fm-greeting-msg{
+          background-color: #fff;
+          border-radius: 8px 8px 8px 0;
+          position: relative;
+          .wpsr-fm-time{
+            text-align: right;
+          }
+          &:after {
+            position: absolute;
+            left: -15px;
+            content: "";
+            width: 0;
+            height: 0;
+            border-right: 15px solid #fff;
+            border-top: 15px solid transparent;
+            bottom: 0;
+          }
+          h3{
+            margin: 0;
+            padding: 0 0 5px;
+            font-size: 14px;
+            line-height: 1.4;
+            font-weight: 500;
+            color: #1c6058;
+          }
+          .wpsr-fm-time{
+            text-align: right;
+            padding-bottom: 0;
+            display: inline-block;
+            float: right;
+            padding-top: 8px;
+          }
+        }
+      }
+      .wpsr-fm-chat-btn-wrapper{
+        margin: 0;
+        padding: 25px 20px;
+        .wpsr-fm-btn-icon{
+          a{
+            background-color: #2ba7e9;
+
+            color: #ffffff;
+
+            svg{
+              path{
+                fill: #ffffff;
+              }
+            }
+
+          }
+        }
+        p{
+          margin: 0;
+          padding: 10px 0 0;
+          font-size: 11px;
+          line-height: 1.5;
+          color: rgba(0, 0, 0, 0.4);
+          text-align: center;
+        }
+      }
+    }
+    .wpsr-fm-chat-bubble{
+      .wpsr-fm-bubble-btn{
+        background-color: #2ba7e9;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+        svg{
+          .wpsr-fm-bubble-btn-svg-path-1{
+            fill: #ffffff;
+          }
+          .wpsr-fm-bubble-btn-svg-path-2{
+            fill: #ffffff;
+          }
+
+        }
+        .wpsr-icon-messenger{
+          .wpsr-fm-bubble-btn-svg-path-2 {
+            fill: #4ee776;
+          }
+        }
+
+      }
+    }
+  }
+}
+
+.wpsr-fm-chat{
+  background-color: #f1f0f0;
+  width: 100px;
+  line-height: 50px;
+  display: block;
+  border-radius: 50px;
+  .wpsr-fm-chat-bubbles{
+    text-align: center;
+    span{
+      display: inline-block;
+      background-color: #B6B5BA;
+      width: 10px;
+      height: 10px;
+      border-radius: 100%;
+      margin-right: 5px;
+      -webkit-animation: typing 2s infinite;
+      -moz-animation: typing 2s infinite;
+      -o-animation: typing 2s infinite;
+      animation: typing 2s infinite;
+      // SAFARI GLITCH
+      &:nth-child(1){
+        animation-delay: -1s;
+      }
+      &:nth-child(2){
+        animation-delay: -0.85s;
+      }
+      &:nth-child(3){
+        animation-delay: -0.7s;
+        margin-right: 0;
+      }
+    }
+  }
+}
+
+.wpsr-fm-bubble-position-bottom-right {
+  .wpsr-channels-icons, .wpsr-channel-icon {
+    right: 415px;
+  }
+}
+
+.wpsr-fm-bubble-position-bottom-left {
+  .wpsr-channels-icons, .wpsr-channel-icon {
+    right: auto;
+  }
+}
+
+.wpsr-fm-bubble-position-top-left {
+  .wpsr-channel-icon {
+    right: inherit;
+    bottom: inherit;
+  }
+}
+
+.wpsr-fm-bubble-position-top-right {
+  .wpsr-channel-icon {
+    left: inherit;
+    bottom: inherit;
+    right: 415px;
+  }
+  .wpsr-channels-icons{
+    right: 415px;
+    top: 200px;
+    bottom: inherit;
+  }
+  .wpsr-fm-chat-box{
+    right: 420px;
+  }
+}
+
+@-webkit-keyframes typing{
+  10%{
+    transform: translateY(-10px);
+    background-color: #9E9DA2;
+  }
+  50%{
+    transform: translateY(0);
+    background-color: #B6B5BA;
+  }
+}
+@-moz-keyframes typing{
+  10%{
+    transform: translateY(-10px);
+    background-color: #9E9DA2;
+  }
+  50%{
+    transform: translateY(0);
+    background-color: #B6B5BA;
+  }
+}
+@-o-keyframes typing{
+  10%{
+    transform: translateY(-10px);
+    background-color: #9E9DA2;
+  }
+  50%{
+    transform: translateY(0);
+    background-color: #B6B5BA;
+  }
+}
+@keyframes typing{
+  10%{
+    transform: translateY(-10px);
+    background-color: #9E9DA2;
+  }
+  50%{
+    transform: translateY(0);
+    background-color: #B6B5BA;
+  }
+}

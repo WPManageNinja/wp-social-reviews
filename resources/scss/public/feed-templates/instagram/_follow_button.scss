@@ -1,0 +1,24 @@
+.wpsr-feed-wrap .wpsr-ig-follow-btn{
+    margin-left: 30px;
+    flex: auto 0 0;
+    @media screen and (max-width: 767px) {
+        margin-left: 0;
+    }
+    a{
+        text-decoration: none;
+        box-shadow: none;
+        padding: 5px 20px;
+        color: #fff;
+        font-weight: 600;
+        font-size: 14px;
+        height: auto;
+        background-color: #0095F6;
+        border-radius: 4px;
+        display: inline-block;
+        &:hover,
+        &:focus{
+            background: #0095f6;
+            text-decoration: none;
+        }
+    }
+}

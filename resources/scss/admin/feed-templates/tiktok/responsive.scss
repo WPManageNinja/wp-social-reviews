@@ -1,0 +1,154 @@
+.is-tablet-active{
+  .wpsr-tiktok-feed-item {
+    .wpsr-tiktok-feed-inner > {
+      .wpsr-tiktok-feed-statistics {
+        .wpsr-tiktok-icon-position {
+          .wpsr-tiktok-feed-reactions-icon {
+            width: 22px;
+            height: 22px;
+            background-size: 12px 12px;
+            margin-top: 8px;
+          }
+
+          .wpsr-tiktok-feed-video-playmode {
+            .wpsr-tiktok-feed-statistics {
+              bottom: 55px;
+              right: 4px;
+
+              .wpsr-tiktok-feed-reaction-count {
+                font-size: 11px;
+              }
+            }
+          }
+
+          .wpsr-feed-link {
+            a {
+              font-size: 12px;
+              font-weight: 400;
+            }
+
+            .wpsr-tiktok-feed-author-avatar {
+              min-width: 30px;
+              width: 30px;
+              height: 30px;
+            }
+          }
+
+          .wpsr-tiktok-feed-link-inner {
+            .wpsr-tiktok-feed-author-avatar-wrapper {
+              margin: 2px 0 3px 0;
+            }
+          }
+
+        }
+      }
+    }
+    .wpsr-tiktok-icon-outer {
+      width: 22px;
+      height: 22px;
+      top: 10px;
+      right: 10px;
+    }
+  }
+  .wpsr-tiktok-feed-statistics {
+    .wpsr-tiktok-icon-position {
+      padding: 0 10px;
+      .wpsr-feed-link {
+        .wpsr-tiktok-feed-author-name {
+          font-size: 12px;
+          font-weight: 400;
+        }
+        span {
+          font-size: 10px;
+        }
+        .wpsr-tiktok-feed-author-avatar {
+          min-width: 30px;
+          width: 30px;
+          height: 30px;
+        }
+      }
+    }
+  }
+  .wpsr-tiktok-feed-video-play{
+    width: 36px;
+    height: 36px;
+    .wpsr-tiktok-feed-video-play-icon{
+      width: 32px;
+      height: 32px;
+      background-size: 18px 18px;
+      margin: -16px 0 0 -15px
+    }
+  }
+}
+
+.is-mobile-active{
+  .wpsr-tiktok-feed-header .wpsr-tiktok-feed-user-info-wrapper .wpsr-tiktok-feed-user-info-head{
+    flex-direction: column;
+  }
+  .wpsr-tiktok-feed-header .wpsr-tiktok-feed-user-info-wrapper .wpsr-tiktok-feed-user-info-head .wpsr-tiktok-feed-header-info{
+    justify-content: center;
+    flex-direction: column;
+    .wpsr-tiktok-feed-user-profile-pic{
+      img{
+        width: 50px;
+        height: 50px;
+      }
+    }
+    .wpsr-tiktok-feed-user-info{
+      padding: 0 10px 0 0;
+      text-align: center;
+    }
+  }
+
+  .wpsr-tiktok-feed-item {
+    .wpsr-tiktok-feed-inner > {
+      .wpsr-tiktok-feed-statistics {
+        .wpsr-tiktok-icon-position {
+          .wpsr-tiktok-feed-reactions-icon {
+            width: 22px;
+            height: 22px;
+            background-size: 12px 12px;
+            margin-top: 8px;
+          }
+
+          .wpsr-tiktok-feed-video-playmode {
+            .wpsr-tiktok-feed-statistics {
+              bottom: 60px;
+              right: 3px;
+
+              .wpsr-tiktok-feed-reaction-count {
+                font-size: 11px;
+              }
+            }
+          }
+
+          .wpsr-feed-link {
+            a {
+              font-size: 12px;
+              font-weight: 400;
+            }
+
+            .wpsr-tiktok-feed-author-avatar {
+              min-width: 30px;
+              width: 30px;
+              height: 30px;
+            }
+          }
+
+          .wpsr-tiktok-feed-link-inner {
+            .wpsr-tiktok-feed-author-avatar-wrapper {
+              margin: 2px 0 3px 0;
+            }
+          }
+
+        }
+      }
+    }
+    .wpsr-tiktok-icon-outer {
+      width: 22px;
+      height: 22px;
+      top: 10px;
+      right: 10px;
+    }
+  }
+}

@@ -1,0 +1,300 @@
+// Header Template 2 - Three Column Layout with Star Breakdown
+.wpsr-business-info.wpsr-template-2{
+    display: flex;
+    flex-direction: column;
+    background-color: transparent;
+}
+.wpsr-template-2 {
+
+  .wpsr-reviews-header-template-2-three-columns {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    width: 100%;
+    min-height: 120px;
+
+    
+    // Column 1: Overall Rating and Review Count
+    .wpsr-reviews-header-template-2-column-1 {
+      flex: 0 0 30%;
+      width: 30%;
+      min-width: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      
+      .wpsr-reviews-header-template-2-overall-rating-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        
+        .wpsr-business-info-paltforms {
+          padding-bottom: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          img {
+            max-height: 25px;
+            width: auto;
+            margin-right: 10px;
+          }
+        }
+        
+        .wpsr-business-info-logo {
+          padding-bottom: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          img {
+            max-height: 30px;
+            width: auto;
+            margin-right: 8px;
+          }
+        }
+        
+        .wpsr-reviews-header-template-2-overall-rating {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 10px;
+          
+          
+          .wpsr-reviews-header-template-2-stars {
+            display: flex;
+            align-items: center;
+          }
+        }    
+      }
+    }
+    
+    // Column 2: Star Rating Breakdown
+    .wpsr-reviews-header-template-2-column-2 {
+      flex: 0 0 40%;
+      width: 40%;
+      min-width: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+      border-left: 1px solid #e0e0e0;
+      border-right: 1px solid #e0e0e0;
+      margin: 20px 0;
+      .wpsr-reviews-header-template-2-star-breakdown {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+        
+        .wpsr-reviews-header-template-2-star-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+          font-size: 14px;
+          
+          .wpsr-reviews-header-template-2-star-label {
+            width: 120px;
+            text-align: right;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            flex-shrink: 0;
+            overflow: visible;
+            padding-right: 5px;
+          }
+          
+          .wpsr-reviews-header-template-2-star-icons {
+            display: flex;
+            gap: 1px;
+            flex-shrink: 0;
+            
+            .wpsr-star-filled {
+              color: #ffc107;
+              font-size: 12px;
+              line-height: 1;
+            }
+            
+            .wpsr-star-empty {
+              color: #e0e0e0;
+              font-size: 12px;
+              line-height: 1;
+            }
+          }
+          
+          .wpsr-reviews-header-template-2-point-range {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            min-width: 40px;
+          }
+          
+          .wpsr-reviews-header-template-2-progress-bar {
+            flex: 1;
+            height: 12px;
+            overflow: hidden;
+            position: relative;
+            
+            .wpsr-reviews-header-template-2-progress-fill {
+              height: 100%;
+              transition: width 0.3s ease;
+            }
+          }
+          
+          .wpsr-reviews-header-template-2-star-count {
+            width: 35px;
+            text-align: left;
+          }
+        }
+      }
+    }
+    
+    // Column 3: Write Review Button
+    .wpsr-reviews-header-template-2-column-3 {
+      flex: 0 0 30%;
+      width: 30%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 150px;
+      height: 100%;
+
+      .wpsr-business-info-right{
+        margin-left: 0;
+      }
+
+      .wpsr-write-review-modal-btn,
+      .wpsr-read-all-review-modal-btn {
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        min-width: 120px;
+        color: #fff;
+        background-color: #4284f3;
+        font-size: 14px;
+        line-height: 1.4;
+        margin: 0;
+        box-shadow: none;
+        border: none;
+        cursor: pointer;
+        
+        &:hover {
+          background-color: darken(#4284f3, 10%);
+          text-decoration: none;
+        }
+        
+        &:focus {
+          background-color: #4284f3;
+          text-decoration: none;
+          outline: none;
+        }
+      }
+    }
+  }
+  
+  // Responsive design for Template 2
+  @media (max-width: 768px) {
+    .wpsr-reviews-header-template-2-three-columns {
+      flex-direction: column;
+      margin-top: 10px;
+      gap: 15px;
+      
+      .wpsr-reviews-header-template-2-column-1,
+      .wpsr-reviews-header-template-2-column-2,
+      .wpsr-reviews-header-template-2-column-3 {
+        min-width: unset;
+        width: 100%;
+        flex: none;
+      }
+
+      .wpsr-reviews-header-template-2-column-2 {
+        flex-direction: column;
+      }
+      // Hide borders on mobile
+      .wpsr-reviews-header-template-2-column-2 {
+        border-left: none;
+        border-right: none;
+        margin: 0;
+      }
+    }
+  }
+}
+
+.wpsr-reviews-header-template-2-progress-bar {
+  background-color: #e0e0e0;
+  
+  .wpsr-reviews-header-template-2-progress-fill {
+    background-color: #ffc107;
+  }
+}
+// When Template 2 is used in block display mode (badge/notification)
+.wpsr-template-2-block {
+  .wpsr-reviews-header-template-2-three-columns {
+    border-radius: 0;
+    
+    .wpsr-reviews-header-template-2-column-1 {
+      .wpsr-business-info-paltforms,
+      .wpsr-business-info-logo,
+      .wpsr-rating-and-count {
+        display: flex;
+        justify-content: center;
+        
+        @media only screen and (max-width: 320px) {
+          display: block;
+        }
+      }
+    }
+    
+    .wpsr-reviews-header-template-2-column-3 {
+      margin-top: 5px;
+      display: flex;
+      justify-content: center;
+    }
+  }
+}
+
+.wpsr-reviews-layout-badge.active,
+.wpsr-notification-active{
+  
+    .wpsr-template-2 .wpsr-reviews-header-template-2-three-columns {
+        flex-direction: column;
+    }
+
+    .wpsr-template-2 .wpsr-reviews-header-template-2-column-2 {
+        border-left: none;
+        border-right: none;
+    }
+
+    .wpsr-reviews-header-template-2-three-columns{
+        margin-top: 10px;
+    }
+
+    .wpsr-business-title{
+      display: flex;
+      justify-content: center;
+    }
+}
+
+.wpsr-reviews-header-template-2-title{
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    width: 100%;
+    display: block;
+}
+
+.wpsr-business-info-wrapper.wpsr-template-2-wrapper{
+    background-color: transparent;
+    border-bottom: 1px solid #e0e0e0;
+}

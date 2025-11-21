@@ -1,0 +1,98 @@
+.wpsr-review-template-two{
+  margin-top: 0;
+  @media screen and (max-width: 1024px) {
+    padding: 25px 15px;
+  }
+  &.wpsr-review-template-google{
+    border-bottom: 10px solid #e7711a;
+  }
+  &.wpsr-review-template-zomato{
+    border-bottom: 10px solid #f3153c;
+  }
+  &.wpsr-review-template-facebook{
+    border-bottom: 10px solid #345a9e;
+  }
+  &.wpsr-review-template-yelp{
+    border-bottom: 10px solid #fa3e3e;
+  }
+  &.wpsr-review-template-tripadvisor{
+    border-bottom: 10px solid #04a96c;
+  }
+  &.wpsr-review-template-amazon{
+    border-bottom: 10px solid #ffa41c;
+  }
+  &.wpsr-review-template-trustpilot{
+    border-bottom: 10px solid #00b67a;
+  }
+  &.wpsr-review-template-aliexpress{
+    border-bottom: 10px solid #fe4646;
+    //.wpsr-review-header{
+    //  .wpsr-review-platform{
+    //    right: 5px;
+    //  }
+    //}
+  }
+  display: flex;
+  flex-direction: inherit;
+  flex-wrap: wrap;
+  .wpsr-review-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    .wpsr-review-platform{
+      right: 15px;
+      left: auto;
+      @media screen and (max-width: 1024px) {
+        top: 5px;
+        img{
+          max-height: 18px;
+        }
+      }
+    }
+    .wpsr-reviewer-image{
+      img{
+        height: 70px;
+        border-radius: 50%;
+        max-width: 70px;
+      }
+      padding-right: 15px;
+      @media screen and (max-width: 1024px) {
+        padding-right: 10px;
+        img{
+          height: 55px;
+          width: 55px;
+        }
+      }
+    }
+    .wpsr-review-info{
+      margin-right: auto;
+      text-align: inherit;
+      padding-top: 0;
+      .wpsr-rating-wrapper{
+        @media screen and (max-width: 1024px) {
+          padding-bottom: 0;
+        }
+
+      }
+
+      .wpsr-reviewer-name-url{
+        .wpsr-reviewer-name{
+          @media screen and (max-width: 1024px) {
+            font-size: 16px;
+          }
+        }
+      }
+    }
+  }
+  .wpsr-review-title {
+    margin-bottom: -10px;
+  }
+  .wpsr-review-content{
+    margin-top: 15px;
+  }
+  &.wpsr-review-template-facebook{
+    .wpsr-recommends{
+      justify-content: flex-start;
+    }
+  }
+}

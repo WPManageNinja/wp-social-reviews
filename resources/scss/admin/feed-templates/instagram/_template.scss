@@ -1,0 +1,303 @@
+@import './header';
+@import './follow_button';
+@import '../../elements/feed-popup';
+.wpsr-instagram-slider-activate{
+  //.slick-list{
+  //  min-width: 800px;
+  //  width: 100%;
+  //  .slick-track{
+  //    margin: 0;
+  //  }
+  //}
+}
+.wpsr-ig-feed-wrapper{
+  .wpsr-column-gap-no_gap{
+    &.wpsr-row{
+      margin-left: 0;
+      margin-right: 0;
+      padding: 0;
+    }
+    [class*="wpsr-col"]{
+      margin-bottom: 0;
+    }
+  }
+  .wpsr-column-gap-narrow{
+    &.wpsr-row{
+      margin-left: -5px;
+      margin-right: -5px;
+      padding: 0;
+    }
+    [class*="wpsr-col"]{
+      margin-bottom: 10px;
+      >div{
+        margin-bottom: 0;
+      }
+    }
+  }
+  .wpsr-column-gap-small{
+    &.wpsr-row{
+      margin-left: -10px;
+      margin-right: -10px;
+      padding: 0;
+    }
+    [class*="wpsr-col"]{
+      margin-bottom: 20px;
+      >div{
+        margin-bottom: 0;
+      }
+    }
+  }
+  .wpsr-column-gap-wide{
+    &.wpsr-row{
+      margin-left: -20px;
+      margin-right: -20px;
+      padding: 0;
+    }
+    [class*="wpsr-col"]{
+      margin-bottom: 40px;
+      >div{
+        margin-bottom: 0;
+      }
+    }
+  }
+  .wpsr-column-gap-wider{
+    &.wpsr-row{
+      margin-left: -25px;
+      margin-right: -25px;
+      padding: 0;
+    }
+    [class*="wpsr-col"]{
+      margin-bottom: 50px;
+      >div{
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  .wpsr-shoppable-icon_wrap {
+    position: absolute;
+    z-index: 9;
+    margin: 15px 10px 0 0;
+    right: 0;
+    .wpsr-shoppable-icon{
+      border-radius: 4px;
+      padding: 5px 10px;
+      background-color: #FFFFFF;
+      font-size: 14px;
+      color: #000;
+      font-size: 14px;
+      &.wpsr-shoppable-icon-add{
+        background-color: #5525d8;
+        color: #fff;
+         i{
+          color: #fff;
+        }
+      }
+      &+.wpsr-shoppable-icon{
+        margin-left: 10px;
+      }
+    }
+    .wpsr-shoppable-icon i{
+      color: #5525d9;
+    }
+  }
+}
+.wpsr-ig-footer{
+  display: flex;
+  justify-content: center;
+  .wpsr-ig-follow-btn{
+    margin-top: 5px;
+  }
+}
+
+.wpsr-ig-post{
+  margin-bottom: 30px;
+  position: relative;
+  overflow: hidden;
+  &:hover{
+    .wpsr-ig-post-info{
+      opacity: 1;
+      visibility: visible;
+    }
+    .wpsr-ig-shoppble-icon-top {
+      img {
+        visibility: hidden;
+      }
+    }
+  }
+  .wpsr-ig-playmode{
+    cursor: pointer;
+  }
+
+  .wpsr-ig-post-info{
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    z-index: 3;
+    background-color: rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+    -webkit-transition: 0.4s;
+    transition: 0.4s;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    .wpsr-shoppable-button {
+      position: absolute;
+      border-radius: 4px;
+      background-color: transparent;
+      border: 1px solid #FFFFFF;
+      cursor: pointer;
+      color: #FFFFFF;
+      font-weight: 400;
+      font-size: 14px;
+      pointer-events: auto;
+      text-decoration: none;
+      padding: 8px 30px;
+      &:hover,
+      &:focus{
+        text-decoration: none;
+      }
+    }
+    .wpsr-ig-post-statistics{
+      display: flex;
+      align-items: center;
+      .wpsr-ig-post-single-statistic{
+        display: flex;
+        align-items: center;
+        margin-right: 15px;
+        &:last-child{
+          margin-right: 0;
+        }
+        span{
+          font-weight: 700;
+          font-size: 14px;
+        }
+        color: #fff;
+        svg{
+          height: 20px;
+          width: 20px;
+          fill: #fff;
+          margin-right: 5px;
+        }
+      }
+    }
+    .wpsr-ig-post-caption{
+      margin-top: 10px;
+      pointer-events: none;
+      p{
+        color: #fff;
+        text-align: center;
+        margin-top: 0;
+        word-break: break-all;
+        margin-bottom: 0;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.4;
+        a{
+          cursor: pointer;
+          color: #00376b;
+          font-weight: 400;
+          pointer-events: auto;
+          text-decoration: none;
+          &:hover,
+          &:focus{
+            text-decoration: underline;
+          }
+        }
+      }
+    }
+    .wpsr-ig-icon{
+      right: 10px;
+      position: absolute;
+      top: 10px;
+      svg{
+        path{
+          fill: #fff;
+        }
+      }
+    }
+  }
+  .wpsr-ig-shoppble-icon-top{
+    left: 10px;
+    position: absolute;
+    top: 10px;
+    img {
+      height: 18px;
+      width: 18px;
+      visibility: visible;
+      box-shadow: 0px 4px 11px 1px rgb(0 0 0 / 20%);
+    }
+  }
+}
+.wpsr-ig-post{
+  &.wpsr-image-ratio-frame34{
+    .wpsr-ig-post-media,
+    .wpsr-ig-feed-popup-media{
+      padding-top: 133.33333333%;
+    }
+  }
+  &.wpsr-image-ratio-frame45{
+    .wpsr-ig-post-media,
+    .wpsr-ig-feed-popup-media{
+      padding-top: 125%;
+    }
+  }
+}
+.wpsr-ig-post-media,
+.wpsr-ig-feed-popup-media{
+  position: relative;
+  overflow: hidden;
+  padding-top: 100%;
+  .wpsr-ig-post-type-icon{
+    background-image: url("../../../../images/icon/ig-media-type.png");
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 32px;
+    height: 32px;
+    background-repeat: no-repeat;
+    background-position: 0 -33px;
+    background-size: 65px 65px;
+
+    &.wpsr-ig-post-type-CAROUSEL_ALBUM{
+      background-position: 0 0;
+    }
+    &.wpsr-ig-post-type-VIDEO{
+      background-position: 0 -33px;
+    }
+  }
+  video,
+  img{
+    position: absolute;
+    width: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 100%;
+    min-width: 100%;
+    max-width: inherit;
+    object-fit: cover;
+  }
+}
+
+.wpsr-ig-feed-popup-media {
+  padding-top: initial;
+  a{
+    width: 100%;
+  }
+  .wpsr-ig-post-type-icon {
+    right: 15px;
+  }
+  img{
+    position: initial;
+    transform: initial;
+  }
+}

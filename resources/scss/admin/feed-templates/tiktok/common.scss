@@ -1,0 +1,169 @@
+.wpsr-tiktok-load-more.wpsr-load-more-default{
+  background-color: #FE2C55;
+  padding: 7px 15px 5px 15px;
+  font-weight: 400;
+  border-radius: 4px;
+  box-shadow: -1px 2px 12px 1px rgba(67, 72, 74, 0.15);
+  font-size: 14px;
+  margin: 0 15px 0 0;
+  .wpsr-load-icon-wrapper{
+    border-radius: 8px;
+  }
+}
+.wpsr-tiktok-feed-follow-button-group {
+  display: flex;
+  align-items: center;
+  flex: auto 0 0;
+  .wpsr-tiktok-feed-btn {
+    flex: auto 0 0;
+    a {
+      padding: 7px 15px 5px 15px;
+      color: #ffffff;
+      font-weight: 400;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      box-shadow: -1px 2px 12px 1px rgb(67 72 74 / 15%);
+      background-color: #FE2C55;
+      border: var(--c3f17a3a);
+      cursor: pointer;
+      font-size: 14px;
+      line-height: inherit;
+      overflow: hidden;
+      text-decoration: none;
+      text-overflow: ellipsis;
+      transition: all .15s ease-out;
+      white-space: nowrap;
+      z-index: 1;
+      .wpsr-tiktok-feed-btn-icon{
+        line-height: 1;
+      }
+      svg{
+        margin-right: 5px;
+        height: 12px;
+        width: 12px;
+      }
+      &:hover{
+        outline: none;
+      }
+      &:hover,
+      &:focus{
+        border: none;
+        box-shadow: 0px 25px 59px 0px rgb(0 0 0 / 10%);
+      }
+      &:focus{
+        outline: 2px solid #72aee6;
+      }
+      @media screen and (max-width: 767px) {
+        .wpsr-tiktok-feed-btn-text{
+          display: none;
+        }
+      }
+    }
+  }
+}
+
+.wpsr-has-equal-height{
+  .swiper-slide{
+    height: initial;
+  }
+}
+
+.wpsr-tiktok-feed-wrapper-inner{
+  position: relative;
+}
+.wpsr-tiktok-feed-image{
+  .wpsr-feed-link{
+    position: relative;
+  }
+  .wpsr-animated-background {
+    height: 100%;
+    z-index: 5;
+  }
+}
+.wpsr-tiktok-feed-wrapper{
+  width: 100%;
+  position: relative;
+  a {
+    box-shadow: none;
+    text-decoration: none;
+    outline: none;
+    border: none;
+    &:focus,
+    &:hover{
+      box-shadow: none;
+      border: none;
+    }
+  }
+}
+.wpsr-tiktok-feed-video-play{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  border-radius: 50%;
+  background: rgba(16, 23, 31, 0.20);
+  backdrop-filter: blur(5px);
+  visibility: visible;
+  transition: all 0.3s ease 0s;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  z-index: 2;
+  @media screen and (max-width: 900px) {
+    width: 36px;
+    height: 36px;
+  }
+  .wpsr-tiktok-feed-video-play-icon{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    background-size: 24px 24px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-image: url('../../../../images/tiktok-images/play.svg');
+    margin: -12px 0 0 -12px;
+    opacity: 0.9;
+    @media screen and (max-width: 900px) {
+      width: 32px;
+      height: 32px;
+      background-size: 18px 18px;
+      margin: -16px 0 0 -15px
+    }
+  }
+}
+
+.wpsr-tiktok-feed-footer{
+  display: flex;
+  justify-content: center;
+}
+
+/* this CSS to stop carousel layout image flashes */
+.wpsr_content{
+  .swiper-container .wpsr-tiktok-feed-item .wpsr-tiktok-feed-video-preview {
+    display: none;
+  }
+  &.wpsr-slider-before-init .wpsr-tiktok-feed-item .wpsr-tiktok-feed-video-preview {
+    display: block;
+  }
+  .swiper-container .wpsr-animated-background {
+    background: #f0f0f0;
+  }
+  &.wpsr-slider-before-init .wpsr-animated-background {
+    animation-duration: 1.25s;
+    animation-fill-mode: forwards;
+    animation-iteration-count: infinite;
+    animation-name: wpsrPlaceHolderShimmer;
+    animation-timing-function: linear;
+    background: darkgray;
+    background: linear-gradient(to right, #eeeeee 10%, #dddddd 18%, #eeeeee 33%);
+    background-size: 800px 104px;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    z-index: 22;
+  }
+}

@@ -1,0 +1,27 @@
+.wpsr-twitter-footer{
+    display: flex;
+    justify-content: center;
+    .wpsr-twitter-follow-btn{
+        margin-top: 5px;
+        a{
+            background-color: #1ea1f2;
+            font-size: 14px;
+            padding: 0 20px;
+            border-radius: 15px;
+            color: #fff;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            height: 30px;
+            transition: 0.3s ease;
+            text-decoration: none;
+            svg{
+                fill: #fff;
+                height: 16px;
+                margin-right: 5px;
+            }
+        }
+
+    }
+
+}

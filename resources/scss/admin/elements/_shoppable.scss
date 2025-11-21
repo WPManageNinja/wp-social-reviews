@@ -1,0 +1,379 @@
+.wpsr-global-settings-main{
+  .wpsr-shoppable-upgrade-to-pro{
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    
+    img{
+      width: 100%;
+      height: auto;
+      display: block;
+      z-index: 1;
+    }
+    
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 2;
+    }
+    .wpsr-shoppable-upgrade-message{
+      background-color: var(--wpsr-primary-bg, #fff);
+      max-width: 420px;
+      padding: 30px 30px 30px;
+      border-radius: 8px;
+      position: absolute;
+      z-index: 3;
+      left: 0;
+      right: 0;
+      margin: 0 auto;
+      text-align: center;
+      top: 130px;
+      h2{
+        font-size: 22px;
+        line-height: 28px !important;
+        margin: 0 0 15px;
+        font-weight: 700;
+        line-height: 34px;
+        color: var(--wpsr-heading-text, #0E121B);
+      }
+      p{
+        padding: 0;
+      }
+      .wpsr_buy_pro_btn_primary{
+        margin-top: 15px;
+        display: inline-block;
+      }
+    }
+  }
+
+  .wpsr-welcome-screen-message{
+    padding: 50px 50px 50px;
+    display: flex;
+    flex-direction: column;
+    align-self: flex-start;
+    h2{
+      color: var(--wpsr-heading-text, #0E121B);
+      font-size: 28px;
+      margin: 0 0 25px;
+      font-weight: 600;
+      line-height: 34px;
+    }
+    p{
+      margin: 0 0 10px;
+      color: var(--wpsr-primary-text, #525866);
+    }
+    .el-button{
+      margin-top: 15px;
+    }
+  }
+}
+
+// New
+
+.wpsr-shoppable-content {
+  padding: 0;
+}
+
+.wpsr-shoppable-list-container {
+  padding: 0;
+}
+
+.wpsr-shoppable-table {
+  background: var(--wpsr-primary-bg, #FFFFFF);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.wpsr-shoppable-table-header {
+  display: flex;
+  border-bottom: 1px solid var(--wpsr-primary-border, #E1E4EA);
+  padding: 12px 24px;
+}
+
+.wpsr-shoppable-table-cell {
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+}
+
+.wpsr-shoppable-table-cell-hashtags {
+  flex: 1;
+  min-width: 0;
+}
+
+.el-button.wpsr-add-shoppable-btn svg {
+  margin-right: 4px;
+}
+
+.wpsr-shoppable-table-cell-source {
+  flex: 1;
+  min-width: 0;
+}
+
+.wpsr-shoppable-table-cell-actions {
+  width: 80px;
+  justify-content: center;
+}
+
+.wpsr-shoppable-table-header-text {
+  color: var(--wpsr-heading-text, #0E121B);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.wpsr-shoppable-table-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.wpsr-shoppable-table-row {
+  display: flex;
+  border-bottom: 1px solid var(--wpsr-primary-border, #E1E4EA);
+  padding: 12px 20px;
+  transition: background-color 0.2s ease;
+}
+
+.wpsr-shoppable-table-row:hover {
+  background-color: var(--wpsr-secondary-bg);
+}
+
+.wpsr-shoppable-table-row:last-child {
+  border-bottom: none;
+}
+
+.wpsr-shoppable-row-error {
+  background-color: #fef2f2;
+  border-left: 3px solid #ef4444;
+}
+
+.wpsr-shoppable-hashtags {
+  overflow: hidden;
+  color: var(--wpsr-heading-text, #0E121B);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.wpsr-shoppable-source {
+  font-size: 14px;
+  color: #6b7280;
+}
+/* Modal Styles */
+.wpsr-shoppable-modal .el-dialog {
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.wpsr-shoppable-modal .el-dialog__header {
+  padding: 24px 24px 0 24px;
+  border-bottom: none;
+}
+
+.wpsr-shoppable-modal .el-dialog__headerbtn {
+  top: 20px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background-color: var(--wpsr-secondary-bg, #F8F9FA);
+  border: 1px solid var(--wpsr-primary-border, #E1E4EA);
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.wpsr-shoppable-modal .el-dialog__headerbtn:hover {
+  background-color: #e9ecef;
+}
+
+.wpsr-shoppable-modal .el-dialog__close {
+  color: #6b7280;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.wpsr-shoppable-modal .el-dialog__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  padding: 0;
+}
+
+.wpsr-shoppable-modal .el-dialog__body {
+  padding: 24px 24px 0 24px;
+}
+
+.wpsr-shoppable-modal .el-dialog__footer {
+  padding: 24px 24px 24px 24px;
+  border-top: none;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.wpsr-shoppable-modal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.wpsr-modal-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wpsr-modal-field-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  line-height: 20px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wpsr-modal-field-label .el-tooltip {
+  margin-left: 4px;
+}
+
+.wpsr-modal-field-label .el-icon {
+  color: #6b7280;
+  font-size: 16px;
+}
+
+.wpsr-modal-input .el-input__wrapper,
+.wpsr-modal-select .el-input__wrapper {
+  border-radius: 8px;
+  box-shadow: none;
+  transition: all 0.2s ease;
+  height: 40px;
+}
+
+.wpsr-modal-input .el-input__inner,
+.wpsr-modal-select .el-input__inner {
+  font-size: 14px;
+  color: #374151;
+}
+
+.wpsr-modal-select .el-select__placeholder {
+  font-size: 14px;
+}
+
+.wpsr-modal-checkbox .el-checkbox__label {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.wpsr-modal-checkbox .el-checkbox__input.is-checked .el-checkbox__inner {
+  background-color: #5525d7;
+  border-color: #5525d7;
+}
+
+.wpsr-modal-checkbox .el-checkbox__input.is-checked + .el-checkbox__label {
+  color: #374151;
+}
+
+.wpsr-modal-checkbox .el-checkbox__inner {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  transition: all 0.2s ease;
+}
+
+.wpsr-modal-checkbox .el-checkbox__input.is-checked .el-checkbox__inner::after {
+  border-color: #ffffff;
+  border-width: 2px;
+}
+
+.wpsr-shoppable-url-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Modal Button Styles */
+.wpsr-shoppable-modal .el-button {
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 10px 20px;
+  height: auto;
+  transition: all 0.2s ease;
+}
+
+.wpsr-shoppable-modal .el-button:not(.el-button--primary) {
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.wpsr-shoppable-modal .el-button:not(.el-button--primary):hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+.wpsr-shoppable-modal .el-button--primary {
+  background-color: #5525d7;
+  border-color: #5525d7;
+  color: #ffffff;
+}
+
+.wpsr-shoppable-modal .el-button--primary:hover {
+  background-color: #451ea6;
+  border-color: #451ea6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(85, 37, 215, 0.3);
+}
+
+.wpsr-shoppable-modal .el-button--primary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(85, 37, 215, 0.3);
+}
+
+/* Scrollbar Styling */
+.wpsr-shoppable-table-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.wpsr-shoppable-table-body::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.wpsr-shoppable-table-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.wpsr-shoppable-table-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.wpsr-modal-field-group {
+  .wpsr-modal-select{
+    .el-select__wrapper{
+      width: 100%;
+      min-height: 40px;
+      border-radius: 8px;
+    }
+    .el-select__wrapper.is-focused {
+      box-shadow: 0 0 0 1px var(--wpsr-heading-text, #0E121B);
+    }
+  }
+}

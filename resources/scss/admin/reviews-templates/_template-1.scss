@@ -1,0 +1,73 @@
+.wpsr-review-template-one{
+  border-radius: 8px;
+  .wpsr-reviewer-image{
+    position: absolute;
+    top: -40px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    line-height: 0;
+    img{
+      margin: auto;
+      max-height: 80px;
+      border-radius: 50%;
+      max-width: 80px;
+      width: 100%;
+      border: 4px solid #fff;
+      box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.34);
+    }
+  }
+  .wpsr-review-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    .wpsr-review-info{
+      margin: 0 auto;
+      text-align: center;
+      padding-top: 20px;
+      .wpsr-rating-wrapper{
+        justify-content: center;
+        .wpsr-rating{
+          .wpsr-star{
+            margin-right: 2px;
+          }
+        }
+        .wpsr-rating-style-1{
+          justify-content: center;
+        }
+        .wpsr-booking-rating-style{
+          justify-content: center;
+        }
+      }
+    }
+  }
+  .wpsr-review-content{
+    text-align: center;
+    margin-top: 15px;
+  }
+  .wpsr-review-title {
+    margin-bottom: -10px;
+    margin-top: 10px;
+    text-align: center;
+  }
+  .wpsr-review-images{
+    justify-content: center;
+  }
+}
+
+.wpsr-reviews-template-grid1{
+  .wpsr-ai-summary-enabled{
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    row-gap: 60px;
+    margin-top: 30px;
+    column-gap: 15px;
+    [class*="wpsr-col-"]{
+      display: flex;
+    }
+    .wpsr-review-template{
+      margin: 0;
+      width: 100%;
+    }
+  }
+}

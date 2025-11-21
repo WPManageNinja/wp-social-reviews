@@ -1,0 +1,45 @@
+.wpsr-chat-modal{
+    .el-dialog__body{
+        padding: 10px 30px 40px;
+        h3{
+            font-size: 15px;
+            color: #000;
+            line-height: 1.4;
+            font-weight: 500;
+            margin-top: 30px;
+            span{
+                &.connected{
+                    color: green;
+                }
+                &.disconnected{
+                    color: #ff4f4f;
+                }
+            }
+        }
+        p{
+            font-size: 15px;
+            &.save-messenger-info{
+                width: 300px;
+                margin: 0 auto 10px auto;
+            }
+            &.edit-template-msg{
+                margin: 40px 0 10px;
+            }
+            &.wpsr-info{
+                margin-top: 60px;
+                margin-bottom: 0;
+                font-size: 12px;
+                opacity: 0.8;
+            }
+            &.wpsr-docs-help{
+                margin-bottom: 0;
+            }
+
+        }
+
+        text-align: center;
+        .el-button{
+            margin: 0 auto;
+        }
+    }
+}

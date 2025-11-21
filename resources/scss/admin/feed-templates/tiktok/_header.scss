@@ -1,0 +1,115 @@
+.wpsr-tiktok-feed-header{
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+  &.wpsr-tiktok-feed-profile-pic-hide{
+    .wpsr-tiktok-feed-user-info-head .wpsr-tiktok-feed-user-info{
+      padding-left: 0;
+    }
+  }
+  .wpsr-tiktok-feed-user-profile-banner{
+    background: #fff;
+    position: relative;
+    padding-top: 25%;
+    overflow: hidden;
+    border-radius: 8px 8px 0 0;
+    img{
+      width: 100%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      display: block;
+      transform: translate(-50%, -50%);
+    }
+  }
+  .wpsr-tiktok-feed-user-info-wrapper{
+    background-color: #fff;
+    border: 1px solid #edededab;
+    padding: 15px;
+    position: relative;
+    border-radius: 8px;
+    border-top: none;
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+    .wpsr-tiktok-feed-user-info-head{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      @media  screen and (max-width: 767px) {
+        flex-direction: column;
+      }
+      .wpsr-tiktok-feed-user-profile-pic{
+        &:hover{
+          outline: none;
+        }
+        &:focus{
+          box-shadow: none;
+          outline: 2px solid #72aee6;
+        }
+        img{
+          width: 70px;
+          height: auto;
+          border-radius: 50%;
+          box-shadow: 0 5px 10px rgb(67 72 74 / 10%);
+        }
+      }
+      .wpsr-tiktok-feed-header-info {
+        display: flex;
+        align-items: center;
+        flex-grow: 1;
+        gap: 10px;
+        @media screen and (max-width: 767px) {
+          flex-direction: column;
+          justify-content: center;
+          margin-bottom: 20px;
+        }
+        .wpsr-tiktok-feed-user-info{
+          @media screen and (max-width: 767px) {
+            padding-left: 0;
+            text-align: center;
+          }
+          .wpsr-tiktok-feed-user-info-name-wrapper{
+            a{
+              text-decoration: none;
+              box-shadow: none;
+              outline: none;
+              border: none;
+              color: #17191a;
+              font-size: 20px;
+              font-weight: 600;
+              line-height: 1.4;
+              display: block;
+              &:focus{
+                outline: 2px solid #72aee6;
+              }
+            }
+          }
+          .wpsr-tiktok-feed-user-info-description{
+            margin: 3px 0;
+            p{
+              font-size: 16px;
+              line-height: 1.4;
+              font-weight: 400;
+              color: #17191a;
+              opacity: 0.7;
+              margin-top: 0;
+              margin-bottom: 0;
+              word-break: break-word;
+            }
+          }
+          .wpsr-tiktok-feed-user-statistics{
+            span{
+              color: #464b5b;
+              font-size: 14px;
+              font-weight: 400;
+              margin: 0 8px 0 0;
+              padding: 0;
+              strong{
+                margin-right: 3px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

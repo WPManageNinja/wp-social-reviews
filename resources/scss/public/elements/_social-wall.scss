@@ -1,0 +1,41 @@
+.wpsr-social-wall-tabs {
+  display: flex;
+  margin: 15px auto;
+  justify-content: center;
+  .wpsr-social-wall-tab {
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-right: 5px;
+    margin-left: 5px;
+    text-decoration: none;
+    font-size: 18px;
+  }
+
+}
+
+.wpsr-social-wall-tab:hover {
+  background-color: #eee;
+}
+.wpsr-social-wall-tab.wpsr-active {
+  background-color: #000;
+  border-color: #000;
+  color: #fff;
+}
+.wpsr-social-wall-tab-content-wrapper{
+  .wpsr-feed-wrap{
+    position: relative;
+  }
+  .wpsr-social-wall-content.wpsr-active{
+    display: block;
+  }
+  .wpsr-social-wall-content.wpsr-deactivate{
+    display: none;
+  }
+}
+

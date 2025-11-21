@@ -1,0 +1,177 @@
+.wpsr-reviews-template-grid9{
+  .wpsr-review-template{
+    .wpsr-review-info{
+      .wpsr-rating-time{
+        align-items: flex-start;
+        flex-direction: column;
+        .wpsr-review-date{
+          padding-left: 0;
+          padding-top: 2px;
+        }
+      }
+    }
+  }
+}
+.wpsr-review-template-nine{
+  padding: 20px 15px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  transition: 0.4s;
+  margin-top: 0;
+  &.wpsr-review-template-facebook{
+    .wpsr-review-header{
+      .wpsr-rating-time{
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+      }
+    }
+  }
+  @media screen and (max-width: 1024px) {
+    padding: 20px 15px;
+  }
+  &:hover{
+    background-color: #6a65e7;
+    .wpsr-recommends{
+      span{
+        color: #fff;
+      }
+      svg{
+        path{
+          fill: #fff;
+        }
+      }
+    }
+    .wpsr-review-content {
+      color: #fff;
+      a {
+        color: #fff;
+        text-decoration-color: #fff;
+      }
+      .wpsr_add_read_more .wpsr_read_more,
+      .wpsr_add_read_more .wpsr_read_less {
+        color: #fff;
+        text-decoration-color: #fff;
+      }
+    }
+    .wpsr-review-title {
+      color: #fff;
+    }
+    .wpsr-review-header{
+      .wpsr-review-info{
+        .wpsr-reviewer-name-url{
+          .wpsr-reviewer-name{
+            color: #fff;
+          }
+        }
+        .wpsr-review-date{
+          color: #fff;
+        }
+      }
+      p{
+        color: #fff;
+        a{
+          color: #59f333;
+          text-decoration-color: #59f333;
+          &:hover{
+            color: #59f333;
+            text-decoration-color: #59f333;
+          }
+        }
+      }
+    }
+
+    .wpsr-rating-wrapper{
+      .wpsr-rating{
+        .wpsr-star{
+          svg{
+            path{
+              fill: #fff;
+            }
+          }
+        }
+      }
+      .wpsr-rating-style-1{
+        color: #fff;
+        span{
+          background: #e7711a;
+          color: #fff;
+        }
+      }
+      .wpsr-rating-style-2{
+        span{
+          color: #fff;
+        }
+      }
+      .wpsr-booking-rating-style{
+        .review-badge{
+          background: #fff;
+          color: #003580;
+        }
+      }
+    }
+    .wpsr-total-review-count{
+      color: #fff;
+    }
+    .wpsr_read_more_list{
+      color: #fff;
+      text-decoration-color: #fff;
+    }
+    .wpsr-list-style-check{
+      background:#fff;
+    }
+  }
+  .wpsr-review-header{
+    display: flex;
+    .wpsr-reviewer-image{
+      .wpsr-reviewer-image-url{
+        display: block;
+        margin-right: 10px;
+      }
+      img{
+        height: 60px;
+        border-radius: 50%;
+        max-width: 60px;
+        margin: 0 auto;
+        border: 5px solid #fff;
+        box-shadow: 0px 0px 9px 0px rgba(0, 0, 0, 0.15);
+      }
+    }
+    .wpsr-rating-time{
+      display: flex;
+      align-items: center;
+      margin-top: 5px;
+    }
+    .wpsr-review-info{
+      .wpsr-reviewer-name-url{
+        .wpsr-reviewer-name{
+          font-size: 15px;
+        }
+      }
+
+      .wpsr-review-date{
+        padding-left: 10px;
+      }
+    }
+  }
+  .wpsr-rating-wrapper{
+    padding-bottom: 0;
+    margin-bottom: -5px;
+  }
+  .wpsr-review-platform{
+    position: initial;
+    @media screen and (max-width: 1024px) {
+      top: 5px;
+      img{
+        max-height: 18px;
+      }
+    }
+  }
+  .wpsr-review-title {
+    margin-top: 10px;
+  }
+  .wpsr-review-content{
+    padding-top: 5px;
+  }
+}

@@ -1,0 +1,86 @@
+.wpsr_feeds{
+  &.wpsr-loading-feeds{
+    opacity: 0.5;
+    transition: 0.3s;
+  }
+}
+.wpsr-load-more-default{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+  background-color: #000;
+  border: none;
+  height: 36px;
+  width: calc(100% - 16px);
+  margin: 15px auto;
+  cursor: pointer;
+  color: #fff;
+  font-size: 14px;
+  user-focus: none;
+  outline: none;
+  opacity: 1;
+  max-width: 300px;
+  transition: 0.3s ease;
+  position: relative;
+  font-weight: 600;
+  box-shadow: none;
+  &:focus{
+    outline: 2px solid #3962b3;
+  }
+  &:hover{
+    opacity: 0.7;
+  }
+  &:hover,
+  &:focus{
+    box-shadow: none;
+  }
+  .wpsr-load-icon-wrapper{
+    display: none;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: #dddedf;
+    border-radius: 4px;
+  }
+}
+
+.wpsr-load-more-default span{
+  font-size:0;
+  width:15px;
+  height:15px;
+  border-radius:15px;
+  padding:0;
+  border:3px solid #fff;
+  border-bottom:3px solid rgba(255,255,255,0.0);
+  border-left:3px solid rgba(255,255,255,0.0);
+  background-color:transparent !important;
+  animation-name: rotateAnimation;
+  -webkit-animation-name: rotateAnimation;
+  animation-duration: 1s;
+  -webkit-animation-duration: 1s;
+  animation-delay: 0.2s;
+  -webkit-animation-delay: 0.2s;
+  animation-iteration-count: infinite;
+  -webkit-animation-iteration-count: infinite;
+  display: block;
+  margin: 10px auto;
+}
+.wpsr-load-more-default.wpsr-spinner-loading .wpsr-load-icon-wrapper{
+  display: inline-flex;
+}
+.elementor-widget-container .wpsr-load-more-default{
+  background: none;
+  &:hover,
+  &:focus{
+    background: none;
+  }
+}
+@keyframes rotateAnimation {
+  0%   {transform: rotate(0deg);}
+  100% {transform: rotate(360deg);}
+}

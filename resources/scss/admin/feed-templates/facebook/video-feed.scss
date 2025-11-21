@@ -1,0 +1,87 @@
+.wpsr-fb-feed-item{
+  height: 100%;
+  position: relative;
+  >div{
+    width: 100%;
+  }
+  .wpsr-fb-feed-image{
+    width: 100%;
+  }
+  .wpsr-fb-feed-video-preview{
+    display: block;
+    width: 100%;
+    height: auto;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    padding-top: 59.93%;
+    border-radius: 4px;
+    z-index: 1;
+    img{
+      // display: block;
+      max-width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      object-fit: cover;
+    }
+    .wpsr-fb-feed-video-duration{
+      position: absolute;
+      z-index: 3;
+      right: 10px;
+      bottom: 10px;
+      padding: 4px 4px;
+      color: #fff;
+      border-radius: 2px;
+      font-weight: 500;
+      font-size: 12px;
+      line-height: 14px;
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  .wpsr-fb-feed-video-info{
+    padding-top: 15px;
+    h3{
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.2;
+      padding: 0;
+      margin-top: 0;
+      margin-bottom: 0;
+      cursor: pointer;
+      a{
+        color: #17191a;
+        text-decoration: none;
+        box-shadow: none;
+      }
+      &:hover{
+        a{
+          text-decoration: underline;
+        }
+      }
+    }
+
+    .wpsr-fb-feed-video-statistics{
+      display: flex;
+      margin-top: 3px;
+      .wpsr-fb-feed-video-statistic-item{
+        font-size: 13px;
+        position: relative;
+        color: #7f8588;
+        font-weight: 400;
+        line-height: 1.4;
+      }
+    }
+  }
+}
+.wpsr-fb-video_feed{
+  .wpsr-fb-feed-item{
+    margin-bottom: 0;
+  }
+}
+

@@ -1,0 +1,265 @@
+@import './header';
+@import '../../elements/feed-popup';
+@import './follow_button';
+@import '../../elements/load-more';
+@import "../../elements/instagram-widget";
+
+.wpsr-ig-feed-wrapper{
+  margin-bottom: 20px;
+}
+.wpsr-instagram-slider-activate{
+  .wpsr-ig-footer{
+    margin-top: 10px;
+  }
+  //.slick-list{
+  //  width: 100%;
+  //  .slick-track{
+  //    margin: 0;
+  //  }
+  //}
+}
+.wpsr-ig-post{
+  margin-bottom: 30px;
+  position: relative;
+  overflow: hidden;
+  &:has(a:focus) {
+    overflow: visible;
+  }
+  &:hover{
+    .wpsr-ig-post-info{
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .wpsr-ig-shoppble-icon-top {
+      img {
+        visibility: hidden;
+      }
+    }
+  }
+  .wpsr-ig-playmode{
+    cursor: pointer;
+    display: block;
+    &:focus{
+      outline: 2px solid #72aee6;
+      outline-offset: 3px;
+    }
+  }
+
+  .wpsr-ig-post-info{
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    z-index: 3;
+    background-color: rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+    -webkit-transition: 0.4s;
+    transition: 0.4s;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    .wpsr-shoppable-button {
+      position: absolute;
+      border-radius: 4px;
+      background-color: transparent;
+      border: 1px solid #FFFFFF;
+      cursor: pointer;
+      color: #FFFFFF;
+      font-weight: 400;
+      font-size: 14px;
+      pointer-events: auto;
+      text-decoration: none;
+      padding: 8px 30px;
+      &:hover,
+      &:focus{
+        text-decoration: none;
+      }
+    }
+    .wpsr-ig-post-statistics{
+      display: flex;
+      align-items: center;
+      .wpsr-ig-post-single-statistic{
+        display: flex;
+        align-items: center;
+        margin-right: 15px;
+        &:last-child{
+          margin-right: 0;
+        }
+        span{
+          font-weight: 700;
+          font-size: 14px;
+        }
+        color: #fff;
+        svg{
+          height: 20px;
+          width: 20px;
+          fill: #fff;
+          margin-right: 5px;
+        }
+      }
+
+
+    }
+    .wpsr-ig-post-caption{
+      margin-top: 10px;
+      pointer-events: none;
+      p{
+        word-break: break-word;
+        color: #fff;
+        text-align: center;
+        margin-top: 0;
+        margin-bottom: 0;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.4;
+        @media screen and (max-width: 767px) {
+          font-size: 16px;
+        }
+        a{
+          cursor: pointer;
+          color: #00376b;
+          font-weight: 400;
+          pointer-events: auto;
+          text-decoration: none;
+          &:hover,
+          &:focus{
+            text-decoration: underline;
+          }
+        }
+      }
+    }
+    .wpsr-ig-icon{
+      right: 10px;
+      position: absolute;
+      top: 10px;
+      svg{
+        path{
+          fill: #fff;
+        }
+      }
+    }
+  }
+
+  .wpsr-ig-shoppble-icon-top{
+    left: 10px;
+    position: absolute;
+    top: 10px;
+    img{
+      height: 18px;
+      width: 18px;
+      visibility: visible;
+      box-shadow: 0px 4px 11px 1px rgb(0 0 0 / 20%);
+    }
+  }
+
+}
+.wpsr-ig-footer{
+  justify-content: center;
+}
+.wpsr-ig-load-more.wpsr-load-more-default{
+  margin: 0;
+  background-color: #0095F6;
+  padding: 10px 20px;
+  max-width: initial;
+  width: auto;
+  height: auto;
+  &:hover{
+    background-color: #0a8bdf;
+  }
+}
+.wpsr-ig-post{
+  &.wpsr-image-ratio-frame34{
+    .wpsr-ig-post-media,
+    .wpsr-ig-feed-popup-media{
+      padding-top: 133.33333333%;
+    }
+  }
+  &.wpsr-image-ratio-frame45{
+    .wpsr-ig-post-media,
+    .wpsr-ig-feed-popup-media{
+      padding-top: 125%;
+    }
+  }
+}
+.wpsr-ig-post-media,
+.wpsr-ig-feed-popup-media{
+  position: relative;
+  overflow: hidden;
+  padding-top: 100%;
+  .wpsr-ig-post-type-icon{
+    background-image: url("../../../../images/icon/ig-media-type.png");
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 32px;
+    height: 32px;
+    background-repeat: no-repeat;
+    background-position: 0 -33px;
+    background-size: 65px 65px;
+
+    &.wpsr-ig-post-type-CAROUSEL_ALBUM{
+      background-position: 0 0;
+    }
+    &.wpsr-ig-post-type-VIDEO{
+      background-position: 0 -33px;
+    }
+  }
+
+  video,
+  img{
+    position: absolute;
+    width: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 100%;
+    min-width: 100%;
+    max-width: inherit;
+    object-fit: cover;
+  }
+}
+
+.wpsr-ig-feed-popup-media {
+  padding-top: initial;
+  a{
+    width: 100%;
+  }
+  .wpsr-ig-post-type-icon {
+    right: 15px;
+  }
+  img{
+    position: initial;
+    transform: initial;
+  }
+}
+
+/* this CSS to stop carousel layout image flashes */
+.wpsr-instagram-slider-activate .wpsr-ig-post-media {
+  display: none;
+}
+.wpsr-slider-before-init .wpsr-ig-post-media {
+  display: block;
+}
+.wpsr-instagram-slider-activate .wpsr-animated-background {
+  background: #f0f0f0;
+}
+.wpsr-slider-before-init .wpsr-animated-background {
+  animation-duration: 1.25s;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+  animation-name: wpsrPlaceHolderShimmer;
+  animation-timing-function: linear;
+  background: darkgray;
+  background: linear-gradient(to right, #eeeeee 10%, #dddddd 18%, #eeeeee 33%);
+  background-size: 800px 104px;
+  height: 100px;
+  position: relative;
+}

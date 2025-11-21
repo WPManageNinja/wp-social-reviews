@@ -1,0 +1,20 @@
+.wpsr-setting-header {
+  border-bottom: 1px solid var(--wpsr-primary-border, #E1E4EA);
+  padding: 10px 20px;
+}
+
+.wpsr-tools-export-import {
+  .el-table tr {
+    border-bottom: 1px solid var(--wpsr-primary-border, #E1E4EA);
+    background-color: var(--wpsr-primary-bg, #F5F7FA);
+  }
+  .el-table .el-table th.el-table__cell.is-leaf {
+    border: none;
+    border-bottom: 1px solid var(--wpsr-primary-border, #E1E4EA);
+  }
+  .el-table .el-table__header th {
+    background-color: var(--wpsr-tertiary-btn-bg, #F9FAFB);
+    border-bottom: 1px solid var(--wpsr-primary-border, #E1E4EA);
+    color: var(--wpsr-primary-text, #525866);
+  }
+}
