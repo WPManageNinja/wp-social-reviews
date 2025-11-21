@@ -1,0 +1,112 @@
+.wpsr-fb-feed-popup {
+  &.wpsr-feed-popup-overlay.wpsr-feed-popup-open .wpsr-feed-popup-box-wraper .wpsr-feed-popup-box-wraper-inner{
+    @media screen and (max-width: 767px) {
+      height: auto;
+      .wpsr-feed-popup-media{
+        padding-top: 0;
+      }
+      .wpsr-feed-popup-view-post-cta{
+        width: 100%;
+        justify-content: center;
+        margin-top: 5px;
+      }
+    }
+  }
+  .wpsr-feed-popup-box-wraper-inner {
+
+    &.wpsr-feed-timeline_feed {
+      .wpsr-feed-popup-media img {
+        width: auto;
+        max-width: 615px;
+      }
+    }
+    .wpsr-feed-popup-carousel-wrapper{
+      .swiper-slide{
+        height: initial;
+      }
+    }
+  }
+}
+.wpsr-fb-feed-image-album {
+  display: flex;
+  justify-content: space-evenly;
+  transition: 0.4s;
+  margin-top: 4px;
+
+  .wpsr-fb-feed-image-album-item {
+    flex: 33.33%;
+    width: 33.33%;
+    // height: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin-right: 4px;
+    &:last-child{
+      margin-right: 0;
+    }
+  }
+  .wpsr-fb-feed-image-more{
+    position: absolute;
+    color: #fff;
+    font-size: 28px;
+    font-weight: 500;
+    background: rgba(0, 0, 0, 0.4);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  &.wpsr-fb-feed-image-album-layout-2{
+    .wpsr-fb-feed-image-album-item{
+      margin-right: initial;
+      display: block;
+      width: 100%;
+      &:after{
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 4px;
+      }
+    }
+  }
+}
+
+.wpsr-fb-feed-follow-button-group .wpsr-fb-feed-btn a svg{
+  height: 12px;
+  width: 12px;
+}
+
+.wpsr-fb-feed-follow-button-group .wpsr-fb-feed-btn a svg{
+  height: 12px;
+  width: 12px;
+}
+.wpsr-fb-feed-header .wpsr-fb-feed-user-info-wrapper .wpsr-fb-feed-user-info-head .wpsr-fb-feed-header-info .wpsr-fb-feed-user-info .wpsr-fb-feed-user-statistics{
+  margin-top: -3px;
+}
+
+/* this CSS to stop carousel layout image flashes */
+.wpsr-facebook-feed-slider-activate .wpsr-fb-feed-image {
+  display: none;
+}
+.wpsr-slider-before-init .wpsr-fb-feed-image {
+  display: block;
+}
+.swiper-container .wpsr-animated-background {
+  background: #f0f0f0;
+}
+.wpsr-slider-before-init .wpsr-animated-background {
+  animation-duration: 1.25s;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+  animation-name: wpsrPlaceHolderShimmer;
+  animation-timing-function: linear;
+  background: darkgray;
+  background: linear-gradient(to right, #eeeeee 10%, #dddddd 18%, #eeeeee 33%);
+  background-size: 800px 104px;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  z-index: 22;
+}

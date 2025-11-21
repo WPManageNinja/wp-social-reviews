@@ -1,0 +1,47 @@
+.wpsr-star-rating-val {
+  unicode-bidi: bidi-override;
+  color: #d1d1d1;
+  font-size: 20px;
+  height: 20px;
+  line-height: 20px;
+  width: 100px;
+  position: relative;
+}
+.wpsr-star-rating-val::before {
+  content: '★★★★★';
+  opacity: .3;
+  font-family: initial;
+}
+
+.wpsr-star-rating-val::after {
+  color: #e7711a;
+  content: '★★★★★';
+  position: absolute;
+  z-index: 1;
+  display: block;
+  left: 0;
+  top:0;
+  overflow: hidden;
+  font-family: initial;
+}
+[title="0"]::after {
+  width: 0%;
+}
+[title="1"]::after {
+  width: 20%;
+}
+[title="2"]::after {
+  width: 40%;
+}
+[title="3"]::after {
+  width: 60%;
+}
+[title="4"]::after {
+  width: 80%;
+}
+[title="4.5"]::after {
+  width: 90%;
+}
+[title="5"]::after {
+  width: 100%;
+}

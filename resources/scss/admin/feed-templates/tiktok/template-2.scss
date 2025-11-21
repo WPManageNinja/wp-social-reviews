@@ -1,0 +1,157 @@
+.wpsr-tiktok-feed-template2 {
+  .wpsr-tiktok-feed-reactions-icon-like {
+    background-image: url('../../../../images/tiktok-images/like-template-2.svg');
+  }
+  .wpsr-tiktok-feed-reactions-icon-comment {
+    background-image: url('../../../../images/tiktok-images/comments-template-2.svg');
+  }
+  .wpsr-tiktok-feed-reactions-icon-play {
+    background-image: url('../../../../images/tiktok-images/view-template-2.svg');
+  }
+}
+.wpsr-tiktok-feed-wrapper {
+  &.wpsr-tiktok-feed-template2 {
+    .wpsr-tiktok-feed-item{
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border-radius: 14px;
+      box-shadow: rgba(99, 99, 99, 0.2) 0 2px 8px 0;
+      transition: 0.3s;
+      .wpsr-tiktok-feed-inner {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        background-color: #fff;
+        //.wpsr-tiktok-feed-video-preview {
+        //  padding-top: 100%;
+        //  img{
+        //    position: absolute;
+        //    width: auto;
+        //    left: 50%;
+        //    top: 50%;
+        //    transform: translate(-50%, -50%);
+        //    height: 100%;
+        //    min-width: 100%;
+        //    max-width: inherit;
+        //    object-fit: cover;
+        //  }
+        //}
+      }
+      [data-playmode="popup"] {
+        cursor: pointer;
+      }
+      &:hover{
+        box-shadow: rgba(99, 99, 99, 0.3) 0 2px 9px 0;
+        .wpsr-tiktok-feed-video-preview {
+          &:after{
+            opacity: 0.7;
+          }
+        }
+      }
+    }
+    .wpsr-feed-description-link {
+      padding: 10px 15px 0 15px;
+    }
+    .wpsr-feed-description-text {
+      color: #2F3448;
+      display: inline-block;
+      text-decoration: none;
+      font-weight: 400;
+      a{
+        color: #5766ee;
+      }
+    }
+
+    .wpsr-tiktok-feed-content-top-wrapper {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 15px;
+      @media only screen and (min-width: 767px) and (max-width: 1024px) {
+        padding: 5px 10px
+      }
+      &.wpsr-tiktok-feed-author-avatar-wrapper-remove-spacing {
+        padding: 0;
+      }
+    }
+
+    .wpsr-tiktok-feed-author-avatar-wrapper {
+      display: flex;
+      align-items: center;
+      .wpsr-tiktok-feed-author-name{
+        color: #2F3448;
+        font-weight: 600;
+        margin-top: 0;
+      }
+    }
+
+    img.wpsr-tiktok-feed-author-avatar {
+      width: 35px;
+      max-height: 35px;
+      border-radius: 50%;
+      @media only screen and (min-width: 767px) and (max-width: 1024px) {
+        width: 25px;
+        max-height: 25px;
+      }
+    }
+    .wpsr-feed-avatar-right {
+      display: flex;
+      flex-direction: column;
+      margin-left: 10px;
+    }
+    .wpsr-tiktok-icon-temp-2 {
+      width: 24px;
+      height: 24px;
+      margin-top: 5px;
+      background-image: url('../../../../images/icon/icon-tiktok-white.svg');
+      background-size: 16px 16px;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-color: #000000;
+      border-radius: 8px;
+      margin-left: 10px;
+      @media only screen and (min-width: 767px) and (max-width: 1024px) {
+        width: 20px;
+        height: 20px;
+        background-size: 13px 13px;
+      }
+    }
+    .wpsr-tiktok-feed-statistics {
+      margin-top: auto;
+      height: auto;
+      width: 100%;
+      border-top: 1px solid #E6E8EC;
+      padding: 10px;
+      &.wpsr-remove-white-space{
+        padding: 0;
+      }
+      .wpsr-tiktok-feed-reaction-wrapeer{
+        flex-direction: inherit;
+        margin-right: 10px;
+        transition: 0.3s;
+        &:hover{
+          .wpsr-tiktok-feed-reaction-count{
+            color: #2F3448;
+          }
+        }
+        .wpsr-tiktok-feed-reactions-icon{
+          margin-top: 0;
+        }
+      }
+      .wpsr-tiktok-feed-reaction-count{
+        color: #565865;
+      }
+    }
+
+    .wpsr-tiktok-feed-reactions {
+      display: flex;
+      width: 100%;
+    }
+    .wpsr-tiktok-feed-content-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+  }
+}

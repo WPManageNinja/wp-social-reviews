@@ -1,0 +1,329 @@
+// Common Header Template Styles
+// This file contains shared styles used across all header templates
+
+// IMPORTANT: Brand-specific progress bar colors - CSS Specificity Solution
+// These styles provide default brand colors but are designed to have LOWER CSS specificity 
+// than user customizations applied through the ReviewsStyleEditor.
+// 
+// User styles like .wpsr-reviews-1891 .wpsr-reviews-header-progress-fill (specificity: 0,2,0) 
+// will override these brand defaults (specificity: 0,2,0) because they come later in the cascade.
+// 
+// The keys 'header_progress_bar_fill' and 'header_progress_bar_background' from Config.php 
+// allow users to fully customize progress bar colors when needed.
+
+// Common clickable rating bar styles
+.wpsr-clickable-rating-bar {
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin: 0 -4px;
+    transition: opacity 0.2s ease;
+}
+
+.wpsr-disabled-rating-bar{
+    cursor: not-allowed;
+    opacity: 0.8;
+    pointer-events: none; // Prevents interaction
+}
+
+.wpsr-clickable-rating-bar:hover {
+    opacity: 0.6;
+}
+
+.wpsr-clickable-rating-bar:active {
+    opacity: 0.6;
+}
+
+// Common clear filter styles
+.wpsr-reviews-header-clear-filter {
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.wpsr-clear-filter {
+    background-color: transparent;
+    color: #666;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: underline;
+    border: none;
+    padding: 0;
+}
+
+.wpsr-clear-filter:hover {
+    color: #555;
+    text-decoration: none;
+}
+
+.wpsr-clear-filter:active {
+    background-color: #d0d0d0;
+}
+
+// Active filter state
+.wpsr-active-progressbar-filter {
+    opacity: 0.6;
+}
+
+// Brand-specific progress bar colors
+// Default progress bar colors (used for general/multi-platform)
+// Note: These styles provide default brand colors but can be overridden by user customizations
+// through the ReviewsStyleEditor using the keys: header_progress_bar_fill and header_progress_bar_background
+.wpsr-reviews-header-progress-bar {
+    background-color: #e0e0e0;
+    border-radius: 6px;
+}
+
+.wpsr-reviews-header-progress-fill {
+    background-color: #ffc107;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+// Brand-specific progress bar colors based on platform star colors
+// These are default brand colors with LOWER specificity than user customizations
+// User styles like .wpsr-reviews-1891 .wpsr-reviews-header-progress-fill will override these
+// Fill colors (active/filled portion)
+.google .wpsr-reviews-header-progress-fill {
+    background-color: #ffb542;
+}
+.google .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4; // Empty star color for Google
+}
+
+.facebook .wpsr-reviews-header-progress-fill {
+    background-color: #ffb542;
+}
+.facebook .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4; // Empty star color for Facebook
+}
+
+.airbnb .wpsr-reviews-header-progress-fill {
+    background-color: #ff385c;
+}
+.airbnb .wpsr-reviews-header-progress-bar {
+    background-color: #fff; // Empty star color for Airbnb
+}
+
+.yelp .wpsr-reviews-header-progress-fill {
+    background-color: #fa3e3e;
+}
+.yelp .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4; // Empty star background color for Yelp
+}
+
+.tripadvisor .wpsr-reviews-header-progress-fill {
+    background-color: #04a96c;
+}
+.tripadvisor .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4; // Empty star color for TripAdvisor
+}
+
+.amazon .wpsr-reviews-header-progress-fill {
+    background-color: #ffa41c;
+}
+.amazon .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4; // Empty star color for Amazon
+}
+
+.trustpilot .wpsr-reviews-header-progress-fill {
+    background-color: #00b67a;
+}
+.trustpilot .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4; // Empty star background color for Trustpilot
+}
+
+.aliexpress .wpsr-reviews-header-progress-fill {
+    background-color: #fe4646;
+}
+.aliexpress .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4; // Empty star color for AliExpress
+}
+
+.fluent_forms .wpsr-reviews-header-progress-fill {
+    background-color: #ffb542;
+}
+.fluent_forms .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4; // Empty star color for Fluent Forms
+}
+
+.woocommerce .wpsr-reviews-header-progress-fill {
+    background-color: #ffb542;
+}
+.woocommerce .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4; // Empty star color for WooCommerce
+}
+
+// Multi-platform or custom reviews
+.wpsr-has-multiple-reviews-platform .wpsr-reviews-header-progress-fill,
+.wpsr-review-template-custom .wpsr-reviews-header-progress-fill {
+    background-color: #ffb542;
+}
+.wpsr-has-multiple-reviews-platform .wpsr-reviews-header-progress-bar,
+.wpsr-review-template-custom .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4; // Default empty star color
+}
+
+// Booking.com specific styles
+.booking .wpsr-reviews-header-progress-fill {
+    background-color: #003580;
+}
+.booking .wpsr-reviews-header-progress-bar {
+    background-color: #e0e0e0; // Booking.com uses default background
+}
+
+// Business info platform-specific styles with LOWER specificity than user customizations
+// IMPORTANT: These selectors have been simplified to reduce CSS specificity from 0,3,0 to 0,2,0
+// This ensures user customizations like .wpsr-reviews-1891 .wpsr-reviews-header-progress-fill (0,2,0)
+// can override these brand defaults due to cascade order (user styles come later)
+
+// NOTE: These styles are duplicates of the main brand selectors above but are needed
+// for business info contexts. The duplication ensures compatibility across different template structures.
+
+// These selectors now have the same specificity (0,2,0) as user customizations,
+// so user styles will win due to cascade order
+.google .wpsr-reviews-header-progress-fill {
+    background-color: #ffb542;
+}
+.google .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4;
+}
+
+.facebook .wpsr-reviews-header-progress-fill {
+    background-color: #ffb542;
+}
+.facebook .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4;
+}
+
+.airbnb .wpsr-reviews-header-progress-fill {
+    background-color: #ff385c;
+}
+.airbnb .wpsr-reviews-header-progress-bar {
+    background-color: #fff;
+}
+
+.yelp .wpsr-reviews-header-progress-fill {
+    background-color: #fa3e3e;
+}
+.yelp .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4;
+}
+
+.tripadvisor .wpsr-reviews-header-progress-fill {
+    background-color: #04a96c;
+}
+.tripadvisor .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4;
+}
+
+.amazon .wpsr-reviews-header-progress-fill {
+    background-color: #ffa41c;
+}
+.amazon .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4;
+}
+
+.trustpilot .wpsr-reviews-header-progress-fill {
+    background-color: #00b67a;
+}
+.trustpilot .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4;
+}
+
+.aliexpress .wpsr-reviews-header-progress-fill {
+    background-color: #fe4646;
+}
+.aliexpress .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4;
+}
+
+.fluent_forms .wpsr-reviews-header-progress-fill {
+    background-color: #ffb542;
+}
+.fluent_forms .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4;
+}
+
+.woocommerce .wpsr-reviews-header-progress-fill {
+    background-color: #ffb542;
+}
+.woocommerce .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4;
+}
+
+.booking .wpsr-reviews-header-progress-fill {
+    background-color: #003580;
+}
+.booking .wpsr-reviews-header-progress-bar {
+    background-color: #e0e0e0;
+}
+
+.wpsr-multi-platform .wpsr-reviews-header-progress-fill {
+    background-color: #ffb542;
+}
+.wpsr-multi-platform .wpsr-reviews-header-progress-bar {
+    background-color: #d6dae4;
+}
+
+// Common star styles for headers
+.wpsr-header-star-filled {
+    color: #ffc107;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.wpsr-header-star-empty {
+    color: #e0e0e0;
+    font-size: 12px;
+    line-height: 1;
+}
+
+// Common header layout utilities
+.wpsr-header-flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wpsr-header-flex-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.wpsr-header-text-center {
+    text-align: center;
+}
+
+// Common responsive breakpoints for headers
+@media (max-width: 768px) {
+    .wpsr-header-responsive-column {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .wpsr-header-responsive-full-width {
+        min-width: unset;
+        width: 100%;
+        flex: none;
+    }
+    
+    .wpsr-header-responsive-no-border {
+        border-left: none !important;
+        border-right: none !important;
+        margin: 0 !important;
+    }
+}
+
+// Mobile specific adjustments
+.el-container.is-mobile-active,
+.wpsr-reviews-layout-badge.active {
+    .wpsr-header-responsive-column {
+        flex-direction: column;
+    }
+    
+    .wpsr-header-responsive-no-border {
+        border-left: none;
+        border-right: none;
+    }
+}

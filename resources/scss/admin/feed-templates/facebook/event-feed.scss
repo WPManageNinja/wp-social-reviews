@@ -1,0 +1,84 @@
+.wpsr-fb-event_feed{
+  .wpsr-fb-feed-item{
+    position: relative;
+    overflow: hidden;
+    display: initial;
+    text-align: start;
+    cursor: pointer;
+    .wpsr-fb-event_feed-wrapper{
+      border-radius: 8px;
+    }
+    .wpsr-fb-feed-inner{
+      padding: 0px;
+    }
+    .wpsr-fb-feed-image{
+      position: relative;
+      overflow: hidden;
+      padding-top: 100%;
+      border-top-right-radius: 8px;
+      border-top-left-radius: 8px;
+      box-shadow: 0 0 20px 0 rgb(0 0 0 / 6%);
+      transition: 0.4s;
+      &:hover{
+        box-shadow: 0px 25px 59px 0px rgb(0 0 0 / 10%);
+      }
+      .wpsr-feed-link{
+        cursor: pointer;
+        position: initial;
+      }
+      img{
+        position: absolute;
+        width: auto;
+        top: 50%;
+        left: 50%;
+        -webkit-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+        height: 100%;
+        min-width: 100%;
+        max-width: 100%;
+        object-fit: cover;
+      }
+    }
+    .wpsr-fb-events-feed-info{
+      padding: 10px 15px;
+    }
+    .wpsr-fb-feed-event-name{
+      h4 {
+        color: #050505;
+        font-size: 16px;
+        margin-bottom: 0;
+        margin-top: 5px;
+        padding: 0;
+        display: inline-block;
+        font-weight: 600;
+        line-height: 1.2;
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+    .wpsr-fb-feed-time {
+        color: #17191a;
+        font-size: 12px;
+        font-weight: 500;
+        margin: 0px;
+        line-height: 1.4;
+        text-transform: uppercase;
+    }
+    .wpsr-fb-feed-event-count{
+      color: #65676b;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.4;
+      display: block;
+    }
+    .wpsr-fb-feed-event-place{
+      color: #5F6266;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      padding-top: 3px;
+      line-height: 1.4;
+    }
+  }
+}

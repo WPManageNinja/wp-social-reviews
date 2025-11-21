@@ -1,0 +1,53 @@
+.wpsr-review-template-one{
+  border-radius: 8px;
+  .wpsr-reviewer-image{
+    position: absolute;
+    top: -40px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    line-height: 0;
+    img{
+      margin: auto;
+      max-height: 80px;
+      border-radius: 50%;
+      width: 80px;
+      object-fit: cover;
+      border: 4px solid #fff;
+      box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.34);
+    }
+  }
+  .wpsr-review-info{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding-top: 20px;
+    .wpsr-rating-wrapper{
+      &.wpsr-rating{
+        .wpsr-star{
+          margin-right: 2px;
+        }
+      }
+      .wpsr-booking-rating-style{
+        justify-content: center;
+      }
+    }
+  }
+  .wpsr-review-content{
+    text-align: center;
+    margin-top: 15px;
+  }
+  .wpsr-rating-wrapper.wpsr-rating{
+    justify-content: center;
+  }
+  .wpsr-review-title {
+    margin-bottom: -10px;
+    margin-top: 10px;
+    text-align: center;
+  }
+  .wpsr-review-images{
+    justify-content: center;
+  }
+}
+

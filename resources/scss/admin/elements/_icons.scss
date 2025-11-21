@@ -1,0 +1,104 @@
+@charset "UTF-8";
+@font-face {
+  font-family: "wp-social-reviews";
+  src:url("../../../fonts/wp-social-reviews.eot");
+  src:url("../../../fonts/wp-social-reviews.eot?#iefix") format("embedded-opentype"),
+  url("../../../fonts/wp-social-reviews.woff") format("woff"),
+  url("../../../fonts/wp-social-reviews.ttf") format("truetype"),
+  url("../../../fonts/wp-social-reviews.svg#wp-social-reviews") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+
+[data-icon]:before {
+  font-family: "wp-social-reviews" !important;
+  content: attr(data-icon);
+  font-style: normal !important;
+  font-weight: normal !important;
+  font-variant: normal !important;
+  text-transform: none !important;
+  speak: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[class^="icon-"]:before,
+[class*=" icon-"]:before {
+  font-family: "wp-social-reviews" !important;
+  font-style: normal !important;
+  font-weight: normal !important;
+  font-variant: normal !important;
+  text-transform: none !important;
+  speak: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-quote-right:before {
+  content: "\61";
+}
+.icon-angle-right:before {
+  content: "\62";
+}
+.icon-angle-left:before {
+  content: "\63";
+}
+.icon-arrow-circle-o-right:before {
+  content: "\64";
+}
+.icon-arrow-circle-o-left:before {
+  content: "\65";
+}
+.icon-arrow-right:before {
+  content: "\66";
+}
+.icon-arrow-left:before {
+  content: "\67";
+}
+.icon-arrow-circle-right:before {
+  content: "\68";
+}
+.icon-arrow-circle-left:before {
+  content: "\69";
+}
+.icon-chevron-right:before {
+  content: "\6a";
+}
+.icon-chevron-left:before {
+  content: "\6b";
+}
+.icon-long-arrow-right:before {
+  content: "\6c";
+}
+.icon-long-arrow-left:before {
+  content: "\6d";
+}
+.icon-map-marker:before {
+  content: "\6e";
+}
+.icon-link:before {
+  content: "\6f";
+}
+.icon-calendar:before {
+  content: "\70";
+}
+.icon-instagram:before {
+  content: "\71";
+}
+.icon-facebook-square:before {
+  content: "\72";
+}
+.icon-picture-o:before {
+  content: "\74";
+}
+.icon-video-camera:before {
+  content: "\73";
+}
+.icon-ban:before {
+  content: "\75";
+}
+.icon-bag:before {
+  content: "\76";
+}

@@ -1,0 +1,162 @@
+.wpsr-fb-feed-header{
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+  //background: #2a509f;
+  &.wpsr-fb-feed-profile-pic-hide{
+    .wpsr-fb-feed-user-info-head .wpsr-fb-feed-user-info{
+      padding-left: 0 !important;
+    }
+  }
+  .wpsr-fb-feed-user-profile-banner{
+    background: #fff;
+    position: relative;
+    padding-top: 25%;
+    overflow: hidden;
+    border-radius: 8px 8px 0 0;
+    img{
+      width: 100%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      display: block;
+      transform: translate(-50%, -50%);
+    }
+  }
+  .wpsr-fb-feed-user-info-wrapper{
+    background-color: #fff;
+    border: 1px solid #edededab;
+    padding: 15px 15px 35px;
+    position: relative;
+    border-radius: 0 0 8px 8px;
+    border-top: none;
+    .wpsr-fb-feed-user-info-head{
+      display: flex;
+      //justify-content: space-between;
+      .wpsr-fb-feed-user-profile-pic{
+        height: 0;
+        position: absolute;
+        top: -20px;
+        &:focus{
+          outline: none;
+          box-shadow: none;
+        }
+        img{
+          width: 100px;
+          height: 100px;
+          border-radius: 50%;
+          box-shadow: 0 5px 10px rgb(67 72 74 / 10%);
+          @media screen and (max-width: 767px) {
+            width: 70px;
+            height: 70px;
+          }
+        }
+      }
+      .wpsr-fb-feed-header-info {
+        display: flex;
+        align-items: center;
+        flex-grow: 1;
+        @media screen and (max-width: 767px) {
+          justify-content: center;
+        }
+        .wpsr-fb-feed-user-info{
+          padding-left: 115px;
+          flex: 1;
+          padding-right: 15px;
+          @media screen and (max-width: 767px) {
+            padding-top: 50px;
+            padding-left: 0;
+            text-align: center;
+          }
+          .wpsr-fb-feed-user-info-name-wrapper{
+            a{
+              text-decoration: none;
+              box-shadow: none;
+              outline: none;
+              border: none;
+              color: #17191a;
+              font-size: 20px;
+              font-weight: 600;
+              line-height: 1.4;
+              display: block;
+            }
+          }
+          .wpsr-fb-feed-user-info-description{
+            p{
+              font-size: 16px;
+              line-height: 1.4;
+              font-weight: 400;
+              color: #17191a;
+              opacity: 0.7;
+              margin-top: 0;
+              margin-bottom: 0;
+              word-break: break-word;
+            }
+          }
+          .wpsr-fb-feed-user-statistics{
+            span{
+              color: #17191a;
+              font-size: 14px;
+              font-weight: 600;
+              opacity: 0.8;
+              position: relative;
+              margin-right: 17px;
+              &:last-child{
+                margin-right: 0;
+                &:after{
+                  content: "";
+                }
+              }
+              &:after{
+                position: absolute;
+                content: ".";
+                top: -7px;
+                font-size: 25px;
+                margin: 0 5px;
+                line-height: 0.75;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+.wpsr-fb-feed-header{
+  .wpsr-fb-feed-follow-button-group{
+    position: absolute;
+    top: -15px;
+    right: 15px;
+    @media screen and (max-width: 767px) {
+      top: -55px;
+      right: auto;
+      left: auto;
+    }
+  }
+}
+
+
+.is-mobile-active{
+  .wpsr-fb-feed-header .wpsr-fb-feed-user-info-wrapper .wpsr-fb-feed-user-info-head .wpsr-fb-feed-header-info{
+    justify-content: center;
+    .wpsr-fb-feed-user-profile-pic{
+      img{
+        width: 70px;
+        height: 70px;
+      }
+    }
+    .wpsr-fb-feed-user-info{
+      padding-top: 50px;
+      padding-left: 0;
+      text-align: center;
+    }
+  }
+
+  .wpsr-fb-feed-header{
+    .wpsr-fb-feed-follow-button-group{
+      top: -55px;
+      right: auto;
+      left: auto;
+    }
+  }
+}

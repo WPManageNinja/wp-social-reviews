@@ -1,0 +1,21 @@
+.wpsr-reviews-badge2{
+	.wpsr-reviews-badge-btn,
+	.wpsr-reviews-badge-html{
+		padding: 15px 20px;
+	}
+	.wpsr-reviews-badge-wrapper-inner{
+		display: flex;
+		.wpsr-business-info-logo{
+			margin-right: 15px;
+			img{
+				height: 50px;
+			}
+		}
+	}
+	.wpsr-rating-and-count{
+		display: block;
+		.wpsr-total-reviews{
+			padding-left: 0;
+		}
+	}
+}

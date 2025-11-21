@@ -1,0 +1,161 @@
+.folded{
+	.wpsr-reviews-badge-wrapper{
+		.wpsr-float_left_bottom{
+			left: 50px;
+		}
+		.wpsr-float_top_left{
+			left: 50px;
+		}
+	}
+}
+.wpsr-reviews-badge-wrapper{
+	width: 100%;
+	display: block;
+	text-align: center;
+	&.fluent_forms{
+		background-color: transparent;
+	}
+	.wpsr-float_top_left,
+	.wpsr-float_top_right,
+	.wpsr-float_right_bottom,
+	.wpsr-float_left_bottom{
+		width: initial;
+		position: fixed;
+		z-index: 2;
+	}
+	.wpsr-float_right_bottom,
+	.wpsr-float_left_bottom{
+		bottom: 0;
+		margin-bottom: 15px !important;
+	}
+	.wpsr-float_top_left{
+		top: 160px;
+		left: 175px;
+		z-index: 99999;
+	}
+	.wpsr-float_top_right{
+		top: 160px;
+		right: 400px;
+		&.active{
+			right: 760px;
+		}
+	}
+	.wpsr-float_left_bottom{
+		bottom: 20px;
+		left: 175px;
+		z-index: 99999;
+	}
+	.wpsr-float_right_bottom{
+		right: 400px;
+		&.active{
+			right: 760px;
+		}
+	}
+	.wpsr-reviews-badge-btn,
+	.wpsr-reviews-badge-html{
+		background-color: #fff;
+		box-shadow: 0 5px 20px 0 rgb(0 0 0 / 10%);
+		border-radius: 4px;
+		padding: 20px 40px;
+		display: inline-block;
+		margin-bottom: 30px;
+		color: inherit;
+		text-align: center;
+		text-decoration: none;
+		&:hover,
+		&:focus{
+			box-shadow: 0 5px 20px 0 rgb(0 0 0 / 12%);
+			outline: none;
+			border: none;
+		}
+	}
+	.wpsr-reviews-badge-html {
+		 cursor: default;
+		.wpsr-total-reviews {
+			text-decoration: none !important;
+		}
+	}
+	.wpsr-reviews-badge-wrapper-inner{
+		.wpsr-business-info-logo{
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			line-height: 0;
+			padding-bottom: 5px;
+			img{
+				height: 28px;
+				width: auto;
+				object-fit: cover;
+				border-radius: 4px;
+			}
+			span{
+				padding-left: 10px;
+				font-size: 16px;
+				color: #333;
+				font-weight: 400;
+			}
+			.wpsr-business-info-paltforms{
+				img{
+					margin-right: 5px;
+					height: 28px;
+					width: auto;
+					object-fit: cover;
+					display: inline-block;
+					border-radius: 4px;
+					&:last-child{
+						margin-right: 0;
+					}
+				}
+			}
+		}
+	}
+	.wpsr-reviews-badge-btn{
+		.wpsr-rating-and-count{
+			.wpsr-total-reviews{
+				text-decoration: underline;
+			}
+		}
+	}
+	.wpsr-rating-and-count{
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+		padding-top: 5px;
+		margin: 0;
+		line-height: 1.2;
+		.wpsr-reviews-badge-title{
+			text-align: left;
+			display: block;
+			font-size: 16px;
+			color: #333;
+			padding-bottom: 5px;
+		}
+		.wpsr-rating{
+			margin-top: 2px;
+			margin-left: 5px;
+		}
+		.wpsr-total-rating{
+			color: #333;
+			font-size: 20px;
+			font-weight: 700;
+			display: flex;
+			align-items: center;
+		}
+		.wpsr-total-reviews{
+			padding-left: 5px;
+			font-size: 14px;
+			color: #333;
+			padding-top: 5px;
+			text-align: left;
+		}
+		.wpsr-star-rand{
+			stop{
+				stop-color: #f7b80c;
+			}
+			stop + stop {
+				stop-color: #d6dae4;
+			}
+		}
+	}
+}

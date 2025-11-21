@@ -1,0 +1,243 @@
+.wpsr-tiktok-feed-popup{
+  .wpsr-feed-popup-box-wraper-inner{
+    max-height: 80vh;
+    overflow-x: hidden;
+    .wpsr-feed-popup-loader{
+      position: absolute;
+      padding-bottom: 56.25%;
+      width: 100%;
+      background: #000000;
+      left: 0;
+      top: 0;
+      z-index: -1;
+      &.wpsr-popup-loading{
+        z-index: 1;
+      }
+      .wpsr-spinner-animation{
+        visibility: visible;
+        transition: all 0.4s ease;
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        top: 50%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-50%);
+        &:before{
+          display: block;
+          width: 100%;
+          height: 100%;
+          border: 3px solid rgba(255, 255, 255, .7);
+          border-radius: 50%;
+          animation: wpsr-spinner 1.2s infinite;
+          content: '';
+        }
+      }
+    }
+    &.wpsr-feed-video_feed{
+      display: block !important;
+    }
+    //.wpsr-feed-popup-box-content{
+    //  margin-left: -10px;
+    //}
+    .wpsr-feed-popup-user-info{
+      a{
+        img{
+          border: 1px solid #dcdcdc;
+        }
+      }
+      .wpsr-feed-popup-user-name{
+        a{
+          color: #17191a;
+        }
+      }
+      .wpsr-feed-popup-date{
+        color: #65676b;
+        font-size: 14px;
+      }
+    }
+    .wpsr-feed-popup-comments-wrapper{
+      .wpsr-feed-popup-comment-text{
+        padding-bottom: 10px;
+        p{
+          color: #17191a;
+          opacity: 0.7;
+        }
+      }
+      .wpsr-feed-popup-description-text{
+        padding-bottom: 2px;
+        p{
+          margin-top: 5px;
+          margin-bottom: 5px;
+          color: #17191a;
+          opacity: 0.7;
+          font-size: 13px;
+        }
+      }
+    }
+    .wpsr-feed-popup-view-post-cta{
+      border-top: 1px solid #eee;
+      @media screen and (max-width: 767px) {
+        width: 100%;
+        justify-content: center
+      }
+      a{
+        display: flex;
+        .wpsr-icon{
+          font-size: 15px;
+          margin-right: 5px;
+          color: #4672d1;
+        }
+        .wpsr-icon-tiktok-black {
+          width: 15px;
+          height: 15px;
+          background-image: url('../../../../images/icon/icon-tiktok-black.png');
+          background-size: contain;
+          margin-right: 5px;
+          background-repeat: no-repeat;
+          background-position: center;
+        }
+      }
+    }
+    .wpsr-feed-popup-media{
+      align-items: flex-start;
+      position: relative;
+      height: 100%;
+      >div{
+        width: 100%;
+        height: 100%;
+        background-color: #000000;
+        display: flex;
+        justify-content: center;
+        align-items: baseline;
+        @media screen and (max-width: 767px) {
+          padding-top: initial;
+        }
+      }
+      img{
+        width: 450px;
+        height: 100%;
+        object-fit: contain;
+        opacity: 0.6;
+      }
+      #wpsr-feed-popup-video-iframe{
+        height: 758px;
+        width: auto;
+        border: 1px solid white;
+        @media screen and (max-width: 767px) {
+          position: initial;
+        }
+      }
+    }
+  }
+  .wpsr-feed-popup-box-wraper {
+    max-width: 850px;
+    width: 100%;
+    max-height: 80vh;
+    margin: auto;
+    padding: 0;
+    overflow: inherit;
+    .wpsr-prev-btn, .wpsr-next-btn {
+      position: absolute;
+      top: 50%;
+      display: block;
+      padding: 0;
+      transform: translate(0, -50%);
+      cursor: pointer;
+      border: none;
+      outline: none;
+      background: transparent;
+      z-index: 9999;
+      left: -50px;
+      &.wpsr-link-disable{
+        display: none;
+      }
+      span{
+        background-color: #fff;
+        color: #909090;
+        border-radius: 50%;
+        font-size: 35px;
+        height: 40px;
+        width: 40px;
+        line-height: 38px;
+        box-shadow: 0 0 16px 0 rgba(0, 0, 0, 0.2);
+        display: block;
+        text-align: center;
+        @media screen and (max-width: 767px) {
+          font-size: 16px;
+          height: 30px;
+          width: 30px;
+          line-height: 30px;
+          //background-color: #fff;
+          //box-shadow: 0 0 16px 0 rgba(0, 0, 0, 0.1);
+          //color: #000;
+        }
+      }
+    }
+    .wpsr-next-btn {
+      left: auto;
+      right: -50px;
+      @media screen and (max-width: 1024px) {
+        right: 30px;
+      }
+      @media screen and (max-width: 767px) {
+        right: 15px;
+      }
+    }
+    .wpsr-prev-btn {
+      @media screen and (max-width: 1024px) {
+        left: 30px;
+      }
+      @media screen and (max-width: 767px) {
+        left: 15px;
+      }
+    }
+    .wpsr-feed-popup-close-btn{
+      position: absolute;
+      z-index: 2;
+      width: 40px;
+      height: 40px;
+      top: -40px;
+      right: -40px;
+      cursor: pointer;
+      transition: all .3s ease;
+      @media screen and (max-width: 767px) {
+        top: -35px;
+        right: 20px;
+      }
+      &:hover{
+        color: #ffffff;
+      }
+      &:before{
+        transform: rotate3d(0, 0, 1, 45deg);
+      }
+      &:after{
+        transform: rotate3d(0, 0, 1, -45deg);
+      }
+      &:before,
+      &:after{
+        content: '';
+        position: absolute;
+        display: block;
+        top: 50%;
+        left: 50%;
+        width: 25px;
+        height: 2px;
+        margin: -1px 0 0 -10px;
+        border-radius: 10px;
+        background: #d5cece;
+        transition: all .3s ease;
+        @media screen and (max-width: 767px) {
+          width: 20px;
+        }
+      }
+    }
+    .wpsr-feed-popup-box-wraper-inner {
+      @media screen and (max-width: 1024px) {
+        width: 680px;
+      }
+      @media screen and (max-width: 767px) {
+        width: 90vw;
+      }
+    }
+  }
+}

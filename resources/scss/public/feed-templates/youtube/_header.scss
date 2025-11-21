@@ -1,0 +1,187 @@
+@import 'subscribe_button';
+.wpsr-yt-header{
+  width: 100%;
+  margin-bottom: 30px;
+  &.wpsr-gap-no_gap{
+    margin-bottom: 0;
+  }
+  &.wpsr-gap-narrow{
+    margin-bottom: 10px;
+  }
+  &.wpsr-gap-small{
+    margin-bottom: 20px;
+  }
+  &.wpsr-gap-wide{
+    margin-bottom: 40px;
+  }
+  &.wpsr-gap-wider{
+    margin-bottom: 50px;
+  }
+    .wpsr-yt-header-banner{
+  
+      img{
+        object-fit: cover;
+        height: 150px;
+        max-width: 100%;
+        width: 100%;
+      }
+      .wpsr-yt-header-banner-desktop{
+        display: block;
+      }
+      .wpsr-yt-header-banner-mobile,
+      .wpsr-yt-header-banner-tablet{
+        display: none;
+      }
+  
+      @media screen and (max-width: 1024px) {
+        .wpsr-yt-header-banner-mobile,
+        .wpsr-yt-header-banner-desktop{
+          display: none;
+        }
+        .wpsr-yt-header-banner-tablet{
+          display: block;
+        }
+      }
+  
+      @media screen and (max-width: 767px) {
+        .wpsr-yt-header-banner-tablet,
+        .wpsr-yt-header-banner-desktop{
+          display: none;
+        }
+        .wpsr-yt-header-banner-mobile{
+          display: block;
+        }
+      }
+  
+    }
+    .wpsr-yt-header-inner{
+      padding: 20px;
+      background-color: #f9f9f9;
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      @media screen and (max-width: 767px) {
+        display: block;
+        text-align: center;
+        padding: 20px 15px;
+      }
+      .wpsr-yt-header-logo{
+        margin-right: 15px;
+        flex: auto 0 0;
+        a{
+          text-decoration: none;
+          box-shadow: none;
+          &:focus{
+            outline: 2px solid #72aee6;
+          }
+          &:hover{
+            outline: none;
+          }
+          img{
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: inline-block;
+            @media screen and (max-width: 767px) {
+              margin: 0 auto;
+            }
+          }
+        }
+      }
+  
+      .wpsr-yt-header-info{
+        flex-grow: 1;
+        @media screen and (max-width: 767px) {
+          padding-top: 5px;
+        }
+        .wpsr-yt-header-channel-name{
+          a{
+            text-decoration: none;
+            box-shadow: none;
+            font-size: 18px;
+            line-height: 1.2;
+            font-weight: 400;
+            color: #030303;
+            &:focus{
+              outline: 2px solid #72aee6;
+            }
+            &:hover{
+              outline: none;
+            }
+          }
+        }
+        .wpsr-yt-header-channel-description{
+          p{
+            font-size: 14px;
+            line-height: 1.4;
+            font-weight: 400;
+            color: #606060;
+            margin-top: 10px;
+            margin-bottom: 0;
+            word-break: break-word;
+          }
+        }
+        .wpsr-yt-header-channel-statistics{
+          display: flex;
+          flex-wrap: nowrap;
+          @media screen and (max-width: 767px) {
+            flex-direction: column;
+          }
+          .wpsr-yt-header-statistic-item{
+            margin-right: 15px;
+            position: relative;
+            font-size: 14px;
+            font-weight: 400;
+            color: #606060;
+            line-height: 1.4;
+            &:after{
+              position: absolute;
+              content: ".";
+              top: -7px;
+              font-size: 25px;
+              margin: 0 5px;
+              line-height: 0.75;
+              @media screen and (max-width: 767px) {
+                content: initial;
+              }
+            }
+            &:last-child{
+              &:after{
+                content: none;
+              }
+            }
+            &:last-child{
+              margin-right: 0;
+            }
+          }
+        }
+  
+      }
+
+
+      //.wpsr-yt-header-subscribe-btn{
+      //  margin-left: 15px;
+      //  @media screen and (max-width: 767px) {
+      //    margin-left: 0;
+      //    margin-top: 15px;
+      //  }
+      //  a{
+      //    text-decoration: none;
+      //    box-shadow: none;
+      //    padding: 5px 20px;
+      //    color: #fff;
+      //    font-weight: 500;
+      //    text-transform: uppercase;
+      //    font-size: 14px;
+      //    background-color: #c00;
+      //    border-radius: 2px;
+      //    display: inline-block;
+      //    &:hover,
+      //    &:focus{
+      //      outline: none;
+      //    }
+      //  }
+      //}
+    }
+  }
+

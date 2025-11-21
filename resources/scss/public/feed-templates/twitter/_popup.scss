@@ -1,0 +1,67 @@
+.wpsr-feed-popup-tweet-actions{
+    display: flex;
+    margin-top: 5px;
+    a{
+      margin-right: 25px;
+      display: flex;
+      align-items: center;
+      color: #657786;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      &:first-child{
+        margin-left: -10px;
+      }
+      span{
+        padding-left: 5px;
+      }
+      svg{
+        width: 35px;
+        height: 35px;
+        fill: #657786;
+        padding: 8px;
+        transition: 0.4s;
+      }
+      &:hover,
+      &:focus{
+        outline: none;
+        box-shadow: none;
+      }
+      &.wpsr-tweet-reply{
+        &:hover{
+          svg{
+            background-color: rgba(29, 161, 242, 0.3);
+            fill: #1da1f2;
+          }
+        }
+      }
+      &.wpsr-tweet-retweet{
+        &:hover{
+          svg{
+            background-color: rgba(101, 119, 134, 0.3);
+            fill: #17bf63;
+          }
+        }
+      }
+  
+      &.wpsr-tweet-like{
+        &:hover{
+          svg{
+            background-color: rgba(101, 119, 134, 0.3);
+            fill: #e0245e;
+          }
+        }
+      }
+  
+      &:hover{
+        svg{
+          border-radius: 50%;
+          background: rgba(255, 0, 0, 0.1);
+        }
+      }
+    }
+ }
+
+.wpsr-twitter-feed-popup-media {
+  position: relative;
+}

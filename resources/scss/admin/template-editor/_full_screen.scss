@@ -1,0 +1,123 @@
+.wp-admin.folded {
+  .toplevel_page_wpsocialninja .wrap {
+    left: 56px;
+  }
+}
+
+#wp-link-wrap,
+.el-color-picker__panel,
+.el-message,
+.el-notification,
+.el-notification.right,
+.el-popper,
+.el-tooltip__popper,
+div.mce-inline-toolbar-grp.mce-arrow-up {
+  z-index: 999999 !important;
+}
+
+.el-notification{
+  word-break: break-word;
+}
+
+.el-notification__content{
+  text-align: start;
+}
+
+body.wpsr_full_screen {
+  overflow-y: hidden;
+  transition: 0.4s;
+
+  .wrap {
+    background-color: #efeff0;
+    z-index: 100099 !important;
+    position: fixed;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    top: 0;
+    bottom: 0;
+    left: 0 !important;
+    right: 0 !important;
+    height: 100%;
+    min-width: 0;
+    cursor: default;
+    margin: 0 !important;
+  }
+  .wpsr_editor .wpsr_editor_wrapper .wpsr-responsive-bar-wrapper{
+    top: 73px;
+    left: 0;
+  }
+}
+
+#switchScreen {
+  font-size: 25px;
+  vertical-align: middle;
+  font-weight: bold;
+  margin-left: 10px;
+  cursor: pointer;
+  background: transparent;
+  color: white;
+  border: none;
+}
+
+img.wpsr_platfrom_mini {
+  width: auto;
+  max-height: 32px;
+  border-radius: 0;
+}
+
+span.wpsr_platforms {
+  display: block;
+  text-align: center;
+  text-transform: capitalize;
+  img {
+    border-radius: 0;
+  }
+}
+
+span.wpsr_platforms.wpsr_has_platform_multi img {
+  width: 20px;
+  text-align: center;
+  margin-left: 4px;
+}
+
+
+.wpsr_set_boxed {
+  background: white;
+  min-height: 350px;
+
+  .wpsr_set_header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #dcdfe5;
+
+    .wpsr_set_header_title {
+      display: inline-block;
+
+      h3 {
+        line-height: 100%;
+        margin: 0;
+        padding: 0;
+        color: var(--wpsr-heading-text, #0E121B);
+      }
+    }
+
+    .wpsr_set_actions {
+      float: right;
+      line-height: 100%;
+    }
+  }
+
+  .wpsr_set_body {
+    padding: 15px 20px;
+  }
+
+  .fc_narrow_box {
+    max-width: 860px;
+    padding: 30px 45px;
+    margin: 0 auto;
+  }
+
+}
+
+.text-align-center {
+  text-align: center;
+}

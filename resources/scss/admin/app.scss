@@ -1,0 +1,86 @@
+/** Import Custom Elements **/
+@import "elements/variables";
+@import "elements/typography";
+@import "elements/icons";
+@import "elements/universel";
+@import "elements/rating";
+@import "elements/all-platforms";
+@import "elements/all-templates";
+@import "elements/configuration_modal";
+@import "elements/chat-modal";
+@import "elements/global-settings";
+@import "elements/qr-code";
+@import "elements/management-settings";
+@import "elements/dashboard-promote";
+@import "elements/permission-notification";
+@import "elements/swiper-navs";
+@import "elements/table";
+@import "elements/tools";
+@import "elements/shoppable";
+@import "elements/screen-option-drawer";
+@import "elements/dark-mode";
+@import "elements/photo-upload";
+
+@import "template-editor/edit-view";
+@import "template-editor/docs";
+@import "template-editor/full_screen";
+
+@import "components/image-selection";
+@import "components/add-new-review";
+@import "components/styles-section";
+@import "components/typography";
+@import "components/spacing";
+@import "components/border";
+@import "components/skeleton";
+
+@import "elements/native-components";
+
+@import "reviews-templates/popup";
+@import "reviews-templates/template";
+@import "reviews-templates/template-1";
+@import "reviews-templates/template-2";
+@import "reviews-templates/template-3";
+@import "reviews-templates/template-4";
+@import "reviews-templates/template-5";
+@import "reviews-templates/template-6";
+@import "reviews-templates/template-7";
+@import "reviews-templates/template-8";
+@import "reviews-templates/template-9";
+@import "reviews-templates/template-10";
+@import "reviews-templates/header-templates/header-template";
+@import "reviews-templates/header-templates/header-template2";
+@import "reviews-templates/badge";
+@import "reviews-templates/badge-1";
+@import "reviews-templates/notification";
+
+@import "testimonial-templates/template-1";
+@import "testimonial-templates/template-2";
+
+@import "chat-templates/template-1";
+@import "chat-templates/template-2";
+@import "chat-templates/template-3";
+@import "chat-templates/template-4";
+
+@import "feed-templates/twitter/template-1";
+@import "feed-templates/twitter/card";
+
+@import "feed-templates/youtube/template";
+@import "feed-templates/youtube/template-2";
+@import "feed-templates/youtube/template-3";
+
+@import "feed-templates/instagram/template";
+@import "feed-templates/instagram/template-2";
+
+
+@import "feed-templates/facebook/template-1";
+@import "feed-templates/facebook/photo-feed";
+@import "feed-templates/facebook/video-feed";
+@import "feed-templates/facebook/event-feed";
+@import "feed-templates/facebook/album-feed";
+@import "feed-templates/facebook/single-album-feed";
+@import "feed-templates/facebook/fb";
+
+@import "feed-templates/tiktok/admin";
+@import "feed-templates/tiktok/template-1";
+@import "feed-templates/tiktok/template-2";
+@import "feed-templates/tiktok/responsive";

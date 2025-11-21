@@ -1,0 +1,1716 @@
+.e-con-full .wpsr-reviews-wrapper .wpsr-row{
+  margin-left: 0;
+  margin-right: 0;
+}
+.e-con-full .wpsr-reviews-wrapper .wpsr-reviews-slider-wrapper-inner{
+  margin-left: 10px;
+  margin-right: 10px;
+  .wpsr-swiper-next{
+    right: 0;
+  }
+  .wpsr-swiper-prev {
+    left: 0;
+  }
+}
+a.wpsr-reviewer-image-animation {
+  position: relative;
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+  overflow: hidden;
+}
+a.wpsr-reviewer-image-animation {
+  position: relative;
+  display: inline-block;
+}
+a.wpsr-reviewer-image-animation::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: auto;
+  height: auto;
+  background: #a9a9a9;
+  z-index: 1;
+  right: 0;
+  opacity: 1;
+  bottom: 0;
+  animation-duration: 1.25s;
+  -webkit-animation-fill-mode: forwards;
+  animation-fill-mode: forwards;
+  -webkit-animation-iteration-count: infinite;
+  animation-iteration-count: infinite;
+  -webkit-animation-name: wpsrPlaceHolderShimmer;
+  animation-name: wpsrPlaceHolderShimmer;
+  -webkit-animation-timing-function: linear;
+  animation-timing-function: linear;
+  background: #a9a9a9;
+  background: -webkit-gradient(linear, left top, right top, color-stop(10%, #eee), color-stop(18%, #ddd), color-stop(33%, #eee));
+  background: linear-gradient(90deg, #eee 10%, #ddd 18%, #eee 33%);
+  background-size: 800px 104px;
+}
+.wpsr-reviews-wrapper.wpsr-reviews-layout-badge,
+.wpsr-reviews-wrapper.wpsr-reviews-layout-notification{
+  position: fixed !important;
+  top: 0;
+  right: -350px !important;
+  background-color: #fcfcfc;
+  width: 350px !important;
+  visibility: hidden;
+  @media only screen and (max-width : 320px) {
+    width: 280px;
+  }
+  height: 100vh;
+  transition: .3s;
+  z-index: 999999;
+  box-shadow: 0 0 20px 0 rgb(0 0 0 / 10%), 0 0 10px 0 rgb(0 0 0 / 10%);
+  .wpsr-empty-business-info{
+    .wpsr-business-info{
+      flex-direction: column;
+      .wpsr-business-info-left,
+      .wpsr-business-info-right{
+        width: 100%;
+        align-items: center;
+      }
+      .wpsr-business-info-right{
+        border-left: none;
+      }
+    }
+  }
+  .wpsr-fixed-height .wpsr-review-fixed-height-wrap{
+    padding-top: 10px;
+    margin-left: -10px;
+  }
+  & ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+    overflow: visible;
+  }
+  & ::-webkit-scrollbar-button {
+    width: 0;
+    height: 0;
+  }
+  & ::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.2);
+    background-clip: padding-box;
+    border: solid transparent;
+    border-radius: 8px;
+    min-height: 8px;
+  }
+  & ::-webkit-scrollbar-track-piece {
+    background-clip: padding-box;
+    background: #fff;
+    border-left: 1px solid #f1f1f1;
+  }
+
+  .wpsr-popup-collapse{
+    display: inline-flex;
+    text-decoration: none;
+    transform: rotate(90deg);
+    position: absolute;
+    z-index: 2;
+    right: -10px;
+    top: -15px;
+    font-size: 28px;
+    color: #111;
+    background-color: #fff;
+    height: 30px;
+    width: 30px;
+    line-height: 30px;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 5px 20px 10px rgb(0 0 0 / 10%);
+    &:focus{
+      outline: none;
+      box-shadow: none;
+    }
+  }
+
+  .wpsr-popup-close {
+    position: absolute;
+    z-index: 2;
+    top: 5px;
+    right: 5px;
+    height: 30px;
+    width: 30px;
+    background-color: rgb(76 75 75 / 66%);
+    border-radius: 50%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    svg{
+      height: 16px;
+      width: 16px;
+    }
+  }
+}
+.wpsr-reviews-layout-badge.active,
+.widget_wpsn-widget .wpsr-reviews-layout-badge.active{
+  right: 0 !important;
+  visibility: visible !important;
+  &:not(.wpsr-header-enable){
+    height: 100vh;
+    max-height: initial;
+    overflow-y: scroll;
+    overflow-x: hidden;
+  }
+
+  @media screen and (max-width: 767px) {
+    width: 100%;
+  }
+  .wpsr-container{
+    .wpsr-row{
+      margin-left: 0;
+      margin-right: 0;
+    }
+  }
+  .wpsr-all-reviews.wpsr-row{
+    margin-top: 30px;
+  }
+
+  &.wpsr-header-enable{
+    .wpsr-all-reviews.wpsr-row,
+    .wpsr-row:nth-child(2),
+    .wpsr-row:nth-child(3){
+      height: calc(100vh - 100px);
+      max-height: initial;
+      padding: 10px;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      transition: height 100ms cubic-bezier(0.4, 0, 0.2, 1) 0s;
+    }
+  }
+}
+.wpsr-no-reviews{
+  &.wpsr-reviews-badge2{
+    .wpsr-reviews-badge-wrapper-inner {
+      display: initial;
+    }
+  }
+  &.wpsr-reviews-badge1{
+    .wpsr-reviews-badge-wrapper-inner {
+      .wpsr-business-info-logo{
+        display: inline-block;
+      }
+    }
+  }
+  .wpsr-reviews-badge-wrapper-inner{
+    .wpsr-rating-and-count {
+      padding-top: 0;
+      .wpsr-reviews-badge-title{
+        padding-bottom: 0;
+      }
+    }
+    .wpsr-business-info-logo{
+      margin-left: 0;
+    }
+    .wpsr-rating-and-count .wpsr-rating{
+      margin-left: 0;
+    }
+  }
+}
+.wpsr-fixed-height{
+  &.wpsr-container{
+    max-width: initial;
+    padding-right: 0;
+    padding-left: 0;
+    width: 100%;
+    //background-color: #fafafa;
+    margin-bottom: 30px;
+  }
+  .wpsr-business-info{
+    border-radius: 8px;
+    background-color: #fdf4f4;
+    .wpsr-business-info-left{
+      @media screen and (max-width: 767px) {
+        margin-bottom: 10px;
+        h3{
+          font-size: 20px;
+        }
+        .wpsr-rating{
+          justify-content: center;
+        }
+      }
+    }
+    @media screen and (max-width: 767px) {
+      padding: 20px 15px;
+      text-align: center;
+      flex-direction: column;
+    }
+  }
+  :nth-child(1).wpsr-row{
+    height: inherit !important;
+    overflow: inherit !important;
+  }
+
+  .wpsr-row{
+    margin-right: 0;
+    margin-left: 0;
+    display: block;
+    //overflow-y: auto;
+    //height: 600px;
+    flex-wrap: initial;
+  }
+  .wpsr-review-fixed-height-wrap{
+    padding-top: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    overflow: hidden;
+    margin-right: -15px;
+    margin-left: -15px;
+  }
+}
+
+.wpsr-reviews-wrapper{
+  .trustpilot,
+  .yelp{
+    .wpsr-star-container{
+      margin-right: 0.25rem;
+    }
+  }
+}
+.wpsr-reviews-badge-wrapper{
+  &.trustpilot,
+  &.yelp{
+    .wpsr-star-container{
+      margin-right: 0.25rem;
+    }
+  }
+}
+.wpsr-reviews-wrapper,
+.wpsr-reviews-badge-wrapper{
+  .wpsr-star-empty,
+  .wpsr-star-filled {
+    width: 100%;
+    height: 100%;
+  }
+  .wpsr-star-container{
+    margin-right: 0;
+  }
+
+  .wpsr-star-empty {
+    background-color: #d6dae4;
+  }
+  .wpsr-star-filled {
+    background-color: #f7b80c;
+  }
+}
+
+.wpsr-empty-business-info{
+ .wpsr-business-info{
+   justify-content: center;
+   background-color: transparent;
+   .wpsr-business-info-left{
+     display: flex;
+     width: 30%;
+     flex-direction: column;
+     flex: initial;
+   }
+   .wpsr-business-info-right{
+     padding: 10px 0;
+     border-left: 1px solid #ddd;
+     width: 30%;
+     display: flex;
+     justify-content: center;
+     margin: initial;
+     text-align: initial;
+   }
+   @media screen and (max-width: 767px) {
+     .wpsr-business-info-left,
+     .wpsr-business-info-right{
+       width: 100%;
+       border-left: none;
+     }
+   }
+ }
+}
+.wpsr_add_read_more_slice_content{
+  transition: 0.5s;
+}
+.wpsr_add_read_more.wpsr_show_less_content .wpsr_add_read_more_slice_content,
+.wpsr_add_read_more.wpsr_show_less_content .wpsr_read_less {
+  display: none;
+}
+
+.wpsr_add_read_more.wpsr_show_more_content .wpsr_read_more {
+  display: none;
+}
+.wpsr-reviews-form-popup-overlay{
+  .wpsr-popup-close{
+    position: absolute;
+    right: -50px;
+    top: -5px;
+    svg{
+      height: 25px;
+    }
+  }
+  &.wpsr_has_fluent_forms_shortcode{
+    visibility: visible;
+    &:before {
+      visibility: visible;
+    }
+    .wpsr-reviews-form-popup-box-wraper-inner{
+      visibility: visible;
+      opacity: 1;
+      transition: all 0.4s ease;
+      transform: translateX(-50%) scale(1);
+    }
+  }
+  position: fixed;
+  visibility: hidden;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  text-align: initial;
+  &:before {
+    content: "";
+    background: rgba(0, 0, 0, 0.7);
+    position: absolute;
+    visibility: hidden;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    transition: all 0.25s ease;
+  }
+}
+.wpsr-reviews-form-popup-box-wraper{
+  position: absolute;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  max-height: 100%;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 50px 0;
+}
+.wpsr-reviews-form-popup-box-wraper-inner{
+  background-color: #fff;
+  opacity: 0;
+  position: relative;
+  visibility: hidden;
+  box-sizing: border-box;
+  left: 50%;
+  width: 500px;
+  padding: 20px;
+  border-radius: 18px;
+  transition: all 0.35s ease;
+  transform: translateX(-50%) scale(0.9);
+  .ff-el-group.ff-custom_html {
+    margin-bottom: 0;
+  }
+  .fluentform .ff-el-ratings{
+    line-height: 20px;
+  }
+  @media screen and (max-width: 767px) {
+    width: 280px;
+  }
+}
+
+.wpsr-reviews-wrapper{
+  .wpsr-business-info{
+    .wpsr-write-review-modal .wpsr-business-info-paltforms-url{
+      .wpsr-reviews-form-popup-overlay{
+        a.wpsr-popup-close{
+          &:hover{
+            background-color: transparent;
+          }
+        }
+      }
+    }
+  }
+
+}
+
+
+.wpsr_add_read_more .wpsr_read_more,
+.wpsr_add_read_more .wpsr_read_less {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+  padding: 0;
+  margin: 0;
+  text-decoration: underline;
+  -webkit-text-decoration-color: #1194dc;
+  text-decoration-color: #1194dc;
+  color: #1194dc;
+  cursor: pointer;
+  padding-left: 4px;
+}
+.wpsr-has-equal-height,
+.wpsr-reviews-content-length-deactive{
+  //.wpsr-reviews-slider .swiper-slide {
+    & ::-webkit-scrollbar {
+      width: 4px;
+      border-radius: 4px;
+    }
+    & ::-webkit-scrollbar-thumb {
+      background: rgba(70, 69, 69, 0.6);
+    }
+    & ::-webkit-scrollbar-track {
+      background: rgba(72, 70, 70, 0.1);
+    }
+    .wpsr-review-content {
+      height: 70px !important;
+      overflow-y: scroll;
+      overflow: auto;
+      padding-right: 10px;
+      scrollbar-color: #8d8d8d #e0e0e0;
+      scrollbar-width: thin;
+    }
+  //}
+}
+.wpsr-has-equal-height{
+  & ::-webkit-scrollbar {
+    width: 4px;
+    border-radius: 4px;
+  }
+  & ::-webkit-scrollbar-thumb {
+    background: rgba(70, 69, 69, 0.6);
+  }
+  & ::-webkit-scrollbar-track {
+    background: rgba(72, 70, 70, 0.1);
+  }
+  .wpsr-review-content {
+    height: 80px !important;
+    overflow-y: scroll;
+    overflow: auto;
+    padding-right: 10px;
+    scrollbar-color: #8d8d8d #e0e0e0;
+    scrollbar-width: thin;
+  }
+}
+
+.wpsr-rating{
+  .wpsr-star-empty {
+    background-color: #d6dae4;
+  }
+  .wpsr-star-filled {
+    background-color: #ffb542;
+  }
+}
+.wpsr-has-multiple-reviews-platform{
+  .wpsr-star-empty {
+    background-color: #d6dae4;
+  }
+  .wpsr-star-filled {
+    background-color: #f7b80c;
+  }
+}
+
+.airbnb{
+  .wpsr-star-empty {
+    background-color: #fff;
+  }
+  .wpsr-star-filled {
+    background-color: #ff385c;
+  }
+}
+
+.tripadvisor {
+  .wpsr-star-empty {
+    background-color: #d6dae4;
+  }
+  .wpsr-star-filled {
+    background-color: #04a96c;
+  }
+}
+
+
+.aliexpress {
+  .wpsr-star-empty {
+    background-color: #d6dae4;
+  }
+  .wpsr-star-filled {
+    background-color: #fe4646;
+  }
+}
+.wpsr-review-template,
+.wpsr-review-template-custom,
+.wpsr-review-template-fluent_forms,
+.wpsr-has-multiple-reviews-platform,
+.wpsr-review-template-testimonial,
+.wpsr-review-template-woocommerce,
+.facebook,
+.fluent_forms,
+.woocommerce,
+.airbnb,
+.tripadvisor,
+.google,
+.custom,
+.aliexpress{
+  .wpsr-star-empty,
+  .wpsr-star-filled {
+    width: 100%;
+    height: 100%;
+  }
+  .wpsr-star-container{
+    margin-right: 0;
+  }
+}
+.wpsr-review-template{
+  &.wpsr-review-template-yelp,
+  &.wpsr-review-template-trustpilot{
+    .wpsr-star-container{
+      margin-right: 0.25rem;
+    }
+  }
+}
+//.wpsr-read-more-reviews-btn {
+//  display:flex;
+//  .wpsr-business-info-button {
+//    padding: 0px 0px;
+//  }
+//}
+
+//.wpsr-business-info-button {
+//  align-items: center;
+//  justify-content: center;
+//}
+.wpsr-business-info {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  //background-color: #f2f2f3;
+  padding: 20px 20px;
+  align-items: center;
+  &.wpsr-display-block{
+    border-radius: 0;
+    .wpsr-business-info-left{
+      .wpsr-business-info-paltforms,
+      .wpsr-business-info-logo,
+      .wpsr-rating-and-count{
+        display: flex;
+        justify-content: center;
+        @media only screen and (max-width : 320px) {
+          display: block;
+        }
+      }
+    }
+    .wpsr-business-info-right{
+      margin-top: 5px;
+      display: flex;
+      justify-content: center;
+      .wpsr-write-review-modal-wrapper .wpsr-write-review-modal{
+        transition: 0.3s;
+        right: -50px;
+      }
+      .wpsr-write-review-modal-wrapper .wpsr-read-all-review-modal{
+        transition: 0.3s;
+        right: -50px;
+      }
+      .wpsr-write-review-modal-wrapper .wpsr-write-review-modal.active{
+        right: 0;
+      }
+      .wpsr-write-review-modal-wrapper.wpsr-read-all-review-modal.active{
+        right: 0;
+      }
+    }
+  }
+  .wpsr-business-info-paltforms.facebook{
+      span{
+        margin-top: 5px;
+      }
+  }
+  &.amazon{
+    .wpsr-business-info-left{
+      .wpsr-business-info-logo{
+        span{
+          margin-top: -10px;
+        }
+      }
+      .wpsr-business-info-paltforms{
+        span{
+          margin-top: -8px;
+        }
+      }
+    }
+  }
+  &.facebook{
+    .wpsr-business-info-left .wpsr-business-info-logo{
+      span{
+        margin-top: 5px;
+      }
+    }
+  }
+  &.trustpilot{
+    .wpsr-business-info-left .wpsr-business-info-logo{
+      span{
+        margin-top: 5px;
+      }
+    }
+  }
+
+  .wpsr-business-info-left{
+    flex: 0 0 70%;
+    .wpsr-business-info-logo{
+      display: flex;
+      align-items: center;
+      @media screen and (max-width: 767px) {
+        justify-content: center;
+      }
+      img{
+        margin-right: 5px;
+        height: 25px;
+        width: auto;
+        object-fit: cover;
+      }
+      span{
+        //padding-left: 5px;
+        font-size: 16px;
+        color: #333;
+        font-weight: 400;
+      }
+    }
+    .wpsr-business-info-paltforms{
+      padding-bottom: 5px;
+      display: flex;
+      align-items: center;
+      a{
+        display: inherit;
+      }
+      span{
+        font-size: 18px;
+        color: #333;
+        font-weight: 400;
+        line-height: 1.2;
+        margin-top: 4px;
+      }
+      img{
+        max-height: 25px;
+        box-shadow: none;
+        margin-right: 10px;
+        width: auto;
+        border-radius: 4px;
+      }
+      @media screen and (max-width: 767px) {
+        justify-content: center;
+      }
+    }
+  }
+  .wpsr-rating-and-count{
+    display: flex;
+    align-items: center;
+    margin: 0;
+    line-height: 1.2;
+    @media screen and (max-width: 767px) {
+      display: block;
+    }
+    .wpsr-rating{
+      margin-top: -2px;
+      display: flex;
+    }
+    .wpsr-total-rating{
+      color: #333;
+      font-size: 16px;
+      font-weight: 700;
+      padding-right: 5px;
+    }
+    .wpsr-total-reviews{
+      padding-left: 5px;
+      font-size: 14px;
+      span{
+        font-weight: 700;
+      }
+    }
+    .wpsr-star{
+      display: inherit;
+      //path{
+      //  fill: #f7b80c;
+      //}
+    }
+
+    .wpsr-star-rand{
+      stop{
+        stop-color: #f7b80c;
+      }
+      stop + stop {
+        stop-color: #d6dae4;
+      }
+    }
+  }
+  .wpsr-business-info-right{
+    text-align: right;
+    margin-left: auto;
+    @media only screen and (max-width : 767px) {
+      margin-left: initial;
+    }
+    a.wpsr-write-review{
+      text-align: right;
+      color: #fff;
+      font-size: 14px;
+      line-height: 1.4;
+      margin: 0;
+      display: block;
+      box-shadow: none;
+      text-decoration: none;
+      background-color: #4284f3;
+      padding: 5px 15px;
+      border-radius: 50px;
+      &:focus {
+        background-color: #4284f3;
+        text-decoration: none;
+      }
+    }
+
+    .wpsr-write-review-modal-wrapper{
+      position: relative;
+      .wpsr-read-all-review-modal-btn, .wpsr-write-review-modal-btn {
+        color: #fff;
+        font-size: 14px;
+        line-height: 1.4;
+        margin: 0;
+        display: block;
+        box-shadow: none;
+        cursor: pointer;
+        text-decoration: none;
+        background-color: #4284f3;
+        padding: 5px 15px;
+        border-radius: 50px;
+      }
+      .wpsr-read-all-review-modal,.wpsr-write-review-modal{
+        position: absolute;
+        top: 100%;
+        display: flex;
+        width: 290px;
+        box-shadow: rgba(17, 17, 17, 0.2) 0px 9px 13px 3px;
+        background-color: #fff;
+        z-index: 999;
+        opacity: 0;
+        margin-top: -4px;
+        visibility: hidden;
+        border-radius: 10px;
+        transition: 0.3s;
+        flex-direction: column;
+        right: -20px;
+        @media only screen and (max-width : 767px) {
+          width: 300px;
+          right: 30px;
+        }
+        @media only screen and (max-width : 320px) {
+          width: 260px;
+          right: 30px;
+        }
+        &.active{
+          margin-top: 4px;
+          opacity: 1;
+          visibility: visible;
+          right: 0;
+          @media only screen and (max-width : 767px) {
+            margin-left: -90px;
+            right: auto;
+          }
+          @media only screen and (max-width : 320px) {
+            margin-left: -70px;
+            right: auto;
+          }
+        }
+        p{
+          padding: 10px 20px 10px;
+          color: #333;
+          font-weight: 600;
+          font-size: 14px;
+          line-height: 1.4;
+          text-align: left;
+          text-transform: initial;
+          margin-bottom: 0;
+        }
+        .wpsr-business-info-paltforms-url{
+          a{
+            display: flex;
+            transition: 0.4s;
+            padding: 6px 20px;
+            box-shadow: none;
+            text-decoration: none;
+            &:hover{
+              background-color: #fdf4f4;
+            }
+            img{
+              max-height: 25px;
+              width: auto;
+              box-shadow: none;
+              border-radius: 4px;
+            }
+            .wpsr-business-info-war-btn-icon{
+              margin-right: 10px;
+            }
+            .wpsr-paltforms-url{
+              overflow: hidden;
+              line-height: 16px;
+              text-align: left;
+              display: flex;
+              flex-direction: column;
+              align-items: flex-start;
+              justify-content: center;
+              span.wpsr-platform{
+                font-size: 14px;
+                font-weight: 700;
+                color: #333;
+                text-transform: capitalize;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                width: 100%;
+                display: block;
+              }
+              span.wpsr-url{
+                color: #888;
+                font-size: 12px;
+                font-weight: 400;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                width: 100%;
+                display: block;
+              }
+            }
+          }
+        }
+
+      }
+    }
+
+  }
+  .wpsr-people-list{
+    img{
+      width: 30px;
+      height: 30px;
+      object-fit: cover;
+      border-radius: 50%;
+      margin-left: -4px;
+      display: inline-block;
+      box-shadow: none;
+    }
+
+  }
+}
+
+.yelp {
+  .wpsr-star-container{
+    margin-right: 3px;
+    .wpsr-star-filled,
+    .wpsr-star-empty{
+      width: 80%;
+      height: 80%;
+    }
+  }
+  .wpsr-star-background-filled{
+    background-color: #fa3e3e;
+  }
+
+  .wpsr-star-background-empty{
+    background-color: #d6dae4;
+  }
+  .wpsr-star-empty {
+    background-color: #fff;
+  }
+  .wpsr-star-filled {
+    background-color: #fff;
+  }
+}
+
+.trustpilot {
+  .wpsr-star-container{
+    margin-right: 3px;
+    .wpsr-star-filled,
+    .wpsr-star-empty{
+      width: 80%;
+      height: 80%;
+    }
+  }
+  .wpsr-star-background-filled{
+    background-color: #00b67a;
+  }
+  .wpsr-star-background-empty{
+    background-color: #d6dae4;
+  }
+  .wpsr-star-empty {
+    background-color: #fff;
+  }
+  .wpsr-star-filled {
+    background-color: #fff;
+  }
+  .wpsr-star-container{
+    border-radius: 0;
+  }
+}
+
+.wpsr-reviews-footer-cta{
+  justify-content: center;
+  .wpsr-business-info-right{
+    margin-left: initial;
+  }
+}
+.wpsr-review-template{
+  background-color: #fff;
+  box-shadow: 0 8px 20px 2px rgb(0 0 0 / 7%);
+  padding: 30px;
+  margin-bottom: 30px;
+  margin-top: 30px;
+  position: relative;
+  border-radius: 4px;
+  transition: 0.4s;
+  width: 100%;
+  .wpsr-review-title{
+    font-weight: 600;
+    color: #333;
+    font-size: 16px;
+    line-height: 1.4;
+    padding: 0;
+    margin-top: 10px;
+    margin-bottom: 0;
+  }
+  .wpsr-reviewer-image{
+    img{
+      height: 80px;
+      width: 80px;
+      object-fit: cover;
+      max-width: initial;
+    }
+  }
+  .wpsr-reviewer-image{
+   .wpsr-reviewer-image-url{
+     box-shadow: none;
+     &:hover{
+       outline: none !important;
+     }
+     &:focus,
+     &:hover{
+       box-shadow: none !important;
+     }
+     img{
+       box-shadow: none;
+     }
+   }
+  }
+  .wpsr-review-platform{
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    img{
+      max-height: 25px;
+      width: auto;
+      box-shadow: none;
+      border-radius: 4px;
+    }
+  }
+  .wpsr-recommends{
+    margin-top: 1px;
+    margin-right: 4px;
+    span{
+      padding-left: 5px;
+      margin-top: -5px;
+      color: #616770;
+      font-size: 14px;
+    }
+    svg{
+      path{
+        fill: #F36B7F;
+      }
+    }
+  }
+  .wpsr-reviewer-name-url{
+      margin: 0;
+      padding: 0;
+      text-decoration: none;
+      box-shadow: none;
+      display: inline-block;
+      .wpsr-reviewer-name{
+        font-size: 18px;
+        line-height: 1.4;
+        color: #333;
+        font-weight: 700;
+        margin: 0;
+        word-break: break-word;
+        padding: 0;
+      }
+    }
+  
+    .wpsr-verified-review {
+      display: inline-flex;
+      align-items: center;
+      vertical-align: middle;
+      white-space: nowrap; /* Prevent badge from wrapping */
+      position: relative;
+      margin-left: 6px;
+      top: -1px; /* Fine-tune vertical alignment */
+    }
+  
+    /* Three overlapping backgrounds using ::before, ::after, and main element */
+    .verified-badge-star {
+      width: 13px;
+      height: 13px;
+      background: #197BFF;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 5%;
+      transform: rotate(0deg);
+      margin-bottom: 1px;
+    }
+  
+    /* Second layer */
+    .verified-badge-star::before {
+      content: '';
+      position: absolute;
+      width: 13px;
+      height: 13px;
+      background: #197BFF;
+      border-radius: 5%;
+      transform: rotate(30deg);
+      z-index: -1;
+    }
+  
+    /* Third layer */
+    .verified-badge-star::after {
+      content: '';
+      position: absolute;
+      width: 13px;
+      height: 13px;
+      background: #197BFF;
+      border-radius: 5%;
+      transform: rotate(60deg);
+      z-index: -2;
+    }
+  
+    /* Checkmark as separate element */
+    .checkmark {
+      width: 9px;
+      height: 5px;
+      border: 2px solid white;
+      border-top: none;
+      border-right: none;
+      transform: rotate(-45deg) translate(1px, -1px);
+      z-index: 1;
+    }
+
+    /* Tooltip styles for verified badge */
+    .wpsr-tooltip {
+      position: relative;
+      cursor: pointer;
+    }
+
+    /* Shared tooltip styles */
+    .wpsr-tooltip::before,
+    .wpsr-tooltip::after {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    /* Unique styles for tooltip content (::before) */
+    .wpsr-tooltip::before {
+      content: attr(data-tooltip);
+      bottom: 160%;
+      background-color: #000;
+      color: #fff;
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    /* Unique styles for tooltip arrow (::after) */
+    .wpsr-tooltip::after {
+      content: '';
+      bottom: 120%;
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #000;
+    }
+
+    .wpsr-tooltip:hover::before,
+    .wpsr-tooltip:hover::after {
+      opacity: 1;
+      visibility: visible;
+    }
+  .wpsr-review-date{
+    font-size: 12px;
+    line-height: 18px;
+    color: #888888;
+    display: block;
+  }
+  .wpsr-rating-wrapper{
+    display: flex;
+    padding-bottom: 5px;
+    &.wpsr-rating{
+      align-items: center;
+      .wpsr-star{
+        display: inherit;
+        path{
+          fill: #f7b80c;
+        }
+      }
+    }
+    &.wpsr-rating-style1{
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.6;
+      text-transform: uppercase;
+      align-items: center;
+      span{
+        background: #f7b80c;
+        margin-left: 5px;
+        display: inline-block;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 12px;
+        width: 28px;
+        height: 23px;
+        line-height: 25px;
+        text-align: center;
+      }
+    }
+    &.wpsr-rating-style2{
+      padding-top: 3px;
+      span{
+        margin-right: 2px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #2bc54d;
+      }
+    }
+
+    .wpsr-booking-rating-style{
+      display: flex;
+      align-items: center;
+      span {
+        background: #003580;
+        border-radius: 6px 6px 6px 0;
+        color: #fff;
+        display: inline-block;
+        font-size: 14px;
+        width: 32px;
+        height: 32px;
+        line-height: 32px;
+        min-width: 28px;
+        font-weight: 500;
+        text-align: center;
+      }
+    }
+  }
+  .wpsr-review-content{
+    p{
+      font-size: 14px;
+      line-height: 1.6;
+      color: #555;
+      margin: 0;
+      overflow: initial;
+    }
+    a{
+      display: inline-block;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.6;
+      padding: 0;
+      margin: 0;
+      text-decoration: underline;
+      text-decoration-color: #1194dc;
+      color: #1194dc;
+      cursor: pointer;
+      box-shadow: none;
+    }
+  }
+  &.wpsr-review-template{
+    .wpsr-star-empty {
+      background-color: #d6dae4;
+    }
+    .wpsr-star-filled {
+      background-color: #f7b80c;
+    }
+  }
+  &.wpsr-review-template-google{
+    .wpsr-review-platform{
+      img{
+        max-height: 20px;
+        width: auto;
+      }
+    }
+  }
+  &.wpsr-review-template-ai{
+    .wpsr-star-empty {
+      background-color: #d6dae4;
+    }
+    .wpsr-star-filled {
+      background-color:#f7b80c;
+    }
+  }
+  &.wpsr-review-template-airbnb{
+    .wpsr-star-empty {
+      background-color: #d6dae4;
+    }
+    .wpsr-star-filled {
+      background-color: #ff385c;
+    }
+  }
+  &.wpsr-review-template-yelp{
+    .wpsr-star-container{
+      margin-right: 3px;
+      .wpsr-star-filled,
+      .wpsr-star-empty{
+        width: 80%;
+        height: 80%;
+      }
+    }
+    .wpsr-star-background-filled{
+      background-color: #fa3e3e;
+    }
+
+    .wpsr-star-background-empty{
+      background-color: #d6dae4;
+    }
+
+    .wpsr-star-empty {
+      background-color: #fff;
+    }
+    .wpsr-star-filled {
+      background-color: #fff;
+    }
+  }
+  &.wpsr-review-template-tripadvisor{
+    .wpsr-star-empty {
+      background-color: #d6dae4;
+    }
+    .wpsr-star-filled {
+      background-color: #04a96c;
+    }
+  }
+  &.wpsr-review-template-amazon{
+    .wpsr-star-empty {
+      background-color: #d6dae4;
+    }
+    .wpsr-star-filled {
+      background-color: #ffa41c;
+    }
+  }
+  &.wpsr-review-template-trustpilot{
+    .wpsr-star-container{
+      margin-right: 3px;
+      .wpsr-star-filled,
+      .wpsr-star-empty{
+        width: 80%;
+        height: 80%;
+      }
+    }
+    .wpsr-star-background-filled{
+      background-color: #00b67a;
+    }
+    .wpsr-star-background-empty{
+      background-color: #d6dae4;
+    }
+    .wpsr-star-empty {
+      background-color: #fff;
+    }
+    .wpsr-star-filled {
+      background-color: #fff;
+    }
+    .wpsr-star-container{
+      border-radius: 0;
+    }
+  }
+  &.wpsr-review-template-aliexpress{
+
+    .wpsr-star-empty {
+      background-color: #d6dae4;
+    }
+    .wpsr-star-filled {
+      background-color: #fe4646;
+    }
+  }
+
+  &.wpsr-review-template-google,
+  &.wpsr-review-template-airbnb,
+  &.wpsr-review-template-tripadvisor,
+  &.wpsr-review-template-amazon,
+  &.wpsr-review-template-aliexpress,
+  &.wpsr-review-template-ai,
+  &[class~="wpsr-review-template-booking.com"]
+  {
+    .wpsr-star-empty,
+    .wpsr-star-filled {
+      width: 100%;
+      height: 100%;
+    }
+    .wpsr-star-container{
+      margin-right: 0;
+    }
+  }
+}
+
+[data-template-type="masonry"] {
+  &.wpsr-reviews-loadmore{
+    //margin-top: 80px;
+    position: relative;
+    z-index: 2;
+  }
+}
+
+.wpsr-reviews-loadmore{
+  text-align: center;
+  width: auto;
+  background: transparent;
+  margin: 0 auto;
+  display: flex;
+  padding:0 0 50px;
+  border: none;
+  box-shadow: none;
+  &:hover,
+  &:focus{
+    background: transparent;
+    outline: none;
+    box-shadow: none;
+    span{
+      outline: 2px solid #757579;
+    }
+  }
+  span{
+    background-color:#000;
+    border-radius: 8px;
+    padding: 10px 20px;
+    color:#FFFFFF;
+    font-size: 15px;
+    font-weight: 700;
+    cursor:pointer !important;
+    outline:none;
+  }
+}
+
+.wpsr-reviews-loadmore .wpsr-loading{
+  font-size:0;
+  width:30px;
+  height:30px;
+  border-radius:15px;
+  padding:0;
+  border:3px solid #000;
+  border-bottom:3px solid rgba(255,255,255,0.0);
+  border-left:3px solid rgba(255,255,255,0.0);
+  background-color:transparent !important;
+  animation-name: rotateAnimation;
+  -webkit-animation-name: rotateAnimation;
+  animation-duration: 1s;
+  -webkit-animation-duration: 1s;
+  animation-delay: 0.2s;
+  -webkit-animation-delay: 0.2s;
+  animation-iteration-count: infinite;
+  -webkit-animation-iteration-count: infinite;
+  display: block;
+  margin: 0 auto;
+}
+
+.elementor-widget-container .wpsr-reviews-loadmore{
+  background: none;
+  &:hover,
+  &:focus{
+    background: none;
+  }
+}
+
+@keyframes rotateAnimation {
+  0%   {transform: rotate(0deg);}
+  100% {transform: rotate(360deg);}
+}
+
+.wpsr-star-container {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 3px; /* Add gap between stars */
+  border-radius: 4px; /* Add border radius */
+  text-align: center; /* Center content horizontally */
+  line-height: 20px; /* Center content vertically */
+}
+.wpsr-star-container:last-child {
+  margin-right: 0; /* Remove margin from last star */
+}
+.wpsr-star-empty,
+.wpsr-star-filled {
+  position: absolute;
+  width: 80%;
+  height: 80%;
+  clip-path: polygon(
+    49.14% 79.18%,
+    74.94% 93.78%,
+    71.04% 64.43%,
+    92.87% 44.26%,
+    63.88% 38.95%,
+    51.54% 11.97%,
+    37.51% 37.94%,
+    8.09% 41.34%,
+    28.44% 62.80%,
+    22.57% 91.98%
+  );
+}
+
+.wpsr-star-filled {
+  mask-image: linear-gradient(to right, black var(--wpsr-review-star-fill), transparent var(--wpsr-review-star-fill));
+  -webkit-mask-image: linear-gradient(to right, black var(--wpsr-review-star-fill), transparent var(--wpsr-review-star-fill));
+}
+
+.wpsr-rating{
+  display: flex;
+  flex-direction: row;
+}
+.wpsr-ai-summary-enabled{
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  row-gap: 0;
+  margin-top: 30px;
+  [class*="wpsr-col-"]{
+    display: flex;
+  }
+  &.wpsr-reviews-with-top-padding{
+    padding-top: 30px;
+  }
+}
+
+.wpsr-ai-summary-enabled,
+.wpsr-ai-summary-enabled-masonry,
+.wpsr-ai-summary-enabled-badge,
+.wpsr-ai-summary-enabled-slider{
+  .wpsr-review-summary-list{
+    &.wpsr-review-content{
+      text-align: left;
+    }
+    overflow: hidden;
+    ul {
+      transition: max-height 0.3s ease;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      li{
+        margin-bottom: 10px;
+      }
+    }
+    .wpsr-ai-review-summary-list-scroll{
+      height: 70px !important;
+      overflow: auto;
+      padding-right: 10px;
+      scrollbar-color: #8d8d8d #e0e0e0;
+      scrollbar-width: thin;
+    }
+    .wpsr-summary-point{
+      display: grid;
+      grid-template-columns: auto auto;
+    }
+
+    .wpsr-list-style-check{
+      display: inline-block;
+      width: 12px;
+      height: 10px;
+      background: black;
+      margin-right: 8px;
+      margin-top: 8px;
+      -webkit-clip-path: path("M10.043.554a1 1 0 0 1 1.497 1.32l-.083.095-6.272 6.899a1 1 0 0 1-1.32.083l-.095-.083-3.227-3.5a1 1 0 0 1 1.32-1.498l.094.083 2.52 2.793L10.043.554Z");
+      clip-path: path("M10.043.554a1 1 0 0 1 1.497 1.32l-.083.095-6.272 6.899a1 1 0 0 1-1.32.083l-.095-.083-3.227-3.5a1 1 0 0 1 1.32-1.498l.094.083 2.52 2.793L10.043.554Z");
+    }
+
+    ul {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start; /* Align items to the start to prevent centering */
+      width: 100%; /* Ensure the list takes full width */
+    }
+
+    .wpsr-text p {
+      margin: 0;
+      position: initial;
+      overflow: initial;
+      overflow-x: initial;
+      padding-right: 10px;
+      scrollbar-color: initial;
+      scrollbar-width: initial;
+      text-align: left;
+    }
+
+    .wpsr_read_more_list{
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.4;
+      margin: 0;
+      text-decoration: underline;
+      text-decoration-color: #65676b;
+      color: #65676b;
+      cursor: pointer;
+      padding-left: 4px;
+    }
+  }
+}
+
+
+.wpsr-ai-summary-fixed-height{
+  min-height: 250px;
+}
+
+.wpsr-review-template-ai{
+  .wpsr-ai-review-summary{
+    text-align: left;
+  }
+}
+
+.wpsr_add_read_more_list .wpsr_read_more,
+.wpsr_add_read_more_list .wpsr_read_less {
+
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+  padding: 0;
+  margin: 0;
+  text-decoration: underline;
+  -webkit-text-decoration-color: #1194dc;
+  text-decoration-color: #1194dc;
+  color: #1194dc;
+  cursor: pointer;
+  padding-left: 4px;
+
+}
+
+.wpsr-ai-summary-list-collapsed .wpsr_read_less {
+  display: none;
+}
+
+.wpsr-ai-summary-list-expanded .wpsr_read_more {
+  display: none;
+}
+
+.wpsr-ai-summary-list-collapsed {
+  .wpsr-ai-review-summary-remaining{
+    display: none;
+  }
+}
+
+.wpsr-ai-summary-list-expanded {
+   // or inline, or flex
+  .wpsr-ai-review-summary-remaining{
+    display: inline;
+  }
+}
+
+.wpsr-total-reviews-for-ai-summary-card{
+  font-size: 14px;
+  font-weight: 400;
+  color: #333;
+  margin: 0;
+  padding: 0;
+  text-align: inherit;
+}
+
+.wpsr-ai-summary-read-more-dots {
+  display: inline;
+  padding-left: 2px;
+  padding-right: 2px;
+  font-weight: bold;
+  color: #888;
+}
+
+.wpsr-ai-summary-list-expanded .wpsr-ai-summary-read-more-dots {
+  display: none;
+}
+.wpsr-review-images{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  .wpsr-review-image{
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: 0.3s;
+    &:hover,
+    &:focus{
+      border: 1px solid #4284f3;
+    }
+  }
+}
+
+@media (min-width: 992px) {
+  .wpsr-ai-summary-enabled{
+    .wpsr-col-12{
+      grid-column: span 12;
+      min-width: 100%;
+    }
+
+    .wpsr-col-6{
+      grid-column: span 6;
+      min-width: 100%;
+    }
+
+    .wpsr-col-4{
+      grid-column: span 4;
+      min-width: 100%;
+    }
+
+    .wpsr-col-3{
+      grid-column: span 3;
+      min-width: 100%;
+    }
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  .wpsr-ai-summary-enabled{
+    .wpsr-col-sm-12 {
+      grid-column: span 12;
+      min-width: 100%;
+    }
+
+    .wpsr-col-sm-6 {
+      grid-column: span 6;
+      min-width: 100%;
+    }
+
+    .wpsr-col-sm-4 {
+      grid-column: span 4;
+      min-width: 100%;
+    }
+
+    .wpsr-col-sm-3 {
+      grid-column: span 3;
+      min-width: 100%;
+    }
+  }
+}
+
+@media (max-width: 767px) {
+  .wpsr-ai-summary-enabled{
+    .wpsr-col-xs-12 {
+      grid-column: span 12;
+      min-width: 100%;
+    }
+
+    .wpsr-col-xs-6 {
+      grid-column: span 6;
+      min-width: 100%;
+    }
+
+    .wpsr-col-xs-4 {
+      grid-column: span 4;
+      min-width: 100%;
+    }
+
+    .wpsr-col-xs-3 {
+      grid-column: span 3;
+      min-width: 100%;
+    }
+  }
+}

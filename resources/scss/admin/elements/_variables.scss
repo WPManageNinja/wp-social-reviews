@@ -1,0 +1,74 @@
+.toplevel_page_wpsocialninja {
+  // ─── TEXT COLORS ─────────────────────── //
+  --wpsr-primary-text: #525866;
+  --wpsr-secondary-text: #FFFFFF;
+  --wpsr-heading-text: #0E121B;
+
+  // ─── BACKGROUND COLORS ───────────────── //
+  --wpsr-primary-bg: #FFFFFF;
+  --wpsr-primary-light-bg: rgba(120, 77, 239, 0.10);
+  --wpsr-settings-tab-active-bg: #EEE9FB;
+  --wpsr-secondary-bg: #F5F7FA;
+  --wpsr-light-primary-bg: #F2F5F8;
+  --wpsr-selected-bg: #F8F6FE;
+  --wpsr-editor-notes-bg: #EBF1FF;
+  --wpsr-white-icons-bg: #E1E4EA;
+  --wpsr-platform-icon-bg: #EBF1FF;
+ // ─── BUTTONS ───────────────── //
+  --wpsr-primary-btn-bg: #5525D9;
+  --wpsr-primary-btn-bg-hover: #3C1A9A;
+  --wpsr-primary-btn-text: #fff;
+
+  --wpsr-secondary-btn-bg: #0E121B;
+  --wpsr-secondary-btn-hover-bg: #222530;
+  --wpsr-secondary-button-text: #FFF;
+
+  --wpsr-tertiary-btn-bg: #F9FAFB;
+  --wpsr-tertiary-btn-bg-hover: #FFF;
+
+  // ─── LINKS ───────────────── //
+  --wpsr-secondary-link: #99A0AE;
+  --wpsr-secondary-link-hover: #0E121B;
+  
+  // ─── MENU COLORS ───────────────── //
+  --wpsr-menu-active-bg: #F5F7FA;
+  --wpsr-menu-text: #525866;
+  --wpsr-menu-text-active: #0E121B;
+  --wpsr-secondary-menu-active-bg: #EEE9FB;
+  --wpsr-secondary-menu-active-text: #5525D9;
+
+  // ─── BORDER COLORS ───────────────────── //
+  --wpsr-primary-border: #E1E4EA;
+  --wpsr-selected-border: #5525D9;
+  --wpsr-dark-default-border: #E1E4EA;
+  //--wpsr-secondary-border: ;
+
+  // ─── RADIUS ──────────────────────────── //
+  --wpsr-radius-sm: 4px;
+  --wpsr-radius-intermediate: 6px;
+  --wpsr-radius-md: 8px;
+  --wpsr-radius-lg: 12px;
+  // ─── SVG ──────────────────────────── //
+  --wpsr-svg-primary-color: #525866;
+  --wpsr-responsivebar-svg-active-color: #525866;
+  --wpsr-responsivebar-svg-default-color: #CACFD8;
+  --wpsr-svg-primary-active-color: #5525d9;
+  --wpsr-dark-svg-primary-active-color: #8C71F6;
+  --wpsr-svg-secondary-color: #335CFF;
+  --wpsr-settings-svg-primary-active-color: #0E121B;
+
+  // ─── Warnings ─────────────────────── //
+  --wpsr-warning-bg: #FFC0C5;
+  --wpsr-warning-secondary-bg: #FFF1EB;
+  --wpsr-warning-text: #681219;
+  --wpsr-error-bg: #FB3748;
+  --wpsr-error-text: #FFF;
+
+  --wpsr-icon-info-color: #23A682;
+  --wpsr-icon-info-warning-color: #FF8447;
+  --wpsr-icon-disabled-color: #717784;
+  --wpsr-icon-info-secondary-color: #99A0AE;
+
+  // ─── Alert ─────────────────────── //
+  --wpsr-alert-bg: #FFEBEC;
+}

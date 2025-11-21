@@ -1,0 +1,45 @@
+.wpsr-prev-next-default{
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+  text-align: center;
+  display: block;
+  width: 100%;
+  &.wpsr-prev-next-gallery{
+    margin: -10px 0 20px 0;
+  }
+  li{
+    display: inline-block;
+    margin-right: 10px;
+    a{
+      background-color: #fff;
+      box-shadow: 0 0 16px 0 rgba(0, 0, 0, 0.1);
+      transition: 0.3s;
+      height: 30px;
+      width: 50px;
+      line-height: 30px;
+      border-radius: 50px;
+      display: inline-block;
+      font-size: 13px;
+      color: #606060;
+      font-weight: 500;
+      text-decoration: none;
+      &.wpsr-link-disable{
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+      &:focus,
+      &:hover{
+        outline: none;
+        background-color: #fff;
+        opacity: 1;
+        &.wpsr-link-disable{
+          opacity: 0.6;
+        }
+      }
+    }
+    &:last-child{
+      margin-right: 0;
+    }
+  }
+}

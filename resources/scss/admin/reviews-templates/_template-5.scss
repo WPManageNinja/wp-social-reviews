@@ -1,0 +1,104 @@
+.wpsr-review-template-five{
+  margin-top: 30px;
+  border-radius: 8px;
+  .wpsr-review-platform{
+    right: 15px;
+    left: auto;
+  }
+  .wpsr-recommends{
+    justify-content: center;
+  }
+  .wpsr-reviewer-image{
+    position: absolute;
+    top: -40px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    line-height: 0;
+    img{
+      margin: auto;
+      max-height: 80px;
+      max-width: 80px;
+      width: 100%;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.34);
+    }
+  }
+  .wpsr-review-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .wpsr-review-info{
+    margin: 0 auto;
+    text-align: center;
+    padding-top: 20px;
+  }
+  .wpsr-rating-wrapper{
+    padding-bottom: 0;
+    padding-top: 10px;
+    justify-content: center;
+    .wpsr-rating{
+      .wpsr-star{
+        margin-right: 2px;
+      }
+    }
+    .wpsr-rating-style-1{
+      justify-content: center;
+    }
+    .wpsr-rating-style-2{
+      justify-content: center;
+    }
+    .wpsr-booking-rating-style{
+      justify-content: center;
+    }
+  }
+  .wpsr-review-date{
+    text-align: center;
+    padding-top: 5px;
+  }
+  .wpsr-review-title {
+    margin-bottom: -5px;
+    margin-top: 5px;
+    text-align: center;
+  }
+  .wpsr-review-content{
+    text-align: center;
+    margin-top: 10px;
+    position: relative;
+    z-index: 1;
+    &:after{
+      position: absolute;
+      content: "\61";
+      font-family: "wp-social-reviews";
+      font-size: 70px;
+      top: 25px;
+      z-index: -1;
+      opacity: 0.2;
+      left: 0;
+      right: 0;
+      color: #1c7298;
+    }
+  }
+  .wpsr-review-images{
+    justify-content: center;
+  }
+}
+
+.wpsr-reviews-template-grid5{
+  .wpsr-ai-summary-enabled{
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    row-gap: 60px;
+    margin-top: 30px;
+    column-gap: 15px;
+    [class*="wpsr-col-"]{
+      display: flex;
+    }
+    .wpsr-review-template{
+      margin: 0;
+      width: 100%;
+    }
+  }
+}

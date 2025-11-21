@@ -1,0 +1,122 @@
+.wpsr-ig-header{
+    width: 100%;
+    margin-bottom: 30px;
+
+    &.wpsr-gap-no_gap{
+      margin-bottom: 0;
+    }
+    &.wpsr-gap-narrow{
+      margin-bottom: 10px;
+    }
+    &.wpsr-gap-small{
+      margin-bottom: 20px;
+    }
+    &.wpsr-gap-wide{
+      margin-bottom: 40px;
+    }
+    &.wpsr-gap-wider{
+      margin-bottom: 50px;
+    }
+
+    .wpsr-ig-header-inner{
+      padding: 15px;
+      background-color: #f9f9f9;
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      @media screen and (max-width: 767px) {
+        display: block;
+        text-align: center;
+        padding: 20px 15px;
+      }
+      .wpsr-ig-header-logo{
+        margin-right: 15px;
+        flex: auto 0 0;
+        a{
+          text-decoration: none;
+          box-shadow: none;
+          display: inline-block;
+          &:focus{
+            outline: 2px solid #72aee6;
+          }
+          &:hover{
+            outline: none;
+          }
+          img{
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: block;
+            @media screen and (max-width: 767px) {
+              margin: 0 auto;
+            }
+          }
+        }
+      }
+  
+      .wpsr-ig-header-info{
+        flex-grow: 1;
+        @media screen and (max-width: 767px) {
+          padding-top: 5px;
+          margin-bottom: 10px;
+        }
+        .wpsr-ig-header-name{
+          a{
+            text-decoration: none;
+            box-shadow: none;
+            font-size: 22px;
+            line-height: 1.2;
+            font-weight: 600;
+            color: #262626;
+            display: block;
+            &:focus{
+              outline: 2px solid #72aee6;
+            }
+            &:hover{
+              outline: none;
+            }
+          }
+        }
+        .wpsr-ig-header-fullname{
+          font-size: 16px;
+          line-height: 1.2;
+          font-weight: 600;
+          color: #262626;
+          margin: 10px 0 0;
+        }
+        .wpsr-ig-header-description{
+          p{
+            font-size: 16px;
+            line-height: 1.4;
+            font-weight: 400;
+            color: #262626;
+            margin-top: 5px;
+            margin-bottom: 0;
+            word-break: break-word;
+          }
+        }
+        .wpsr-ig-header-statistics{
+          display: flex;
+          flex-wrap: nowrap;
+          padding-top: 5px;
+          @media screen and (max-width: 767px) {
+            justify-content: center;
+          }
+          .wpsr-ig-header-statistic-item{
+            margin-right: 15px;
+            font-size: 16px;
+            font-weight: 400;
+            color: #262626;
+            line-height: 1.4;
+            strong{
+              color: #262626;
+            }
+            &:last-child{
+              margin-right: 0;
+            }
+          }
+        }
+  
+      }
+    }
+  }

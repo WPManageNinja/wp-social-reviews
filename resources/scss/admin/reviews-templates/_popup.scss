@@ -1,0 +1,13 @@
+.wpsr-review-feed-popup.wpsr-feed-popup-open{
+  .wpsr-feed-popup-box-wraper-inner {
+    background: transparent;
+    .wpsr-feed-popup-media{
+      flex: 0 0 100%;
+      background: transparent;
+      img,
+      > div{
+        width: 100%;
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+.wpsr-yt-live-now-btn{
+    color:#c00;
+    font-weight: 600;
+    border: 1px solid #c00;
+    text-decoration: none;
+    padding: 2px 4px;
+    font-size: 14px;
+    box-shadow: none;
+    &:focus{
+        outline: none;
+        color:#c00;
+    }
+    &:hover{
+        cursor: pointer;
+        outline: none;
+        color:#c00;
+    }
+    &:active{
+        outline: none;
+        color:#c00;
+    }
+}

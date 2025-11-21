@@ -1,0 +1,64 @@
+.wpsr-photo-uploader-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 24px;
+}
+.wpsr-photo-uploader-label {
+  color: #525866;
+  font-size: 16px;
+  font-weight: 500;
+  flex: 1;
+}
+.wpsr-photo-uploader-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.wpsr-photo-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #F5F7FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.wpsr-photo-preview img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+}
+.wpsr-photo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+.wpsr-photo-upload-btn {
+  border: 1.5px solid var(--wpsr-primary-border, #E1E4EA);
+  background: var(--wpsr-primary-bg, #FFF);
+  color: #525866;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 6px 18px;
+  cursor: pointer;
+  transition: background 0.2s, border 0.2s;
+  outline: none;
+}
+.wpsr-photo-upload-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.wpsr-photo-upload-btn:hover:not(:disabled) {
+  background: #F5F7FA;
+  border-color: #B0B7C3;
+}

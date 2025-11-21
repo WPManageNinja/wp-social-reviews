@@ -1,0 +1,141 @@
+.wpsr-element-spacing-wrapper {
+
+  .wpsr-element-spacing-title {
+   font-size: 12px;
+   margin-right: 7px;
+   margin-bottom: 4px;
+  }
+
+  .wpsr-element-responsive-spacing{
+    display: flex;
+    align-items: center;
+  }
+
+  .wpsr-element-spacing-input-wrapper {
+    width: 50%;
+    float: right;
+    text-align: right;
+
+    &.wpsr-element-spacing_input_wrapper_full {
+      width: 100%;
+      float: none;
+      text-align: left;
+    }
+  }
+
+  .wpsr-element-spacing-dimensions {
+    overflow: hidden;
+    margin: 0;
+    padding: 10px 0px 10px 0px;
+
+    li {
+      float: left;
+      width: 20%;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+
+      &:first-child {
+        input {
+          border-left: 1px solid #d5dadf;
+          -webkit-border-radius: 3px 0 0 3px;
+          border-radius: 3px 0 0 3px;
+        }
+      }
+
+      input {
+        display: block;
+        text-align: center;
+        width: 100%;
+        border-color: #d5dadf;
+        height: 27px;
+        padding: 4px 0;
+        border-radius: 0;
+
+        &:focus {
+          border-color: #a4afb7;
+          margin-left: 0;
+          width: 100%;
+          outline: 0;
+        }
+
+        &:disabled {
+          background-color: #f5f7fa;
+          color: #a4afb7;
+        }
+      }
+
+      label {
+        display: block;
+        text-align: center;
+        color: #989898;
+        font-size: 9px;
+        text-transform: uppercase;
+        padding-top: 0px;
+        margin-top: 5px;
+      }
+
+      .wpsr-element-spacing_item_linkable {
+        border: 1px solid #d5dadf;
+        padding: 0px 16px;
+        height: 30px;
+        display: inline-block;
+        font-size: 10px;
+        vertical-align: top;
+        border-top-right-radius: 3px;
+        border-bottom-right-radius: 3px;
+
+        &.wpsr-element-spacing_item_linked {
+          // background-color: #1DA1F1; update theme color if necessary
+          border-color: #a4afb7;
+        }
+
+        span {
+          font-size: 17px;
+          margin-top: 4px;
+          @media screen and (max-width: 782px){
+            margin-top: 7px;
+          }
+        }
+        @media screen and (max-width: 782px) {
+          min-height: 40px;
+        }
+      }
+    }
+  }
+
+  .wpsr-element-spacing-linked {
+    cursor: pointer;
+  }
+
+  .wpsr-element-spacing_section_title {
+    font-size: 18px;
+  }
+}
+
+.wpsr-editor-edit-item-field{
+  .wpsr-classic-number{
+    width: 130px;
+    font-size: 12px;
+  }
+  .wpsr-responsive-icon-wrapper{
+    i{
+      font-size: 14px;
+      width: 12px;
+      height: 12px;
+      cursor: pointer;
+      color: #a4afb7;
+    }
+    .selected{
+      color: #1DA1F1;
+    }
+  }
+}
+
+.wpsr-element-slider-wrapper{
+  // display: flex;
+  // div:nth-of-type(1){
+  //   flex-grow: 1;
+  //   margin-right: 10px;
+  // }
+}
