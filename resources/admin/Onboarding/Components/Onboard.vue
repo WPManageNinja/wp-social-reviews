@@ -475,7 +475,6 @@ export default {
                     this.preloadPlatformIcons();
                 }
             } catch (error) {
-                console.log('No saved onboarding data found');
             } finally {
                 this.loading = false;
             }

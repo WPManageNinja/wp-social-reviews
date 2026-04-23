@@ -256,8 +256,8 @@
             </template>
             <el-rate
                 clearable
-                v-model="review.rating"
-                color="var(--wpsr-star-color)"
+                :model-value="Number(review.rating) || 0"
+                @update:model-value="val => review.rating = val"
             ></el-rate>
 
             <error-view :errors="errors" :field="'review.rating'" />

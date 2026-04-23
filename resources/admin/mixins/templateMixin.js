@@ -133,7 +133,6 @@ export const templateMixin = {
                     }
 
                     this.pages =  response.data.sources;
-                    this.posts = response.data.posts !== undefined ? response.data.posts.splice(1) : null;
                     this.post_types = response.data.post_types !== undefined ? response.data.post_types : null;
                     if(this.post_types) {
                         this.post_types.push(this.post_type_default);

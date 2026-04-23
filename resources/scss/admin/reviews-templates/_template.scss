@@ -320,6 +320,12 @@ a.wpsr-reviewer-image-animation::before {
   .wpsr-business-info{
     justify-content: center;
     background-color: transparent;
+    .wpsr-no-reviews-message{
+      font-size: 14px;
+      color: #666;
+      margin-top: 5px;
+      margin-bottom: 0;
+    }
     .wpsr-business-info-left{
       display: flex;
       width: 30%;
@@ -890,6 +896,7 @@ a.wpsr-reviewer-image-animation::before {
   &.wpsr-review-template-testimonial,
   &.wpsr-review-template-ai,
   &.wpsr-review-template-woocommerce,
+  &.wpsr-review-template-native_form,
   &[class~="wpsr-review-template-booking.com"]
   {
     .wpsr-star-empty,
@@ -1014,7 +1021,8 @@ a.wpsr-reviewer-image-animation::before {
       background-color: #fe4646;
   }
 }
-.fluent_forms{
+.fluent_forms,
+.native_form{
   .wpsr-star-empty {
     background-color: #d6dae4;
   }
@@ -1032,8 +1040,10 @@ a.wpsr-reviewer-image-animation::before {
 .wpsr-review-template,
 .wpsr-review-template-custom,
 .wpsr-review-template-fluent_forms,
+.wpsr-review-template-native_form,
 .wpsr-has-multiple-reviews-platform,
 .fluent_forms,
+.native_form,
 .facebook,
 .airbnb,
 .woocommerce,
@@ -1111,6 +1121,10 @@ a.wpsr-reviewer-image-animation::before {
 .wpsr-star-filled {
   mask-image: linear-gradient(to right, black var(--wpsr-review-star-fill), transparent var(--wpsr-review-star-fill));
   -webkit-mask-image: linear-gradient(to right, black var(--wpsr-review-star-fill), transparent var(--wpsr-review-star-fill));
+}
+
+.wpsr-star-background-empty .wpsr-star-filled {
+  display: none;
 }
 
 .wpsr-rating{

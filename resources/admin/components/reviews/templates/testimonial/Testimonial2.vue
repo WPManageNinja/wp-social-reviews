@@ -43,6 +43,7 @@
               :contentLanguage="template_meta.contentLanguage"
               :contentType="template_meta.contentType"
               :contentLength="template_meta.content_length"
+              :showReviewImages="template_meta.show_review_images !== 'false'"
               @expandContent="expandContent"
           />
         </div>

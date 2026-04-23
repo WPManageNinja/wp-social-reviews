@@ -1,5 +1,7 @@
 <?php defined('ABSPATH') or die;
 
+use WPSocialReviews\Framework\Support\Arr;
+
 // end wpsr-twitter-all-tweets div
 echo '</div>';
 
@@ -31,11 +33,16 @@ if ($total > $paginate && $layout_type !== 'carousel' && $pagination_type !== 'n
     data-total="' . intval($total) . '" 
     data-page="1"
     data-platform="twitter"
-    data-paginate="' . intval($paginate) . '" >' .esc_html($wpsr_load_more_button_text).
+    data-paginate="' . esc_attr($paginate) . '" >' .esc_html($wpsr_load_more_button_text).
          '<div class="wpsr-load-icon-wrapper"><span></span></div></button>';
 }
 $wpsr_feed_type = isset($feed_settings['additional_settings']['feed_type']) ? $feed_settings['additional_settings']['feed_type'] : '';
-if (!empty($header) && isset($feed_settings['follow_button_settings']['follow_button_position']) && $feed_settings['follow_button_settings']['follow_button_position'] !== 'header' && $wpsr_feed_type !== 'hashtag') {
+$show_follow_btn = !empty($header)
+    && !empty(Arr::get($feed_settings, 'follow_button_settings.display_follow_button'))
+    && Arr::get($feed_settings, 'follow_button_settings.display_follow_button') === 'true'
+    && Arr::get($feed_settings, 'follow_button_settings.follow_button_position') !== 'header'
+    && $wpsr_feed_type !== 'hashtag';
+if ($show_follow_btn) {
     /**
      * tweeter_user_profile_follow_btn hook.
      *

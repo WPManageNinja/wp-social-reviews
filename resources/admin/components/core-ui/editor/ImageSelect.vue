@@ -61,9 +61,9 @@
 </template>
 
 <script>
-import { findIndex } from 'lodash'
+import { findIndex } from '../../../utils'
 import optionSelectorPopup from './optionSelectorPopup.vue'
-import { ArrowRight, Check } from '@element-plus/icons-vue'
+import { Check } from '@element-plus/icons-vue'
 import  TemplateDemoImage  from './TemplateDemoImage.vue'
 import ArrowRightIcon from '../../pieces/icons/ArrowRightIcon.vue'
 export default {

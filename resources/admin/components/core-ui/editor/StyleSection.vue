@@ -3,14 +3,14 @@
         <div class="wpsr_editor_group_item">
             <span @click="showWrapper = true">{{ 'Wrapper' }}</span>
             <div class="item-reorder">
-                <i class="el-icon-arrow-right"></i>
+              <el-icon><ArrowRight /></el-icon>
             </div>
         </div>
 
         <transition name="fade">
             <div v-if="showWrapper" class="wpsr_editor_overflow">
                 <div class="wpsr_editor_header wpsr_pointer" @click="showWrapper = false">
-                    <i class="el-icon-back"></i>
+                    <el-icon><ArrowLeft /></el-icon>
                     <span>{{ 'Wrapper' }}</span>
                     <!-- <span v-if="header_title">{{ header_title }}</span> -->
                     <!-- <span v-else>{{ title }}</span> -->

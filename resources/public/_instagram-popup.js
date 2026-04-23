@@ -15,6 +15,15 @@ let imageSize = null;
 let userName = null;
 let uploadUrl = null;
 
+function getWpsrImageFormat() {
+    let imageFormat = window.wpsr_ajax_params
+        && window.wpsr_ajax_params.image_settings
+        && window.wpsr_ajax_params.image_settings.image_format
+        ? window.wpsr_ajax_params.image_settings.image_format
+        : '';
+
+    return ['jpg', 'webp'].includes(imageFormat) ? imageFormat : 'jpg';
+}
 
 export default {
     init: function (e, $this) {
@@ -178,7 +187,7 @@ export default {
                 </div>`;
     },
     renderMedia() {
-        let image_format = window.wpsr_ajax_params.image_settings.image_format;
+        let image_format = getWpsrImageFormat();
         generatedUrl = optimizedImages && !currentFeed.oembed_image_failed ? `${uploadUrl}/instagram/${currentFeed.username}/${currentFeed.id}_${imageSize}.${image_format}` : currentFeed.media_url || currentFeed.default_media;
         
         if(!currentFeed.has_carousel && currentFeed.media_name === 'VIDEO' && currentFeed.media_type === 'IMAGE') {
@@ -301,7 +310,10 @@ export default {
            return `<div class="wpsr-feed-popup-comment">
            <div class="wpsr-feed-popup-comment-inner">
                     <div class="wpsr-feed-popup-comment-text">
-                        <a href="https://www.instagram.com/${comments[key].username}" target="_blank" title="${comments[key].username}">${comments[key].username}</a>
+                       
+                       ${ comments[key].username !== undefined ?
+                           `<a href="https://www.instagram.com/${comments[key].username}" target="_blank" title="${comments[key].username}">${comments[key].username}</a>` : ``
+                       }
                         <p>${formatText( comments[key].text, 'https://www.instagram.com/explore/tags/' )}</p>
                     </div>
                 ${ ( currentPopupSettings.display_date === 'true' && comments[key].time_ago ) ?

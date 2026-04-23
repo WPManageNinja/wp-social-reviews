@@ -18,7 +18,7 @@ jQuery(document).ready(function ($) {
                 that.fetchData($(this))
             });
 
-            if (window.wpsr_ajax_params.has_pro) {
+            if (window.wpsr_ajax_params && window.wpsr_ajax_params.has_pro) {
                 this.initPro();
             }
 
@@ -61,20 +61,23 @@ jQuery(document).ready(function ($) {
             const column = $feedsWrap.data("column");
 
             if (templateType === 'masonry') {
-                $feedsWrap.find('.wpsr_feeds').masonry('reloadItems')
-                if (typeof $feedsWrap.find('.wpsr_feeds').imagesLoaded === 'function') {
-                    $feedsWrap.find('.wpsr_feeds').imagesLoaded(function () {
-                        if (typeof $feedsWrap.find('.wpsr_feeds').masonry === 'function') {
-                            $feedsWrap.find('.wpsr_feeds').masonry({
+                const $feedsElement = $feedsWrap.find('.wpsr_feeds');
+                if ($feedsElement.length) {
+                    $feedsElement.masonry('reloadItems');
+                    if (typeof $feedsElement.imagesLoaded === 'function') {
+                        $feedsElement.imagesLoaded(function () {
+                            if (typeof $feedsElement.masonry === 'function') {
+                                $feedsElement.masonry({
+                                    itemSelector: '.wpsr-col-' + column + '',
+                                });
+                            }
+                        });
+                    } else {
+                        if (typeof $feedsElement.masonry === 'function') {
+                            $feedsElement.masonry({
                                 itemSelector: '.wpsr-col-' + column + '',
                             });
                         }
-                    });
-                } else {
-                    if (typeof $feedsWrap.find('.wpsr_feeds').masonry === 'function') {
-                        $feedsWrap.find('.wpsr_feeds').masonry({
-                            itemSelector: '.wpsr-col-' + column + '',
-                        });
                     }
                 }
             }
@@ -83,19 +86,23 @@ jQuery(document).ready(function ($) {
             if(masonrySelector.length){
                 masonrySelector.each(function () {
                     let id = '#' + $(this).attr('id');
+                    let $element = $(id);
                     let column = $(this).data("column");
 
-                    if (typeof $(id).imagesLoaded === 'function') {
-                        $(id).imagesLoaded(function () {
-                            if (typeof $(id).find('.wpsr-twitter-all-tweets, .wpsr-ig-all-feed, .wpsr-fb-all-feed, .wpsr-tt-all-feed').masonry === 'function') {
-                                $(id).find('.wpsr-twitter-all-tweets, .wpsr-ig-all-feed, .wpsr-fb-all-feed, .wpsr-tt-all-feed').masonry({
+                    // Check if element exists before calling imagesLoaded
+                    if ($element.length && typeof $element.imagesLoaded === 'function') {
+                        $element.imagesLoaded(function () {
+                            const $masonryContainer = $element.find('.wpsr-twitter-all-tweets, .wpsr-ig-all-feed, .wpsr-fb-all-feed, .wpsr-tt-all-feed');
+                            if ($masonryContainer.length && typeof $masonryContainer.masonry === 'function') {
+                                $masonryContainer.masonry({
                                     itemSelector: '.wpsr-col-' + column,
                                 });
                             }
                         });
                     } else {
-                        if (typeof $(id).find('.wpsr-twitter-all-tweets, .wpsr-ig-all-feed, .wpsr-fb-all-feed, .wpsr-tt-all-feed').masonry === 'function') {
-                            $(id).find('.wpsr-twitter-all-tweets, .wpsr-ig-all-feed, .wpsr-fb-all-feed, .wpsr-tt-all-feed').masonry({
+                        const $masonryContainer = $element.find('.wpsr-twitter-all-tweets, .wpsr-ig-all-feed, .wpsr-fb-all-feed, .wpsr-tt-all-feed');
+                        if ($masonryContainer.length && typeof $masonryContainer.masonry === 'function') {
+                            $masonryContainer.masonry({
                                 itemSelector: '.wpsr-col-' + column,
                             });
                         }
@@ -108,9 +115,11 @@ jQuery(document).ready(function ($) {
                 total = parseInt($btn.data("total")),
                 prev_page = parseInt($btn.data("page")),
                 platform = $btn.data("platform"),
-                paginate = parseInt($btn.data("paginate")),
                 feed_id = $btn.data("feed_id"),
                 feed_type = $btn.data("feed_type");
+            
+            // Use backend-resolved paginate (wp_is_mobile), same as total_posts_number
+            let paginate = parseInt($btn.data("paginate"));
 
             if (prev_page * paginate >= total) {
                 $btn.hide();
@@ -245,8 +254,9 @@ jQuery(document).ready(function ($) {
 
             if(reviewsMasonry.length) {
                 const reviewsColumn = reviewsMasonry.data("column");
-                if (typeof reviewsMasonry.imagesLoaded === 'function') {
-                    reviewsMasonry.imagesLoaded(function () {
+                const $masonryElement = reviewsMasonry.first(); // Get first element to avoid empty collection issues
+                if ($masonryElement.length && typeof $masonryElement.imagesLoaded === 'function') {
+                    $masonryElement.imagesLoaded(function () {
                         if (typeof reviewsMasonry.masonry === 'function') {
                             reviewsMasonry.masonry({
                                 itemSelector: '.wpsr-col-' + reviewsColumn + '',
@@ -266,14 +276,14 @@ jQuery(document).ready(function ($) {
             let masonrySelector = $('.wpsr-twitter-masonry, .wpsr-instagram-masonry-activate, .wpsr-facebook-feed-masonry-activate, .wpsr-tiktok-feed-masonry-activate');
             this.activeMasonryLayout(masonrySelector);
 
-            // show hide write a review modal box
-            $('.wpsr-write-review-modal-btn').on("click", function (e) {
+            // show hide write a review modal box (delegated for drawer support)
+            $(document).on("click", '.wpsr-write-review-modal-btn', function (e) {
                 e.preventDefault();
                 let templateId = $(this).parents('.wpsr-reviews-wrapper').attr('id');
                 $('#' + templateId).find('.wpsr-write-review-modal').toggleClass("active");
             });
 
-            $('.wpsr-reviews-form-popup-trigger').on("click", function (e) {
+            $(document).on("click", '.wpsr-reviews-form-popup-trigger', function (e) {
                 e.preventDefault();
 
 
@@ -282,12 +292,31 @@ jQuery(document).ready(function ($) {
                     return;
                 }
 
-                let templateId = $(this).parents('.wpsr-reviews-wrapper').attr('id');
-                $('#' + templateId).find('.wpsr-reviews-form-popup-overlay').toggleClass("wpsr_has_fluent_forms_shortcode");
+                // Use closest() to find the overlay within the same wrapper context,
+                // avoiding duplicate ID issues when shortcode output appears in both
+                // the page and a drawer
+                var $wrapper = $(this).closest('.wpsr-reviews-wrapper');
+                var $overlay = $wrapper.find('.wpsr-reviews-form-popup-overlay');
+
+                // If inside a drawer, move overlay to body so it escapes overflow clipping
+                if ($overlay.closest('.wpsr-product-review-drawer').length) {
+                    $overlay.data('wpsr-original-parent', $overlay.parent());
+                    $overlay.appendTo('body');
+                }
+
+                $overlay.toggleClass("wpsr_has_fluent_forms_shortcode");
             });
 
-            $('.wpsr-reviews-form-popup-overlay .wpsr-popup-close').on('click', function (e) {
-                $('.wpsr-reviews-form-popup-overlay').removeClass('wpsr_has_fluent_forms_shortcode');
+            $(document).on('click', '.wpsr-reviews-form-popup-overlay .wpsr-popup-close', function (e) {
+                var $overlay = $(this).closest('.wpsr-reviews-form-popup-overlay');
+                $overlay.removeClass('wpsr_has_fluent_forms_shortcode');
+
+                // Move overlay back to its original parent if it was relocated
+                var $originalParent = $overlay.data('wpsr-original-parent');
+                if ($originalParent && $originalParent.length) {
+                    $overlay.appendTo($originalParent);
+                    $overlay.removeData('wpsr-original-parent');
+                }
             });
 
             $(document).on('click', function (e) {
@@ -434,9 +463,9 @@ jQuery(document).ready(function ($) {
     $('.wpsr-reviews-badge-btn').on('click', function (e) {
         let display_mode = $(this).data('display_mode');
 
-        if(display_mode === 'popup' || display_mode === 'form_shortcode_id' || display_mode === 'none') {
+        if(display_mode === 'popup' || display_mode === 'form_shortcode_id' || display_mode === 'native_form' || display_mode === 'none') {
             e.preventDefault();
-            if(display_mode === 'form_shortcode_id'){
+            if(display_mode === 'form_shortcode_id' || display_mode === 'native_form'){
                 let templateId = $(this).data('badge_id');
                 $('.wpsr-reviews-badge-'+templateId+' .wpsr-reviews-form-popup-overlay').toggleClass("wpsr_has_fluent_forms_shortcode");
             }
@@ -462,7 +491,33 @@ jQuery(document).ready(function ($) {
         }
     });
 
-    $('.wpsr-woocommerce-context.wpsr-woocommerce-reviews-form .wpsr-write-review').on('click', function (e) {
+    // Generic product review drawer: open on star rating click
+    $(document).on('click', '[data-wpsr-action="open-review-drawer"]', function (e) {
+        e.preventDefault();
+        var target = $(this).data('wpsr-drawer-target');
+        var $drawer = target ? $(target) : $('.wpsr-product-review-drawer').first();
+        if ($drawer.length) {
+            $drawer.addClass('active');
+        }
+    });
+
+    // Generic product review drawer: close on close button click
+    $(document).on('click', '.wpsr-product-review-drawer .wpsr-popup-close', function (e) {
+        e.preventDefault();
+        $(this).closest('.wpsr-product-review-drawer').removeClass('active');
+    });
+
+    // Generic product review drawer: close on click outside
+    $(document).on('click', function (e) {
+        var $drawers = $('.wpsr-product-review-drawer.active');
+        if (!$drawers.length) return;
+        if ($(e.target).closest('[data-wpsr-action="open-review-drawer"]').length) return;
+        if (!$(e.target).closest('.wpsr-product-review-drawer').length) {
+            $drawers.removeClass('active');
+        }
+    });
+
+    $('.wpsr-woocommerce-context.wpsr-woocommerce-reviews-form .woocommerce .wpsr-write-review').on('click', function (e) {
         e.preventDefault();
         // Scroll to WooCommerce reviews form
         let $wooReviewsForm = $('#review_form_wrapper');
@@ -480,6 +535,8 @@ jQuery(document).ready(function ($) {
         var reviewLinks = document.querySelectorAll('a[href*="#reviews"], .woocommerce-review-link, .star-rating a, .woocommerce-product-rating a');
 
         reviewLinks.forEach(function(link) {
+            // Skip links that open the review drawer — they have their own handler
+            if (link.hasAttribute('data-wpsr-action')) return;
             link.addEventListener("click", function(e) {
                 e.preventDefault();
 
@@ -528,7 +585,6 @@ jQuery(document).ready(function ($) {
             if (clickedVideo) {
                 // Some browsers require the play() to be called after a user interaction
                 clickedVideo.play().catch((err) => {
-                    console.log('Video play was prevented by browser:', err);
                 });
             }
         }

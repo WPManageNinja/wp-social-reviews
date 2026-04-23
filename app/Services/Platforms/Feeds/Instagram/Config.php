@@ -122,8 +122,9 @@ class Config
                     'key'      => 'follow_button',
                     'divider' => true,
                     'typography' => true,
-                    'padding' => false,
-                    'border' => false,
+                    'padding' => true,
+                    'border' => true,
+                    'border_radius' => true,
                     'styles' => array(
                         array(
                             'title'      => __('Text Color:', 'wp-social-reviews'),
@@ -142,12 +143,45 @@ class Config
                     )
                 ),
                 array(
-                    'title'     => __('Box', 'wp-social-reviews'),
+                    'title'     => __('Follow Button Hover Style', 'wp-social-reviews'),
+                    'key'      => 'follow_button_hover',
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title'      => __('Text Hover Color:', 'wp-social-reviews'),
+                            'fieldKey'  => 'text_color',
+                            'type'      => 'color_picker',
+                            'flex'      => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title'      => __('Background Hover Color:', 'wp-social-reviews'),
+                            'fieldKey'  => 'background_color',
+                            'type'      => 'color_picker',
+                            'flex'      => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title'      => __('Border Hover Color:', 'wp-social-reviews'),
+                            'fieldKey'  => 'border_color',
+                            'type'      => 'color_picker',
+                            'flex'      => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title'     => __('Header Box', 'wp-social-reviews'),
                     'key'      => 'account_info_wrapper',
                     'divider' => false,
                     'typography' => false,
                     'padding' => true,
                     'border' => true,
+                    'border_radius' => true,
+                    'box_shadow' => true,
                     'styles' => array(
                         array(
                             'title'      => __('Background Color:', 'wp-social-reviews'),
@@ -328,6 +362,7 @@ class Config
                     'typography' => true,
                     'padding' => true,
                     'border' => true,
+                    'border_radius' => true,
                     'styles' => array(
                         array(
                             'title'      => __('Text Color:', 'wp-social-reviews'),
@@ -358,8 +393,12 @@ class Config
                     'key'      => 'pagination',
                     'divider' => false,
                     'typography' => true,
+                    'slider' => array(
+                        'title' => __('Top Spacing', 'wp-social-reviews'),
+                    ),
                     'padding' => true,
                     'border' => true,
+                    'border_radius' => true,
                     'styles' => array(
                         array(
                             'title'      => __('Text Color:', 'wp-social-reviews'),
@@ -377,9 +416,106 @@ class Config
                         ),
                     )
                 ),
+                array(
+                    'title'     => __('Hover Style', 'wp-social-reviews'),
+                    'key'      => 'pagination_hover',
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title'      => __('Text Hover Color:', 'wp-social-reviews'),
+                            'fieldKey'  => 'text_color',
+                            'type'      => 'color_picker',
+                            'flex'      => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title'      => __('Background Hover Color:', 'wp-social-reviews'),
+                            'fieldKey'  => 'background_color',
+                            'type'      => 'color_picker',
+                            'flex'      => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title'      => __('Border Hover Color:', 'wp-social-reviews'),
+                            'fieldKey'  => 'border_color',
+                            'type'      => 'color_picker',
+                            'flex'      => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+            ),
+            'footer' => array(
+                'title' => __('Footer Follow Button', 'wp-social-reviews'),
+                'key'  => 'footer_follow_button',
+                'condition' => array(
+                    'key' => 'follow_button_settings.display_follow_button',
+                    'selector'  => 'true',
+                ),
+                array(
+                    'key'      => 'footer_follow_button',
+                    'divider' => true,
+                    'typography' => true,
+                    'slider' => array(
+                        'title' => __('Top Spacing', 'wp-social-reviews'),
+                    ),
+                    'padding' => true,
+                    'border' => true,
+                    'border_radius' => true,
+                    'styles' => array(
+                        array(
+                            'title'      => __('Text Color:', 'wp-social-reviews'),
+                            'fieldKey'  => 'text_color',
+                            'type'      => 'color_picker',
+                            'flex'      => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title'      => __('Button Background Color', 'wp-social-reviews'),
+                            'fieldKey'  => 'background_color',
+                            'type'      => 'color_picker',
+                            'flex'      => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title'     => __('Hover Style', 'wp-social-reviews'),
+                    'key'      => 'footer_follow_button_hover',
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title'      => __('Text Hover Color:', 'wp-social-reviews'),
+                            'fieldKey'  => 'text_color',
+                            'type'      => 'color_picker',
+                            'flex'      => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title'      => __('Background Hover Color:', 'wp-social-reviews'),
+                            'fieldKey'  => 'background_color',
+                            'type'      => 'color_picker',
+                            'flex'      => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title'      => __('Border Hover Color:', 'wp-social-reviews'),
+                            'fieldKey'  => 'border_color',
+                            'type'      => 'color_picker',
+                            'flex'      => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
             ),
             'content_box' => array(
-                'title' => __('Item Box', 'wp-social-reviews'),
+                'title' => __('Item Content Box', 'wp-social-reviews'),
                 'key'  => 'content_box',
                 array(
                     'key'      => 'content_box',
@@ -387,6 +523,29 @@ class Config
                     'typography' => false,
                     'padding' => true,
                     'border' => true,
+                    'border_radius' => false,
+                    'styles' => array(
+                        array(
+                            'title'      => __('Background Color:', 'wp-social-reviews'),
+                            'fieldKey'  => 'background_color',
+                            'type'      => 'color_picker',
+                            'flex'      => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+            ),
+            'item_box' => array(
+                'title' => __('Item Box', 'wp-social-reviews'),
+                'key'  => 'item_box',
+                array(
+                    'key'      => 'item_box',
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => true,
+                    'border_radius' => true,
+                    'box_shadow' => true,
                     'styles' => array(
                         array(
                             'title'      => __('Background Color:', 'wp-social-reviews'),
@@ -562,6 +721,85 @@ class Config
                         'text_transform'  => Arr::get($settings,'styles.follow_button.typography.text_transform', ''),
                         'text_decoration'  => Arr::get($settings,'styles.follow_button.typography.text_decoration', ''),
                     ),
+                    'padding' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings,'styles.follow_button.padding.top.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.follow_button.padding.top.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.follow_button.padding.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings,'styles.follow_button.padding.right.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.follow_button.padding.right.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.follow_button.padding.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings,'styles.follow_button.padding.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.follow_button.padding.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.follow_button.padding.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings,'styles.follow_button.padding.left.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.follow_button.padding.left.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.follow_button.padding.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings,'styles.follow_button.padding.linked', false),
+                    ),
+                    'border' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings,'styles.follow_button.border.top.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.follow_button.border.top.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.follow_button.border.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings,'styles.follow_button.border.right.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.follow_button.border.right.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.follow_button.border.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings,'styles.follow_button.border.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.follow_button.border.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.follow_button.border.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings,'styles.follow_button.border.left.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.follow_button.border.left.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.follow_button.border.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings,'styles.follow_button.border.linked', false),
+                        'border_style' => Arr::get($settings,'styles.follow_button.border.border_style', ''),
+                        'border_color' => Arr::get($settings,'styles.follow_button.border.border_color', ''),
+                    ),
+                    'border_radius' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings,'styles.follow_button.border_radius.top.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.follow_button.border_radius.top.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.follow_button.border_radius.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings,'styles.follow_button.border_radius.right.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.follow_button.border_radius.right.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.follow_button.border_radius.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings,'styles.follow_button.border_radius.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.follow_button.border_radius.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.follow_button.border_radius.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings,'styles.follow_button.border_radius.left.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.follow_button.border_radius.left.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.follow_button.border_radius.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings,'styles.follow_button.border_radius.linked', false),
+                    ),
+                ),
+                'follow_button_hover' => array(
+                    'selector' => $prefix . ' .wpsr-ig-header-inner .wpsr-ig-follow-btn a:hover',
+                    'color'  => array(
+                        'text_color' => Arr::get($settings,'styles.follow_button_hover.color.text_color', ''),
+                        'background_color' => Arr::get($settings,'styles.follow_button_hover.color.background_color', ''),
+                        'border_color' => Arr::get($settings,'styles.follow_button_hover.color.border_color', ''),
+                    ),
                 ),
                 'account_info_wrapper' => array(
                     'selector' => $prefix . ' .wpsr-ig-header .wpsr-ig-header-inner',
@@ -615,6 +853,38 @@ class Config
                         'linked' => Arr::get($settings,'styles.account_info_wrapper.border.linked', false),
                         'border_style' => Arr::get($settings,'styles.account_info_wrapper.border.border_style', ''),
                         'border_color' => Arr::get($settings,'styles.account_info_wrapper.border.border_color', ''),
+                    ),
+                    'border_radius' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings,'styles.account_info_wrapper.border_radius.top.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.account_info_wrapper.border_radius.top.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.account_info_wrapper.border_radius.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings,'styles.account_info_wrapper.border_radius.right.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.account_info_wrapper.border_radius.right.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.account_info_wrapper.border_radius.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings,'styles.account_info_wrapper.border_radius.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.account_info_wrapper.border_radius.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.account_info_wrapper.border_radius.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings,'styles.account_info_wrapper.border_radius.left.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.account_info_wrapper.border_radius.left.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.account_info_wrapper.border_radius.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings,'styles.account_info_wrapper.border_radius.linked', false),
+                    ),
+                    'box_shadow' => array(
+                        'box_shadow_style' => Arr::get($settings,'styles.account_info_wrapper.box_shadow.box_shadow_style', 'none'),
+                        'horizontal' => Arr::get($settings,'styles.account_info_wrapper.box_shadow.horizontal', ''),
+                        'vertical' => Arr::get($settings,'styles.account_info_wrapper.box_shadow.vertical', ''),
+                        'blur' => Arr::get($settings,'styles.account_info_wrapper.box_shadow.blur', ''),
+                        'spread' => Arr::get($settings,'styles.account_info_wrapper.box_shadow.spread', ''),
+                        'color' => Arr::get($settings,'styles.account_info_wrapper.box_shadow.color', ''),
+                        'inset' => Arr::get($settings,'styles.account_info_wrapper.box_shadow.inset', 'no'),
                     ),
                 ),
                 'content' => array(
@@ -928,6 +1198,29 @@ class Config
                         'border_style' => Arr::get($settings,'styles.popup_call_to_action.border.border_style', ''),
                         'border_color' => Arr::get($settings,'styles.popup_call_to_action.border.border_color', ''),
                     ),
+                    'border_radius' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings,'styles.popup_call_to_action.border_radius.top.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.popup_call_to_action.border_radius.top.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.popup_call_to_action.border_radius.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings,'styles.popup_call_to_action.border_radius.right.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.popup_call_to_action.border_radius.right.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.popup_call_to_action.border_radius.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings,'styles.popup_call_to_action.border_radius.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.popup_call_to_action.border_radius.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.popup_call_to_action.border_radius.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings,'styles.popup_call_to_action.border_radius.left.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.popup_call_to_action.border_radius.left.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.popup_call_to_action.border_radius.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings,'styles.popup_call_to_action.border_radius.linked', false),
+                    ),
                 ),
                 'pagination' => array(
                     'selector' => $prefix . ' .wpsr_more',
@@ -955,6 +1248,13 @@ class Config
                         'font_style'  => Arr::get($settings,'styles.pagination.typography.font_style', ''),
                         'text_transform'  => Arr::get($settings,'styles.pagination.typography.text_transform', ''),
                         'text_decoration'  => Arr::get($settings,'styles.pagination.typography.text_decoration', ''),
+                    ),
+                    'slider'  => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings,'styles.pagination.slider.top.desktop', 0),
+                            'tablet' => Arr::get($settings,'styles.pagination.slider.top.tablet', 0),
+                            'mobile' => Arr::get($settings,'styles.pagination.slider.top.mobile', 0),
+                        ),
                     ),
                     'padding' => array(
                         'top' => array(
@@ -1004,7 +1304,38 @@ class Config
                         'border_style' => Arr::get($settings,'styles.pagination.border.border_style', ''),
                         'border_color' => Arr::get($settings,'styles.pagination.border.border_color', ''),
                     ),
+                    'border_radius' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings,'styles.pagination.border_radius.top.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.pagination.border_radius.top.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.pagination.border_radius.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings,'styles.pagination.border_radius.right.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.pagination.border_radius.right.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.pagination.border_radius.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings,'styles.pagination.border_radius.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.pagination.border_radius.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.pagination.border_radius.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings,'styles.pagination.border_radius.left.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.pagination.border_radius.left.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.pagination.border_radius.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings,'styles.pagination.border_radius.linked', false),
+                    ),
 
+                ),
+                'pagination_hover' => array(
+                    'selector' => $prefix . ' .wpsr_more:hover',
+                    'color'  => array(
+                        'text_color' => Arr::get($settings,'styles.pagination_hover.color.text_color', ''),
+                        'background_color' => Arr::get($settings,'styles.pagination_hover.color.background_color', ''),
+                        'border_color' => Arr::get($settings,'styles.pagination_hover.color.border_color', ''),
+                    ),
                 ),
                 'content_box' => array(
                     'selector' => $prefix . '.wpsr-ig-feed-wrapper .wpsr-ig-post-info',
@@ -1059,7 +1390,183 @@ class Config
                         'border_style' => Arr::get($settings,'styles.content_box.border.border_style', ''),
                         'border_color' => Arr::get($settings,'styles.content_box.border.border_color', ''),
                     ),
-
+                ),
+                'item_box' => array(
+                    'selector' => $prefix . '.wpsr-ig-feed-wrapper .wpsr-ig-post',
+                    'color'  => array(
+                        'background_color' => Arr::get($settings,'styles.item_box.color.background_color', ''),
+                    ),
+                    'border' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings,'styles.item_box.border.top.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.item_box.border.top.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.item_box.border.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings,'styles.item_box.border.right.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.item_box.border.right.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.item_box.border.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings,'styles.item_box.border.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.item_box.border.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.item_box.border.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings,'styles.item_box.border.left.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.item_box.border.left.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.item_box.border.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings,'styles.item_box.border.linked', false),
+                        'border_style' => Arr::get($settings,'styles.item_box.border.border_style', ''),
+                        'border_color' => Arr::get($settings,'styles.item_box.border.border_color', ''),
+                    ),
+                    'border_radius' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings,'styles.item_box.border_radius.top.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.item_box.border_radius.top.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.item_box.border_radius.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings,'styles.item_box.border_radius.right.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.item_box.border_radius.right.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.item_box.border_radius.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings,'styles.item_box.border_radius.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.item_box.border_radius.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.item_box.border_radius.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings,'styles.item_box.border_radius.left.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.item_box.border_radius.left.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.item_box.border_radius.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings,'styles.item_box.border_radius.linked', false),
+                    ),
+                    'box_shadow' => array(
+                        'box_shadow_style' => Arr::get($settings,'styles.item_box.box_shadow.box_shadow_style', 'none'),
+                        'horizontal' => Arr::get($settings,'styles.item_box.box_shadow.horizontal', ''),
+                        'vertical' => Arr::get($settings,'styles.item_box.box_shadow.vertical', ''),
+                        'blur' => Arr::get($settings,'styles.item_box.box_shadow.blur', ''),
+                        'spread' => Arr::get($settings,'styles.item_box.box_shadow.spread', ''),
+                        'color' => Arr::get($settings,'styles.item_box.box_shadow.color', ''),
+                        'inset' => Arr::get($settings,'styles.item_box.box_shadow.inset', 'no'),
+                    ),
+                ),
+                'footer_follow_button' => array(
+                    'selector' => $prefix . ' .wpsr-ig-footer .wpsr-ig-follow-btn a',
+                    'color'  => array(
+                        'text_color' => Arr::get($settings,'styles.footer_follow_button.color.text_color', ''),
+                        'background_color' => Arr::get($settings,'styles.footer_follow_button.color.background_color', ''),
+                    ),
+                    'typography' => array(
+                        'font_size' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.typography.font_size.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.typography.font_size.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.typography.font_size.mobile', ''),
+                        ),
+                        'letter_spacing'  => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.typography.letter_spacing.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.typography.letter_spacing.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.typography.letter_spacing.mobile', ''),
+                        ),
+                        'line_height'  => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.typography.line_height.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.typography.line_height.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.typography.line_height.mobile', ''),
+                        ),
+                        'font_weight'  => Arr::get($settings,'styles.footer_follow_button.typography.font_weight', ''),
+                        'font_style'  => Arr::get($settings,'styles.footer_follow_button.typography.font_style', ''),
+                        'text_transform'  => Arr::get($settings,'styles.footer_follow_button.typography.text_transform', ''),
+                        'text_decoration'  => Arr::get($settings,'styles.footer_follow_button.typography.text_decoration', ''),
+                    ),
+                    'slider'  => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.slider.top.desktop', 0),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.slider.top.tablet', 0),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.slider.top.mobile', 0),
+                        ),
+                    ),
+                    'padding' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.padding.top.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.padding.top.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.padding.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.padding.right.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.padding.right.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.padding.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.padding.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.padding.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.padding.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.padding.left.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.padding.left.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.padding.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings,'styles.footer_follow_button.padding.linked', false),
+                    ),
+                    'border' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.border.top.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.border.top.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.border.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.border.right.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.border.right.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.border.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.border.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.border.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.border.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.border.left.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.border.left.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.border.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings,'styles.footer_follow_button.border.linked', false),
+                        'border_style' => Arr::get($settings,'styles.footer_follow_button.border.border_style', ''),
+                        'border_color' => Arr::get($settings,'styles.footer_follow_button.border.border_color', ''),
+                    ),
+                    'border_radius' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.border_radius.top.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.border_radius.top.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.border_radius.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.border_radius.right.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.border_radius.right.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.border_radius.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.border_radius.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.border_radius.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.border_radius.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings,'styles.footer_follow_button.border_radius.left.desktop', ''),
+                            'tablet' => Arr::get($settings,'styles.footer_follow_button.border_radius.left.tablet', ''),
+                            'mobile' => Arr::get($settings,'styles.footer_follow_button.border_radius.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings,'styles.footer_follow_button.border_radius.linked', false),
+                    ),
+                ),
+                'footer_follow_button_hover' => array(
+                    'selector' => $prefix . ' .wpsr-ig-footer .wpsr-ig-follow-btn a:hover',
+                    'color'  => array(
+                        'text_color' => Arr::get($settings,'styles.footer_follow_button_hover.color.text_color', ''),
+                        'background_color' => Arr::get($settings,'styles.footer_follow_button_hover.color.background_color', ''),
+                        'border_color' => Arr::get($settings,'styles.footer_follow_button_hover.color.border_color', ''),
+                    ),
                 ),
             ),
         ];

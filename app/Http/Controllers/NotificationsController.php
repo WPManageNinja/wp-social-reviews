@@ -32,12 +32,16 @@ class NotificationsController extends Controller
      **/
     public function index(Request $request, Post $post)
     {
+        $search = sanitize_text_field($request->get('search', ''));
+        $filter = sanitize_text_field($request->get('filter', ''));
+        $order_by = sanitize_sql_orderby($request->get('order_by', '')) ?: '';
+
         $notifications = $post->getPosts(
             $this->postType,
-            $request->get('search'),
-            $request->get('filter'),
+            $search,
+            $filter,
             false,
-            $request->get('order_by')
+            $order_by
         );
 
         return [
@@ -61,8 +65,8 @@ class NotificationsController extends Controller
     public function create(Request $request, Post $post)
     {
         try {
-            $platform = $request->get('platform');
-            $onboarding   = $request->get('onboarding');
+            $platform = sanitize_text_field($request->get('platform', ''));
+            $onboarding = rest_sanitize_boolean($request->get('onboarding', false));
 
             $postId = $post->createPost(
                 [
@@ -103,7 +107,9 @@ class NotificationsController extends Controller
      **/
     public function duplicate(Request $request, Post $post)
     {
-        $ids = $request->get('ids', []);
+        $ids = (array) $request->get('ids', []);
+        // sanitize ids as integers
+        $ids = array_map('intval', $ids);
 
         if(empty($ids)) {
             return __('No notifications selected', 'wp-social-reviews');
@@ -112,6 +118,7 @@ class NotificationsController extends Controller
         $response = [];
 
         foreach ( $ids as $id) {
+            $id = intval($id);
             $template = $post->findPost($this->postType, $id);
             $template['post_title'] = '(Duplicate) ' . $template['post_title'];
             $template = $this->app->applyCustomFilters('notification_template_duplicate', $template);
@@ -164,8 +171,9 @@ class NotificationsController extends Controller
     public function update(Request $request, Post $post)
     {
         try {
-            $ids = $request->get('ids', []);
-            $status = $request->get('status');
+            $ids = (array) $request->get('ids', []);
+            $ids = array_map('intval', $ids);
+            $status = sanitize_text_field($request->get('status', ''));
 
             if (empty($ids)) {
                 return [
@@ -173,11 +181,17 @@ class NotificationsController extends Controller
                 ];
             }
 
+            // validate status registered post statuses
+            $allowed_statuses = ['publish','draft','pending','private','trash'];
+            if (!in_array($status, $allowed_statuses, true)) {
+                $status = 'draft';
+            }
+
             $updatedCount = 0;
 
             foreach ($ids as $id) {
                 $args = [
-                    'ID' => $id,
+                    'ID' => intval($id),
                     'post_status' => $status,
                 ];
 
@@ -219,7 +233,8 @@ class NotificationsController extends Controller
      **/
     public function delete(Request $request, Post $post)
     {
-        $ids = $request->get('ids', []);
+        $ids = (array) $request->get('ids', []);
+        $ids = array_map('intval', $ids);
 
         if(empty($ids)) {
             return __('No notifications selected', 'wp-social-reviews');
@@ -227,7 +242,7 @@ class NotificationsController extends Controller
         
         $deletedCount = 0;
         foreach ($ids as $id) {
-            $post->deletePost($id);
+            $post->deletePost(intval($id));
             $deletedCount++;
             do_action('wpsocialreviews/notification_deleted', $id);
         }

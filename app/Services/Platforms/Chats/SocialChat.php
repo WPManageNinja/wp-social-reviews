@@ -28,7 +28,6 @@ class SocialChat extends BaseChat
     {
         $feed_meta = $this->processMetadata($postId);
         $settings        = Config::formatConfig($feed_meta);
-        $pages           = GlobalHelper::getPagesList();
         $postTypes       = GlobalHelper::getPostTypes();
         $languages       = defined('WPSOCIALREVIEWS_PRO') ? (new CountryNames())->get() : [];
 
@@ -42,7 +41,6 @@ class SocialChat extends BaseChat
             'message'          => __('Success', 'wp-social-reviews'),
             'settings'         => $settings,
             'template_details' => $templateDetails,
-            'pages'            => $pages,
             'languages'        => $languages,
             'post_types'       => $postTypes,
         ], 200);

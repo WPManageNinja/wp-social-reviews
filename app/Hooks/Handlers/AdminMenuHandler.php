@@ -3,6 +3,7 @@
 namespace WPSocialReviews\App\Hooks\Handlers;
 
 use WPSocialReviews\App\App;
+use WPSocialReviews\App\Services\DashboardNotices;
 use WPSocialReviews\App\Services\Helper;
 use WPSocialReviews\App\Services\Onboarding\OnboardingService;
 use WPSocialReviews\App\Services\PermissionManager;
@@ -81,6 +82,14 @@ class AdminMenuHandler
 		    );
 	    }
 
+        if (in_array('wpsn_manage_reviews', $permission)) {
+            $submenu['wpsocialninja.php']['review_forms'] = array(
+                __( 'Review Forms', 'wp-social-reviews' ) . '<span class="menu-counter">New</span>',
+                $hasAllPermission ? $dashboardPermission : 'wpsn_manage_reviews',
+                'admin.php?page=wpsocialninja.php#/review-forms',
+            );
+        }
+
 	    if (in_array('wpsn_manage_testimonials', $permission)) {
 		    $submenu['wpsocialninja.php']['testimonials'] = array(
 			    __( 'Testimonials', 'wp-social-reviews' ),
@@ -114,17 +123,25 @@ class AdminMenuHandler
 		}
         if (in_array('wpsn_manage_reviews', $permission)) {
             $submenu['wpsocialninja.php']['custom_sources'] = array(
-                __( 'Custom Sources(Beta)', 'wp-social-reviews' ),
+                __( 'Custom Sources', 'wp-social-reviews' ),
                 $hasAllPermission ? $dashboardPermission : 'wpsn_manage_reviews',
                 'admin.php?page=wpsocialninja.php#/custom-sources',
             );
         }
 
         if (!defined('WPSOCIALREVIEWS_PRO')) {
+            $upgradeButtonConfig = (new DashboardNotices())->getUpgradeButtonConfig();
+            $upgradeButtonText = Arr::get($upgradeButtonConfig, 'text', __('Upgrade To Pro', 'wp-social-reviews'));
+            $upgradeButtonUrl = Arr::get(
+                $upgradeButtonConfig,
+                'pro_purchase_url',
+                'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade'
+            );
+
             $submenu['wpsocialninja.php']['upgrade_to_pro'] = array(
-                '<span style="color: #f9e112;">Upgrade To Pro</span>',
+                '<span style="color: #f9e112;">' . esc_html($upgradeButtonText) . '</span>',
                 $dashboardPermission,
-                'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade',
+                esc_url_raw($upgradeButtonUrl),
             );
         }
 
@@ -180,13 +197,13 @@ class AdminMenuHandler
         echo "<div id='wpsocialreviewsapp'></div>";
 
         do_action('wpsocialreviews/loading_app');
-       // $this->checkForDbMigration();
+        $this->checkForDbMigration();
     }
 
     public function checkForDbMigration()
     {
-        $older_version = get_option('_wp_social_ninja_version', '3.5.0');
-        if (version_compare($older_version, '3.6.1', '<=')) {
+        $older_version = get_option('_wp_social_ninja_version', '4.1.0');
+        if (version_compare($older_version, WPSOCIALREVIEWS_VERSION, '<')) {
             (new ActivationHandler)->handle();
         }
     }
@@ -245,6 +262,16 @@ class AdminMenuHandler
 
             }, 1);
 
+            if (function_exists('wp_enqueue_editor')) {
+                wp_enqueue_editor();
+                wp_enqueue_script('thickbox');
+            }
+
+            if (function_exists('wp_enqueue_media')) {
+                add_filter('user_can_richedit', '__return_true');
+                wp_enqueue_media();
+            }
+
             wp_enqueue_script('wpsocialreviews_boot', WPSOCIALREVIEWS_URL . 'assets/js/social-review-boot.js',
                 array('jquery'), WPSOCIALREVIEWS_VERSION, true);
             // 3rd party developers can now add their scripts here
@@ -289,6 +316,7 @@ class AdminMenuHandler
                 'nonce'                   => wp_create_nonce($slug),
                 'rest'                    => $this->getRestInfo($app),
                 'has_fluent_form'         => defined('FLUENTFORM_VERSION'),
+                'hasFluentCart'           => defined('FLUENTCART_VERSION'),
                 'brand_icons'             => $this->getBrandIcons(),
                 'tp_slug'                 => '_not_defined_yet_',
                 'tp_title'                 => ' ',
@@ -321,16 +349,6 @@ class AdminMenuHandler
                 }
                 return $footerContent;
             }, 11, 1);
-
-            if (function_exists('wp_enqueue_editor')) {
-                wp_enqueue_editor();
-                wp_enqueue_script('thickbox');
-            }
-
-            if (function_exists('wp_enqueue_media')) {
-                add_filter('user_can_richedit', '__return_true');
-                wp_enqueue_media();
-            }
         }
     }
 
@@ -602,7 +620,31 @@ class AdminMenuHandler
                 ]
             ],
             [
-                'id'                 => 10,
+                'id'                 => 11,
+                'platform'           => 'fluent-cart',
+                'platform_title'     => __('Fluent Cart', 'wp-social-reviews'),
+                'image'              => $assetBase . 'icon-fluent-cart-small.png',
+                'apiKey'             => '',
+                'sourceId'           => '',
+                'message'            => '',
+                'reviewsinfo'        => [],
+                'sourceText'         => 'Place',
+                'apiUrl'             => '#',
+                'sourceUrl'          => '#',
+                'exampleURL'         => '',
+                'docs'               => 'https://wpsocialninja.com/docs/fluent-cart-reviews-social-reviews-wp-social-ninja/',
+                'privacy'            => 'https://wpsocialninja.com/privacy-policy/',
+                'termsAndConditions' => 'https://wpsocialninja.com/terms-conditions/',
+                'promotion'          => [
+                    'title' => __('Fluent Cart Reviews', 'wp-social-reviews'),
+                    'description' => __('Fetch & display your Fluent Cart reviews to connect with your audiences without wasting any time.', 'wp-social-reviews'),
+                    'img' => $promoteBase . 'fluent-cart.png',
+                    'proPurchaseUrl' => 'https://wpsocialninja.com/?utm_source=wp_site&amp;utm_medium=plugin&amp;utm_campaign=upgrade',
+                    'features' => $this->reviewsFeatureList()
+                ]
+            ],
+            [
+                'id'                 => 12,
                 'platform'           => 'custom',
                 'platform_title'     => __('Custom', 'wp-social-reviews'),
                 'image'              => $assetBase . 'icon-custom-platform.svg',
@@ -713,10 +755,10 @@ class AdminMenuHandler
                 'icon'  => $assetBase . 'icon-woocommerce.png'
             ],
             [
-                'route' => 'fluent-forms-settings',
-                'title' => 'Fluent Forms Settings',
+                'route' => 'fluent-cart-settings',
+                'title' => 'Fluent Cart Settings',
                 'permission' => ['wpsn_reviews_platforms_settings'],
-                'icon'  => $assetBase . 'fluentform.png'
+                'icon'  => $assetBase . 'icon-fluent-cart-small.png'
             ]
         ]);
     }
@@ -743,6 +785,7 @@ class AdminMenuHandler
             'booking.com'  => WPSOCIALREVIEWS_URL . 'assets/images/icon/icon-booking.com-small.png',
             'fluent_forms' => WPSOCIALREVIEWS_URL . 'assets/images/icon/fluentform.png',
             'woocommerce'  => WPSOCIALREVIEWS_URL . 'assets/images/icon/icon-woocommerce-small.png',
+            'fluent-cart'  => WPSOCIALREVIEWS_URL . 'assets/images/icon/icon-fluent-cart-small.png',
             'custom'       => WPSOCIALREVIEWS_URL . 'assets/images/icon/wp-social-icon.png',
             'testimonial'  => WPSOCIALREVIEWS_URL . 'assets/images/icon/testimonial-icon-small.png',
             'social_wall'  => WPSOCIALREVIEWS_URL . 'assets/images/icon/icon-social-wall.png',

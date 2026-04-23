@@ -3,6 +3,8 @@ import GlobalView from '../components/global/Index';
 import Platforms from '../components/views/Platforms';
 import ChatWidgets from '../components/views/ChatWidgets';
 import CustomSources from '../components/views/CustomSources';
+import ReviewForms from '../components/views/review-forms/ReviewsFormView';
+import ReviewFormEditor from '../components/views/review-forms/ReviewFormEditor';
 import Settings from '../components/views/Settings';
 import SupportAndDocs from '../components/views/SupportAndDocs';
 
@@ -184,11 +186,11 @@ const  globalSettingsViewChildrenRoutes =[
         meta: { title: 'WooCommerce Settings' }
     },
     {
-        path: 'fluent-forms-settings',
-        name: 'fluent-forms-settings',
+        path: 'fluent-cart-settings',
+        name: 'fluent-cart-settings',
         component: ReviewSettings,
 
-        meta: { title: 'Fluent Forms Settings' }
+        meta: { title: 'FluentCart Settings' }
     },
     {
         path: 'shoppable-by-hashtags',
@@ -298,6 +300,13 @@ export const routes = [
                 meta: { title: 'Custom Sources' }
             },
             {
+                path: '/review-forms',
+                name: 'review-forms',
+                component: ReviewForms,
+
+                meta: { title: 'Review Forms' }
+            },
+            {
                 path: '/settings/',
                 component: Settings,
                 children: globalSettingsViewChildrenRoutes,
@@ -388,5 +397,11 @@ export const routes = [
         component: EditCustomSourceView,
 
         meta: { title: 'Edit Custom Source' }
+    },
+    {
+        path: '/review-forms/:id/edit',
+        name: 'review-form-edit',
+        component: ReviewFormEditor,
+        meta: { title: 'Edit Review Form' }
     },
 ];

@@ -123,7 +123,9 @@ if (!empty($reviews)) {
                         $wpsr_review->reviewer_text,
                         $template_meta['contentLanguage']
                     );
-                    do_action('wpsocialreviews/review_images', $wpsr_review_images, $wpsr_review->id);
+                    if (Arr::get($template_meta, 'show_review_images', 'true') !== 'false') {
+                        do_action('wpsocialreviews/review_images', $wpsr_review_images, $wpsr_review->id);
+                    }
                 }
 
                 /**

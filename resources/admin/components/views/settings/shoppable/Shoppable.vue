@@ -182,18 +182,17 @@
                    <span v-if="shoppable_fields.source_type === 'custom_url'">URL</span>
                    <span v-else>Link to</span>
                  </label>
-                 <el-select 
+                 <AsyncMultipleSelect
                    v-if="shoppable_fields.source_type !== 'custom_url'"
-                   v-model="shoppable_fields.url_settings.id" 
-                   size="large" 
-                   allow-create
-                   default-first-option 
-                   placeholder="Select or start typing..."
+                   v-model="shoppable_fields.url_settings.id"
+                   searchRoute="pages/search"
+                   :multiple="false"
+                   :includeEverywhere="false"
+                   :clearable="true"
+                   :extraParams="{ post_type: shoppable_fields.source_type }"
+                   :key="shoppable_fields.source_type"
                    class="wpsr-qr-code-select wpsr-modal-select wpsr-select-input-field"
-                 >
-                   <el-option v-for="(item, index) in posts" :key="index" :label="item.title" :value="item.id">
-                   </el-option>
-                 </el-select>
+                 />
                  <error-view v-if="!shoppable_fields.url_settings.id" :errors="errors" :field="'id'" />
                  <el-input 
                    v-if="shoppable_fields.source_type === 'custom_url'" 
@@ -264,6 +263,7 @@ import Errors from "../../../../errors/Errors";
 import ErrorView from '../../../../errors/errorView';
 import UpgradeToProButton from '../../advertise/UpgradeToProButton';
 import PermissionsNotification from '../../advertise/PermissionsNotification';
+import AsyncMultipleSelect from '../../../core-ui/editor/AsyncMultipleSelect';
 
 let fields = {
   'platform': 'instagram',
@@ -283,7 +283,8 @@ export default {
   components: {
     PermissionsNotification,
     ErrorView,
-    UpgradeToProButton
+    UpgradeToProButton,
+    AsyncMultipleSelect
   },
   data() {
     return {
@@ -300,7 +301,6 @@ export default {
       ],
       show_shoppable_popup: false,
       shoppable_fields: { ...fields },
-      posts: [],
       postType: 'post',
       post_types: [],
       post_type_default: {
@@ -380,7 +380,6 @@ export default {
           if (isOnChange) {
             this.has_item = true;
           }
-          this.posts = response.posts.splice(1);
           this.post_types = response.post_types;
           this.post_types.push(this.post_type_default);
 
@@ -410,29 +409,6 @@ export default {
       this.selected_item = { ...item };
       this.shoppable_fields = this.shoppable_settings[item.platform][index];
       this.postType = item.source_type;
-      this.getPostsByPostType(item.source_type);
-    },
-    getPostsByPostType(source_type) {
-      this.sidebarLoading = true;
-      let tempId = this.shoppable_fields.url_settings.id;
-      this.shoppable_fields.url_settings.id = null;
-      let that = this;
-      this.$get(`shoppable/posts`, {
-        postType: source_type
-      }).then(response => {
-        if (response) {
-          this.posts = response.posts.splice(1);
-          setTimeout(function () {
-            that.shoppable_fields.url_settings.id = tempId;
-          }, 50);
-        }
-      }).catch(errors => {
-        this.handleError(errors);
-      }).always(() => {
-        setTimeout(function () {
-          that.sidebarLoading = false;
-        }, 100);
-      });
     },
     beforeDeleteHandler(index, item) {
       this.selected_index = index;
@@ -466,7 +442,6 @@ export default {
       this.shoppable_fields.url_settings.id = null;
       this.shoppable_fields.url_settings.url = '';
       this.postType = postType;
-      this.getSettings(true);
     },
     onPlatformChange(fields) {
       this.shoppable_settings[this.selected_item.platform].splice(this.selected_index, 1);

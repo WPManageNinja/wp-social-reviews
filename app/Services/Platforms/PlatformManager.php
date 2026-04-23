@@ -15,6 +15,7 @@ class PlatformManager
         'aliexpress',
         'booking.com',
         'facebook',
+        'fluent-cart',
         'woocommerce'
     ];
     /**
@@ -62,6 +63,7 @@ class PlatformManager
             'aliexpress'    => 'icon-aliexpress-small.png',
             'booking.com'   => 'icon-booking.com-small.png',
             'woocommerce'   => 'icon-woocommerce-small.png',
+            'fluent-cart'   => 'icon-fluent-cart-small.png',
             'facebook_feed' => 'icon-facebook-small.png',
             'facebook_feed_dark' => 'icon-facebook-small-dark.png',
             'instagram'     => 'icon-instagram.png',

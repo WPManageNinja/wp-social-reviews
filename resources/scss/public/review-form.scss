@@ -1,0 +1,306 @@
+/* WP Social Ninja - Review Form */
+
+// Variables
+$wpsr-rf-text-primary: #1e293b;
+$wpsr-rf-text-secondary: #334155;
+$wpsr-rf-text-muted: #64748b;
+$wpsr-rf-border: #cbd5e1;
+$wpsr-rf-border-light: #e2e8f0;
+$wpsr-rf-accent: #6366f1;
+$wpsr-rf-accent-hover: #4f46e5;
+$wpsr-rf-rating-default: #cbd5e1;
+$wpsr-rf-rating-star: #f59e0b;
+$wpsr-rf-rating-heart: #ef4444;
+$wpsr-rf-rating-thumbs: #3b82f6;
+$wpsr-rf-error: #ef4444;
+$wpsr-rf-radius: 6px;
+$wpsr-rf-transition: 0.15s ease;
+
+// Form container
+.wpsr-review-form {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+// Form title & subtitle
+.wpsr-review-form-title {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin: 0 0 4px;
+    color: $wpsr-rf-text-primary;
+}
+
+.wpsr-review-form-subtitle {
+    font-size: 0.95em;
+    color: $wpsr-rf-text-muted;
+    margin: 0 0 24px;
+}
+
+// Fields
+.wpsr-review-form-field {
+    margin-bottom: 20px;
+
+    label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: $wpsr-rf-text-secondary;
+        margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    textarea {
+        display: block;
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: $wpsr-rf-text-primary;
+        background: #fff;
+        border: 1px solid $wpsr-rf-border;
+        border-radius: $wpsr-rf-radius;
+        box-sizing: border-box;
+        transition: border-color $wpsr-rf-transition, box-shadow $wpsr-rf-transition;
+
+        &:focus {
+            outline: none;
+            border-color: $wpsr-rf-accent;
+            box-shadow: 0 0 0 3px rgba($wpsr-rf-accent, 0.1);
+        }
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+}
+
+// Required marker
+.wpsr-required {
+    color: $wpsr-rf-error;
+    margin-left: 2px;
+}
+
+// Rating widget
+.wpsr-rating-input {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.wpsr-rating-icon {
+    cursor: pointer;
+    color: $wpsr-rf-rating-default;
+    transition: color $wpsr-rf-transition, transform $wpsr-rf-transition;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+
+    &:hover {
+        transform: scale(1.15);
+    }
+
+    svg {
+        display: block;
+    }
+
+    &.wpsr-rating-hover,
+    &.wpsr-rating-active {
+        color: $wpsr-rf-rating-star;
+    }
+}
+
+// Rating styles
+.wpsr-rating-input[data-style="heart"] {
+    .wpsr-rating-icon.wpsr-rating-hover,
+    .wpsr-rating-icon.wpsr-rating-active {
+        color: $wpsr-rf-rating-heart;
+    }
+}
+
+.wpsr-rating-input[data-style="emoji"] {
+    .wpsr-rating-icon.wpsr-rating-hover,
+    .wpsr-rating-icon.wpsr-rating-active {
+        color: $wpsr-rf-rating-star;
+    }
+}
+
+.wpsr-rating-input[data-style="thumbs"] {
+    .wpsr-rating-icon.wpsr-rating-hover,
+    .wpsr-rating-icon.wpsr-rating-active {
+        color: $wpsr-rf-rating-thumbs;
+    }
+}
+
+.wpsr-rating-input[data-style="number"] {
+    .wpsr-rating-icon {
+        width: 36px;
+        height: 36px;
+        border: 2px solid $wpsr-rf-border;
+        border-radius: 50%;
+        font-size: 14px;
+        font-weight: 600;
+        color: $wpsr-rf-text-muted;
+        background: #fff;
+
+        &.wpsr-rating-hover,
+        &.wpsr-rating-active {
+            border-color: $wpsr-rf-accent;
+            background: $wpsr-rf-accent;
+            color: #fff;
+        }
+    }
+}
+
+// Checkbox fields
+.wpsr-field-checkbox {
+    label {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-weight: 400;
+        cursor: pointer;
+    }
+
+    input[type="checkbox"] {
+        margin-top: 3px;
+        flex-shrink: 0;
+    }
+
+    a {
+        color: $wpsr-rf-accent;
+        text-decoration: underline;
+    }
+}
+
+// Media upload
+.wpsr-field-media {
+    input[type="file"] {
+        font-size: 14px;
+    }
+}
+
+.wpsr-media-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    overflow: visible;
+
+    .wpsr-media-preview-item {
+        position: relative;
+        display: inline-block;
+        overflow: visible;
+    }
+
+    img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: $wpsr-rf-radius;
+        border: 1px solid $wpsr-rf-border-light;
+    }
+
+    .wpsr-media-remove {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        z-index: 1;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #ff4d4f;
+        color: #fff;
+        border: none;
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+
+        &:hover {
+            background: #cf1322;
+        }
+    }
+}
+
+.wpsr-media-notice {
+    font-size: 13px;
+    color: $wpsr-rf-error;
+    margin: 6px 0 0;
+}
+
+// Submit button
+.wpsr-review-form-submit {
+    margin-top: 24px;
+}
+
+.wpsr-review-form-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 24px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #fff;
+    background: $wpsr-rf-accent;
+    border: none;
+    border-radius: $wpsr-rf-radius;
+    cursor: pointer;
+    transition: background $wpsr-rf-transition;
+
+    &:hover {
+        background: $wpsr-rf-accent-hover;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+// Messages
+.wpsr-review-form-messages {
+    margin-top: 16px;
+}
+
+.wpsr-review-form-message-success {
+    padding: 12px 16px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: $wpsr-rf-radius;
+    color: #166534;
+    font-size: 14px;
+}
+
+.wpsr-review-form-message-error {
+    padding: 12px 16px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: $wpsr-rf-radius;
+    color: #991b1b;
+    font-size: 14px;
+}
+
+// Login required
+.wpsr-review-form-login-required {
+    padding: 16px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: $wpsr-rf-radius;
+    color: #92400e;
+    font-size: 14px;
+    text-align: center;
+}
+
+// Loading state
+.wpsr-review-form.wpsr-form-loading {
+    .wpsr-review-form-btn {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+}

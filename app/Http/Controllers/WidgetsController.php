@@ -34,7 +34,10 @@ class WidgetsController extends Controller
      **/
     public function index(Request $request, Widget $widget)
     {
-        $widgets = $widget->getWidgetTemplate($request->get('search'));
+        // sanitize search term
+        $search = sanitize_text_field($request->get('search', ''));
+
+        $widgets = $widget->getWidgetTemplate($search);
 
         return [
             'message'            => 'success',
@@ -56,7 +59,8 @@ class WidgetsController extends Controller
     public function create(Request $request, Post $post)
     {
         try {
-            $onboarding   = $request->get('onboarding');
+            // normalize onboarding flag to boolean
+            $onboarding = rest_sanitize_boolean($request->get('onboarding', false));
 
             $widgetId = $post->createPost(
                 [
@@ -68,7 +72,7 @@ class WidgetsController extends Controller
 
 
             $widgetMeta = Config::formatConfig();
-            $widgetMeta['chat_settings']['created_from_onboarding'] = $onboarding;
+            $widgetMeta['chat_settings']['created_from_onboarding'] = (bool) $onboarding;
 
             // Use the same serialization logic as SocialChat
             global $wpdb;
@@ -98,8 +102,9 @@ class WidgetsController extends Controller
      **/
     public function duplicate(Request $request, Post $post)
     {
-        $ids = $request->get('ids', []);
-        
+        $ids = (array) $request->get('ids', []);
+        $ids = array_map('intval', $ids);
+
         if (empty($ids)) {
             return __('No widgets selected', 'wp-social-reviews');
         }
@@ -162,11 +167,19 @@ class WidgetsController extends Controller
     public function update(Request $request, Post $post)
     {
         try {
-            $ids = $request->get('ids', []);
-            $status = $request->get('status', 'publish');
+            $ids = (array) $request->get('ids', []);
+            $ids = array_map('intval', $ids);
+
+            $status = sanitize_text_field($request->get('status', 'publish'));
 
             if (empty($ids)) {
                 return __('No widgets selected', 'wp-social-reviews');
+            }
+
+            // validate status registered post statuses if available
+            $allowed_statuses = ['publish','draft','pending','private','trash'];
+            if (!in_array($status, $allowed_statuses, true)) {
+                $status = 'draft';
             }
 
             $updatedCount = 0;
@@ -210,7 +223,8 @@ class WidgetsController extends Controller
      **/
     public function delete(Request $request, Post $post)
     {
-        $ids = $request->get('ids', []);
+        $ids = (array) $request->get('ids', []);
+        $ids = array_map('intval', $ids);
 
         if(empty($ids)) {
             return __('No widgets selected', 'wp-social-reviews');

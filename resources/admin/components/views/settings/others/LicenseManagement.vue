@@ -87,8 +87,8 @@
                     <div class="wpsr-connection-upgrade-message">
                       <h2>Upgrade to WP Social Ninja Pro and unlock all the features</h2>
                       <p>Get access to all premium features, priority support, and regular updates with our Pro version.</p>
-                      <a :href="pro_purchase_url" class="wpsr-upgrade-btn wpsr-extend-btn" target="_blank">
-                        <span class="wpsr-crown-icon"><ProCrownIcon :width="20" :height="20"/></span> Upgrade to Pro
+                      <a :href="upgradeBtnConfig.pro_purchase_url" class="wpsr-upgrade-btn wpsr-extend-btn" target="_blank">
+                        <span class="wpsr-crown-icon"><ProCrownIcon :width="20" :height="20"/></span> {{ upgradeBtnConfig.text || 'Upgrade to Pro' }}
                       </a>
                     </div>
                   </div>
@@ -123,6 +123,15 @@ export default {
             licenseKey: '',
             showNewLicenseInput: false,
             errorMessage: ''
+        }
+    },
+    computed: {
+        upgradeBtnConfig() {
+            return {
+                text: 'Upgrade to Pro',
+                pro_purchase_url: 'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade',
+                ...(this.appVars?.upgrade_btn_config || {})
+            };
         }
     },
     methods: {

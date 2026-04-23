@@ -28,43 +28,85 @@
       <div class="wpsr-table-controls wpsr-display-block">
         <div class="wpsr-d-flex wpsr-jc-between">
           <div class="wpsr-controls-left">
+            <div class="wpsr_status_tabs">
+              <div class="wpsr_segmented_control">
+                <button
+                  :class="['wpsr-tab-button', { active: statusFilter === 'all' }]"
+                  @click="changeStatusTab('all')"
+                >
+                  {{ $t('All') }}
+                </button>
+                <button
+                  :class="['wpsr-tab-button', { active: statusFilter === 'publish' }]"
+                  @click="changeStatusTab('publish')"
+                >
+                  {{ $t('Approved') }}
+                </button>
+                <button
+                  :class="['wpsr-tab-button', { active: statusFilter === 'unpublish' }]"
+                  @click="changeStatusTab('unpublish')"
+                >
+                  {{ $t('Pending') }}
+                </button>
+                <button
+                    :class="['wpsr-tab-button', { active: statusFilter === 'spam' }]"
+                    @click="changeStatusTab('spam')"
+                >
+                  {{ $t('Spam') }}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="wpsr-controls-right">
             <div class="wpsr-controls-bulk-actions">
-              <el-select class="wpsr-select-field-primary" v-model="bulkAction" placeholder="Bulk Action" size="default" style="width: 160px;">
-                <el-option label="Bulk Actions" value="">
+              <el-select class="wpsr-select-field-primary" v-model="bulkAction" :placeholder="$t('Bulk Action')" size="default" style="width: 160px;">
+                <el-option :label="$t('Bulk Actions')" value="">
                   <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
                     <el-icon><Plus /></el-icon>
-                    <span>Bulk Actions</span>
+                    <span>{{ $t('Bulk Actions') }}</span>
                   </span>
                 </el-option>
-                <el-option label="Enable" value="enable">
+                <el-option :label="$t('Approve')" value="enable">
                   <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
                     <el-icon><View /></el-icon>
-                    <span>Enable</span>
+                    <span>{{ $t('Approve') }}</span>
                   </span>
                 </el-option>
-                <el-option label="Disable" value="disable">
+                <el-option :label="$t('Disapprove')" value="disable">
                   <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
                     <el-icon><Hide /></el-icon>
-                    <span>Disable</span>
+                    <span>{{ $t('Disapprove') }}</span>
                   </span>
                 </el-option>
-                <el-option label="Duplicate" value="duplicate">
+                <el-option :label="$t('Mark as Spam')" value="mark-spam">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><WarningFilled /></el-icon>
+                    <span>{{ $t('Mark as Spam') }}</span>
+                  </span>
+                </el-option>
+                <el-option :label="$t('Not Spam')" value="not-spam">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><CircleCheck /></el-icon>
+                    <span>{{ $t('Not Spam') }}</span>
+                  </span>
+                </el-option>
+                <el-option :label="$t('Duplicate')" value="duplicate">
                   <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
                     <el-icon><DocumentCopy /></el-icon>
-                    <span>Duplicate</span>
+                    <span>{{ $t('Duplicate') }}</span>
                   </span>
                 </el-option>
-                <el-option label="Delete" value="delete">
+                <el-option :label="$t('Delete')" value="delete">
                   <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
                     <el-icon><Delete /></el-icon>
-                    <span>Delete</span>
+                    <span>{{ $t('Delete') }}</span>
                   </span>
                 </el-option>
               </el-select>
-              <el-button @click="applyBulkAction" :disabled="!selectedItems.length">Apply</el-button>
+              <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
             </div>
             <div class="wpsr-controls-filter">
-              <el-select class="wpsr-select-field-primary" v-model="filter_value" placeholder="Select Platform" size="small" clearable v-if="Object.entries(validPlatforms).length" @change="getItems" style="width: 220px;">
+              <el-select class="wpsr-select-field-primary" v-model="filter_value" :placeholder="$t('Select Platform')" size="small" clearable v-if="Object.entries(validPlatforms).length" @change="getItems" style="width: 220px;">
                 <el-option
                     v-for="item in validPlatforms"
                     :key="item.value"
@@ -74,8 +116,6 @@
                 </el-option>
               </el-select>
             </div>
-          </div>
-          <div class="wpsr-controls-right">
             <el-input
                 class="wpsr-input-default"
                 v-model="search_string"
@@ -163,7 +203,11 @@
 
           <el-table-column :label="$t('Status')" width="90">
               <template #default="scope">
+                <el-tag v-if="scope.row.review_approved === '2'" type="danger" size="small">
+                  {{ $t('Spam') }}
+                </el-tag>
                 <el-switch
+                    v-else
                     v-model="scope.row.review_approved"
                     active-value="1"
                     inactive-value="0"
@@ -177,32 +221,48 @@
 
           <el-table-column width="70" align="center">
             <template #default="scope">
-              <el-dropdown v-if="(appVars.platforms_cards && appVars.platforms_cards.every(card => card.platform !== scope.row.platform_name)) || (scope.row.platform_name === 'woocommerce' || scope.row.platform_name === 'custom')" class="wpsr-actions" trigger="click" @command="(command) => handleRowAction(command, scope.row)">
+              <el-dropdown class="wpsr-actions" trigger="click" @command="(command) => handleRowAction(command, scope.row)">
                 <el-button text>
                   <el-icon size="16" color="var(--wpsr-svg-primary-color)"><MoreFilled /></el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="approve">
+                    <el-dropdown-item command="approve" v-if="scope.row.review_approved !== '2'">
                       <el-icon v-if="scope.row.review_approved === '0'"><CircleCheck /></el-icon>
                       <el-icon v-else><CircleClose /></el-icon>
-                      <span v-if="scope.row.platform_name === 'fluent_forms' || scope.row.platform_name === 'woocommerce' || scope.row.platform_name === 'custom'">
+                      <span>
                         {{ scope.row.review_approved === '0' ? $t('Approve') : $t('Disapprove') }}
-                      </span>
-                      <span v-else>
-                        {{ scope.row.review_approved === '0' ? $t('Enable') : $t('Disable') }}
                       </span>
                     </el-dropdown-item>
 
-                    <el-dropdown-item command="edit">
-                      <el-icon><Edit /></el-icon> Edit
+                    <el-dropdown-item
+                      v-if="scope.row.review_approved !== '2'"
+                      command="mark-spam"
+                      class="wpsr-action-spam"
+                    >
+                      <el-icon><WarningFilled /></el-icon> {{ $t('Mark as Spam') }}
                     </el-dropdown-item>
-                    <el-dropdown-item command="duplicate">
-                      <el-icon><DocumentCopy /></el-icon> Duplicate
+
+                    <el-dropdown-item
+                      v-if="scope.row.review_approved === '2'"
+                      command="not-spam"
+                    >
+                      <el-icon><CircleCheck /></el-icon> {{ $t('Not Spam') }}
                     </el-dropdown-item>
-                    <el-dropdown-item command="delete" class="wpsr-action-delete">
-                      <el-icon><Delete /></el-icon> Delete
-                    </el-dropdown-item>
+
+                    <div v-if="(appVars.platforms_cards && appVars.platforms_cards.every(card => card.platform !== scope.row.platform_name)) || (scope.row.platform_name === 'woocommerce' || scope.row.platform_name === 'custom')">
+                      <el-dropdown-item command="edit">
+                        <el-icon><Edit /></el-icon> Edit
+                      </el-dropdown-item>
+                      <el-dropdown-item command="duplicate">
+                        <el-icon><DocumentCopy /></el-icon> Duplicate
+                      </el-dropdown-item>
+                      <el-dropdown-item command="delete" class="wpsr-action-delete">
+                        <el-icon><Delete /></el-icon> Delete
+                      </el-dropdown-item>
+                    </div>
+
+
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -472,6 +532,12 @@ export default {
           const newStatus = row.review_approved === '0' ? 'enable' : 'disable';
           this.updateItemStatus(row, newStatus);
           break;
+        case 'mark-spam':
+          this.markAsSpam(row);
+          break;
+        case 'not-spam':
+          this.markAsNotSpam(row);
+          break;
         case 'edit':
           this.beforeEditHandler(row);
           break;
@@ -515,15 +581,6 @@ export default {
     addSources() {
       this.$router.push('/custom-sources?create=true');
     },
-    handleSwitchChange(row, newValue) {
-      // When newValue is '1', we want to enable (approve)
-      // When newValue is '0', we want to disable (disapprove)
-      const newStatus = newValue === '1' ? 'enable' : 'disable';
-
-      // Update the row value first
-      row.review_approved = newValue;
-      this.updateItemStatus(row, newStatus);
-    },
     beforeEditHandler(row) {
       this.editRow = row;
       if (!this.has_pro) {
@@ -535,10 +592,11 @@ export default {
     },
     isRowSelectable(row) {
       if (this.bulkAction === 'delete') {
-        return row.platform_name === 'custom' || 
-               row.platform_name === 'fluent_forms' || 
+        return row.platform_name === 'custom' ||
+               row.platform_name === 'fluent_forms' ||
                row.platform_name === 'testimonial' ||
-               row.platform_name === 'woocommerce';
+               row.platform_name === 'woocommerce' ||
+               row.platform_name === 'native_form';
       }
       return true;
     },
@@ -553,6 +611,7 @@ export default {
         return;
       }
 
+      // Custom logic for AllReviews: Filter out platform reviews for delete action
       if (this.bulkAction === 'delete') {
         const platformReviews = this.selectedItems.filter(item => 
           item.platform_name !== 'custom' && 
@@ -574,6 +633,7 @@ export default {
         }
       }
 
+      // Call mixin's applyBulkAction to handle all actions including spam
       switch(this.bulkAction) {
         case 'delete':
           this.beforeBulkDeleteHandler();
@@ -584,6 +644,12 @@ export default {
         case 'enable':
         case 'disable':
           this.bulkStatusItems();
+          break;
+        case 'mark-spam':
+          this.bulkMarkAsSpam();
+          break;
+        case 'not-spam':
+          this.bulkMarkAsNotSpam();
           break;
         default:
           this.$notify.warning('Selected action is not supported yet');

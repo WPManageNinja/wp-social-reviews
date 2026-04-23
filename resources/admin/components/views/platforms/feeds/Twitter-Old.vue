@@ -26,7 +26,7 @@
               <!-- start of manual connection input fields -->
               <div v-if="isManualConnect && !isManuallyConnected">
                     <h4>{{$t('Consumer Key(API Key):')}}<el-tooltip class="item" effect="dark" :content="$t('A Consumer Key is needed, if you want to use credentials from your own X (Twitter) App')" placement="right-start">
-                        <i class="el-icon-info"></i>
+                      <el-icon><InfoFilled /></el-icon>
                     </el-tooltip></h4>
                     <InputPassword
                         id="consumer_key"
@@ -36,7 +36,7 @@
                         class="wpsr-mb-20"
                     />
                     <h4>{{$t('Consumer Secret(API Secret Key):')}}<el-tooltip class="item" effect="dark" :content="$t('A Consumer Secret is needed, if you want to use credentials from your own X (Twitter) App')" placement="right-start">
-                        <i class="el-icon-info"></i>
+                      <el-icon><InfoFilled /></el-icon>
                     </el-tooltip></h4>
                     <InputPassword
                         id="consumer_secret"
@@ -50,7 +50,7 @@
 
                 <div v-if="isManualConnect && !isManuallyConnected">
                 <h4>{{$t('Access Token:')}} <el-tooltip class="item" effect="dark" :content="$t('This will allow the plugin to connect to the X (Twitter) API')" placement="right-start">
-                    <i class="el-icon-info"></i>
+                  <el-icon><InfoFilled /></el-icon>
                 </el-tooltip></h4>
                   <InputPassword
                       id="oauth_token"
@@ -60,7 +60,7 @@
                       class="wpsr-mb-20"
                   />
                 <h4>{{$t('Access Token Secret:')}} <el-tooltip class="item" effect="dark" :content="$t('This will allow the plugin to connect to the X (Twitter) API')" placement="right-start">
-                    <i class="el-icon-info"></i>
+                  <el-icon><InfoFilled /></el-icon>
                 </el-tooltip></h4>
                   <InputPassword
                       id="oauth_token_secret"

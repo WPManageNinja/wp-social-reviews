@@ -22,7 +22,7 @@ $wpsr_ai_enabled = Arr::get($template_meta, 'ai_summary.enabled', false);
 
 $wpsr_wrapper_atts_array = [
     'id' => esc_attr($wpsr_wrapper_id),
-    'class' => 'wpsr-reviews-' . esc_attr($templateId) . '  wpsr-reviews-wrapper wpsr-feed-wrap wpsr_content '.esc_attr($wpsr_position) .' '.esc_attr($wpsr_has_slider) . ' '.esc_attr($wpsr_equal_height). ' ' . esc_attr($wpsr_content_length_deactivated) .' wpsr-reviews-template-'. esc_attr($wpsr_template).' wpsr-reviews-layout-'.esc_attr($templateType).' '.esc_attr($wpsr_header_enable),
+    'class' => 'wpsr-reviews-' . esc_attr($templateId) . ' wpsr-reviews-wrapper wpsr-feed-wrap wpsr_content '.esc_attr($wpsr_position) .' '.esc_attr($wpsr_has_slider) . ' '.esc_attr($wpsr_equal_height). ' ' . esc_attr($wpsr_content_length_deactivated) .' wpsr-reviews-template-'. esc_attr($wpsr_template).' wpsr-reviews-layout-'.esc_attr($templateType).' '.esc_attr($wpsr_header_enable),
     'data-column' => $wpsr_desktop_column_number,
     'data-platforms' => $wpsr_data_platforms,
 ];
@@ -48,12 +48,12 @@ echo wp_kses('<div ' . $wpsr_wrapper_atts . '>', array(
 ));
 
 if($templateType === 'badge'){
-    echo '<a class="wpsr-popup-close" href="#">
-    <svg viewBox="0 0 16 16" style="fill: rgb(255, 255, 255);">
+    echo '<button type="button" class="wpsr-popup-close" aria-label="' . esc_attr__('Close popup', 'wp-social-reviews') . '">
+    <svg viewBox="0 0 16 16" style="fill: rgb(255, 255, 255);" aria-hidden="true" focusable="false">
        <path d="M3.426 2.024l.094.083L8 6.586l4.48-4.479a1 1 0 011.497 1.32l-.083.095L9.414 8l4.48 4.478a1 1 0 01-1.32 1.498l-.094-.083L8 9.413l-4.48 4.48a1 1 0 01-1.497-1.32l.083-.095L6.585 8 2.106 3.522a1 1 0 011.32-1.498z">
        </path>
     </svg>
-    </a>';
+    </button>';
 }
 
 if($templateType === 'notification') {
@@ -70,7 +70,9 @@ if(!in_array('testimonial', $platforms)) {
     do_action('wpsocialreviews/render_reviews_template_business_info', $reviews, $business_info, $template_meta, $templateId, $translations);
 }
 if($template_meta['enable_schema'] === 'true'){
+    $wpsr_schema_type = Arr::get($template_meta, 'schema_settings.schema_type', 'aggregate_rating');
     $wpsr_name = Arr::get($template_meta, 'schema_settings.business_name');
+    $wpsr_business_description = Arr::get($template_meta, 'schema_settings.business_description');
     $wpsr_type = Arr::get($template_meta, 'schema_settings.business_type');
     $wpsr_image = Arr::get($template_meta, 'schema_settings.business_logo');
     $wpsr_telephone = Arr::get($template_meta, 'schema_settings.business_telephone');
@@ -78,26 +80,72 @@ if($template_meta['enable_schema'] === 'true'){
     $wpsr_business_total_rating   = Arr::get($template_meta, 'schema_settings.business_total_rating');
     $wpsr_include_business_address = Arr::get($template_meta, 'schema_settings.include_business_address');
     $wpsr_average_rating = Arr::get($business_info, 'average_rating', 0);
-    $wpsr_rating_value = $wpsr_business_average_rating ?: $wpsr_average_rating;
+    $wpsr_rating_value = $wpsr_average_rating ?: $wpsr_business_average_rating;
 
     $wpsr_total_rating = Arr::get($business_info, 'total_rating', 0);
-    $wpsr_rating_count = $wpsr_business_total_rating ?: $wpsr_total_rating;
+    $wpsr_rating_count = $wpsr_total_rating ?: $wpsr_business_total_rating;
 
-    $wpsr_schema_array = [
-        '@context' => 'https://schema.org/',
-        '@type' => 'AggregateRating',
-        'itemReviewed' => [
-            '@type' => $wpsr_type,
-            'image' => $wpsr_image,
+    // Build schema based on type
+    if($wpsr_schema_type === 'product'){
+        // Product schema with reviews
+        $wpsr_schema_array = [
+            '@context' => 'https://schema.org/',
+            '@type' => 'Product',
             'name' => $wpsr_name,
-            'telephone' => $wpsr_telephone
-        ],
-        'ratingValue' => number_format($wpsr_rating_value, 1),
-        'bestRating' => '5',
-        'ratingCount' => $wpsr_rating_count
-    ];
+            'image' => $wpsr_image,
+            'description' => $wpsr_business_description,
+            'aggregateRating' => [
+                '@type' => 'AggregateRating',
+                'ratingValue' => number_format($wpsr_rating_value, 1),
+                'reviewCount' => $wpsr_rating_count
+            ]
+        ];
 
-    if($wpsr_include_business_address === 'true'){
+        // Add individual reviews if configured
+        $wpsr_include_reviews_count = Arr::get($template_meta, 'schema_settings.include_reviews_in_schema', 0);
+        if($wpsr_include_reviews_count > 0 && !empty($reviews)){
+            $wpsr_reviews_array = json_decode(json_encode($reviews), true);
+            $wpsr_reviews_to_include = array_slice($wpsr_reviews_array, 0, min($wpsr_include_reviews_count, 50));
+            $wpsr_schema_reviews = [];
+
+            foreach($wpsr_reviews_to_include as $wpsr_review){
+                $wpsr_review_item = [
+                    '@type' => 'Review',
+                    'reviewBody' => Arr::get($wpsr_review, 'reviewer_text', ''),
+                    'author' => [
+                        '@type' => 'Person',
+                        'name' => Arr::get($wpsr_review, 'reviewer_name', '')
+                    ],
+                    'reviewRating' => [
+                        '@type' => 'Rating',
+                        'ratingValue' => Arr::get($wpsr_review, 'rating', 0)
+                    ]
+                ];
+                $wpsr_schema_reviews[] = $wpsr_review_item;
+            }
+
+            if(!empty($wpsr_schema_reviews)){
+                $wpsr_schema_array['review'] = $wpsr_schema_reviews;
+            }
+        }
+    } else {
+        // Default AggregateRating schema
+        $wpsr_schema_array = [
+            '@context' => 'https://schema.org/',
+            '@type' => 'AggregateRating',
+            'itemReviewed' => [
+                '@type' => $wpsr_type,
+                'image' => $wpsr_image,
+                'name' => $wpsr_name,
+                'telephone' => $wpsr_telephone
+            ],
+            'ratingValue' => number_format($wpsr_rating_value, 1),
+            'bestRating' => '5',
+            'ratingCount' => $wpsr_rating_count
+        ];
+    }
+
+    if($wpsr_include_business_address === 'true' && $wpsr_schema_type === 'aggregate_rating'){
         $wpsr_business_street_address = Arr::get($template_meta, 'schema_settings.business_street_address');
         $wpsr_business_city = Arr::get($template_meta, 'schema_settings.business_address_city');
         $wpsr_business_state = Arr::get($template_meta, 'schema_settings.business_address_state');

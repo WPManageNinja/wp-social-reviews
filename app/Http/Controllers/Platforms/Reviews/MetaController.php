@@ -15,10 +15,12 @@ use WPSocialReviews\App\Services\Platforms\Reviews\Config as ReviewConfig;
 use WPSocialReviews\App\Services\Platforms\ReviewImageOptimizationHandler;
 use WPSocialReviews\App\Services\Includes\CountryNames;
 use WPSocialReviews\App\Services\Onboarding\OnboardingHelper;
+use WPSocialReviews\App\Models\ReviewForm;
 class MetaController extends Controller
 {
     public function index($templateId, $isFirstRound = false)
     {
+        $templateId = absint($templateId);
         $reviewConfig = new ReviewConfig();
         $templateDetails    = get_post($templateId);
         $feed_template_style_meta = get_post_meta($templateId, '_wpsr_template_styles_config', true);
@@ -109,7 +111,6 @@ class MetaController extends Controller
             'template_details'   => $templateDetails,
             'template_meta'      => $formattedMeta,
             'country_list'       => $countryList,
-            'pages'              => [],
             'post_types'         => [],
             'all_business_info'  => $allBusinessInfo,
 	        'categories'         => $categories,
@@ -119,6 +120,7 @@ class MetaController extends Controller
             'image_settings'     => $advanceSettings,
             'needs_immediate_update' => $needsImmediateUpdate,
             'can_enable_ai_summary' => $canEnableAISummary,
+            'review_forms'       => $this->getReviewFormsList(),
         ];
 
         // Always include all_reviews for initial load so frontend has all data needed
@@ -132,8 +134,7 @@ class MetaController extends Controller
             $data['ai_summary_errors'] = $aiSummaryError;
         }
 
-        if(isset($templateDetails->post_type) && $templateDetails->post_type === 'wpsr_reviews_notify'){
-            $data['pages'] = GlobalHelper::getPagesList();
+        if (isset($templateDetails->post_type) && ($templateDetails->post_type === 'wpsr_reviews_notify' || $templateDetails->post_type === 'wp_social_reviews')) {
             $data['post_types'] = GlobalHelper::getPostTypes();
         }
 
@@ -142,6 +143,24 @@ class MetaController extends Controller
         }
 
         return $data;
+    }
+
+    private function getReviewFormsList()
+    {
+        $forms = [];
+        if (defined('WPSOCIALREVIEWS_PRO') && class_exists(ReviewForm::class)) {
+            $items = ReviewForm::select(['id', 'title', 'status'])
+                ->where('status', 'active')
+                ->orderBy('id', 'desc')
+                ->get();
+            foreach ($items as $item) {
+                $forms[] = [
+                    'id'    => $item->id,
+                    'title' => $item->title,
+                ];
+            }
+        }
+        return $forms;
     }
 
     public function canUserEnableAISummary(Request $request, $templateId)
@@ -179,8 +198,11 @@ class MetaController extends Controller
 
     public function update(Request $request, $templateId)
     {
+        $templateId = absint($templateId);
         $templateMeta = wp_unslash($request->get('template_meta'));
         $templateMeta = json_decode($templateMeta, true);
+        $templateMeta = $this->sanitizeTemplateMeta($templateMeta);
+
         if(
             defined('WPSOCIALREVIEWS_PRO') &&
             class_exists('\WPSocialReviewsPro\App\Services\TemplateCssHandler')){
@@ -252,8 +274,11 @@ class MetaController extends Controller
 
     public function edit(Request $request, $templateId)
     {
+        $templateId = absint($templateId);
         $templateMeta = wp_unslash($request->get('template_meta'));
         $templateMeta = json_decode($templateMeta, true);
+        $templateMeta = $this->sanitizeTemplateMeta($templateMeta);
+
 	    $currentPlatforms  = $templateMeta['platform'];
 	    if (empty($templateMeta['platform'])) {
 		    $templateMeta['filterByTitle']   = 'all';
@@ -363,9 +388,7 @@ class MetaController extends Controller
 
         else if($display_mode === 'page') {
             $id = Arr::get($template_meta,'id', '');
-            if($id) {
-                $url = get_the_permalink($id);
-            }
+            $url = $id ? get_the_permalink($id) : '';
         }
 
         return $url;
@@ -376,9 +399,13 @@ class MetaController extends Controller
         $page = (int) $request->get('page', 1);
         $templateMeta = wp_unslash($request->get('template_meta'));
         $templateMeta = json_decode($templateMeta, true);
+        $templateMeta = $this->sanitizeTemplateMeta($templateMeta);
         $currentPlatforms = Arr::get($templateMeta, 'platform', []);
 
-        $paginate = (int) Arr::get($templateMeta, 'paginate', 6);
+        // Get responsive paginate value
+        $paginateNumber = Arr::get($templateMeta, 'paginate_number');
+        $fallbackPaginate = (int) Arr::get($templateMeta, 'paginate', 6);
+        $paginate = wp_is_mobile() ? (int) Arr::get($paginateNumber, 'mobile', $fallbackPaginate) : (int) Arr::get($paginateNumber, 'desktop', $fallbackPaginate);
 
         // Create a copy of templateMeta without limits to get total count
         $templateMetaForTotal = $templateMeta;
@@ -436,6 +463,182 @@ class MetaController extends Controller
 //                'reviews_in_this_batch' => count($reviews)
 //            ]
         ]);
+    }
+
+    /**
+     * Sanitizes the raw template meta data from a request.
+     *
+     * @param array $templateMeta The raw, decoded template meta array.
+     * @return array The fully sanitized template meta array.
+     */
+    private function sanitizeTemplateMeta($templateMeta)
+    {
+        // Handle all complex style arrays separately ---
+        $styleArraysToSanitize = ['styles_config', 'responsive_styles'];
+        foreach ($styleArraysToSanitize as $styleKey) {
+            if (isset($templateMeta[$styleKey]) && is_array($templateMeta[$styleKey])) {
+                $templateMeta[$styleKey] = wpsr_sanitize_styles_config($templateMeta[$styleKey]);
+            }
+        }
+        //  Define the main sanitize map for all other keys
+        $sanitizeMap = [
+            // --- Top-Level Settings ---
+            'platformType'                      => 'sanitize_text_field',
+            'template'                          => 'sanitize_text_field',
+            'templateType'                      => 'sanitize_text_field',
+            'column'                            => 'sanitize_text_field',
+            'responsive_column_number.desktop'    => 'sanitize_text_field',
+            'responsive_column_number.tablet'     => 'sanitize_text_field',
+            'responsive_column_number.mobile'     => 'sanitize_text_field',
+            'reviewer_name_format'              => 'sanitize_text_field',
+            'rating_style'                      => 'sanitize_text_field',
+            'verified_badge_tooltip_text'       => 'sanitize_text_field',
+            'resolution'                        => 'sanitize_text_field',
+            'platform_label'                    => 'sanitize_text_field',
+            'equalHeightLen'                    => 'intval',
+            'content_length'                    => 'intval',
+            'contentLanguage'                   => 'sanitize_text_field',
+            'contentType'                       => 'sanitize_text_field',
+            'current_template_type'             => 'sanitize_text_field',
+            'totalReviewsVal'                   => 'intval',
+            'totalReviewsNumber.desktop'        => 'intval',
+            'totalReviewsNumber.mobile'         => 'intval',
+            'starFilterVal'                     => 'intval',
+            'filterByTitle'                     => 'sanitize_text_field',
+            'excludes_inputs'                   =>   'sanitize_text_field',
+            'includes_inputs'                   =>   'sanitize_text_field',
+            'order'                             => 'sanitize_text_field',
+            'header_template'                   => 'sanitize_text_field',
+            'custom_write_review_text'          => 'sanitize_text_field',
+            'war_btn_source'                    => 'sanitize_text_field',
+            'war_btn_source_custom_url'         => 'sanitize_url',
+            'war_btn_source_form_shortcode_id'  => 'sanitize_text_field',
+            'war_btn_source_native_form_id'    => 'intval',
+            'custom_title_text'                 => 'sanitize_text_field',
+            'custom_number_of_reviews_text'     => 'sanitize_text_field',
+            'pagination_type'                   => 'sanitize_text_field',
+            'load_more_button_text'             => 'sanitize_text_field',
+            'paginate'                          => 'intval',
+            'template_width'                    => 'sanitize_text_field',
+            'template_height'                   => 'sanitize_text_field',
+            'is_editor_initial_load'            => 'intval',
+
+            // --- Boolean Keys ---
+            'reviewer_name'                     => 'wpsr_sanitize_boolean',
+            'author_position'                   => 'wpsr_sanitize_boolean',
+            'author_company_name'               => 'wpsr_sanitize_boolean',
+            'website_logo'                      => 'wpsr_sanitize_boolean',
+            'reviewer_image'                    => 'wpsr_sanitize_boolean',
+            'timestamp'                         => 'wpsr_sanitize_boolean',
+            'reviewerrating'                    => 'wpsr_sanitize_boolean',
+            'enable_verified_badge'             => 'wpsr_sanitize_boolean',
+            'equal_height'                      => 'wpsr_sanitize_boolean',
+            'enableExternalLink'                => 'wpsr_sanitize_boolean',
+            'display_review_title'              => 'wpsr_sanitize_boolean',
+            'isReviewerText'                    => 'wpsr_sanitize_boolean',
+            'show_review_images'                => 'wpsr_sanitize_boolean',
+            'isPlatformIcon'                    => 'wpsr_sanitize_boolean',
+            'hide_empty_reviews'                => 'rest_sanitize_boolean',
+            'show_header'                       => 'wpsr_sanitize_boolean',
+            'display_header_business_logo'      => 'rest_sanitize_boolean',
+            'display_header_business_name'       => 'rest_sanitize_boolean',
+            'display_header_rating'             => 'rest_sanitize_boolean',
+            'display_header_reviews'            => 'rest_sanitize_boolean',
+            'display_header_write_review'       => 'rest_sanitize_boolean',
+            'add_custom_war_btn_url'            => 'wpsr_sanitize_boolean',
+            'war_btn_open_in_new_window'        => 'wpsr_sanitize_boolean',
+            'display_tp_brand'                  => 'wpsr_sanitize_boolean',
+            'enable_schema'                     => 'wpsr_sanitize_boolean',
+
+            // --- Carousel Settings ---
+            'carousel_settings.autoplay'               => 'wpsr_sanitize_boolean',
+            'carousel_settings.autoplay_speed'         => 'intval',
+            'carousel_settings.slides_to_show'          => 'intval',
+            'carousel_settings.spaceBetween'             => 'intval',
+            'carousel_settings.slides_to_scroll'        => 'intval',
+            'carousel_settings.navigation'              => 'sanitize_text_field',
+            'carousel_settings.responsive_slides_to_show.desktop' => 'intval',
+            'carousel_settings.responsive_slides_to_show.tablet'  => 'intval',
+            'carousel_settings.responsive_slides_to_show.mobile'  => 'intval',
+            'carousel_settings.responsive_slides_to_scroll.desktop' => 'intval',
+            'carousel_settings.responsive_slides_to_scroll.tablet'  => 'intval',
+            'carousel_settings.responsive_slides_to_scroll.mobile'  => 'intval',
+
+            // --- Badge Settings ---
+            'badge_settings.template'                  => 'sanitize_text_field',
+            'badge_settings.badge_position'             => 'sanitize_text_field',
+            'badge_settings.display_platform_icon'      => 'wpsr_sanitize_boolean',
+            'badge_settings.custom_title'               => 'sanitize_text_field',
+            'badge_settings.custom_num_of_reviews_text' => 'sanitize_text_field',
+            'badge_settings.display_mode'               => 'sanitize_text_field',
+            'badge_settings.url'                        => 'sanitize_url',
+            'badge_settings.custom_url'                 => 'sanitize_url',
+            'badge_settings.form_shortcode_id'          => 'sanitize_text_field',
+            'badge_settings.native_form_id'             => 'intval',
+            'badge_settings.id'                         => 'sanitize_text_field',
+            'badge_settings.open_in_new_window'         => 'wpsr_sanitize_boolean',
+
+            // --- Notification Settings ---
+            'notification_settings.template'             => 'sanitize_text_field',
+            'notification_settings.notification_position'=> 'sanitize_text_field',
+            'notification_settings.display_mode'        => 'sanitize_text_field',
+            'notification_settings.url'                 => 'sanitize_url',
+            'notification_settings.custom_url'          => 'sanitize_url',
+            'notification_settings.id'                  => 'intval',
+            'notification_settings.page_list'           => 'intval', // Array of page IDs
+            'notification_settings.exclude_page_list'    => 'intval', // Array of page IDs
+            'notification_settings.post_types'           => 'sanitize_text_field', // Array of post type slugs
+            'notification_settings.hide_on_desktop'      => 'wpsr_sanitize_boolean',
+            'notification_settings.hide_on_mobile'       => 'wpsr_sanitize_boolean',
+            'notification_settings.notification_priority' => 'intval',
+            'notification_settings.display_close_button' => 'wpsr_sanitize_boolean',
+            'notification_settings.display_date'        => 'wpsr_sanitize_boolean',
+            'notification_settings.custom_notification_text' => 'sanitize_text_field',
+            'notification_settings.initial_delay'       => 'intval',
+            'notification_settings.notification_delay'  => 'intval',
+            'notification_settings.delay_for'           => 'intval',
+            'notification_settings.display_read_all_reviews_btn' => 'wpsr_sanitize_boolean',
+            'notification_settings.read_all_reviews_btn_url' => 'sanitize_url',
+
+            // --- Schema Settings ---
+            'schema_settings.schema_type'               => 'sanitize_text_field',
+            'schema_settings.business_logo'             => 'sanitize_url',
+            'schema_settings.business_name'             => 'sanitize_text_field',
+            'schema_settings.business_description'      => 'sanitize_text_field',
+            'schema_settings.business_type'             => 'sanitize_text_field',
+            'schema_settings.business_telephone'        => 'sanitize_text_field',
+            'schema_settings.include_business_address'  => 'wpsr_sanitize_boolean',
+            'schema_settings.business_street_address'   => 'sanitize_text_field',
+            'schema_settings.business_address_city'     => 'sanitize_text_field',
+            'schema_settings.business_address_state'    => 'sanitize_text_field',
+            'schema_settings.business_address_postal_code' => 'sanitize_text_field',
+            'schema_settings.business_address_country' => 'sanitize_text_field',
+            'schema_settings.business_average_rating'  => 'floatval',
+            'schema_settings.business_total_rating'    => 'intval',
+            'schema_settings.include_reviews_in_schema' => 'intval',
+
+            // --- Feed Settings ---
+            'feed_settings.enable_style'               => 'wpsr_sanitize_boolean',
+            'feed_settings.created_from_onboarding'    => 'rest_sanitize_boolean',
+
+            // --- AI Summary Settings ---
+            'ai_summary.enabled'                        => 'wpsr_sanitize_boolean',
+            'ai_summary.style'                          => 'sanitize_text_field',
+            'ai_summary.display_readmore'               => 'rest_sanitize_boolean',
+            'ai_summary.text_typing_animation'          => 'rest_sanitize_boolean',
+            'ai_summary.display_ai_summary_icon'        => 'rest_sanitize_boolean',
+
+            // --- Array Sanitization ---
+            'selectedIncList'                           => 'wpsr_array_map_absint',
+            'selectedExcList'                           => 'wpsr_array_map_absint',
+            'platform'                                  => 'wpsr_array_map_sanitize_text_field',
+            'selectedBusinesses'                        => 'wpsr_array_map_sanitize_text_field',
+            'selectedCategories'                        => 'wpsr_array_map_sanitize_text_field',
+        ];
+
+        // Run the main recursive sanitizer on the rest of the data ---
+        $templateMeta = wpsr_backend_sanitizer($templateMeta, $sanitizeMap);
+        return $templateMeta;
     }
 
 }

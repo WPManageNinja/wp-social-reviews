@@ -424,8 +424,8 @@ class Airbnb extends BaseReview
             } else {
                 $reviews = Arr::get($data, 'data.presentation.stayProductDetailPage.reviews.reviews', []);
                 // Get total available reviews count for stays
-                if ($maxAvailableReviews === null) {
-                    $maxAvailableReviews = Arr::get($businessDetails, $this->placeId.'total_rating', 0);
+                if ($maxAvailableReviews === null && !empty($businessDetails)) {
+                    $maxAvailableReviews = Arr::get($businessDetails, 'reviewCount', 0);
                 }
             }
 
@@ -470,6 +470,12 @@ class Airbnb extends BaseReview
 
         if ($services || $experiences) {
             $businessDetails = Arr::get($data, 'data.node.reviewsSearch.pageInfo', []);
+        } elseif ($rooms && empty($businessDetails)) {
+            // Fallback: try to get business info from the reviews response if businessDetails call failed
+            $businessDetails = Arr::get($data, 'data.presentation.stayProductDetailPage.sections.metadata.sharingConfig', []);
+            if (empty($businessDetails)) {
+                $businessDetails = Arr::get($data, 'data.presentation.stayProductDetailPage.metadata.sharingConfig', []);
+            }
         }
         $businessInfo = $this->saveBusinessInfo($businessDetails);
 
@@ -483,37 +489,104 @@ class Airbnb extends BaseReview
     private function getBusinessDetailsFromGraphQL($nodeId, $headers)
     {
         $businessInfoApiSecretKey = apply_filters('wpsocialreviews/airbnb_rooms_business_info_api_secret_key', '');
-        $variables = [
-            'id' => $nodeId,
-            'demandStayListingId' => 'DemandStayListing:' . $this->placeId,
-            'pdpSectionsRequest' => [
-                'adults' => '1',
-                'children' => null,
-                'infants' => null,
-                'pets' => 0,
-                'layouts' => [],
-                'sectionIds' => [],
-            ],
-            'useContextualUser' => false,
-            'isDemandStayListingQueryEnabled' => false
+        
+        if (empty($businessInfoApiSecretKey)) {
+            return [];
+        }
+        
+        // Ensure demandStayListingId is base64 encoded (API expects encoded form)
+        $demandStayListingId = base64_encode("DemandStayListing:{$this->placeId}");
+
+        // Generate a p3ImpressionId if none is available — API often expects a non-empty string here
+        $p3ImpressionId = apply_filters('wpsocialreviews/airbnb_p3_impression_id', null);
+        if (empty($p3ImpressionId)) {
+            $p3ImpressionId = 'p3_' . time() . '_' . substr(md5(uniqid('', true)), 0, 12);
+        }
+
+        // Build pdpSectionsRequest matching the API structure
+        // Note: adults should be string "1" not integer, and null values are accepted
+        $pdpSectionsRequest = [
+            'adults' => '1',
+            'amenityFilters' => null,
+            'bypassTargetings' => false,
+            'categoryTag' => null,
+            'causeId' => null,
+            'children' => null,
+            'disasterId' => null,
+            'discountedGuestFeeVersion' => null,
+            'federatedSearchId' => null,
+            'forceBoostPriorityMessageType' => null,
+            'hostPreview' => false,
+            'infants' => null,
+            'interactionType' => null,
+            'layouts' => ['SIDEBAR', 'SINGLE_COLUMN'],
+            'pets' => 0,
+            'pdpTypeOverride' => null,
+            'preview' => false,
+            'previousStateCheckIn' => null,
+            'previousStateCheckOut' => null,
+            'priceDropSource' => null,
+            'privateBooking' => false,
+            'promotionUuid' => null,
+            'relaxedAmenityIds' => null,
+            'searchId' => null,
+            'selectedCancellationPolicyId' => null,
+            'selectedRatePlanId' => null,
+            'splitStays' => null,
+            'staysBookingMigrationEnabled' => false,
+            'translateUgc' => null,
+            'useNewSectionWrapperApi' => false,
+            'sectionIds' => ['POLICIES_DEFAULT', 'BOOK_IT_SIDEBAR', 'URGENCY_COMMITMENT_SIDEBAR', 'BOOK_IT_NAV', 'BOOK_IT_FLOATING_FOOTER', 'URGENCY_COMMITMENT', 'BOOK_IT_CALENDAR_SHEET', 'CANCELLATION_POLICY_PICKER_MODAL'],
+            'p3ImpressionId' => $p3ImpressionId,
         ];
 
-        $payload = [
+        // Build variables matching the actual API structure
+        $variables = [
+            'id' => $nodeId,
+            'demandStayListingId' => $demandStayListingId,
+            'pdpSectionsRequest' => $pdpSectionsRequest,
+            'includeHotelFragments' => false,
+            'includePdpMigrationHighlightsFragment' => false,
+            'includePdpMigrationNavMobileFragment' => false,
+            'includePdpMigrationReviewsFragment' => false,
+            'includePdpMigrationDescriptionFragment' => false,
+            'includeGpHighlightsFragment' => true,
+            'includePdpMigrationReviewsEmptyFragment' => false,
+            'includePdpMigrationTitleFragment' => false,
+            'includeGpNavMobileFragment' => true,
+            'includeGpReviewsFragment' => true,
+            'includeGpDescriptionFragment' => true,
+            'includeGpReviewsEmptyFragment' => true,
+            'includeGpTitleFragment' => true,
+            'useContextualUser' => false,
+        ];
+
+        // Build the request URL with query parameters (GET request like the API)
+        $queryParams = [
             'operationName' => 'StaysPdpSections',
             'locale' => 'en',
             'currency' => 'USD',
-            'variables' => $variables,
-            'extensions' => [
+            'variables' => wp_json_encode($variables),
+            'extensions' => wp_json_encode([
                 'persistedQuery' => [
                     'version' => 1,
                     'sha256Hash' => $businessInfoApiSecretKey
                 ]
-            ]
+            ])
         ];
 
-        $data = $this->makeGraphQLRequest($this->remoteBaseUrlV3, $payload, $headers);
+        $requestUrl = add_query_arg($queryParams, $this->remoteBaseUrlV3 . '/StaysPdpSections/' . $businessInfoApiSecretKey);
+        $data = $this->makeGraphQLGetRequest($requestUrl, $headers);
 
-        return Arr::get($data, 'data.presentation.stayProductDetailPage.sections.metadata.sharingConfig', []);
+        // Extract sharingConfig from the API response
+        $sharingConfig = Arr::get($data, 'data.presentation.stayProductDetailPage.sections.metadata.sharingConfig', []);
+        
+        // Validate and return the sharingConfig if it has the correct structure
+        if (!empty($sharingConfig) && is_array($sharingConfig) && isset($sharingConfig['__typename']) && $sharingConfig['__typename'] === 'PdpSharingConfig') {
+            return $sharingConfig;
+        }
+
+        return [];
     }
 
     public function formatData($review, $index)
@@ -769,11 +842,32 @@ class Airbnb extends BaseReview
             'body' => wp_json_encode($payload),
             'headers' => $this->formatHeadersForWpRemote($headers),
             'timeout' => 30,
-            'sslverify' => false,
             'method' => 'POST'
         ];
 
         $response = wp_remote_post($url, $args);
+
+        if (is_wp_error($response)) {
+            throw new \Exception('Request failed: ' . esc_html($response->get_error_message()));
+        }
+
+        $httpCode = wp_remote_retrieve_response_code($response);
+        if ($httpCode !== 200) {
+            throw new \Exception('GraphQL request failed with HTTP code: ' . esc_html($httpCode));
+        }
+
+        return json_decode(wp_remote_retrieve_body($response), true);
+    }
+
+    private function makeGraphQLGetRequest($url, $headers)
+    {
+        $args = [
+            'headers' => $this->formatHeadersForWpRemote($headers),
+            'timeout' => 30,
+            'method' => 'GET'
+        ];
+
+        $response = wp_remote_get($url, $args);
 
         if (is_wp_error($response)) {
             throw new \Exception('Request failed: ' . esc_html($response->get_error_message()));

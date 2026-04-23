@@ -24,7 +24,6 @@ class Common
     {   
         $args     = array(
             'timeout'   => 60,
-            'sslverify' => false
         );
         $response = wp_remote_get($url, $args);
         do_action( 'wpsocialreviews/instagram_feed_api_connect_response', $response );

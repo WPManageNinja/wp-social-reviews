@@ -175,9 +175,9 @@
                           <el-dropdown-item command="duplicate">
                             <el-icon><DocumentCopy /></el-icon> Duplicate
                           </el-dropdown-item>
-<!--                          <el-dropdown-item command="clear_cache" v-if="feedPlatforms.includes(scope.row.platform_name)">-->
-<!--                            <el-icon><Coin /></el-icon> Clear Cache-->
-<!--                          </el-dropdown-item>-->
+                          <el-dropdown-item command="clear_cache" v-if="feedPlatforms.includes(scope.row.platform_name)">
+                            <el-icon><Coin /></el-icon> Clear Cache
+                          </el-dropdown-item>
                           <el-dropdown-item class="wpsr-action-delete" command="delete">
                             <el-icon><Delete /></el-icon> Delete
                           </el-dropdown-item>

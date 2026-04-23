@@ -284,7 +284,7 @@
 </template>
 
 <script type="text/babel">
-import debounced from 'lodash/debounce';
+import { debounce } from '../../../../utils';
 import FeedEditorGroup from './../../../core-ui/editor/EditorGroup';
 import UpgradeToProButton from '../../../views/advertise/UpgradeToProButton';
 import Instagram from '../../../views/platforms/feeds/Instagram.vue';
@@ -652,16 +652,19 @@ export default {
                     }
                 },
                 {
-                    fieldKey: 'paginate',
+                    fieldKey: 'paginate_number',
                     type: 'number',
                     title: this.$t('Feeds Per Page'),
                     min: 1,
-                    max: 20,
                     flex: true,
+                    responsive: true,
+                    hide_tablet: true,
                     condition: {
                         'key': 'pagination_type',
                         'selector': 'load_more'
-                    }
+                    },
+                    tooltip: true,
+                    tooltipText: this.$t("The Feeds per Page is only visible on preview and live pages/posts, not in the WordPress Editor's editing mode."),
                 },
             ],
             column_gap_options: [
@@ -951,7 +954,7 @@ export default {
                     title: this.$t('Display Sidebar'),
                     active_value: 'true',
                     inactive_value: 'false',
-                    disabled: this.has_pro
+                    disabled: !this.has_pro
                 },
                 {
                     fieldKey: 'display_profile_photo',
@@ -967,7 +970,7 @@ export default {
                     title: this.$t('Display Username'),
                     active_value: 'true',
                     inactive_value: 'false',
-                    disabled: this.has_pro
+                    disabled: !this.has_pro
                 },
                 {
                     fieldKey: 'display_caption',
@@ -975,7 +978,7 @@ export default {
                     title: this.$t('Display Caption'),
                     active_value: 'true',
                     inactive_value: 'false',
-                    disabled: this.has_pro
+                    disabled: !this.has_pro
                 },
                 {
                     fieldKey: 'display_date',
@@ -983,7 +986,7 @@ export default {
                     title: this.$t('Display Date'),
                     active_value: 'true',
                     inactive_value: 'false',
-                    disabled: this.has_pro
+                    disabled: !this.has_pro
                 },
                 {
                     fieldKey: 'display_comments',
@@ -991,7 +994,7 @@ export default {
                     title: this.$t('Display Comments'),
                     active_value: 'true',
                     inactive_value: 'false',
-                    disabled: this.has_pro
+                    disabled: !this.has_pro
                 },
                 {
                     fieldKey: 'display_cta_btn',
@@ -999,7 +1002,7 @@ export default {
                     title: this.$t('Display Call to Action Button'),
                     active_value: 'true',
                     inactive_value: 'false',
-                    disabled: this.has_pro
+                    disabled: !this.has_pro
                 },
                 {
                     fieldKey: 'display_next_prev_arrows',
@@ -1007,7 +1010,7 @@ export default {
                     title: this.$t('Display Next Prev Arrows'),
                     active_value: 'true',
                     inactive_value: 'false',
-                    disabled: this.has_pro
+                    disabled: !this.has_pro
                 }
             ]
         }
@@ -1044,7 +1047,7 @@ export default {
             this.$emit('fetchFeed');
         },
 
-        fetch: debounced(function () {
+        fetch: debounce(function () {
             this.$emit('fetchFeed', 'fetching');
         }, 500),
 

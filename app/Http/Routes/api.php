@@ -38,6 +38,7 @@ $wpsr_routes = function ($router) {
     $router->put('/{id}', 'Platforms\Reviews\RecommendationsController@update')->int('id');
     $router->delete('/', 'Platforms\Reviews\RecommendationsController@delete');
     $router->put('/status-update', 'Platforms\Reviews\RecommendationsController@statusUpdate');
+    $router->put('/spam', 'Platforms\Reviews\RecommendationsController@spamReviews');
 };
 
 // Manage custom reviews from RecommendationsController controller
@@ -49,9 +50,6 @@ $router->prefix('testimonials')->withPolicy('TestimonialPolicy')->group($wpsr_ro
 $router->prefix('settings')->withPolicy('SettingsPolicy')->group(function ($router) {
     $router->get('/', 'SettingsController@index');
     $router->put('/', 'SettingsController@update');
-
-    $router->get('/fluent_forms', 'SettingsController@getFluentFormsSettings');
-    $router->put('/fluent_forms', 'SettingsController@saveFluentFormsSettings');
 
     $router->delete('/', 'SettingsController@delete');
     $router->delete('/twitter-card', 'SettingsController@deleteTwitterCard');
@@ -103,7 +101,11 @@ $router->prefix('notifications')->withPolicy('NotificationsPolicy')->group(funct
     $router->delete('/', 'NotificationsController@delete');
 });
 
-$router->prefix('onboarding')->group(function ($router) {
+$router->prefix('pages')->withPolicy('PagesPolicy')->group(function ($router) {
+    $router->get('/search', 'PagesController@search');
+});
+
+$router->prefix('onboarding')->withPolicy('AdminPolicy')->group(function ($router) {
     $router->get('/', 'OnboardingController@index');
     $router->post('/', 'OnboardingController@create');
     $router->post('/skip', 'OnboardingController@skip');

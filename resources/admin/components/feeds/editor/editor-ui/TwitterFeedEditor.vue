@@ -192,33 +192,11 @@
                 </div>
               
                 <div class="wpsr_editor_edit_item" v-if="localFeedConfig.pagination_settings.pagination_type !== 'none'">
-                    <div class="wpsr-settings-switch">
-                        <span class="wpsr-editor-inside-left wpsr-input-field-label wpsr-element-center">{{ $t('Posts Per Page') }}</span>
-                        <div class="wpsr-reviews-number wpsr-editor-inside-right">
-                            <el-input-number
-                                :min="1"
-                                :max="20"
-                                controls-position="right"
-                                :modelValue="localFeedConfig.pagination_settings.paginate"
-                                @update:modelValue="(val) => $emit('update:feed_config', { ...localFeedConfig, pagination_settings: { ...localFeedConfig.pagination_settings, paginate: val }})"
-                                size="large"
-                                class="wpsr-text-input"
-                            >
-                            </el-input-number>
-                            <div class="wpsr-group-input">
-                                <el-button
-                                    class="wpsr-editor-minus-btn"
-                                    @click="decreasePaginate"
-                                > <MinusIcon width="16" height="16" />
-                                </el-button>
-                                <el-button
-                                    class="wpsr-editor-plus-btn"
-                                    @click="increasePaginate"
-                                ><PlusIcon width="16" height="16"/>
-                                </el-button>
-                            </div>
-                        </div>
-                    </div>
+                    <FeedEditorGroup
+                        :fieldsMaps="paginationFields"
+                        :modelValue="localFeedConfig.pagination_settings"
+                        @update:modelValue="(val) => $emit('update:feed_config', { ...localFeedConfig, pagination_settings: val })"
+                    />
                 </div>
             </div>
         </el-collapse-item>
@@ -230,9 +208,7 @@ import ImageSelect from './../../../core-ui/editor/ImageSelect' ;
 import FeedEditorGroup from './../../../core-ui/editor/EditorGroup';
 import UpgradeToProButton from '../../../views/advertise/UpgradeToProButton';
 import EditorCollapsiblePanel from '../../../core-ui/editor/EditorCollapsiblePanel.vue';
-import debounced from 'lodash/debounce';
-import PlusIcon from '../../../pieces/icons/PlusIcon';
-import MinusIcon from '../../../pieces/icons/MinusIcon';
+import { debounce } from '../../../../utils';
 import UpgradeToProBanner from '../../../views/advertise/UpgradeToProBanner.vue';
 import ProCrownIcon from '../../../pieces/icons/ProCrownIcon.vue';
 export default {
@@ -242,8 +218,6 @@ export default {
         FeedEditorGroup,
         UpgradeToProButton,
         EditorCollapsiblePanel,
-        PlusIcon,
-        MinusIcon,
         UpgradeToProBanner,
         ProCrownIcon
     },
@@ -960,6 +934,21 @@ export default {
                     tooltipText: "This input field allows you to set how many tweets to retrieve from the X (Twitter) API. Max: 200"
                 }
             ]
+        },
+        paginationFields() {
+            return [
+                {
+                    fieldKey: 'paginate_number',
+                    type: 'number',
+                    title: this.$t('Posts Per Page'),
+                    min: 1,
+                    flex: true,
+                    responsive: true,
+                    hide_tablet: true,
+                    tooltip: true,
+                    tooltipText: this.$t("The Posts per Page is only visible on preview and live pages/posts, not in the WordPress Editor's editing mode.")
+                }
+            ];
         }
     },
     created() {
@@ -971,7 +960,7 @@ export default {
                 this.localFeedConfig = JSON.parse(JSON.stringify(this.feed_config));
             }
         },
-        fetch: debounced(function () {
+        fetch: debounce(function () {
             this.$emit('fetchFeed', 'fetching');
         }, 500),
         fetchTweets(){
@@ -990,28 +979,6 @@ export default {
                 this.isUpdating = false;
             });
         },
-        decreasePaginate() {
-            const currentValue = this.localFeedConfig.pagination_settings.paginate || 1;
-            const newValue = Math.max(1, currentValue - 1);
-            this.$emit('update:feed_config', { 
-                ...this.localFeedConfig, 
-                pagination_settings: { 
-                    ...this.localFeedConfig.pagination_settings, 
-                    paginate: newValue 
-                } 
-            });
-        },
-        increasePaginate() {
-            const currentValue = this.localFeedConfig.pagination_settings.paginate || 1;
-            const newValue = Math.min(20, currentValue + 1);
-            this.$emit('update:feed_config', { 
-                ...this.localFeedConfig, 
-                pagination_settings: { 
-                    ...this.localFeedConfig.pagination_settings, 
-                    paginate: newValue 
-                } 
-            });
-        }
     },
     watch: {
         feed_config: {

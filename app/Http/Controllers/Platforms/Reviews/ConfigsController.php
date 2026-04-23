@@ -21,7 +21,7 @@ class ConfigsController extends Controller
 
     public function index(Request $request)
     {
-        $platformName   = $request->get('platform');
+        $platformName   = sanitize_text_field($request->get('platform', ''));
         $credential     = $this->app->applyCustomFilters('api_credential_' . $platformName, []);
         $businessInfo   = $this->app->applyCustomFilters('business_info_' . $platformName, []);
         $additionalInfo = $this->app->applyCustomFilters('additional_info_' . $platformName, []);
@@ -35,28 +35,71 @@ class ConfigsController extends Controller
 
     public function store(Request $request)
     {
-        $platform = $request->get('platform');
+        $platform = sanitize_text_field($request->get('platform', ''));
         $configs  = $request->get('verificationData');
+        $configs = sanitize_text_field((string) $configs);
         $this->app->doCustomAction('save_configs' . $platform, $configs);
     }
 
     public function saveReviews(Request $request)
     {
         $settings = $request->get('settings');
-        $this->app->doCustomAction('verify_review_credential_' . $settings['platform'], $settings);
+
+        // map known keys to explicit sanitizers for this payload
+        $sanitizeMap = [
+            'api_key'      => 'sanitize_text_field',
+            'source_id'    => 'sanitize_text_field', // keep as string (IDs can be big)
+            'product_name' => 'sanitize_text_field',
+            'count'        => 'intval',
+            'platform'     => 'sanitize_text_field',
+            'url_value'    => 'esc_url_raw',
+            'credentialsType' => 'sanitize_text_field',
+            'language'     => 'sanitize_text_field'
+        ];
+
+        $settings = wpsr_backend_sanitizer($settings, $sanitizeMap);
+
+        // Always sanitize platform used in action name (defense in depth)
+        $platformForAction = '';
+        if (isset($settings['platform'])) {
+            $platformForAction = sanitize_text_field($settings['platform']);
+        }
+
+        $this->app->doCustomAction('verify_review_credential_' . $platformForAction, $settings);
     }
 
     public function manuallySyncReviews(Request $request)
     {
-        $platform = $request->get('platform');
+        $platform = sanitize_text_field($request->get('platform', ''));
         $credentials = $request->get('credentials');
+
+        $sanitizeMap = [
+            'place_id'        => 'sanitize_text_field',
+            'name'            => 'sanitize_text_field',
+            'url'             => 'esc_url_raw',
+            'address'         => 'sanitize_text_field',
+            'average_rating'  => 'floatval',
+            'total_rating'    => 'intval',
+            'phone'           => 'sanitize_text_field',
+            'platform_name'   => 'sanitize_text_field',
+            'status'          => 'sanitize_text_field',
+            'error_message'   => 'sanitize_text_field',
+            'has_app_permission_error' => 'rest_sanitize_boolean',
+            'has_critical_error'       => 'rest_sanitize_boolean',
+            'error_code'      => 'intval',
+            'encryption_error' => 'rest_sanitize_boolean',
+            'connection_type'  => 'sanitize_text_field'
+        ];
+
+        $credentials = wpsr_backend_sanitizer($credentials, $sanitizeMap);
+
         $this->app->doCustomAction($platform . '_manually_sync_reviews', $credentials);
     }
 
     public function delete(Request $request)
     {
-        $platform           = $request->get('platform');
-        $sourceId           = $request->get('sourceId');
+        $platform           = sanitize_text_field($request->get('platform', ''));
+        $sourceId           = sanitize_text_field($request->get('sourceId', ''));
         $settings_option_name = 'wpsr_reviews_' . $platform . '_settings';
         $business_info_option_name = 'wpsr_reviews_' . $platform . '_business_info';
         $settings           = get_option($settings_option_name);

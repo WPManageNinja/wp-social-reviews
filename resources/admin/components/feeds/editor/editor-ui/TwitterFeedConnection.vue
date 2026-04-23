@@ -39,7 +39,7 @@
 </template>
 
 <script type="text/babel">
-import debounced from 'lodash/debounce';
+import { debounce } from '../../../../utils';
 import FeedEditorGroup from './../../../core-ui/editor/EditorGroup';
 import UpgradeToProButton from '../../../views/advertise/UpgradeToProButton';
 import Twitter from '../../../views/platforms/feeds/Twitter.vue';
@@ -149,7 +149,7 @@ export default {
             this.$emit('fetchFeed');
         },
 
-        fetch: debounced(function () {
+        fetch: debounce(function () {
             this.$emit('fetchFeed', 'fetching');
         }, 500),
     },

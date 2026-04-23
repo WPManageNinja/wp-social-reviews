@@ -56,7 +56,7 @@
           <div class="wpsr-custom-sources-card">
             <div class="wpsr-custom-sources-header">
               <h2 class="wpsr-custom-sources-title">
-                Create Custom Sources (Beta)
+                Create Custom Sources
                 <div v-if="!has_pro">
                   <ProCrownIcon/>
                 </div>
@@ -176,14 +176,17 @@
                   />
 
                   <MultipleBusinessInfo
-                      v-if="platFormName === 'yelp' || platFormName === 'woocommerce' || platFormName === 'aliexpress' || url_based_platforms.includes(platFormName)"
+                      v-if="platFormName === 'yelp' || platFormName === 'woocommerce' || platFormName === 'fluent-cart' || platFormName === 'aliexpress' || url_based_platforms.includes(platFormName)"
                       :verifyPlatform="verifyPlatform"
                       :reviewsinfo="reviewsinfo"
                       :platFormName="platFormName"
+                      :hasFluentCart="hasFluentCartInstalled"
                       :isDownloadablePlatform="true"
+                      :products="productLists"
                       @sync-loader="syncLoaderActivate"
                       @add-new-template="addNewTemplate"
                       @clear-verification-credentials="clearVerificationCredentials"
+                      @products-connected="getApiCredential(platFormName)"
                   />
 
                   <AliExpressForm
@@ -236,12 +239,24 @@
                   <WoocommerceForm
                       v-if="platFormName === 'woocommerce'"
                       :platFormName="platFormName"
-                      :products="productLists"
+                      :hasProducts="hasWooProducts"
                       :sourceId="sourceId"
                       @update:sourceId="value => sourceId = value"
                       @save-reviews="saveReviews"
                       :reviewsinfo="reviewsinfo"
                   />
+
+                  <FluentCartForm
+                      v-if="platFormName === 'fluent-cart'"
+                      :platFormName="platFormName"
+                      :hasFluentCart="hasFluentCartInstalled"
+                      :sourceId="sourceId"
+                      @update:sourceId="value => sourceId = value"
+                      @save-reviews="saveReviews"
+                      :reviewsinfo="reviewsinfo"
+                  />
+
+
 
 
                   <!--                            <AirbnbForm-->
@@ -427,7 +442,7 @@
                 </div>
 
                 <CreateTemplate
-                    v-if="platFormName === 'yelp' || platFormName === 'woocommerce' || platFormName === 'aliexpress' || url_based_platforms.includes(platFormName)"
+                    v-if="platFormName === 'yelp' || platFormName === 'woocommerce' || platFormName === 'fluent-cart' || platFormName === 'aliexpress' || url_based_platforms.includes(platFormName)"
                     :reviewsinfo="reviewsinfo"
                     @add-new-template="addNewTemplate"
                 />
@@ -475,6 +490,7 @@ import { ElNotification } from 'element-plus';
 import ThumbsUpIcon from "../../../pieces/icons/ThumbsUpIcon.vue";
 import ShieldCheckLineIcon from "../../../pieces/icons/ShieldCheckLineIcon.vue";
 import ProCrownIcon from "../../../pieces/icons/ProCrownIcon.vue";
+import FluentCartForm from "./FluentCartForm.vue";
 
 export default {
   name: "ReviewsPlatforms",
@@ -495,7 +511,8 @@ export default {
     MultipleBusinessInfo,
     FacebookForm,
     ElNotification,
-    ThumbsUpIcon
+    ThumbsUpIcon,
+    FluentCartForm
   },
   props: {
     column: {
@@ -529,6 +546,10 @@ export default {
     activeSearchQuery: {
       type: String,
       default: ''
+    },
+    showCustomSources: {
+      type: Boolean,
+      default: true
     }
   },
   emits: ['update:reviewsShowSettingModal', 'open-editor-panel'],
@@ -550,8 +571,7 @@ export default {
       platFormName: '',
       platformTitle: '',
       activePlatformName: '',
-      reviewsinfo: [],
-
+      reviewsinfo: {},
       loading: false,
       sourceText: '',
       apiUrl: '',
@@ -583,6 +603,9 @@ export default {
       disabled: false,
       reConnect: false,
       viaUrl: false,
+      hasWooProducts: false,
+      hasFluentCartInstalled: !!this.appVars.hasFluentCart,
+      hasFluentCartProducts: false,
       productLists: [],
       errorNotice: [],
       promotion: [],
@@ -672,6 +695,7 @@ export default {
         this.message = message;
         this.reviewsinfo = reviewsinfo;
         this.getApiCredential(platformName);
+        
         this.sourceText = sourceText;
         this.apiUrl = apiUrl;
         this.sourceUrl = sourceUrl;
@@ -795,8 +819,8 @@ export default {
                   });
                 }
               }
-              if (this.platFormName === 'woocommerce' && response.additional_info && response.additional_info.length) {
-                this.productLists = response.additional_info;
+              if (this.platFormName === 'woocommerce' && response.additional_info) {
+                this.hasWooProducts = response.additional_info.has_products || false;
               }
               if (this.apiKey && this.sourceId && this.platFormName === 'airbnb') {
                 this.veryfiedAirbnb = true;
@@ -812,6 +836,16 @@ export default {
 
               if (response.additional_info && response.additional_info.languages) {
                 this.languages = response.additional_info.languages;
+              }
+
+              if (this.platFormName === 'fluent-cart' && response.additional_info) {
+                this.hasFluentCartProducts = Array.isArray(response.additional_info) ? response.additional_info.length > 0 : !!response.additional_info;
+                if (Array.isArray(response.additional_info)) {
+                  this.productLists = response.additional_info;
+                }
+              } else if (this.platFormName === 'fluent-cart') {
+                this.hasFluentCartProducts = false;
+                this.productLists = [];
               }
 
               if (this.platFormName === 'google' && response.business_info) {
@@ -853,7 +887,7 @@ export default {
       } else if (platformRequiresSourceId.includes(this.platFormName)) {
         this.apiKey = defaultApiKey;
         this.sourceId = defaultSourceId;
-      } else if (this.platFormName === 'aliexpress' || (this.sourceId && this.platFormName === 'woocommerce') || (this.sourceId && this.platFormName === 'google')) {
+      } else if (this.platFormName === 'aliexpress' || (this.sourceId && this.platFormName === 'woocommerce') || (this.sourceId && this.platFormName === 'fluent-cart') || (this.sourceId && this.platFormName === 'google')) {
         this.apiKey = defaultApiKey;
       }
 
@@ -936,7 +970,7 @@ export default {
               this.apiKey = '';
               this.sourceId = '';
               //this.downloadReviewsUrl = '';
-              this.reviewsinfo = [];
+              this.reviewsinfo = {};
               this.handleSuccess(response.message);
               this.getEnabledPlatforms();
             }
@@ -1009,30 +1043,35 @@ export default {
   },
 
   computed: {
-    hasReviewsToShow() {
+    hasReviewsToShow() {  
       // Show if there are filtered platforms OR if custom sources should be shown
       return this.filteredPlatforms.length > 0 || this.shouldShowCustomSources;
     },
     shouldShowCustomSources() {
       // Don't show in editor mode
+      // Also don't show if parent disabled custom_sources via screen options
+      if (!this.showCustomSources) {
+        return false;
+      }
+
       if (this.isEditorMode()) {
         return false;
       }
 
-      // If there's no active search, show the custom sources
-      if (!this.activeSearchQuery) {
-        return true;
-      }
+       // If there's no active search, show the custom sources
+       if (!this.activeSearchQuery) {
+         return true;
+       }
 
-      // If there's a search, only show if it matches custom/sources related terms
-      const searchTerm = this.activeSearchQuery.toLowerCase();
-      const shouldShow = searchTerm.includes('custom') ||
-                        searchTerm.includes('sources') ||
-                        searchTerm.includes('source');
+       // If there's a search, only show if it matches custom/sources related terms
+       const searchTerm = this.activeSearchQuery.toLowerCase();
+       const shouldShow = searchTerm.includes('custom') ||
+                         searchTerm.includes('sources') ||
+                         searchTerm.includes('source');
 
-      return shouldShow;
-    }
-  },
+       return shouldShow;
+     }
+   },
   created() {
     let urlParams = this.urlParams;
     if(urlParams === '' || urlParams === undefined) return;

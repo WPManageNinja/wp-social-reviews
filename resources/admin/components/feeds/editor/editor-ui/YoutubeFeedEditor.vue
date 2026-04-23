@@ -131,7 +131,7 @@
 </template>
 
 <script>
-import debounced from 'lodash/debounce';
+import { debounce } from '../../../../utils';
 import EditorGroup from './../../../core-ui/editor/EditorGroup';
 import UpgradeToProButton from '../../../views/advertise/UpgradeToProButton';
 import EditorCollapsiblePanel from '../../../core-ui/editor/EditorCollapsiblePanel.vue';
@@ -526,16 +526,20 @@ export default {
               }
             },
             {
-              fieldKey: 'paginate',
+              fieldKey: 'paginate_number',
               type: 'number',
               title: this.$t('Feeds Per Page'),
               min: 1,
-              max: 20,
               flex: true,
+              responsive: true,
+              hide_tablet: true,
               condition: {
                 key: 'pagination_type',
-                selector: 'load_more'
-              }
+                selector: 'load_more',
+                operator: 'includes'
+              },
+              tooltip: true,
+              tooltipText: this.$t("The Feeds per Page is only visible on preview and live pages/posts, not in the WordPress Editor's editing mode."),
             },
           ],
           video_settings: [],
@@ -1008,7 +1012,7 @@ export default {
           },
         ]
       },
-      fetch: debounced(function () {
+      fetch: debounce(function () {
         this.$emit('fetchFeed');
       }, 500)
     },

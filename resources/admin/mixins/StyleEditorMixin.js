@@ -22,13 +22,18 @@ export const StyleEditorMixin = {
                                this.feed_config.styles[option.key] && 
                                this.show_section(optionsKey, option);
 
+      const hasBoxShadowElement = option.box_shadow && 
+                                  this.feed_config.styles[option.key] && 
+                                  this.feed_config.styles[option.key].box_shadow && 
+                                  this.show_section(optionsKey, option);
+
       const hasSliderElement = option.slider && 
                                this.feed_config.styles[option.key] && 
                                this.show_section(optionsKey, option);
 
       const hasDivider = option.divider;
 
-      return hasColorElement || hasTypographyElement || hasSpacingElement || hasBorderElement || hasSliderElement || hasDivider;
+      return hasColorElement || hasTypographyElement || hasSpacingElement || hasBorderElement || hasBoxShadowElement || hasSliderElement || hasDivider;
     },
   }
 };

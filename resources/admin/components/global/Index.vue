@@ -8,14 +8,45 @@
 
             <div class="wpsr-menu-items">
             <template v-for="menuItem in topMenus" :key="menuItem.route">
+                <!-- Menu item with dropdown children -->
+                <div
+                    v-if="isValidMenuItem(menuItem) && menuItem.route !== 'advance-settings' && menuItem.children"
+                    class="wpsr-menu-dropdown"
+                >
+                    <router-link
+                        :to="{ name: menuItem.route }"
+                        :class="getMenuItemClasses(menuItem)"
+                        active-class="wpsr-tab-active"
+                        exact-path
+                        class="wpsr-menu-dropdown-trigger"
+                    >
+                        {{ getMenuTitle(menuItem) }}
+                        <svg class="wpsr-menu-dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </router-link>
+                    <div class="wpsr-menu-dropdown-content">
+                        <router-link
+                            v-for="child in menuItem.children"
+                            :key="child.route"
+                            :to="{ name: child.route }"
+                            class="wpsr-menu-dropdown-item"
+                            active-class="wpsr-tab-active"
+                        >
+                            <span>{{ child.title }}</span>
+                            <span v-if="child.isNew" class="wpsr-menu-keyword">New</span>
+                            <ProCrownIcon v-if="child.isPro && !has_pro" :width="12" :height="12" class="wpsr-menu-pro-icon" />
+                        </router-link>
+                    </div>
+                </div>
+                <!-- Regular menu item -->
                 <router-link
-                    v-if="isValidMenuItem(menuItem) && menuItem.route !== 'advance-settings'"
+                    v-else-if="isValidMenuItem(menuItem) && menuItem.route !== 'advance-settings'"
                     :to="{ name: menuItem.route }"
                     :class="getMenuItemClasses(menuItem)"
                     active-class="wpsr-tab-active"
                     exact-path
                 >
-                    {{ getMenuTitle(menuItem) }}
+                    <span>{{ getMenuTitle(menuItem) }}</span>
+                    <span v-if="menuItem.isNew" class="wpsr-menu-keyword">New</span>
                     <ProCrownIcon v-if="isProFeature(menuItem) && !has_pro" :width="14" :height="14" class="wpsr-menu-pro-icon" />
                 </router-link>
             </template>
@@ -26,16 +57,21 @@
 
             <div class="wpsr-nav-right">
                 <!-- Settings Icon -->
-                <router-link
-                    :to="{ name: 'advance-settings' }"
-                    class="wpsr-settings-icon"
-                    active-class="wpsr-icon-active"
-                    title="Settings"
+                <el-tooltip
+                    effect="dark"
+                    content="Settings"
+                    placement="bottom"
                 >
-                    <el-icon size="18">
-                        <Setting />
-                    </el-icon>
-                </router-link>
+                    <router-link
+                        :to="{ name: 'advance-settings' }"
+                        class="wpsr-settings-icon"
+                        active-class="wpsr-icon-active"
+                    >
+                        <el-icon size="18">
+                            <Setting />
+                        </el-icon>
+                    </router-link>
+                </el-tooltip>
 
                 <!-- Color Mode Toggle -->
                 <ColorMode/>
@@ -110,6 +146,11 @@ import { applyFilters } from '@wordpress/hooks';
                     classes.push('router-link-exact-active');
                 }
 
+                // Keep "Reviews" tab active when on review-forms routes
+                if (menuItem.route === 'reviews' && this.$route.name && this.$route.name.startsWith('review-form')) {
+                    classes.push('wpsr-tab-active', 'router-link-active', 'router-link-exact-active');
+                }
+
                 return classes;
             },
             getMenuTitle(menuItem) {
@@ -129,6 +170,10 @@ import { applyFilters } from '@wordpress/hooks';
                         route: 'reviews',
                         title: 'Reviews',
                         permission: ['wpsn_manage_reviews', 'wpsn_full_access'],
+                        children: [
+                            { route: 'reviews', title: 'All Reviews' },
+                            { route: 'review-forms', title: 'Review Forms', isPro: true, isNew: true },
+                        ]
                     },
                     {
                         route: 'testimonials',
@@ -154,7 +199,7 @@ import { applyFilters } from '@wordpress/hooks';
                     },
                     {
                       route: 'custom-sources',
-                      title: 'Custom Sources (Beta)',
+                      title: 'Custom Sources',
                       permission: ['wpsn_full_access'],
                       isPro: true,
                     },

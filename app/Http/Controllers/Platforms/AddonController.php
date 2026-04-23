@@ -10,7 +10,7 @@ class AddonController extends Controller
 
     public function activePlugin(Request $request)
     {
-        $platform = $request->get('platform');
+        $platform = sanitize_text_field($request->get('platform', ''));
         if ($platform === 'tiktok') {
             $this->handleNinjaTikTokInstall();
         }

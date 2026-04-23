@@ -46,8 +46,10 @@ export default class WPSocialReviews {
         this.nl2br = this.nl2br.bind(this);
         this.parseDuration = this.parseDuration.bind(this);
         this.shortNumberFormat = this.shortNumberFormat.bind(this);
-        this.generateURLsFromHashTag = this.generateURLsFromHashTag.bind(this);
+        this.escapeHtmlAttr = this.escapeHtmlAttr.bind(this);
         this.escapeHtml = this.escapeHtml.bind(this);
+        this.sanitizeHtml = this.sanitizeHtml.bind(this);
+        this.generateURLsFromHashTag = this.generateURLsFromHashTag.bind(this);
         this.generateURLsFromText = this.generateURLsFromText.bind(this);
         this.numberWithCommas = this.numberWithCommas.bind(this);
         this.$getFirstWord = this.$getFirstWord.bind(this);
@@ -143,13 +145,15 @@ export default class WPSocialReviews {
     }
 
     $showAjaxError(error) {
-        if (error.responseJSON && error.responseJSON.message) {
-            ElNotification.error(error.responseJSON.message);
-        } else if (error.responseText) {
-            ElNotification.error(error.responseText);
-        } else {
-            ElNotification.error('Something is wrong when doing ajax request! Please try again');
+        let message = 'Something is wrong when doing ajax request! Please try again';
+        if (error && error.responseJSON && error.responseJSON.message) {
+            message = error.responseJSON.message;
+        } else if (error && error.responseText) {
+            message = error.responseText;
         }
+        ElNotification.error({
+            message: message
+        });
     }
 
     $t(str, ...args) {
@@ -338,8 +342,28 @@ export default class WPSocialReviews {
     }
 
     /**
-     * Escape HTML
-     * Converts < > & " ' to HTML entities
+     * Escape HTML attribute values
+     * Use this when inserting user content into HTML attributes (href, class, etc.)
+     *
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped text safe for HTML attributes
+     */
+    escapeHtmlAttr(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    /**
+     * Escape HTML content - converts ALL HTML to entities
+     * Use this when you want to display HTML as plain text
+     *
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped text with all HTML converted to entities
      */
     escapeHtml(text) {
         if (!text) return '';
@@ -348,21 +372,173 @@ export default class WPSocialReviews {
         return div.innerHTML;
     }
 
-    generateURLsFromHashTag(str, url) {
-        if (str) {
-            return str.replace(/#[^\s!@#$%^&*()=+\/,\[{\]};:'"?><]+/g, function (hash) {
-                let tag = hash.replace("#", "");
-                return '<a href="' + url + '' + tag + '" target="_blank">' + hash + '</a>';
-            });
+    /**
+     * Sanitize HTML
+     *
+     * Allowed tags: <p>, <br>, <a>, <span>
+     * Blocked: <script>, <iframe>, event handlers, dangerous URLs
+     *
+     * @param {string} html - HTML content to sanitize
+     * @returns {string} Sanitized HTML with only safe tags and attributes
+     */
+    sanitizeHtml(html) {
+        if (!html) return '';
+
+        // Remove obfuscated script-like constructs early
+        html = String(html).replace(/<\s*scr[^>]*>/ig, function(m){ return m.replace('<','&lt;'); });
+
+        // Strip inline event handlers and style attributes to prevent execution when parsing
+        html = html.replace(/\s*on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^>\s]+)/ig, '');
+        html = html.replace(/\s*on\s+\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^>\s]+)/ig, '');
+        html = html.replace(/\s*style\s*=\s*(?:"[^"]*"|'[^']*'|[^>\s]+)/ig, '');
+
+        // Temporarily move src/href values into data-* attributes so the browser won't load resources while we parse
+        html = html.replace(/\s*(src|href)\s*=\s*(?:"([^\"]*)"|'([^']*)'|([^>\s]+))/ig, function(match, p1, g1, g2, g3){
+            var val = g1 || g2 || g3 || '';
+            val = val.replace(/"/g, '&quot;');
+            return ' data-wpsr-' + p1 + '="' + val + '"';
+        });
+
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+
+        const allowedTags = ['IMG', 'P', 'SPAN', 'BR', 'STRONG', 'EM'];
+        const discardContentTags = ['SCRIPT', 'STYLE', 'IFRAME', 'NOSCRIPT'];
+        const allowedAttributes = {
+            'IMG': ['src', 'alt', 'title', 'width', 'height', 'draggable', 'role', 'class'],
+            'SPAN': ['class', 'aria-label', 'tabindex'],
+            'P': ['class']
+        };
+
+        function isSafeUrl(attrName, value) {
+            if (!value) return false;
+            const v = value.trim();
+            const lower = v.toLowerCase();
+
+            if (lower.startsWith('javascript:') || lower.startsWith('vbscript:')) return false;
+
+            if (lower.startsWith('data:')) {
+                return /^data:image\/(png|jpe?g|gif);base64,[a-z0-9+/=]+$/i.test(v);
+            }
+
+            if (lower.startsWith('http:') || lower.startsWith('https:') || lower.startsWith('//') || v.startsWith('/')) return true;
+            if (!/^[a-z0-9+\-.]+:/i.test(v)) return true;
+
+            return false;
         }
+
+        let that = this;
+        function cleanNode(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                return that.escapeHtml(node.nodeValue);
+            }
+
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                const tagName = node.tagName.toUpperCase();
+
+                if (discardContentTags.includes(tagName)) {
+                    return '';
+                }
+
+                if (!allowedTags.includes(tagName)) {
+                    let textContent = '';
+                    for (let child of node.childNodes) {
+                        textContent += cleanNode(child);
+                    }
+                    return textContent;
+                }
+
+                const tagLower = node.tagName.toLowerCase();
+                let elementHTML = `<${tagLower}`;
+
+                const allowed = allowedAttributes[tagName] || [];
+
+                for (let attr of Array.from(node.attributes)) {
+                    let name = attr.name.toLowerCase();
+                    let value = attr.value;
+
+                    // Map temporary data-wpsr-src/data-wpsr-href back to src/href after validation
+                    if (name === 'data-wpsr-src') {
+                        name = 'src';
+                    }
+                    if (name === 'data-wpsr-href') {
+                        name = 'href';
+                    }
+
+                    if (name.startsWith('on')) continue;
+                    if (!allowed.includes(name)) continue;
+
+                    if (name === 'src' || name === 'href') {
+                        if (!isSafeUrl(name, value)) continue;
+                    }
+
+                    if (value && value.toLowerCase().includes('javascript:')) continue;
+
+                    elementHTML += ` ${name}="${that.escapeHtmlAttr(value)}"`;
+                }
+
+                // Self-close void elements (no closing tag in HTML)
+                if (tagName === 'IMG' || tagName === 'BR') {
+                    elementHTML += ' />';
+                    return elementHTML;
+                }
+
+                elementHTML += '>';
+                for (let child of node.childNodes) {
+                    elementHTML += cleanNode(child);
+                }
+                elementHTML += `</${tagLower}>`;
+                return elementHTML;
+            }
+
+            return '';
+        }
+
+        let content = '';
+        for (let child of temp.childNodes) {
+            content += cleanNode(child);
+        }
+
+        return content;
     }
 
+    // ========================================================================
+    // URL AND HASHTAG GENERATION
+    // ========================================================================
+
+    /**
+     * Convert hashtags to clickable links
+     * Example: "#javascript" becomes <a href="https://facebook.com/hashtag/javascript">#javascript</a>
+     *
+     * @param {string} str - Text containing hashtags
+     * @param {string} url - Base URL for hashtag links
+     * @returns {string} Text with hashtags converted to links
+     */
+    generateURLsFromHashTag(str, url) {
+        if (!str) return '';
+
+        return str.replace(/#[^\s!@#$%^&*()=+\/,\[{\]};:'"?><]+/g, (hash) => {
+            let tag = hash.replace("#", "");
+            let escapedUrl = this.escapeHtmlAttr(url + tag);
+            let escapedHash = this.escapeHtml(hash);
+            return '<a href="' + escapedUrl + '" target="_blank">' + escapedHash + '</a>';
+        });
+    }
+
+    /**
+     * Convert plain text URLs to clickable links
+     *
+     * @param {string} str - Text containing URLs
+     * @returns {string} Text with URLs converted to links
+     */
     generateURLsFromText(str) {
-        if (str) {
-            return str.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&~\?\/.=]+/g, function (url) {
-                return '<a href="' + url + '" target="_blank">' + url + '</a>';
-            });
-        }
+        if (!str) return '';
+
+        return str.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&~\?\/.=]+/g, (url) => {
+            let escapedUrl = this.escapeHtmlAttr(url);
+            let escapedText = this.escapeHtml(url);
+            return '<a href="' + escapedUrl + '" target="_blank">' + escapedText + '</a>';
+        });
     }
 
     numberWithCommas(number) {
@@ -399,7 +575,16 @@ export default class WPSocialReviews {
         }
     }
 
+    /**
+     * Extract content based on language preference
+     * @param {string} content - Content to process
+     * @param {string} contentLanguage - Language preference ('translated_by_google', 'original', or default)
+     * @returns {string} Processed content
+     */
     $contentLanguage(content, contentLanguage) {
+        // Handle empty or undefined content
+        if (!content) return '';
+
         let translated_by_google = content.indexOf('(Translated by Google)');
         let original = content.indexOf('(Original)');
         let contentGoogleArray = translated_by_google !== -1 ? content.split('(Translated by Google)') : content;
@@ -416,24 +601,41 @@ export default class WPSocialReviews {
             }
             return translated_by_google === 0 ? contentOriginalArray[1] : content;
         } else {
-            return content;
+            return content || '';
         }
     }
 
     /**
      * Safe version of $contentLanguage that escapes HTML for display
      * Use this when rendering with v-html
+     * @param {string} content - Content to process
+     * @param {string} contentLanguage - Language preference
+     * @returns {string} Escaped content
      */
     $safeContentLanguage(content, contentLanguage) {
+        if (!content) return '';
         const result = this.$contentLanguage(content, contentLanguage);
-        return this.escapeHtml(result);
+        return this.sanitizeHtml(result) || '';
     }
 
+    /**
+     * Add Read More/Less button to content
+     * @param {string} content - Content to process
+     * @param {number} length - Word limit
+     * @param {string} contentLanguage - Language preference
+     * @returns {string} Processed content with Read More/Less buttons
+     */
     $addReadMoreBtn(content, length, contentLanguage) {
+        // Handle empty or undefined content
+        if (!content) return '';
+
         content = this.$contentLanguage(content, contentLanguage);
 
-        // Escape HTML
-        content = this.escapeHtml(content);
+        // Handle empty content after language processing
+        if (!content) return '';
+
+        // Sanitize HTML
+        content = this.sanitizeHtml(content);
 
         content = content.replace(/\s+/g, ' ').trim();
         let countWord = content.split(" ", length);
@@ -449,34 +651,79 @@ export default class WPSocialReviews {
             } else {
                 addContent = excerpt;
             }
-            return addContent;
+            return addContent || '';
         } else {
-            return content;
+            return content || '';
         }
     }
 
+    /**
+     * Truncate HTML content by word count while preserving safe HTML structure
+     * @param {string} html - HTML content to truncate
+     * @param {number} wordLimit - Maximum number of words
+     * @returns {string} Truncated HTML with only safe tags
+     */
     truncateHTML(html, wordLimit) {
+        // Handle empty or undefined content
+        if (!html) return '';
+        if (!wordLimit) return html;
+
         let div = document.createElement('div');
         div.innerHTML = html;
 
         let result = '';
         let wordCount = 0;
 
+        // Only allow these safe tags - removed A to disallow links
+        const allowedTags = ['P', 'BR', 'SPAN'];
+
+        // Only allow these safe attributes per tag
+        const allowedAttributes = {
+            'SPAN': ['class']
+        };
+
         const processNode = (node) => {
             if (node.nodeType === Node.TEXT_NODE) {
                 let words = node.nodeValue.split(/\s+/);
 
                 if (wordCount + words.length > wordLimit) {
-                    result += words.slice(0, wordLimit).join(" ");
+                    result += words.slice(0, wordLimit - wordCount).join(" ");
                     wordCount = wordLimit;
                 } else {
                     result += node.nodeValue;
                     wordCount += words.length;
                 }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
+                const tagName = node.tagName.toUpperCase();
+
+                // If tag is not allowed, just process its text content
+                if (!allowedTags.includes(tagName)) {
+                    // Extract text content only
+                    for (let child of node.childNodes) {
+                        if (wordCount < wordLimit) {
+                            processNode(child);
+                        }
+                    }
+                    return;
+                }
+
+                // Build safe element with only allowed attributes
                 let elementHTML = `<${node.tagName.toLowerCase()}`;
+
+                const allowed = allowedAttributes[tagName] || [];
                 for (let attr of node.attributes) {
-                    elementHTML += ` ${attr.name}="${attr.value}"`;
+                    if (allowed.includes(attr.name.toLowerCase())) {
+                        // Extra check for href to prevent javascript: URLs
+                        if (attr.name.toLowerCase() === 'href') {
+                            const href = attr.value.trim().toLowerCase();
+                            if (href.startsWith('javascript:') || href.startsWith('data:') || href.startsWith('vbscript:')) {
+                                continue; // Skip dangerous URLs
+                            }
+                        }
+                        // Escape attribute value
+                        const escapedValue = this.escapeHtmlAttr(attr.value);
+                        elementHTML += ` ${attr.name}="${escapedValue}"`;
+                    }
                 }
                 elementHTML += '>';
                 result += elementHTML;
@@ -497,7 +744,7 @@ export default class WPSocialReviews {
             }
         }
 
-        return this.escapeHtml(result);
+        return result || '';
     }
 
     get_platform_icon(platform, type = '') {

@@ -14,7 +14,6 @@ class Maintenance
 
         $response = wp_remote_post($this->getApiUrl(), [
             'body'      => $this->getData(),
-            'sslverify' => false,
             'timeout'   => 30,
             'cookies'   => []
         ]);
@@ -65,7 +64,6 @@ class Maintenance
                     'domain'  => site_url(),
                     'has_pro' => defined('WPSOCIALREVIEWS_PRO'),
                 ],
-                'ssl_verify' => false,
                 'timeout'    => 30,
             ]
         );

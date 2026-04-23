@@ -23,6 +23,7 @@ class ReviewsMigrator
 				`category` varchar(255),
 				`review_title` varchar(255),
 				`reviewer_name` varchar(255),
+				`reviewer_email` varchar(255) DEFAULT NULL,
 				`reviewer_url` varchar(255),
 				`reviewer_img` TEXT NULL,
 				`reviewer_text` LONGTEXT NULL,
@@ -36,7 +37,9 @@ class ReviewsMigrator
                 INDEX `idx_platform_name` (`platform_name`),
                 INDEX `idx_review_id` (`review_id`),
                 INDEX `idx_source_id` (`source_id`),
-                INDEX `idx_rating` (`rating`)
+                INDEX `idx_review_approved` (`review_approved`),
+                INDEX `idx_rating` (`rating`),
+                INDEX `idx_reviewer_email` (`reviewer_email`)
             ) $charsetCollate;";
             dbDelta($sql);
         } else {
@@ -72,6 +75,11 @@ class ReviewsMigrator
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- Required for migration to modify column
         $wpdb->query($wpdb->prepare("ALTER TABLE %i MODIFY COLUMN %i TEXT NULL", $table, 'reviewer_img'));
 
+        if (!in_array('reviewer_email', $existing_columns)) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- Required for migration to add missing column
+            $wpdb->query($wpdb->prepare('ALTER TABLE %i ADD %i varchar(255) DEFAULT NULL AFTER %i', $table, 'reviewer_email', 'reviewer_name'));
+        }
+
         static::addMissingIndexes($table);
     }
 
@@ -94,6 +102,7 @@ class ReviewsMigrator
             'idx_platform_name' => 'platform_name',
             'idx_review_id'     => 'review_id',
             'idx_source_id'     => 'source_id',
+            'idx_review_approved'     => 'review_approved',
             'idx_rating'        => 'rating',
         ];
 
@@ -102,6 +111,13 @@ class ReviewsMigrator
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- Required for migration to add missing indexes
                 $wpdb->query($wpdb->prepare("ALTER TABLE %i ADD INDEX %i (%i)", $table, $index_name, $column_name));
             }
+        }
+
+        // Index on reviewer_email for duplicate-check query performance.
+        // Uniqueness is enforced at the application layer (respects one_review_per_email toggle).
+        if (!in_array('idx_reviewer_email', $existing_index_names)) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- Required for migration to add index
+            $wpdb->query($wpdb->prepare("ALTER TABLE %i ADD INDEX %i (%i)", $table, 'idx_reviewer_email', 'reviewer_email'));
         }
     }
 }

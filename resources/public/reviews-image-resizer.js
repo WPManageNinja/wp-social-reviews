@@ -1,6 +1,16 @@
 jQuery(document).ready(function($) {
     "use strict";
 
+    function getWpsrImageFormat() {
+        let imageFormat = window.wpsr_ajax_params
+            && window.wpsr_ajax_params.image_settings
+            && window.wpsr_ajax_params.image_settings.image_format
+            ? window.wpsr_ajax_params.image_settings.image_format
+            : '';
+
+        return ['jpg', 'webp'].includes(imageFormat) ? imageFormat : 'jpg';
+    }
+
     let reviews_selector = $(".wpsr-reviews-wrapper");
     reviews_selector.each(function () {
 
@@ -27,7 +37,7 @@ jQuery(document).ready(function($) {
             url: window.wpsr_ajax_params.ajax_url,
             type: 'post',
             data: submitData,
-        }).then(response => {
+        }).done(function(response) {
             if(response) {
                 let jsonObjects = response.match(/({[^{}]+})/g);
                 let image_data_arrays = JSON.parse(jsonObjects);
@@ -41,7 +51,7 @@ jQuery(document).ready(function($) {
                         let review_platform = self.attr("data-review_platform");
                         if (media_id) {
                             media_id = media_id.toString();
-                            let image_format = window.wpsr_ajax_params.image_settings.image_format
+                            let image_format = getWpsrImageFormat();
                             if(review_platform && source_id && image_data_arrays.images_data.includes(media_id)) {
                                 let image = upload_url + '/'+  review_platform + '/'+ source_id +'/' + media_id + '_' + image_resize + '.'+ image_format;
                                 self.find(`.wpsr-reviewer-avatar`).attr('src', image);
@@ -51,9 +61,9 @@ jQuery(document).ready(function($) {
                     });
                 }
             }
-        }).catch(errors => {
+        }).fail(function(errors) {
             console.error(errors);
-        }).always(() => {
+        }).always(function() {
 
         });
     });

@@ -157,7 +157,9 @@ if (!empty($reviews)) {
                         $template_meta['ai_summary']['display_readmore'],
                         $template_meta['ai_summary']['text_typing_animation'],
                     );
-                    do_action('wpsocialreviews/review_images', $wpsr_review_images, $wpsr_review->id);
+                    if (Arr::get($template_meta, 'show_review_images', 'true') !== 'false') {
+                        do_action('wpsocialreviews/review_images', $wpsr_review_images, $wpsr_review->id);
+                    }
                 }
                 ?>
             </div>

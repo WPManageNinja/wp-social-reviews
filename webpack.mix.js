@@ -2,8 +2,9 @@ const mix = require('laravel-mix');
 const path = require('path');
 const fs = require("fs-extra");
 
-
-// Force modern Babel config to avoid legacy transforms and regenerator-runtime
+// -------------------------------------------------
+// Babel: Force modern Babel config to avoid legacy transforms and regenerator-runtime
+// -------------------------------------------------
 mix.babelConfig({
     presets: [
         ['@babel/preset-env', {
@@ -14,7 +15,9 @@ mix.babelConfig({
     ]
 });
 
-// Override webpack config
+// -------------------------------------------------
+// Webpack configuration
+// -------------------------------------------------
 mix.webpackConfig({
     resolve: {
         extensions: ['.js', '.vue', '.json'],
@@ -42,17 +45,22 @@ mix.webpackConfig({
     },
 });
 
+// -------------------------------------------------
+// Source maps (dev only) + clean assets (production)
+// -------------------------------------------------
 if (!mix.inProduction()) {
     mix.webpackConfig({
         devtool: 'source-map'
     }).sourceMaps(true, 'source-map');
 } else {
-    // During production build we'll remove the existing assets
-    // directory so that the source-maps are deleted as well.
+    // Clean assets directory before production build
     let fs = require('fs-extra');
     fs.remove('assets');
 }
 
+// -------------------------------------------------
+// Mix setup
+// -------------------------------------------------
 mix
     .setPublicPath('assets')
     .setResourceRoot('../')
@@ -67,6 +75,7 @@ mix
     .js('resources/public/wpsr-fb-album.js', 'assets/js/wpsr-fb-album.js')
     .js('resources/public/image_resizer.js', 'assets/js/image_resizer.js')
     .js('resources/public/reviews-image-resizer.js', 'assets/js/reviews-image-resizer.js')
+    .js('resources/public/review-form.js', 'assets/js/review-form.js')
     .js('resources/admin/Onboarding/onboarding.js', 'assets/js/onboarding.js')
 
     // React support for Gutenberg block
@@ -83,6 +92,7 @@ mix
     .sass('resources/scss/public/tt.scss', 'assets/css/wp_social_ninja_tt.css')
     .sass('resources/scss/public/tw.scss', 'assets/css/wp_social_ninja_tw.css')
     .sass('resources/scss/public/chat.scss', 'assets/css/social-review-chat.css')
+    .sass('resources/scss/public/review-form.scss', 'assets/css/review-form.css')
     .sass('resources/scss/admin/gutenBlock.scss', 'assets/css/social-review-gutenblock.css')
     .sass('resources/admin/Onboarding/onboarding.scss', 'assets/css/onboarding.css')
 
@@ -90,21 +100,22 @@ mix
     .copy('resources/images', 'assets/images')
     .copy('resources/fonts', 'assets/fonts');
 
-// Fix for Element Plus
+// Keep comment extraction enabled so release builds ship the required JS license files.
 mix.options({
-    legacyNodePolyfills: false
+    legacyNodePolyfills: false,
+    terser: {
+        extractComments: {
+            condition: /^\**!|@preserve|@license|@cc_on/i,
+            filename(fileData) {
+                return `${fileData.filename}.LICENSE.txt${fileData.query}`;
+            },
+            banner(licenseFile) {
+                return `License information can be found in ${path.basename(licenseFile)}`;
+            }
+        },
+    }
 });
 
-if (!mix.inProduction()) {
-    mix.webpackConfig({
-        devtool: 'source-map'
-    }).sourceMaps(true, 'source-map');
-} else {
-    // During production build we'll remove the existing assets
-    // directory so that the source-maps are deleted as well.
-    let fs = require('fs-extra');
-    fs.remove('assets');
-}
 
 // DEBUG: Print full config to diagnose other issues (optional)
 if (process.env.DEBUG_WEBPACK === 'true') {

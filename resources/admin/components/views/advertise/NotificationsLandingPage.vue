@@ -8,8 +8,8 @@
              <h1>Notification Popup</h1>
              <h2>A simple but powerful feature that changes the game</h2>
              <div class="wpsr_buy_pro_btn_wrapper">
-               <a href="https://wpsocialninja.com/?utm_source=wp_site&amp;utm_medium=plugin&amp;utm_campaign=upgrade" class="wpsr_buy_pro_btn">
-                 Upgrade to Pro
+               <a :href="upgradeBtnConfig.pro_purchase_url" class="wpsr_buy_pro_btn">
+                 {{ upgradeBtnConfig.text || 'Upgrade to Pro' }}
                </a>
              </div>
            </div>
@@ -155,8 +155,8 @@
            <div class="wpsr-promote-lp-section-title wpsr-d-flex wpsr-flex-column wpsr-flex-align-center">
              <h2>Thousands of businesses love using WP Social Ninja <br> so be one of the happy clients</h2>
              <div class="wpsr_buy_pro_btn_wrapper">
-               <a href="https://wpsocialninja.com/?utm_source=wp_site&amp;utm_medium=plugin&amp;utm_campaign=upgrade" class="wpsr_buy_pro_btn">
-                 Upgrade to Pro
+               <a :href="upgradeBtnConfig.pro_purchase_url" class="wpsr_buy_pro_btn">
+                 {{ upgradeBtnConfig.text || 'Upgrade to Pro' }}
                </a>
              </div>
            </div>
@@ -169,5 +169,14 @@
 <script type="text/babel">
 export default {
   name: 'NotificationsLandingPage',
+  computed: {
+    upgradeBtnConfig() {
+      return {
+        text: 'Upgrade to Pro',
+        pro_purchase_url: 'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade',
+        ...(this.appVars?.upgrade_btn_config || {})
+      };
+    }
+  }
 }
 </script>

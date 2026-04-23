@@ -25,43 +25,83 @@
       <!-- Filters and Actions -->
       <div class="wpsr-table-controls">
         <div class="wpsr-controls-left">
-          <div class="wpsr-controls-bulk-actions">
-            <el-select class="wpsr-select-field-primary" v-model="bulkAction" placeholder="Bulk Action" size="default" style="width: 160px;">
-              <el-option label="Bulk Actions" value="">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><Plus /></el-icon>
-                  <span>Bulk Actions</span>
-                </span>
-              </el-option>
-              <el-option label="Enable" value="enable">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><View /></el-icon>
-                  <span>Enable</span>
-                </span>
-              </el-option>
-              <el-option label="Disable" value="disable">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><Hide /></el-icon>
-                  <span>Disable</span>
-                </span>
-              </el-option>
-              <el-option label="Delete" value="delete">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><Delete /></el-icon>
-                  <span>Delete</span>
-                </span>
-              </el-option>
-              <el-option label="Duplicate" value="duplicate">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><DocumentCopy /></el-icon>
-                  <span>Duplicate</span>
-                </span>
-              </el-option>
-            </el-select>
-            <el-button @click="applyBulkAction" :disabled="!selectedItems.length">Apply</el-button>
+          <div class="wpsr_status_tabs">
+            <div class="wpsr_segmented_control">
+              <button
+                  :class="['wpsr-tab-button', { active: statusFilter === 'all' }]"
+                  @click="changeStatusTab('all')"
+              >
+                {{ $t('All') }}
+              </button>
+              <button
+                  :class="['wpsr-tab-button', { active: statusFilter === 'publish' }]"
+                  @click="changeStatusTab('publish')"
+              >
+                {{ $t('Approved') }}
+              </button>
+              <button
+                  :class="['wpsr-tab-button', { active: statusFilter === 'unpublish' }]"
+                  @click="changeStatusTab('unpublish')"
+              >
+                {{ $t('Pending') }}
+              </button>
+              <button
+                  :class="['wpsr-tab-button', { active: statusFilter === 'spam' }]"
+                  @click="changeStatusTab('spam')"
+              >
+                {{ $t('Spam') }}
+              </button>
+            </div>
           </div>
         </div>
         <div class="wpsr-controls-right">
+          <div class="wpsr-controls-bulk-actions">
+            <el-select class="wpsr-select-field-primary" v-model="bulkAction" :placeholder="$t('Bulk Action')" size="default" style="width: 160px;">
+              <el-option :label="$t('Bulk Actions')" value="">
+                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                  <el-icon><Plus /></el-icon>
+                  <span>{{ $t('Bulk Actions') }}</span>
+                </span>
+              </el-option>
+              <el-option :label="$t('Approve')" value="enable">
+                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                  <el-icon><View /></el-icon>
+                  <span>{{ $t('Approve') }}</span>
+                </span>
+              </el-option>
+              <el-option :label="$t('Disapprove')" value="disable">
+                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                  <el-icon><Hide /></el-icon>
+                  <span>{{ $t('Disapprove') }}</span>
+                </span>
+              </el-option>
+              <el-option :label="$t('Mark as Spam')" value="mark-spam">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><WarningFilled /></el-icon>
+                    <span>{{ $t('Mark as Spam') }}</span>
+                  </span>
+              </el-option>
+              <el-option :label="$t('Not Spam')" value="not-spam">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><CircleCheck /></el-icon>
+                    <span>{{ $t('Not Spam') }}</span>
+                  </span>
+              </el-option>
+              <el-option :label="$t('Delete')" value="delete">
+                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                  <el-icon><Delete /></el-icon>
+                  <span>{{ $t('Delete') }}</span>
+                </span>
+              </el-option>
+              <el-option :label="$t('Duplicate')" value="duplicate">
+                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                  <el-icon><DocumentCopy /></el-icon>
+                  <span>{{ $t('Duplicate') }}</span>
+                </span>
+              </el-option>
+            </el-select>
+            <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
+          </div>
           <el-input
               class="wpsr-input-default"
               v-model="search_string"
@@ -145,7 +185,11 @@
           </el-table-column>
           <el-table-column :label="$t('Status')" width="90">
             <template #default="scope">
+              <el-tag v-if="scope.row.review_approved === '2'" type="danger" size="small">
+                {{ $t('Spam') }}
+              </el-tag>
               <el-switch
+                  v-else
                   v-model="scope.row.review_approved"
                   active-value="1"
                   inactive-value="0"
@@ -164,10 +208,27 @@
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="approve" v-if="scope.row.fields && scope.row.fields.is_fluent_forms">
+                    <el-dropdown-item command="approve" v-if="scope.row.review_approved !== '2'">
                       <el-icon v-if="scope.row.review_approved === '0'"><CircleCheck /></el-icon>
                       <el-icon v-else><CircleClose /></el-icon>
-                      {{ scope.row.review_approved === '0' ? $t('Approve') : $t('Disapprove') }}
+                      <span>
+                        {{ scope.row.review_approved === '0' ? $t('Approve') : $t('Disapprove') }}
+                      </span>
+                    </el-dropdown-item>
+
+                    <el-dropdown-item
+                      v-if="scope.row.review_approved !== '2'"
+                      command="mark-spam"
+                      class="wpsr-action-spam"
+                    >
+                      <el-icon><WarningFilled /></el-icon> {{ $t('Mark as Spam') }}
+                    </el-dropdown-item>
+
+                    <el-dropdown-item
+                      v-if="scope.row.review_approved === '2'"
+                      command="not-spam"
+                    >
+                      <el-icon><CircleCheck /></el-icon> {{ $t('Not Spam') }}
                     </el-dropdown-item>
 
                     <el-dropdown-item command="edit">
@@ -353,7 +414,7 @@ import ReviewForm from './ReviewForm';
 import TestimonialLandingPage from './advertise/TestimonialLandingPage';
 import {tableMixin} from "../../mixins/tableMixin";
 import PermissionsNotification from "./advertise/PermissionsNotification.vue";
-import { Search, Edit, Delete, DocumentCopy, MoreFilled, CircleCheck, CircleClose } from '@element-plus/icons-vue';
+import { Search, Edit, Delete, DocumentCopy, MoreFilled, CircleCheck, CircleClose, WarningFilled, View, Hide } from '@element-plus/icons-vue';
 import ReviewsEmptyStates from "../pieces/icons/ReviewsEmptyStates.vue";
 import ReviewContentModal from "../pieces/ReviewContentModal.vue";
 
@@ -408,7 +469,10 @@ export default {
     DocumentCopy,
     MoreFilled,
     CircleCheck,
-    CircleClose
+    CircleClose,
+    WarningFilled,
+    View,
+    Hide
   },
   methods: {
     handleSwitchChange(row, newValue) {
@@ -429,6 +493,12 @@ export default {
           // use updateItemStatus with proper toggle logic
           const newStatus = row.review_approved === '0' ? 'enable' : 'disable';
           this.updateItemStatus(row, newStatus);
+          break;
+        case 'mark-spam':
+          this.markAsSpam(row);
+          break;
+        case 'not-spam':
+          this.markAsNotSpam(row);
           break;
         case 'edit':
           this.beforeEditHandler(row);
@@ -491,7 +561,7 @@ export default {
       } else {
         this.deleteItems();
       }
-    },
+    }
   },
   mounted() {
     this.getAll('testimonials');

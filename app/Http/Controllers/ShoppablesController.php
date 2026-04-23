@@ -21,7 +21,8 @@ class ShoppablesController extends Controller
      **/
     public function index(Request $request)
     {
-        $postType = $request->get('postType');
+        // sanitize postType
+        $postType = sanitize_text_field($request->get('postType', ''));
         $default = array(
             'instagram' => [],
             'facebook' => []
@@ -39,7 +40,6 @@ class ShoppablesController extends Controller
         return [
             'settings' => $settings,
             'has_item' => $has_item,
-            'posts' => GlobalHelper::getPostsByPostType($postType),
             'post_types' => GlobalHelper::getPostTypes(),
         ];
     }
@@ -56,9 +56,17 @@ class ShoppablesController extends Controller
      **/
     public function update(Request $request)
     {
-        $settings = $request->get('settings');
+        $settingsPayload = $request->get('settings');
+
+        // if payload is JSON string -> unslash and decode
+        if (is_string($settingsPayload)) {
+            $settingsPayload = wp_unslash($settingsPayload);
+            $decoded = json_decode($settingsPayload, true);
+            $settingsPayload = is_array($decoded) ? $decoded : [];
+        }
+
         $validate_rules = ['hashtags' => 'required'];
-        $settings = $this->recursive_sanitize($settings, $validate_rules);
+        $settings = $this->recursive_sanitize($settingsPayload, $validate_rules);
 
         update_option('wpsr_global_shoppable_settings', $settings);
         return [
@@ -79,8 +87,15 @@ class ShoppablesController extends Controller
      **/
     public function delete(Request $request)
     {
-        $settings = $request->get('settings');
-        update_option('wpsr_global_shoppable_settings', $settings);
+        $settingsPayload = $request->get('settings');
+
+        if (is_string($settingsPayload)) {
+            $settingsPayload = wp_unslash($settingsPayload);
+            $decoded = json_decode($settingsPayload, true);
+            $settingsPayload = is_array($decoded) ? $decoded : [];
+        }
+
+        update_option('wpsr_global_shoppable_settings', $settingsPayload);
         return [
             'message' => __("Deleted Successfully.", 'wp-social-reviews'),
         ];
@@ -88,27 +103,40 @@ class ShoppablesController extends Controller
 
     public function storeTemplateSettings(Request $request, $postId)
     {
+        $postId = intval($postId);
+        $platform = sanitize_text_field($request->get('platform', ''));
+
         $json_data = $request->get('shoppable_fields');
         $raw_data  = json_decode($json_data, true);
 
         $sanitized_data = $this->recursive_sanitize($raw_data);
 
-        $platform = $request->get('platform');
-
         $settings_json = $request->get('settings');
-        $settings  = json_decode($settings_json, true);
+        if (is_string($settings_json)) {
+            $settings  = json_decode($settings_json, true);
+        } else {
+            $settings = $settings_json;
+        }
 
         $feed_json = $request->get('feed');
-        $feed  = json_decode($feed_json, true);
+        if (is_string($feed_json)) {
+            $feed  = json_decode($feed_json, true);
+        } else {
+            $feed = $feed_json;
+        }
 
-        $settings['feed_settings']['shoppable_settings']['shoppable_feeds'][$feed['username']][$feed['id']] = $sanitized_data;
+        // sanitize feed values used as array keys
+        $feed_username = isset($feed['username']) ? sanitize_text_field($feed['username']) : '';
+        $feed_id = isset($feed['id']) ? intval($feed['id']) : 0;
+
+        $settings['feed_settings']['shoppable_settings']['shoppable_feeds'][$feed_username][$feed_id] = $sanitized_data;
 
         do_action('wpsocialreviews/update_editor_settings_' . $platform, $settings, $postId);
     }
 
     public function getPosts(Request $request)
     {
-        $postType = $request->get('postType');
+        $postType = sanitize_text_field($request->get('postType', ''));
         return [
             'posts' => GlobalHelper::getPostsByPostType($postType),
         ];

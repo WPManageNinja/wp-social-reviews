@@ -27,7 +27,7 @@
                     <div v-if="errors && !allFilteredReviews.length" v-for="(error, index ) in errors" :key="index">
                       <ErrorCard :error_message="error.error_message"/>
                     </div>
-                    <div  v-if="allFilteredReviews.length">
+                    <div  v-if="allFilteredReviews.length || (template_meta && template_meta.show_header === 'true')">
                       <div id="wpsr-reviews-grid"
                             class="wpsr-reviews-wrapper"
                             :class="[
@@ -82,7 +82,7 @@
                           :businessInfo='business_info'
                       />
                     </div>
-                    <div v-if="!allFilteredReviews.length && !errors.length">
+                    <div v-if="!allFilteredReviews.length && !errors.length && !(template_meta && template_meta.show_header === 'true')">
                       <div class="wpsr-placeholder-wrapper">
                         <img class="wpsr-placeholder-image" :src="assets_url+ '/images/icon/placeholder-template.png'" alt="Placeholder Image">
                       </div>
@@ -104,11 +104,11 @@
                             :platforms = "platforms"
                             :all_reviews = "allAvailableReviews.length > 0 ? allAvailableReviews : allFilteredReviews"
                             :business_info = "all_business_info"
-                            :pages = "pages"
                             :image_settings = image_settings
                             :country_list = "country_list"
                             :can_enable_ai_summary = "can_enable_ai_summary"
                             :available_grid_skins="available_grid_skins"
+                            :review_forms="review_forms"
                             @fetchReviews = "fetchReviews"
                             @saveTemplateMeta = "saveTemplateMeta"
                             @handleDevice="handleDevice"
@@ -212,7 +212,6 @@ export default {
         return {
             type: '',
             types: '',
-            pages: [],
             country_list: [],
             post_types: [],
             loading: false,
@@ -250,7 +249,8 @@ export default {
             currentPage: 1,
             hasMoreReviews: false,
             totalReviews: 0,
-            allLoadedReviews: [] // Store all loaded reviews
+            allLoadedReviews: [], // Store all loaded reviews
+            review_forms: []
         }
     },
     methods: {
@@ -604,7 +604,6 @@ export default {
 
                       this.formatData(response);
 
-                        this.pages        = response.pages;
                         this.country_list = response.country_list;
                         this.post_types   = response.post_types;
                         this.categories   = response.categories;
@@ -618,6 +617,7 @@ export default {
 
                         this.resized_images = response.resized_images;
                         this.image_settings = response.image_settings;
+                        this.review_forms = response.review_forms || [];
                         let resizedArray = Object.values(response.resized_images);
                         if(response && resizedArray && this.image_settings && this.image_settings.optimized_images === 'true') {
                           if(response && resizedArray.length < response.filtered_reviews.length) {
@@ -766,12 +766,18 @@ export default {
           const filterByTitle = this.template_meta.filterByTitle || 'all';
 
           if (filterByTitle === 'include' || filterByTitle === 'exclude') {
-            // For include/exclude, all matching reviews are loaded initially - no load more needed
             this.hasMoreReviews = false;
             this.totalReviews = this.allFilteredReviews.length;
           } else {
             // Normal pagination behavior for 'all' filter
-            let paginate = this.template_meta.paginate || 6;
+            // Use responsive paginate_number (backend handles device detection, admin preview uses desktop)
+            let paginate = 6;
+            if (this.template_meta.paginate_number && this.template_meta.paginate_number.desktop) {
+              paginate = this.template_meta.paginate_number.desktop;
+            } else if (this.template_meta.paginate) {
+              // Fallback to old paginate field for backward compatibility
+              paginate = this.template_meta.paginate;
+            }
             // Check if pagination is enabled and if there might be more reviews
             if (this.template_meta) {
               // Show load more if we have exactly the paginate amount (suggests more might be available)

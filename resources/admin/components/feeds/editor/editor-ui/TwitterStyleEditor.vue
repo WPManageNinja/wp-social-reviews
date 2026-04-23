@@ -43,6 +43,17 @@
                               :border="feed_config.styles[option.key].border"
                               @update:border="feed_config.styles[option.key].border = $event"
                           />
+                         <SpacingElement
+                             v-if="option.border_radius && feed_config.styles[option.key]"
+                             :spacing="feed_config.styles[option.key].border_radius"
+                             :label="'Border Radius'"
+                             @update:spacing="feed_config.styles[option.key].border_radius = $event"
+                         />
+                          <BoxShadowElement
+                              v-if="option.box_shadow && feed_config.styles[option.key] && feed_config.styles[option.key].box_shadow"
+                              :boxShadow="feed_config.styles[option.key].box_shadow"
+                              @update:boxShadow="feed_config.styles[option.key].box_shadow = $event"
+                          />
                           <SliderElement
                               v-if="option.slider && feed_config.styles[option.key] && show_section(optionsKey, option)"
                               :spacing="feed_config.styles[option.key].slider"
@@ -67,6 +78,7 @@ import FeedEditorGroup from './../../../core-ui/editor/EditorGroup';
 import SpacingElement from './../../../core-ui/editor/SpacingElement';
 import TypographyElementWrapper from "../../../core-ui/editor/TypographyElementWrapper";
 import BorderElement from "../../../core-ui/editor/BorderElement";
+import BoxShadowElement from "../../../core-ui/editor/BoxShadowElement";
 import {helperStyle} from "../../../../mixins/helperStyle";
 import {StyleEditorMixin} from "../../../../mixins/StyleEditorMixin";
 import SliderElement from "../../../core-ui/editor/SliderElement";
@@ -94,6 +106,7 @@ export default {
     FeedEditorGroup,
     SpacingElement,
     BorderElement,
+    BoxShadowElement,
     SliderElement,
     EditorCollapsiblePanel,
     UpgradeToProBanner
@@ -142,6 +155,10 @@ export default {
         'statistics_label',
         'statistics_count',
         'follow_button',
+        'footer_follow_button',
+        'footer_follow_button_hover',
+        'info_wrapper',
+        'tw_pagination',
         'author',
         'username',
         'tweet_date',
@@ -177,7 +194,13 @@ export default {
         this.feed_config.styles.statistics_label,
         this.feed_config.styles.statistics_count,
         this.feed_config.styles.follow_button,
+        this.feed_config.styles.follow_button_hover,
+        this.feed_config.styles.footer_follow_button,
+        this.feed_config.styles.footer_follow_button_hover,
         this.feed_config.styles.info_wrapper,
+        this.feed_config.styles.info_wrapper_hover,
+        this.feed_config.styles.tw_pagination,
+        this.feed_config.styles.tw_pagination_hover,
         this.feed_config.styles.author,
         this.feed_config.styles.username,
         this.feed_config.styles.tweet_date,
@@ -188,6 +211,7 @@ export default {
         this.feed_config.styles.action_text,
         this.feed_config.styles.action_icon,
         this.feed_config.styles.item_box,
+        this.feed_config.styles.item_box_hover,
       ].filter(Boolean); // Filter out any undefined values
 
       this.handleStyles(style_container);

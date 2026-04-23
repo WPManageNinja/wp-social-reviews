@@ -183,6 +183,72 @@ a.wpsr-reviewer-image-animation::before {
     }
   }
 }
+
+// Generic product review drawer layout (used by FluentCart + WooCommerce)
+.wpsr-product-review-drawer {
+  [class*="wpsr-col-"] {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+  .wpsr-business-info {
+    flex-direction: column;
+    border-radius: 0;
+    .wpsr-business-info-left {
+      flex: initial;
+      width: 100%;
+      .wpsr-business-info-paltforms,
+      .wpsr-business-info-logo,
+      .wpsr-rating-and-count {
+        display: flex;
+        justify-content: center;
+        white-space: nowrap;
+      }
+    }
+    .wpsr-business-info-right {
+      width: 100%;
+      margin-top: 5px;
+      display: flex;
+      justify-content: center;
+      border-left: none;
+    }
+  }
+  button.wpsr-popup-close {
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .wpsr-all-reviews.wpsr_feeds {
+    padding: 15px;
+  }
+}
+
+// Wide drawer variant (modern style)
+.wpsr-reviews-wrapper.wpsr-drawer-wide {
+  right: -403px !important;
+  width: 403px;
+  &.active {
+    right: 0 !important;
+  }
+}
+.wpsr-reviews-layout-badge.wpsr-drawer-wide {
+  margin-right: 35px;
+  margin-top: 25px;
+  margin-bottom: 25px;
+  border-radius: 20px;
+  .wpsr-row {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  .wpsr-business-info-wrapper{
+    .wpsr-row {
+      padding: 0px;
+    }
+  }
+  .wpsr-rating-and-count {
+    white-space: nowrap;
+  }
+}
+
 .wpsr-no-reviews{
   &.wpsr-reviews-badge2{
     .wpsr-reviews-badge-wrapper-inner {
@@ -302,6 +368,12 @@ a.wpsr-reviewer-image-animation::before {
  .wpsr-business-info{
    justify-content: center;
    background-color: transparent;
+   .wpsr-no-reviews-message{
+     font-size: 14px;
+     color: #666;
+     margin-top: 5px;
+     margin-bottom: 0;
+   }
    .wpsr-business-info-left{
      display: flex;
      width: 30%;
@@ -342,6 +414,10 @@ a.wpsr-reviewer-image-animation::before {
     position: absolute;
     right: -50px;
     top: -5px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
     svg{
       height: 25px;
     }
@@ -364,7 +440,7 @@ a.wpsr-reviewer-image-animation::before {
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 99999;
+  z-index: 9999999;
   text-align: initial;
   &:before {
     content: "";
@@ -416,7 +492,7 @@ a.wpsr-reviewer-image-animation::before {
   .wpsr-business-info{
     .wpsr-write-review-modal .wpsr-business-info-paltforms-url{
       .wpsr-reviews-form-popup-overlay{
-        a.wpsr-popup-close{
+        .wpsr-popup-close{
           &:hover{
             background-color: transparent;
           }
@@ -534,12 +610,18 @@ a.wpsr-reviewer-image-animation::before {
 .wpsr-review-template,
 .wpsr-review-template-custom,
 .wpsr-review-template-fluent_forms,
+.wpsr-review-template-native_form,
 .wpsr-has-multiple-reviews-platform,
 .wpsr-review-template-testimonial,
 .wpsr-review-template-woocommerce,
+.wpsr-review-template-fluent-cart,
 .facebook,
 .fluent_forms,
+.native_form,
 .woocommerce,
+.fluent-cart,
+.wpsr-fluent-cart-single-rating,
+.wpsr-fluent-cart-list-rating,
 .airbnb,
 .tripadvisor,
 .google,
@@ -711,6 +793,7 @@ a.wpsr-reviewer-image-animation::before {
       font-size: 16px;
       font-weight: 700;
       padding-right: 5px;
+      white-space: nowrap;
     }
     .wpsr-total-reviews{
       padding-left: 5px;
@@ -1337,6 +1420,7 @@ a.wpsr-reviewer-image-animation::before {
   &.wpsr-review-template-airbnb,
   &.wpsr-review-template-tripadvisor,
   &.wpsr-review-template-amazon,
+  &.wpsr-review-template-native_form,
   &.wpsr-review-template-aliexpress,
   &.wpsr-review-template-ai,
   &[class~="wpsr-review-template-booking.com"]
@@ -1463,7 +1547,9 @@ a.wpsr-reviewer-image-animation::before {
   mask-image: linear-gradient(to right, black var(--wpsr-review-star-fill), transparent var(--wpsr-review-star-fill));
   -webkit-mask-image: linear-gradient(to right, black var(--wpsr-review-star-fill), transparent var(--wpsr-review-star-fill));
 }
-
+.wpsr-star-background-empty .wpsr-star-filled {
+  display: none;
+}
 .wpsr-rating{
   display: flex;
   flex-direction: row;
@@ -1640,6 +1726,13 @@ a.wpsr-reviewer-image-animation::before {
     &:focus{
       border: 1px solid #4284f3;
     }
+  }
+}
+.fct-product-card{
+  .wpsr-fluent-cart-list-rating{
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-bottom: 12px;
   }
 }
 

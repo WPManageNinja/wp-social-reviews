@@ -40,7 +40,7 @@
 </template>
 
 <script type="text/babel">
-import debounced from 'lodash/debounce';
+import { debounce } from '../../../../utils';
 import FeedEditorGroup from './../../../core-ui/editor/EditorGroup';
 import UpgradeToProButton from '../../../views/advertise/UpgradeToProButton';
 import Youtube from '../../../views/platforms/feeds/Youtube.vue';
@@ -150,14 +150,13 @@ export default {
             this.$emit('fetchFeed');
         },
 
-        fetch: debounced(function () {
+        fetch: debounce(function () {
             this.$emit('fetchFeed', 'fetching');
         }, 500),
 
         handleFindEnabledPlatforms() {
             // Handle the findEnabledPlatforms event from YoutubeConfig
             // This can be used to refresh connection status or update UI
-            console.log('YouTube enabled platforms updated');
         },
     },
 }

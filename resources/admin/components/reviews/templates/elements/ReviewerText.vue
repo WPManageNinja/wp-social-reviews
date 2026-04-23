@@ -6,7 +6,7 @@
         <p class="wpsr-review-full-content" v-else v-html="$safeContentLanguage(reviewerText, contentLanguage)"></p>
 
       <ReviewImages
-          v-if="hasReviewImages"
+          v-if="hasReviewImages && showReviewImages"
           :reviewImages="processedReviewImages"
           :templateId="review ? review.template_id : null"
           :reviewId="review ? review.id : null"
@@ -31,7 +31,7 @@
 </template>
 
 <script type="text/babel">
-import debounced from "lodash/debounce";
+import { debounce } from '../../../../utils';
 import ReviewImages from "./ReviewImages.vue";
 
 export default {
@@ -44,6 +44,10 @@ export default {
       isAiSummary: Boolean,
       isAiReadmoreEnabled: Boolean,
       isTextTypingAnimationEnabled: Boolean,
+      showReviewImages: {
+        type: Boolean,
+        default: true
+      },
       reviewFields: Array,
       review: Object
   },
@@ -153,7 +157,7 @@ export default {
         contentLength: {
             handler() {
                 if (!this.isAnimating) {
-                    debounced(this.renderSummary, 300)();
+                    debounce(this.renderSummary, 300)();
                 }
             }
         },

@@ -26,16 +26,16 @@
                                 {{ item.name }}
                             </span>
                             <span class="wpsr-accounts-secondary-label wpsr-secondary-label wpsr-body-regular-color">
-                                {{ item.type }}
+                                {{ ucFirst(item.type) }}
                             </span>
 
-                            <span v-if="item.status === 'error'" class="wpsr-account-error-message wpsr-accounts-secondary-label wpsr-secondary-label wpsr-body-regular-color">    
+                            <div v-if="item.status === 'error'" class="wpsr-account-error-message wpsr-accounts-secondary-label wpsr-secondary-label wpsr-body-regular-color">
                                 <div class="wpsr-account-error-status">
                                     <span>
                                         <el-icon><InfoFilled /></el-icon>{{ $t('Source Invalid') }}
                                     </span>
                                 </div>
-                            </span>
+                            </div>
                         </div>
 
                         <span
@@ -100,8 +100,9 @@ export default {
                 return this.accounts.filter(account => account.is_event_enabled === true);
             }
 
-            return this.accounts.filter(account => account.status !== 'error')
+          // Remove event-enabled accounts for other feed types
+          return this.accounts.filter(account => account.is_event_enabled !== true);
         }
-    }
+    },
 }
 </script>

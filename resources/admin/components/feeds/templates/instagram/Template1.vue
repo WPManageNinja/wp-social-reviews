@@ -39,16 +39,16 @@
                                             v-if="!(configs.feed_settings.shoppable_settings.shoppable_feeds[feed.username] && configs.feed_settings.shoppable_settings.shoppable_feeds[feed.username][feed.id])"
                                             @click.prevent.stop="$emit('add_selected_shoppable_feed', feed)"
                                       >
-                                        <i class="el-icon-link" ></i>
+                                        <el-icon><Link /></el-icon>
                                         Add
                                       </span>
                                       <div v-else>
                                           <span class="wpsr-shoppable-icon" @click.prevent.stop="$emit('edit_shoppable_feed', feed)">
-                                            <i class="el-icon-edit"></i>
+                                            <el-icon><EditPen /></el-icon>
                                             Edit
                                           </span>
                                           <span class="wpsr-shoppable-icon" @click.prevent.stop="$emit('remove_shoppable_feed', feed)">
-                                             <i class="el-icon-delete"></i>
+                                             <el-icon><Delete /></el-icon>
                                              Delete
                                           </span>
                                       </div>

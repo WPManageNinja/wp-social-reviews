@@ -241,7 +241,6 @@ class TwitterApi
         $args     = array(
             'headers'   => $header[0],
             'timeout'   => 60,
-            'sslverify' => false
         );
         $result   = wp_remote_get($url, $args);
         if (is_wp_error($result)) {

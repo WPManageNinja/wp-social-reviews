@@ -1307,6 +1307,7 @@
         align-items: flex-start;
         align-self: stretch;
         border-bottom: 1px solid var(--wpsr-primary-border);
+        gap: 16px;
         .el-tabs__active-bar{
           display: none;
           height: auto;
@@ -2341,7 +2342,9 @@
       background-color: var(--wpsr-primary-bg, #fff);
   }
   .mce-statusbar.mce-last {
-    display: none;
+    .mce-path {
+      display: none;
+    }
   }
   .wp-editor-container{
     margin-top: 45px;

@@ -17,6 +17,16 @@ let imageSize = null;
 let userName = null;
 let uploadUrl = null;
 
+function getWpsrImageFormat() {
+    let imageFormat = window.wpsr_ajax_params
+        && window.wpsr_ajax_params.image_settings
+        && window.wpsr_ajax_params.image_settings.image_format
+        ? window.wpsr_ajax_params.image_settings.image_format
+        : '';
+
+    return ['jpg', 'webp'].includes(imageFormat) ? imageFormat : 'jpg';
+}
+
 export default {
     init: function (e, $this){
         this.checkFacebookFeedType(e, $this);
@@ -33,7 +43,7 @@ export default {
         if(currentPopupSettings.display_sidebar === 'false' ) {
             className = 'wpsr-feed-popup-box-no-sidebar';
         }
-        let image_format = window.wpsr_ajax_params.image_settings.image_format;
+        let image_format = getWpsrImageFormat();
         currentFeed.media_url =  optimizedImages ? uploadUrl +'/facebook_feed' +'/' +  userName + '/' + postId + '_' + imageSize + '.' + image_format : currentFeed.media_url;
         let video_attachment_url = '';
         if(currentFeed.status_type === 'added_video'){

@@ -1,69 +1,65 @@
-﻿=== WP Social Ninja - Embed Social Feeds, Customer Reviews, Chat Widgets (Google Reviews, YouTube Feed, Photo Feeds, and More) ===
+﻿=== WP Social Ninja – Embed Social Feeds, User Reviews & Chat Widgets ===
 Contributors: techjewel, adreastrian, devutpol, sabbir345, wpmanageninja
 Tags: Customer Reviews, Google Reviews, Social Reviews, Social Feeds,  Instagram Feeds
 Requires at least: 6.2
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 4.0.0
+Stable tag: 4.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Add Facebook feeds, Instagram feeds, TikTok feeds, Facebook reviews, WhatsApp Chat, Messenger chat, Testimonial, and others using a single dashboard.
-
 == Description ==
-= 🏆 #1 Reliable, Fast, and Feature-Rich Social Media Plugin for WordPress to Connect Your Social Feeds, Customer Reviews, Chat Widgets, Testimonials, Notification Popups, and More. =
+= Easy to Use and Feature-rich Social Media Plugin to Connect Feeds, Reviews, Chat Widgets, Notification Popups, and More. =
 
 👉 Official Website: [WP Social Ninja](https://wpsocialninja.com/)
 
-👉 Get Demo: [Preview The Demo](https://wpsocialninja.com/demo-page/)
+👉 Get Demo: [View The Demo](https://wpsocialninja.com/demo-page/)
 
 👉 Guidelines: [Official Documentation](https://docs.wpsocialninja.com/)
 
-👉 Get support: [Open Support Ticket](https://wpmanageninja.com/support-tickets/#/)
-
-👉 Join Community: [Facebook Group](https://www.facebook.com/groups/wpsocial/)
+👉 Join Our Community: [WP Social Ninja Community](https://community.wpmanageninja.com/portal/space/wp-social-ninja/home)
 
 [youtube https://www.youtube.com/watch?v=da87i4ZR6OU]
 
-=  🔥WP Social Ninja - Your Ultimate Social Media WordPress Plugin =
+=  🔥WP Social Ninja - A Comprehensive Social Media Plugin =
 
-[WP Social Ninja](https://wpsocialninja.com/) is a social media marketing tool designed to build trust, create urgency, and encourage conversions. This easy social media plugin allows you to fulfill all your targets. You can embed **Instagram Feed**, **Facebook Feed**, **YouTube Feed**, **TikTok Feed**, and other social feed platforms. For example, you can display your social feed gallery with user-generated content using hashtags and even embed product feed from Instagram [shoppable feeds](https://wpsocialninja.com/shoppable-feed/) for direct sales.
+[WP Social Ninja](https://wpsocialninja.com/) is a social media marketing tool designed to build trust, create urgency, and encourage conversions. This easy-to-use plugin lets you meet all your targets. You can embed **Instagram Feed**, **Facebook Feed**, **YouTube Feed**, **TikTok Feed**, and other platforms. For example, you can display your social feed gallery with user-generated content using hashtags and even embed product feed from Instagram [shoppable feeds](https://wpsocialninja.com/shoppable-feed/) for direct sales.
 
-This WordPress business reviews plugin also collects and displays [customer reviews](https://wpsocialninja.com/platforms/social-reviews/) or feedback from 9+ popular platforms, helping you build trust with website visitors. You can display these reviews on dedicated pages or as notification popups. You can connect reviews from Google Business Profile, Yelp, Airbnb, Facebook, WooCommerce reviews, and other platforms.
+This business reviews plugin also collects and displays [customer reviews](https://wpsocialninja.com/platforms/social-reviews/) from 9+ popular platforms, helping you build trust. You can display these reviews on dedicated pages or as notification popups. You can connect reviews from Google Business Profile, Yelp, Airbnb, Facebook, WooCommerce, and other platforms.
 
-Need a [social chat](https://wpsocialninja.com/platforms/social-chat/) or customer support solution? Don’t worry, using WP Social Ninja, you can connect 15+ social chat widgets. You can create chat buttons on your WordPress site, like WhatsApp Chat, Messenger Chat, Telegram Chat, and other chat widgets. This user-friendly WordPress social plugin offers unlimited features, customization, and styling options.
+Need a [social chat](https://wpsocialninja.com/platforms/social-chat/) or customer support solution? Don’t worry, using WP Social Ninja, you can connect 15+ social chat widgets. You can add chat buttons to your site, such as WhatsApp Chat, Messenger Chat, Telegram Chat, and other chat widgets. This user-friendly social plugin offers unlimited features, customization, and styling options.
 
-**👉[Get the Pro Version](https://wpsocialninja.com/price/) | [Preview the Demo](https://wpsocialninja.com/demo-page/)**
+**👉[Get the Pro Version](https://wpsocialninja.com/price/) | [View the Demo](https://wpsocialninja.com/demo-page/)**
 
-### 🔌 Embed social feeds, reviews, and chats in 3 quick steps:
+### 🔌 Embed Preferred Platforms in 3 Quick Steps:
 
-Connect social feeds, reviews, and chat widgets to your site in just three simple steps with WP Social Ninja:
+Connect any types of feeds to your site in just three simple steps with WP Social Ninja:
 
 * Connect and create your desired feed
 * Customize and style to match your brand
 * Copy the shortcode and display it on the website
 
-👉 [Get the Pro](https://wpsocialninja.com/price/) | [Learn Detail Steps](https://wpsocialninja.com/docs/how-to-install-upgrade-and-activate-license/)
-
+👉 [Get the Pro](https://wpsocialninja.com/price/) | [Learn Detail Steps](https://docs.wpsocialninja.com/guide/getting-started/install-upgrade-activate-license.html)
 ### 🖼️ Social Feeds Key Platforms & Features
 
-Connect and embed [Instagram](https://www.instagram.com/) feeds, [Facebook](https://www.facebook.com/) Feeds, [YouTube](https://www.youtube.com/) Feeds, or TikTok Feeds anywhere on your WordPress website. You can design eye-catching social feed galleries by choosing a stylish layout and customizing them.
+Connect and embed [Instagram](https://www.instagram.com/) feeds, [Facebook](https://www.facebook.com/) Feeds, [YouTube](https://www.youtube.com/) Feeds, or TikTok Feeds anywhere on your website. You can design eye-catching social feed galleries by choosing a stylish layout and customizing them.
 
 = Instagram Feed =
 
-Integrate **[Instagram feeds](https://wpsocialninja.com/platforms/instagram-feed/)** in WordPress to display Instagram photos on your website. This WP Instagram widget and WordPress Instagram Shoppable feed can improve your e-commerce business growth. The shoppable feature is only available for the Instagram feed Pro version.
+Integrate **[Instagram feeds](https://wpsocialninja.com/platforms/instagram-feed/)** in WordPress to display Instagram photos on your website. This Instagram widget and Instagram Shoppable feed can improve your e-commerce business growth. The shoppable feature is only available for the Instagram feed Pro version.
 
 = Facebook Feed =
 
-Create a personalized **[Facebook feed](https://wpsocialninja.com/platforms/facebook-feed/)** on a website with our Facebook feed WordPress plugin. Using this WordPress Facebook feed plugin, you can spotlight **[Facebook Album Feed](https://wpsocialninja.com/how-to-embed-facebook-album-feed-on-your-website-easy-way/)** and the **[Facebook Event Feed](https://wpsocialninja.com/facebook-events-feed/)** without using any other Custom Facebook Feed plugin.
+Create a personalized **[Facebook feed](https://wpsocialninja.com/platforms/facebook-feed/)** on a website with our Facebook feed feature. Using this Facebook feed plugin, you can show **[Facebook Album Feed](https://wpsocialninja.com/how-to-embed-facebook-album-feed-on-your-website-easy-way/)** and the **[Facebook Event Feed](https://wpsocialninja.com/facebook-events-feed/)** without using multiple plugins.
 
 = YouTube Feed =
 
-Embed **[YouTube feed](https://wpsocialninja.com/platforms/youtube-feed/)** on WordPress website with WP Social Ninja and let your audience be introduced to your YouTube channel through our WordPress YouTube Feed Plugin.
+Embed **[YouTube feed](https://wpsocialninja.com/platforms/youtube-feed/)** on WordPress website with WP Social Ninja and let your audience be introduced to your YouTube channel through our plugin.
 
 = TikTok Feed =
 
-Decorate your website with your TikTok posts through a customized **[TikTok feed](https://wpsocialninja.com/platforms/tiktok-feed/)** by our TikTok plugin and promote your business sales to increase engagement & more sales.
+Decorate your website with your TikTok posts through a customized **[TikTok feed](https://wpsocialninja.com/platforms/tiktok-feed/)** by our TikTok plugin and promote your business to increase engagement.
 
 **Explore Social Feed features (Free):**
 
@@ -75,8 +71,8 @@ Decorate your website with your TikTok posts through a customized **[TikTok feed
 * Control YouTube feed playback with autoplay
 * YouTube feeds with custom play mode
 * Load More to keep visitors engaged
-* Feed Issue Email Alerts
-* Page Builder Compatible
+* Feed issue Email alerts
+* Page builder compatible
 * Auto Sync to keep content fresh
 * Save Images Locally
 * GDPR Compliant
@@ -98,22 +94,21 @@ Decorate your website with your TikTok posts through a customized **[TikTok feed
 
 **👉 [Check All Feed Features](https://wpsocialninja.com/platforms/social-feeds/)**
 ### ⭐ Business Reviews Platforms & Features
-Show your **Customer Reviews** using our business review plugin! With pre-built templates, you can easily highlight Google Reviews, WooCommerce Reviews, Facebook Reviews, and other review platforms. You can also craft and display custom review feeds and filter reviews to boost customer trust, improve SEO scores, and drive more sales.
+Show your **Customer Reviews** using WP Social Ninja! With pre-built templates, you can easily highlight Google Reviews, Facebook Reviews, and other review platforms. You can also collect and display custom review feeds and filter reviews to boost customer trust, improve SEO scores, and drive more sales.
 = Google Reviews (Free) =
-Embed **Google Business Profile reviews** using our [Google reviews WordPress plugin](https://wpsocialninja.com/platforms/google-reviews/) to improve trust and grow your business.
+Embed **Google Business Profile reviews** using our [Google reviews plugin](https://wpsocialninja.com/platforms/google-reviews/) to improve trust and grow your business.
 = Airbnb Reviews (Free) =
 Display **[Airbnb reviews](https://wpsocialninja.com/platforms/airbnb-reviews/)** to engage customers and encourage quick decisions.
 = WooCommerce Reviews (Pro) =
-Collect customer reviews for WooCommerce and highlight your **[WooCommerce product reviews](https://wpsocialninja.com/platforms/woocommerce-reviews/)** on your WooCommerce website to build loyalty and drive more sales with our WooCommerce review plugin.
+Collect customer reviews for WooCommerce and highlight your **[WooCommerce product reviews](https://wpsocialninja.com/platforms/woocommerce-reviews/)** on your WooCommerce website to build loyalty and drive more sales.
 = Facebook Reviews (Pro) =
-Display **[Facebook reviews and recommendations](https://wpsocialninja.com/platforms/facebook-reviews/)** to improve business credibility with our WordPress review plugin.
+Display **[Facebook reviews and recommendations](https://wpsocialninja.com/platforms/facebook-reviews/)** to improve business credibility.
 = Fluent Forms reviews (Pro) =
 Collect and display on-site **[Fluent Forms reviews](https://wpsocialninja.com/platforms/fluent-forms-reviews/)** and display your custom reviews on your website.
 
-### **Easy and secure Judge.me Review Migration:**
-Easily migrate your Judge.me product reviews to WP Social Ninja with minimal effort. Our easy process allows you to import all your reviews, including precise review details, quickly.
 
-**Other Pro customer review Platforms: Yelp Reviews, Booking.com Reviews, Tripadvisor Reviews, AliExpress Reviews, Custom reviews, and Others. (Pro)**
+
+**Other Pro customer review Platforms:** Yelp Reviews, Booking.com Reviews, Tripadvisor Reviews, AliExpress Reviews, Custom reviews, and Others. (Pro)
 
 **Explore Business Reviews Features (Free):**
 
@@ -153,12 +148,14 @@ Easily migrate your Judge.me product reviews to WP Social Ninja with minimal eff
 
 Whether it’s **WhatsApp**, **Messenger**, **Telegram**, or other platforms, you can link your business accounts and keep your support accessible anywhere on your site.
 = WhatsApp Chat (Free) =
-Provide real-time assistance with **[WhatsApp chat](https://wpsocialninja.com/platforms/whatsapp-chat/)** to close sales faster and enhance customer satisfaction, all without the need for complex setups.
+Provide real-time assistance via **[WhatsApp chat](https://wpsocialninja.com/platforms/whatsapp-chat/)** to close sales faster and enhance customer satisfaction, all without complex setups.
 = Messenger Chat (Free) =
 Give proper customer support with **[Messenger Chat](https://wpsocialninja.com/platforms/messenger-chat/)** to boost trust and grow your business.
 = Telegram Chat (Free) =
 Take your user engagement to another level with our **[Telegram Chat Widget](https://wpsocialninja.com/platforms/telegram-chat/)**.
-**Other Pro Social Chat Platforms: Instagram Page Chat, Instagram DM, Phone, SMS, Email, LinkedIn Chat, X (Twitter), Microsoft Teams Chat, Snapchat, WeChat, Slack, and others. (Pro)**
+
+
+**Other Pro Social Chat Platforms:** Instagram Page Chat, Instagram DM, Phone, SMS, Email, LinkedIn Chat, X (Twitter), Microsoft Teams Chat, Snapchat, WeChat, Slack, and others. (Pro)
 
 **Explore Social Chat Features (Free):**
 
@@ -167,7 +164,7 @@ Take your user engagement to another level with our **[Telegram Chat Widget](htt
 * Add multiple chat accounts
 * Different templates and layout types
 * Customize chat button text
-* Set chat header (Profile/page name, caption, picture/logo)
+* Set chat header (Profile/page name, picture/logo)
 * Floating button placement
 * Set chat button position
 * Custom prefilled welcome message
@@ -195,49 +192,43 @@ Take your user engagement to another level with our **[Telegram Chat Widget](htt
 ### 🔔 Notification Popup
 Display [Notification Popups](https://wpsocialninja.com/notification-popup/) on any website page to instantly grab your visitors’ attention and build trust in your brand.
 
-Whether it's a 5-star rating, a customer recommendation, or a recent review from platforms like Google, Facebook, WooCommerce, or any other supported review source, you can showcase them in real time using our Popup WordPress plugin.
-
-[youtube https://www.youtube.com/watch?v=1ZU_tUdDgC8]
+Whether it's a 5-star rating, a customer recommendation, or a recent review from platforms like Google, Facebook, WooCommerce, or any other supported review source, you can showcase them in real time using the notification feature.
 
 These popups add credibility to your business, enhance user engagement, increase social proof, and boost your brand value where it matters most.
 
 **👉 [Check Notification Popup Features](https://wpsocialninja.com/notification-popup/)**
 ### 📝 Testimonial
-Highlight your best customer feedback using WP Social Ninja’s [Testimonial feature](https://wpsocialninja.com/testimonial-widget/). With complete customization options, you can design and style the WordPress testimonials slider to create an engaging and professional look.
-
-[youtube https://www.youtube.com/watch?v=_Qk_4G2hCCM]
+Highlight your best customer feedback using WP Social Ninja’s [Testimonial feature](https://wpsocialninja.com/testimonial-widget/). With complete customization options, you can design and style the testimonials slider to create an engaging and professional look.
 
 **Why use WP Social Ninja for Testimonials?**
 
-WP Social Ninja is one of the most dynamic WordPress testimonial slider plugins for websites. It allows you to:
+WP Social Ninja is one of the most dynamic testimonial slider plugins for WordPress websites. It allows you to:
 
 * Easily create and manage testimonials
 * Display them on any post, page, or template
 * Customize the layout, styling, and design to match your branding
-* Present authentic social proof that encourages others to purchase
 
-We also integrate with Fluent Forms, so you can collect your Testimonials using Fluent Forms and display them on your website to improve credibility.
+We have an integration with Fluent Forms, so you can collect your Testimonials using Fluent Forms and display them on your website to improve credibility.
 
 **👉 [Check Testimonial Features](https://wpsocialninja.com/testimonial-widget/)**
-### 🔥 Social Feeds | Business Reviews | Social Chats Demos
-Want to see how social proof looks on a website? Visit our **[demo page](https://wpsocialninja.com/demo-page/)**. You can see examples of **Instagram Feed**,  **Facebook Feed**, **TikTok feed**, **YouTube Feed**, **Google Reviews**, **Facebook Reviews** along with social chat widgets - **WhatsApp Chat**, **Messenger Chat**, and others.
-
-### 🔥 Page Builder and other Integrations
+### 🔥 Social Feeds, Reviews & Chats Demos
+Want to see how social proof looks on a website? Visit our **[demo page](https://wpsocialninja.com/demo-page/)**. You can see examples of **Instagram Feed**, **YouTube Feed**, **Google Reviews**, **Facebook Reviews**, along with social chat widgets - **WhatsApp Chat**, **Messenger Chat**, and others.
+### 🔥 Page Builder and Other Integrations
 * Elementor
 * Gutenberg
 * Beaver Builder
 * Oxygen Builder
 * Fluent Forms
-### 🗣️ End-user reviews and rating
-Our customers’ feedback proves what we deliver and how they love this social media plugin. Let’s see a few:
-
+### 🗣️ End-user Reviews and Rating
+Our customers’ feedback proves what we deliver and how they love WP Social Ninja. Let’s see a few:
 >__Very best social and testimonial plugin__
 > This is the pure gold. It is an all-in-one plugin you must have on your web. Especially if you want to show your best testimonials from customers or just looking for the best social feed plugin. Now I don’t need a live chat free plugin and the Smash Balloon Instagram plugin._ flu5ky; [Source](https://wordpress.org/support/topic/very-best-social-and-testimonial-plugin/)
 
 >__Excellent Social Toolbox for Business__
 >Everything works as promised, and support levels are great for any small bugs if found._ rich9000; [Source](https://wordpress.org/support/topic/excellent-social-toolbox-for-business/)
 
-### 🔥 Expert insights on WP Social Ninja
+### 🔥 Expert Insights on WP Social Ninja
+
 
 [youtube https://www.youtube.com/watch?v=DNlOgKElRMg]
 
@@ -248,52 +239,30 @@ Our customers’ feedback proves what we deliver and how they love this social m
 [youtube https://www.youtube.com/watch?v=2u9suUNU0oQ]
 
 
-**Hubspot-** [The Top Instagram Plugins for WordPress](https://blog.hubspot.com/website/top-free-instagram-plugins-wordpress-site)
+### 🔥 Documentation and Quick Customer Support
 
-**Astra-** [Best WordPress Social Media Plugins for Every Scenario](https://wpastra.com/plugins/best-social-media-plugins/)
-
-**Bluehost-** [Best Google Reviews Plugins for WordPress to Feature Customer Reviews](https://www.bluehost.com/fr/blog/meilleurs-plugins-google-reviews-pour-wordpress-afin-de-presenter-les-commentaires-des-clients/)
-
-**WPMayor-** [Best WordPress Instagram Plugins](https://wpmayor.com/6-best-instagram-feed-plugins-wordpress/)
-
-**Elegant Themes-** [Best WordPress Plugins](https://www.elegantthemes.com/blog/wordpress/best-wordpress-plugins)
-
-**Themeum-** [Instagram Feed Plugin: Best Social Feed for WordPress](https://www.themeum.com/instagram-feed-plugin/)
-
-**FluentCRM-** [The Ultimate Social Feeds, Reviews, and Chats Plugin](https://fluentcrm.com/wp-social-ninja/)
-
-**WPExplorer-** [Top WordPress Plugins for Adding Reviews](https://www.wpexplorer.com/best-review-plugins-wordpress/)
-
-
-### 🔥 Documentation and quick customer support
-
-WP Social Ninja is all about powering your online presence with the ultimate social media plugin, packed with customization, rock-solid performance, and super-fast support that’s got your back!
+WP Social Ninja is all about powering your online presence, packed with customization, rock-solid performance, and super-fast support that’s got your back!
 
 Are you curious about something or stuck on a feature? Our excellent support crew is here to assist you, ready to dive in and deliver top-tier help for both free and premium users:
 
 👉 [Check Documentation](https://docs.wpsocialninja.com/)
 
 👉 [Get Free and Premium Support](https://wpmanageninja.com/support-tickets/)
-
-### More WordPress Solutions by WPManageNinja
+### Other WordPress Solutions by WPManageNinja
+**[Custom Feed for TikTok – Social Post Feed Plugin for TikTok](https://wordpress.org/plugins/custom-feed-for-tiktok/)**
 
 **[Fluent Forms – Customizable Contact Forms, Survey, & Conversational Form Builder](https://wordpress.org/plugins/fluentform/)**
-
-**[FluentSMTP –The Most Advanced SMTP, SES Plugin for WordPress](https://wordpress.org/plugins/fluent-smtp/)**
 
 **[FluentCRM – Email Marketing, Newsletter, Email Automation and CRM Plugin](https://wordpress.org/plugins/fluent-crm/)**
 
 **[Ninja Tables – Best WP DataTables Plugin for WordPress](https://wordpress.org/plugins/ninja-tables/)**
-
-**[Custom Feed for TikTok – Social Post Feed Plugin for TikTok](https://wordpress.org/plugins/custom-feed-for-tiktok/)**
-
 == Installation ==
-This section describes how to install the plugin and get it working.
+This section describes how to install and get the plugin working.
 Install from WordPress Admin Panel:
-1. Login to your WordPress Admin Area
+1. Log in to your WordPress Admin Area
 2. Go to Plugins -> Add New
 3. Type "WP Social Ninja" into the Search and hit Enter
-4. Find this plugin Click "install now"
+4. Find this plugin, click "Install Now"
 5. Activate The Plugin
 6. Use [wp_social_ninja id="template_id" platform="platform_name"] Shortcode on your next page or post
 = Manual Installation =
@@ -302,7 +271,6 @@ Install from WordPress Admin Panel:
 3. Upload the downloaded plugin file (wp-social-reviews.zip) and click Install Now
 4. Activate "WP Social Ninja" from your Plugins page
 5. Use WP Social Ninja on your site from the dashboard
-
 == FAQ ==
 
 = How many social reviews can be displayed on the website? =
@@ -335,27 +303,25 @@ Yes, you can. WP Social Ninja is a fully featured review plugin with unique feat
 
 = Is WP Social Ninja compatible with my theme or design? =
 
-WP Social Ninja works perfectly with themes Elementor, Gutenberg, Beaver Builder and Oxygen Builder.
+WP Social Ninja works perfectly with themes Elementor, Gutenberg, Beaver Builder, and Oxygen Builder.
 
 = How can I get support if the plugin is not working? =
-If you face any problem with WP Social Ninja or something is not working as it should, follow these basic steps:
-First, make sure the error is not caused by the theme you are using and if your themes are compatible with WP Social Ninja.
+If you face any problem with WP Social Ninja or if something is not working as it should, follow these basic steps:
+First, make sure the error is not caused by the theme you are using, and if your themes are compatible with WP Social Ninja.
 Deactivate other plugins and check if the problem is still occurring.
 Ensure that you’re using the latest version of this plugin and your themes. Also, check if the problem you are experiencing has not already been solved in a later plugin update.
-Still, if any of these doesn't work for you, then submit a [support ticket](https://wpmanageninja.com/support-tickets/) and explain your problem accurately when our support agent responds to you.
-
+Still, if any of these don't work for you, then submit a [support ticket](https://wpmanageninja.com/support-tickets/) and explain your problem accurately when our support agent responds to you.
 = Where can I report bugs? =
 You can report your bugs in our [support ticket](https://wpmanageninja.com/support-tickets/). Our support team is 24/7 available to assist you.
-
 = Where can I report security issues? =
-We handle all security issues with Patchstack vdp program. Please Report any security issues [here](https://wpmanageninja.com/report-a-security-issue/).
+We handle all security issues with the Patchstack vdp program. Please report any security issues [here](https://wpmanageninja.com/report-a-security-issue/).
 
 = I want to contribute to the plugin. Where can I find the code repository? =
-The code repository for WP Social Ninja is hosted on GitHub. You can find it [here](https://github.com/WPManageNinja/wp-social-reviews/)
+The code repository for WP Social Ninja is hosted on GitHub. You can find it [here](https://github.com/WPManageNinja/wp-social-reviews/).
 
 = Do you want to encourage us for future improvement? =
-If you like this plugin, please give us [5-stars](https://wordpress.org/plugins/wp-social-reviews/#reviews) to encourage us for future improvement. Thank you!
 
+If you like this plugin, please give us [5 stars](https://wordpress.org/plugins/wp-social-reviews/#reviews) to encourage us for future improvement. Thank you!
 == Screenshots ==
 
 1. Embed social feeds, reviews, chat widgets & more
@@ -369,7 +335,58 @@ If you like this plugin, please give us [5-stars](https://wordpress.org/plugins/
 
 == Changelog ==
 
-4.0.0 ( Date: 21 November, 2025 )
+4.2.0 ( Date: 17 April 2026 )
+- Added native review form builder for FluentCart, WooCommerce, and Custom Sources, removing the need for additional plugins for basic review collection. (Pro)
+- Added FluentCart integration to collect and display product reviews with product sync, primary review hub support, and customizable “Write a Review” button via templates. (Pro)
+- Replaced default WooCommerce review fields with WP Social Ninja review forms, providing full control over form design and review display. (Pro)
+- Added support for Custom Source review forms via shortcode for easy embedding anywhere on the site. (Pro)
+- Improved FluentCart review drawer (slide-in) experience Pro)
+- Added flexible rating click actions for WooCommerce (drawer/scroll) Pro)
+- Added show review images toggle to review template editor settings
+- Enhanced performance with server-side search and async multi-select
+- Optimized database queries and improved security
+- Fixed YouTube channel “No videos found” issue
+- Fixed YouTube header banner display issue
+- Fixed Google Business Profile location name issue
+- Fixed formatting issues in reviews and testimonials
+- Fixed review auto-sync input update issue
+
+4.1.0 ( Date: 29 January 2026 )
+- Introduced review status controls: Publish, Unpublish, and Spam.
+- Added advanced review moderation with manual approval and intelligent auto-publishing rules based on rating, content length, and keywords.
+- Added spam marking and unmarking for reviews, including bulk actions.
+- Added advanced style options for review and feed templates, including box shadow, border radius, hover effects, and padding and spacing controls. (Pro)
+- Added device-based responsive control for ‘Load More’ behavior.
+- Added advanced Product Review Schema and optimized review structured data for improved SEO.
+- Added the ability to clear cache by individual feed template for better control.
+- Introduced Facebook Event sorting options to display events in the preferred order. (Pro)
+- Optimized SQL queries for review counts, rating breakdowns, and business information.
+- Preserved manual review approval status during sync to prevent unintentionally re-approving disabled reviews.
+- Improved WooCommerce template handling and business information processing. (Pro)
+- Fixed and improved Airbnb business information handling via the GraphQL API. (Pro)
+- Improved facebook event feed handling and account filtering logic. (Pro)
+- Fixed an issue where woocommerce product reviews were incorrectly inserted into non-review comments and processed as reviews. (Pro)
+- Fixed an issue where WP Social Ninja custom cron events could be automatically removed on certain server environments.
+- Resolved a masonry layout rendering issue. (Pro)
+- Fixed review count update issues when enabling or disabling reviews.
+- Fixed incorrect post ID usage in asset loading logic for WooCommerce products.
+- Fixed chat widget Viber configuration issue. (Pro)
+- Fixed time picker, date range type design issue.
+- Filter out Instagram trial reels from account feed
+- Fixed review show/hide reviews based on keyword issue (Pro)
+
+4.0.2 ( Date: 04 December 2025 )
+- Enhanced sanitization and permission validation for REST API requests.
+
+4.0.1 ( Date: 02 December, 2025 )
+- Fixed: Unpublished reviews were being displayed on the frontend.
+- Fixed: Reviewer name mapping issue in Fluent Forms integration. (Pro)
+- Fixed: Duplicate reviews appearing from Booking.com sources. (Pro)
+- Fixed: Custom image upload conflict caused by certain plugins. (Pro)
+- Fixed: Incorrect pro feature toggle behavior inside feed and review editors.
+- Improved: added Loader animation when switching layouts inside the Template Editor panel
+
+4.0.0 ( Date: 21 November 2025 )
 - Revamped UI and improved UX for modern and streamlined experience
 - Added smooth onboarding to simplify first-time setup
 - Introduced Custom Sources to add and display reviews from any platform (Pro)

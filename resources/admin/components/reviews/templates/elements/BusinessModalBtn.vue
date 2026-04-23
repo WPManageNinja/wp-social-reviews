@@ -18,6 +18,14 @@
         >
           {{ btnText }}
         </a>
+
+        <a
+            class="wpsr-write-review wpsr-native-form-trigger"
+            v-if="shouldShowNativeFormButton"
+            href="javascript:void(0)"
+        >
+          {{ btnText }}
+        </a>
         <template v-if="shouldShowMultipleBusinessButton">
         <a class="wpsr-write-review-modal-btn" @click.prevent="toggleReviewModal">
           {{ btnText }}
@@ -57,7 +65,10 @@ export default {
       return this.metaStyles.add_custom_war_btn_url === 'false' && this.isSingleBusiness;
     },
     shouldShowCustomUrlButton() {
-      return this.metaStyles.add_custom_war_btn_url === 'true';
+      return this.metaStyles.add_custom_war_btn_url === 'true' && this.metaStyles.war_btn_source !== 'native_form';
+    },
+    shouldShowNativeFormButton() {
+      return this.metaStyles.add_custom_war_btn_url === 'true' && this.metaStyles.war_btn_source === 'native_form';
     },
     shouldShowMultipleBusinessButton() {
       return this.metaStyles.add_custom_war_btn_url === 'false' && this.isMultipleBusiness;

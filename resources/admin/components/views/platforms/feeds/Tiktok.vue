@@ -51,13 +51,13 @@
                       </div>
                       <div v-if="account.has_critical_error" class="wpsr-account-error-status-wrapper">
                           <div class="wpsr-account-error-status">
-                            <span><i class="el-icon-info"></i>{{ $t('Source Invalid') }}</span>
+                            <span><el-icon><InfoFilled /></el-icon>{{ $t('Source Invalid') }}</span>
                             <a href="#" @click.prevent="oAuthLogin(account)">Reconnect</a>
                           </div>
                       </div>
                       <div v-else-if="account.encryption_error" class="wpsr-account-error-status-wrapper">
                         <div class="wpsr-account-error-status">
-                            <span><i class="el-icon-info"></i>{{ $t('Encryption Error') }}</span>
+                            <span><el-icon><InfoFilled /></el-icon>{{ $t('Encryption Error') }}</span>
                             <a href="#" @click.prevent="oAuthLogin(account)">Reconnect</a>
                         </div>
                       </div>

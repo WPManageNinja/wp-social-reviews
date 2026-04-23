@@ -21,8 +21,10 @@ export const ReviewsBusinessInfoMixin = {
             return firstKey ? this.businessInfo.platforms[firstKey].url : '';
         },
         availablePlatforms() {
-            return this.filterPlatformName(this.businessInfo.platforms)
-                .filter(platform => platform.url && platform.url.length);
+            const platforms = this.businessInfo.platforms || {};
+            return Object.values(platforms).filter(
+                platform => platform && ((platform.url && platform.url.length) || (platform.logo && platform.logo.length))
+            );
         },
         singlePlatformName() {
             if (!this.isSinglePlatform || !this.businessInfo.platforms || !this.businessInfo.platforms[0]) return '';
@@ -53,7 +55,7 @@ export const ReviewsBusinessInfoMixin = {
         getCustomSourcesPlatformIcon(businessInfo){
             if (businessInfo && businessInfo.platforms) {
                 for (const [key, platformData] of Object.entries(businessInfo.platforms)) {
-                    if (platformData && platformData.platform_name !== 'custom' && platformData.logo) {
+                    if (platformData && platformData.logo && platformData.logo.length) {
                         return platformData.logo;
                     }
                 }

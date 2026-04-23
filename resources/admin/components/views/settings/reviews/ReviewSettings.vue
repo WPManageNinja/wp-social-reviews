@@ -39,7 +39,7 @@
 
         <div class="wpsr-general-settings-wrapper">
           <div v-if="allGlobalSettings">
-            <div class="wpsr-settings-container wpsr-mb-20">
+            <div v-if="reviewPlatform !== 'fluent-cart'" class="wpsr-settings-container wpsr-mb-20">
               <div class="wpsr-settings-header">
                 <h2 class="wpsr-feed-settings-title">
                   Synchronization
@@ -62,25 +62,6 @@
                     </el-switch>
                   </div>
                 </div>
-                <div v-if="reviewPlatform === 'fluent-forms'" class="wpsr-setting-row">
-                  <div class="wpsr-setting-left">
-                    <h3 class="wpsr-setting-title">Review/Testimonial must be manually approved</h3>
-                    <p class="wpsr-setting-description">If you enable this, then Fluent Forms reviews/testimonial need approval before a review/testimonial appears on your website.</p>
-                  </div>
-
-                  <div class="wpsr-setting-right">
-                    <el-switch
-                      v-model="
-                        allGlobalSettings.global_settings.manually_review_approved
-                      "
-                      active-color="#5c8df6"
-                      inactive-color="#b7b7b9"
-                      active-value="true"
-                      inactive-value="false"
-                    >
-                    </el-switch>
-                  </div>
-                </div>
                 <div class="wpsr-setting-row" v-if="allGlobalSettings.global_settings.auto_syncing === 'true' && reviewPlatform !== 'fluent-forms'">
                   <div class="wpsr-setting-left">
                     <h3 class="wpsr-setting-title">Check for New Reviews Every</h3>
@@ -89,7 +70,6 @@
                   <div class="wpsr-setting-right">
                     <el-select
                       v-model="validExpirationValue"
-                      @change="updateExpirationValue"
                       class="wpsr-text-input wpsr-select"
                       placeholder="Select"
                       size="large"
@@ -323,6 +303,152 @@
                           </el-select>
                         </div>
                       </div>
+
+                      <div class="wpsr-setting-row" v-if="allGlobalSettings.global_settings.selected_template && allGlobalSettings.global_settings.selected_template !== '0'">
+                        <div class="wpsr-setting-left">
+                          <h3 class="wpsr-setting-title">{{ $t("Star Rating Click Behavior") }}</h3>
+                          <span class="wpsr-setting-description">{{ $t("Choose what happens when the star rating is clicked on a single product page.") }}</span>
+                        </div>
+                        <div class="wpsr-setting-right">
+                          <el-radio-group v-model="allGlobalSettings.global_settings.star_rating_click_action">
+                            <el-radio value="scroll">{{ $t("Scroll to review widget") }}</el-radio>
+                            <el-radio value="drawer">{{ $t("Open review drawer") }}</el-radio>
+                          </el-radio-group>
+                        </div>
+                      </div>
+
+                      <div class="wpsr-setting-row" v-if="allGlobalSettings.global_settings.star_rating_click_action === 'drawer'">
+                        <div class="wpsr-setting-left">
+                          <h3 class="wpsr-setting-title">{{ $t("Drawer Style") }}</h3>
+                          <span class="wpsr-setting-description">{{ $t("Choose the visual style of the review drawer.") }}</span>
+                        </div>
+                        <div class="wpsr-setting-right">
+                          <el-radio-group v-model="allGlobalSettings.global_settings.drawer_style">
+                            <el-radio value="modern">{{ $t("Modern") }}</el-radio>
+                            <el-radio value="default">{{ $t("Default") }}</el-radio>
+                          </el-radio-group>
+                        </div>
+                      </div>
+
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- FluentCart specific settings -->
+            <div
+              class="wpsr-settings-container"
+              v-if="reviewPlatform === 'fluent-cart'"
+            >
+              <div class="wpsr-mb-20">
+                <div>
+                  <div class="wpsr-settings-header">
+                    <h2 class="wpsr-feed-settings-title">
+                      {{ $t("Customize FluentCart Reviews Layout") }}
+                    </h2>
+                  </div>
+                  <div class="wpsr-feed-settings-content">
+                    <!-- Product Listing Rating Settings (always visible) -->
+                    <div class="wpsr-setting-row">
+                      <div class="wpsr-setting-left">
+                        <h3 class="wpsr-setting-title">{{$t("Hide Rating Count from Product Listings")}}</h3>
+                        <span class="wpsr-setting-description">{{$t("Hide the review count text next to the star rating on product listing pages.")}}</span>
+                      </div>
+                      <div class="wpsr-setting-right">
+                        <el-switch
+                          v-model="allGlobalSettings.global_settings.hide_product_list_rating_count"
+                          active-color="#5c8df6"
+                          inactive-color="#b7b7b9"
+                          active-value="yes"
+                          inactive-value="no"
+                        >
+                        </el-switch>
+                      </div>
+                    </div>
+
+                    <div class="wpsr-setting-row">
+                      <div class="wpsr-setting-left">
+                        <h3 class="wpsr-setting-title">
+                          {{ $t("Make WP Social Ninja Your Main Review Hub") }}
+                          
+                        </h3>
+                        <span class="wpsr-setting-description"
+                          >
+                          {{ $t("Use WP Social Ninja as the primary interface for managing all reviews") }}
+                          </span
+                        >
+                      </div>
+                      <div class="wpsr-setting-right">
+                        <el-switch
+                          v-model="
+                            allGlobalSettings.global_settings
+                              .use_social_ninja_primary
+                          "
+                          active-color="#5c8df6"
+                          inactive-color="#b7b7b9"
+                          active-value="yes"
+                          inactive-value="no"
+                        >
+                        </el-switch>
+                      </div>
+                    </div>
+
+                    <span v-if="allGlobalSettings.global_settings.use_social_ninja_primary === 'yes'">
+                      <div class="wpsr-setting-row">
+                        <div class="wpsr-setting-left">
+                          <h3 class="wpsr-setting-title">{{ $t("Review Template") }}</h3>
+                          <span class="wpsr-setting-description"> {{ $t("Choose the template for displaying reviews.") }}</span
+                          >
+                        </div>
+                        <div class="wpsr-setting-right">
+                          <el-select
+                            class="wpsr-text-input"
+                            v-model="
+                              allGlobalSettings.global_settings.selected_template
+                            "
+                            placeholder="Select template"
+                            size="small"
+                            filterable
+                            clearable
+                          >
+                            <el-option
+                              v-for="template in availableTemplates"
+                              :key="template.value"
+                              :label="template.label"
+                              :value="template.value"
+                            >
+                            </el-option>
+                          </el-select>
+                        </div>
+                      </div>
+
+                      <div class="wpsr-setting-row" v-if="allGlobalSettings.global_settings.selected_template && allGlobalSettings.global_settings.selected_template !== '0'">
+                        <div class="wpsr-setting-left">
+                          <h3 class="wpsr-setting-title">{{ $t("Star Rating Click Behavior") }}</h3>
+                          <span class="wpsr-setting-description">{{ $t("Choose what happens when the star rating is clicked on a single product page.") }}</span>
+                        </div>
+                        <div class="wpsr-setting-right">
+                          <el-radio-group v-model="allGlobalSettings.global_settings.star_rating_click_action">
+                            <el-radio value="scroll">{{ $t("Scroll to review widget") }}</el-radio>
+                            <el-radio value="drawer">{{ $t("Open review drawer") }}</el-radio>
+                          </el-radio-group>
+                        </div>
+                      </div>
+
+                      <div class="wpsr-setting-row" v-if="allGlobalSettings.global_settings.star_rating_click_action === 'drawer'">
+                        <div class="wpsr-setting-left">
+                          <h3 class="wpsr-setting-title">{{ $t("Drawer Style") }}</h3>
+                          <span class="wpsr-setting-description">{{ $t("Choose the visual style of the review drawer.") }}</span>
+                        </div>
+                        <div class="wpsr-setting-right">
+                          <el-radio-group v-model="allGlobalSettings.global_settings.drawer_style">
+                            <el-radio value="modern">{{ $t("Modern") }}</el-radio>
+                            <el-radio value="default">{{ $t("Default") }}</el-radio>
+                          </el-radio-group>
+                        </div>
+                      </div>
+
                     </span>
                   </div>
                 </div>
@@ -364,7 +490,8 @@
                     }}
                   </h2>
                   <p class="pro_dialog">
-                    Upgrade to WP Social Ninja Pro and unlock all the features.
+                    {{ $t("Upgrade to WP Social Ninja Pro and unlock all the features.") }}
+                    
                   </p>
                   <UpgradeToProButton classes="wpsr_buy_pro_btn_inline" />
                 </div>
@@ -459,10 +586,11 @@ export default {
     };
   },
   computed: {
-    validExpirationValue() {
-      if (!this.allGlobalSettings || !this.allGlobalSettings.global_settings) {
-        return null;
-      }
+    validExpirationValue: {
+      get() {
+        if (!this.allGlobalSettings || !this.allGlobalSettings.global_settings) {
+          return null;
+        }
 
       const currentValue = this.allGlobalSettings.global_settings.expiration;
       const availableOptions = this.filterDisplayOptions(this.cache_times);
@@ -474,16 +602,17 @@ export default {
         return currentValue;
       }
 
-      // If current value is not valid for this platform, return the first available option
-      return availableOptions.length > 0 ? availableOptions[0].value : null;
+        // If current value is not valid for this platform, return the first available option
+        return availableOptions.length > 0 ? availableOptions[0].value : null;
+      },
+      set(value) {
+        if (this.allGlobalSettings && this.allGlobalSettings.global_settings) {
+          this.allGlobalSettings.global_settings.expiration = value;
+        }
+      }
     }
   },
   methods: {
-    updateExpirationValue(value) {
-      if (this.allGlobalSettings && this.allGlobalSettings.global_settings) {
-        this.allGlobalSettings.global_settings.expiration = value;
-      }
-    },
     filterDisplayOptions(items) {
       const platform = this.reviewPlatform;
 
@@ -502,11 +631,15 @@ export default {
       });
     },
     getSettings(platform) {
+      if (platform === "fluent-cart" && !this.appVars.hasFluentCart) {
+        this.allGlobalSettings = false;
+        return;
+      }
+
       if (
         this.has_pro ||
         (!this.has_pro && (platform === "google" || platform === "airbnb"))
       ) {
-        platform = platform === "fluent-forms" ? "fluent_forms" : platform;
         this.get(platform);
       }
     },
@@ -522,8 +655,18 @@ export default {
         return;
       }
 
+      // Validation for FluentCart - check if template is selected when using Social Ninja as primary
+      if (
+        this.reviewPlatform === "fluent-cart" &&
+        this.allGlobalSettings.global_settings.use_social_ninja_primary ===
+          "yes" &&
+        !this.allGlobalSettings.global_settings.selected_template
+      ) {
+        this.handleError("Please select a template.");
+        return;
+      }
+
       let platform = this.reviewPlatform;
-      platform = platform === "fluent-forms" ? "fluent_forms" : platform;
       this.update(platform, this.allGlobalSettings);
     },
 
@@ -677,14 +820,27 @@ export default {
         this.checkImportProgress(true);
       }
     },
+    allGlobalSettings(val) {
+      if (val && val.global_settings) {
+        if (this.reviewPlatform === 'fluent-cart') {
+          val.global_settings.reviews_form = 'social_ninja';
+        }
+        if (this.reviewPlatform === 'fluent-cart' || this.reviewPlatform === 'woocommerce') {
+          if (val.global_settings.star_rating_click_action == null) {
+            val.global_settings.star_rating_click_action = 'scroll';
+          }
+          if (val.global_settings.drawer_style == null) {
+            val.global_settings.drawer_style = 'modern';
+          }
+        }
+      }
+    },
     reviewPlatform(val) {
-      this.reviewPlatform = val;
-
       // If switching to TripAdvisor and current expiration is 1 Hour or 6 Hours, reset to 1 Day
       if (val === "tripadvisor" && this.allGlobalSettings && this.allGlobalSettings.global_settings) {
         const currentExpiration = this.allGlobalSettings.global_settings.expiration;
         if (currentExpiration === 60 * 60 || currentExpiration === 60 * 60 * 6) {
-          this.updateExpirationValue(86400); // 1 Day
+          this.allGlobalSettings.global_settings.expiration = 86400; // 1 Day
         }
       }
     },

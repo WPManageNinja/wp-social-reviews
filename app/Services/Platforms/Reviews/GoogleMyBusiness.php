@@ -20,8 +20,8 @@ class GoogleMyBusiness extends BaseReview
 {
     private $remoteBaseUrl = 'https://mybusiness.googleapis.com/v4/';
     private $redirect = 'https://wpsocialninja.com/gapi/';
-    private $clientId = '1066221839285-b63ib6vnhv9aed2euhtecbp2nojvq9rp.apps.googleusercontent.com';
-    private $clientSecret = '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';
+    private $clientId = getenv('WP_SOCIAL_REVIEWS_GOOGLE_LEGACY_CLIENT_ID') ?: '';
+    private $clientSecret = getenv('WP_SOCIAL_REVIEWS_GOOGLE_LEGACY_CLIENT_SECRET') ?: '';
     private $placeId;
     public $nextPageToken = '';
     public $locationNextPageToken = '';
@@ -34,6 +34,8 @@ class GoogleMyBusiness extends BaseReview
             'wpsr_google_reviews_update'
         );
         (new ReviewImageOptimizationHandler($this->platform))->registerHooks();
+        $this->clientId = getenv('WP_SOCIAL_REVIEWS_GOOGLE_CLIENT_ID') ?: $this->clientId;
+        $this->clientSecret = getenv('WP_SOCIAL_REVIEWS_GOOGLE_CLIENT_SECRET') ?: $this->clientSecret;
     }
 
     public function makeRequest($url, $bodyArgs, $type = 'GET', $headers = false)
@@ -248,10 +250,12 @@ class GoogleMyBusiness extends BaseReview
 
         $data = json_decode(wp_remote_retrieve_body($response), true);
 
-        if(Arr::get($data, 'nextPageToken')){
+        $limit = apply_filters('wpsocialreviews/gmb_reviews_limit', 10);
+        $limit = $limit > 200 ? 200 : $limit;
+        // Only paginate (use nextPageToken) when we need more than the first page (50 reviews)
+        if (Arr::get($data, 'nextPageToken') && $limit > 50) {
             $data['reviews'] = $this->getNextPageResponse($placeId, $data, $args);
         }
-
 
         if(Arr::get($data, 'error')){
             $error_message = Arr::get($data, 'error.message');
@@ -264,6 +268,10 @@ class GoogleMyBusiness extends BaseReview
             );
         }
 
+        $limit = apply_filters('wpsocialreviews/gmb_reviews_limit', 10);
+        $limit = $limit > 200 ? 200 : $limit;
+        $data['reviews'] = array_slice($data['reviews'], 0, $limit);
+
         return $data;
     }
 
@@ -272,7 +280,7 @@ class GoogleMyBusiness extends BaseReview
         $reviews = Arr::get($data, 'reviews');
         $this->nextPageToken = Arr::get($data, 'nextPageToken');
         $totalReviewCount = Arr::get($data, 'totalReviewCount');
-        $limit = apply_filters('wpsocialreviews/gmb_reviews_limit', 100);
+        $limit = apply_filters('wpsocialreviews/gmb_reviews_limit', 10);
         $limit = $limit > 200 ? 200 : $limit;
         $total = $totalReviewCount >= $limit ? $limit : $totalReviewCount;
         $pageSize = 50;

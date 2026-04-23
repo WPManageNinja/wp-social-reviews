@@ -192,7 +192,6 @@ abstract class BaseImageOptimizationHandler
             'body'        => null,
             'compress'    => false,
             'decompress'  => true,
-            'sslverify'   => false,
             'stream'      => false,
             'filename'    => null
         );

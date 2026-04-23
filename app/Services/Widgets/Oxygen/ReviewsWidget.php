@@ -1,7 +1,6 @@
 <?php
 namespace WPSocialReviews\App\Services\Widgets\Oxygen;
 use WPSocialReviews\App\Services\Widgets\Helper;
-use WPSocialReviews\App\Hooks\Handlers\ShortcodeHandler;
 
 class ReviewsWidget extends OxygenEl
 {
@@ -295,7 +294,6 @@ class ReviewsWidget extends OxygenEl
                 WPSOCIALREVIEWS_VERSION
             );
             wp_enqueue_script('wp-social-review');
-            add_action('wp_footer', array(new ShortcodeHandler(), 'loadLocalizeScripts'), 99);
             if(defined('WPSOCIALREVIEWS_PRO')){
                 wp_enqueue_style(
                     'swiper',

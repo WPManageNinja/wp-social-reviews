@@ -11,11 +11,12 @@
       </p>
     </div>
 
-    <div class="wpsr-user-accounts-heading" :class="platFormName === 'google' || platFormName === 'facebook' ? 'wpsr-jc-between' : ''">
+    <div class="wpsr-user-accounts-heading" :class="platFormName === 'google' || platFormName === 'facebook' || platFormName === 'fluent-cart' ? 'wpsr-jc-between' : ''">
 
-      <h4 v-if="Object.keys(reviewsinfo).length && platFormName !== 'facebook' && platFormName !== 'woocommerce' && platFormName !== 'google'">{{$t('Your Connected Business Accounts')}}</h4>
+      <h4 v-if="Object.keys(reviewsinfo).length && platFormName !== 'facebook' && platFormName !== 'woocommerce' && platFormName !== 'fluent-cart' && platFormName !== 'google'">{{$t('Your Connected Business Accounts')}}</h4>
 
-      <h4 v-if="Object.keys(reviewsinfo).length && platFormName === 'woocommerce'">{{$t('Your Connected Products')}}</h4>
+      <h4 v-if="(platFormName === 'woocommerce')">{{$t('Your Connected WooCommerce Products')}}</h4>
+      <h4 v-if="(platFormName === 'fluent-cart' && hasFluentCart)">{{$t('Your Connected FluentCart Products')}}</h4>
 
       <h4 v-if="platFormName === 'google' && Object.keys(locationList).length && !Object.keys(reviewsinfo).length">
         {{$t('Your Location List')}}
@@ -32,13 +33,23 @@
       </h4>
 
       <el-button
-          v-if="( (platFormName === 'google' && Object.keys(locationList).length) || (platFormName === 'facebook' && Object.keys(pageList).length))"
+          v-if="(platFormName === 'google') || (platFormName === 'facebook' && Object.keys(pageList).length)"
           v-model="addNewBusiness"
           :class="{'display-form': !!addNewBusiness}"
           class="wpsr_simple_btn"
           type="success"
           @click.prevent="addBusiness">
         + {{ Object.keys(reviewsinfo).length ? $t('Add More Business') : $t('Add Business') }} {{ !has_pro ? $t(' (Pro)') : ''}}
+      </el-button>
+
+      <el-button
+          v-if="platFormName === 'fluent-cart' && hasUnconnectedProducts"
+          class="wpsr_simple_btn"
+          type="success"
+          :loading="connectingAll"
+          :disabled="!has_pro || connectingAll"
+          @click.prevent="connectAllProducts">
+        {{ connectingAll ? $t('Connecting...') : $t('Connect All Products') }} {{ !has_pro ? $t(' (Pro)') : ''}}
       </el-button>
     </div>
 
@@ -69,7 +80,7 @@
                     <el-icon ><Refresh /></el-icon>
                   </el-button>
                 </el-tooltip>
-                <remove v-if="!info.is_imported" @confirm="clearVerificationCredentials(platFormName, info.place_id)" :platform="platFormName"></remove>
+                <remove v-if="!info.is_imported && platFormName !== 'fluent-cart'" @confirm="clearVerificationCredentials(platFormName, info.place_id)" :platform="platFormName"></remove>
               </div>
             </div>
             <div v-if="info.has_critical_error" class="wpsr-account-error-status-wrapper">
@@ -120,8 +131,8 @@ import UpgradeToProModal from  '../../advertise/UpgradeToProModal.vue';
 
 export default {
   name: 'MultipleBusinessInfo',
-  props: ['reviewsinfo', 'platFormName', 'verifiedPlatform', 'verifyPlatform', 'isDownloadablePlatform', 'pageList', 'locationList'],
-  emits: ['sync-loader', 'add-new-template', 'clear-verification-credentials', 'login-with-facebook', 'toggle-add-business'],
+  props: ['reviewsinfo', 'platFormName', 'verifiedPlatform', 'verifyPlatform', 'isDownloadablePlatform', 'pageList', 'locationList', 'products', 'hasFluentCart'],
+  emits: ['sync-loader', 'add-new-template', 'clear-verification-credentials', 'login-with-facebook', 'toggle-add-business', 'products-connected'],
   components: {
     TrashcanIcon,
     InfoIcon,
@@ -134,7 +145,20 @@ export default {
       addNewBusiness: false,
       showUpgradeModal: false,
       selectedPlatform: 'general',
-      selectedFeatureType: 'default'
+      selectedFeatureType: 'default',
+      connectingAll: false
+    }
+  },
+  computed: {
+    hasUnconnectedProducts() {
+      if (!this.products || !this.products.length) {
+        return false;
+      }
+      const connectedIds = Object.keys(this.reviewsinfo).map(id => parseInt(id));
+      return this.products.some(product => {
+        const productId = parseInt(product.ID);
+        return !connectedIds.includes(productId);
+      });
     }
   },
   methods:{
@@ -146,7 +170,11 @@ export default {
       this.showUpgradeModal = true;
     },
     addBusiness(){
-      if(!this.has_pro) {
+      if( Object.keys(this.reviewsinfo).length === 0 ) {
+        this.$emit('toggle-add-business', this.addNewBusiness);
+        return;
+      }
+      if (!this.has_pro) {
         this.showProModal();
         this.addNewBusiness = false;
       } else {
@@ -158,6 +186,22 @@ export default {
     },
     loginWithFacebook(){
       this.$emit('login-with-facebook');
+    },
+    async connectAllProducts() {
+      this.connectingAll = true;
+      try {
+        const response = await this.$post('pro/settings/fluent-cart/connect-all-products');
+        if (response && response.success) {
+          this.handleSuccess(response.message);
+          this.$emit('products-connected', response.data);
+        } else {
+          this.handleError(response.message || 'Failed to connect products.');
+        }
+      } catch (error) {
+        this.handleError(error.message || 'Failed to connect all products. Please try again.');
+      } finally {
+        this.connectingAll = false;
+      }
     },
     manuallySyncReviews(platFormName, credentials) {
       this.$emit('sync-loader', true);

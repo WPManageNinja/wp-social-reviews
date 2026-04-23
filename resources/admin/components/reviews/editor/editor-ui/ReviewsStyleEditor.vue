@@ -40,10 +40,27 @@
                           :label="option.spacing.title"
                           @update:spacing="feed_config.styles[option.key].spacing = $event"
                       />
+                      <SpacingElement
+                          v-if="option.padding && feed_config.styles[option.key] && feed_config.styles[option.key].padding"
+                          :spacing="feed_config.styles[option.key].padding"
+                          :label="'Padding'"
+                          @update:spacing="feed_config.styles[option.key].padding = $event"
+                      />
                         <BorderElement
                             v-if="option.border && feed_config.styles[option.key]"
                             :border="feed_config.styles[option.key].border"
                             @update:border="feed_config.styles[option.key].border = $event"
+                        />
+                        <SpacingElement
+                            v-if="option.border_radius && feed_config.styles[option.key]"
+                            :spacing="feed_config.styles[option.key].border_radius"
+                            :label="'Border Radius'"
+                            @update:spacing="feed_config.styles[option.key].border_radius = $event"
+                        />
+                        <BoxShadowElement
+                            v-if="option.box_shadow && feed_config.styles[option.key] && feed_config.styles[option.key].box_shadow"
+                            :boxShadow="feed_config.styles[option.key].box_shadow"
+                            @update:boxShadow="feed_config.styles[option.key].box_shadow = $event"
                         />
                         <SliderElement
                             v-if="option.slider && feed_config.styles[option.key]"
@@ -68,6 +85,7 @@ import FeedEditorGroup from './../../../core-ui/editor/EditorGroup';
 import SpacingElement from './../../../core-ui/editor/SpacingElement';
 import TypographyElementWrapper from "../../../core-ui/editor/TypographyElementWrapper";
 import BorderElement from "../../../core-ui/editor/BorderElement";
+import BoxShadowElement from "../../../core-ui/editor/BoxShadowElement";
 import {helperStyle} from "../../../../mixins/helperStyle";
 import SliderElement from "../../../core-ui/editor/SliderElement";
 import PartyIcon from '../../../pieces/icons/PartyIcon';
@@ -112,6 +130,7 @@ export default {
     FeedEditorGroup,
     SpacingElement,
     BorderElement,
+    BoxShadowElement,
     PartyIcon,
     HeaderIcon,
     AuthorPositionIcon,
@@ -136,22 +155,30 @@ export default {
       // define object's are for resetHandler
       temp_style_star_rating: {},
       temp_style_filled_star_rating: {},
+      temp_style_filled_star_rating_hover: {},
       temp_style_empty_star_rating: {},
       temp_style_rating_title: {},
       temp_style_rating_number: {},
       temp_style_rating_text: {},
       temp_style_review_button: {},
+      temp_style_review_button_hover: {},
       temp_style_header_progress_bar_fill: {},
       temp_style_header_progress_bar_background: {},
       temp_style_header_review_count: {},
       temp_style_business_info_wrapper: {},
+      temp_style_business_info_wrapper_hover: {},
       temp_style_reviewer: {},
+      temp_style_reviewer_hover: {},
       temp_style_author_position: {},
       temp_style_review_title: {},
+      temp_style_review_title_hover: {},
       temp_style_content: {},
+      temp_style_content_hover: {},
       temp_style_review_date: {},
+      temp_style_review_date_hover: {},
       temp_style_review_platform: {},
       temp_style_read_more_less: {},
+      temp_style_read_more_less_hover: {},
       temp_style_platform: {},
       temp_style_badge_title: {},
       temp_style_badge_rating_number: {},
@@ -160,7 +187,9 @@ export default {
       temp_style_notification_title: {},
       temp_style_notification_review_time: {},
       temp_style_pagination: {},
+      temp_style_pagination_hover: {},
       temp_style_review_box: {},
+      temp_style_review_box_hover: {},
       temp_style_star_rating_responsive: {},
       temp_style_filled_star_rating_responsive: {},
       temp_style_empty_star_rating_responsive: {},
@@ -230,19 +259,27 @@ export default {
       let identifierKey = [
         'star_rating',
         'filled_star_rating',
+        'filled_star_rating_hover',
         'empty_star_rating',
         'rating_title',
         'rating_number',
         'rating_text',
         'review_button',
+        'review_button_hover',
         'header_progress_bar_fill',
         'header_progress_bar_background',
         'header_review_count',
+        'business_info_wrapper',
+        'business_info_wrapper_hover',
         'reviewer',
+        'reviewer_hover',
         'author_position',
         'content',
+        'content_hover',
         'review_date',
+        'review_date_hover',
         'read_more_less',
+        'read_more_less_hover',
         'platform',
         'badge_title',
         'badge_rating_number',
@@ -251,7 +288,9 @@ export default {
         'notification_title',
         'notification_review_time',
         'pagination',
+        'pagination_hover',
         'review_title',
+        'review_title_hover',
         'verified_badge_star',
         'verified_badge_checkmark'
       ]
@@ -307,27 +346,41 @@ export default {
 
   computed: {
     style() {
+      // Explicit dependency so computed re-runs when box_shadow_style changes (e.g. Custom -> None)
+      const reviewBoxBoxShadowStyle = this.feed_config.styles.review_box?.box_shadow?.box_shadow_style;
+      const headerBoxBoxShadowStyle = this.feed_config.styles.business_info_wrapper?.box_shadow?.box_shadow_style;
+      const badgeBoxBoxShadowStyle = this.feed_config.styles.badge_wrapper_box?.box_shadow?.box_shadow_style;
+      const notificationBoxBoxShadowStyle = this.feed_config.styles.notification_wrapper_box?.box_shadow?.box_shadow_style;
       let style_container = [
         this.feed_config.styles.star_rating,
         this.feed_config.styles.filled_star_rating,
+        this.feed_config.styles.filled_star_rating_hover,
         this.feed_config.styles.empty_star_rating,
         this.feed_config.styles.rating_title,
         this.feed_config.styles.rating_number,
         this.feed_config.styles.rating_text,
         this.feed_config.styles.review_button,
+        this.feed_config.styles.review_button_hover,
         this.feed_config.styles.header_progress_bar_fill,
         this.feed_config.styles.header_progress_bar_background,
         this.feed_config.styles.header_review_count,
         this.feed_config.styles.business_info_wrapper,
+        this.feed_config.styles.business_info_wrapper_hover,
         this.feed_config.styles.reviewer,
+        this.feed_config.styles.reviewer_hover,
         this.feed_config.styles.author_position,
         this.feed_config.styles.review_title,
+        this.feed_config.styles.review_title_hover,
         this.feed_config.styles.reviewer_name_wrapper,
         this.feed_config.styles.platform,
         this.feed_config.styles.read_more_less,
+        this.feed_config.styles.read_more_less_hover,
         this.feed_config.styles.content,
+        this.feed_config.styles.content_hover,
         this.feed_config.styles.review_date,
+        this.feed_config.styles.review_date_hover,
         this.feed_config.styles.review_box,
+        this.feed_config.styles.review_box_hover,
         this.feed_config.styles.badge_title,
         this.feed_config.styles.badge_rating_number,
         this.feed_config.styles.badge_total_reviews,
@@ -338,6 +391,7 @@ export default {
         this.feed_config.styles.notification_review_time,
         this.feed_config.styles.notification_wrapper_box,
         this.feed_config.styles.pagination,
+        this.feed_config.styles.pagination_hover,
         this.feed_config.styles.verified_badge_star,
         this.feed_config.styles.verified_badge_checkmark,
 

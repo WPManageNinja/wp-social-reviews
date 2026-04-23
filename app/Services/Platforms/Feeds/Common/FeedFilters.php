@@ -92,12 +92,18 @@ class FeedFilters
             }
 
             //filter by date
-            if (($filterSettings['post_order'] === 'ascending' || $filterSettings['post_order'] === 'descending')) {
-                $multiply = ($filterSettings['post_order'] === 'ascending') ? -1 : 1;
-                usort($feeds, function ($m1, $m2) use ($multiply, $feed_type) {
+            $postOrder = Arr::get($filterSettings, 'post_order', 'ascending');
+            // Run sorting for ascending/descending as before, and also for the facebook_event_default option
+            if (in_array($postOrder, ['ascending', 'descending', 'facebook_event_default'])) {
+                $multiply = ($postOrder === 'ascending') ? -1 : 1; // only meaningful for ascending/descending
+                usort($feeds, function ($m1, $m2) use ($multiply, $feed_type, $postOrder) {
                     // Handle boolean values or invalid data
                     $timestamp1 = is_bool($m1) ? null : $this->getTimestamp($m1, $feed_type);
                     $timestamp2 = is_bool($m2) ? null : $this->getTimestamp($m2, $feed_type);
+
+                    if ($feed_type === 'event_feed' && $postOrder === 'facebook_event_default') {
+                        return apply_filters('wpsocialreviews/facebook_event_feed_sorting', $timestamp1, $timestamp2);
+                    }
 
                     // If both have dates
                     // ascending means newest data come first
@@ -191,6 +197,8 @@ class FeedFilters
                         $type = Arr::get($feed, 'attachments.data.0.type');
                         $type = $type === 'animated_image_video' ? 'video_inline' : $type;
                         $has_attachments = Arr::get($feed, 'attachments');
+                        $has_story = Arr::get($feed, 'story');
+                        $type = $has_story ? 'story' : $type;
 
                         if (!in_array($type, $display_posts) && ($has_attachments || !in_array('text', $display_posts))) {
                             return false;

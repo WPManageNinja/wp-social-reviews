@@ -94,7 +94,9 @@ export default {
           'booking.com': true,
           facebook: true,
           woocommerce: true,
-          trustpilot: true
+          trustpilot: true,
+          custom_sources: true,
+          'fluent-cart': true
         },
         chats: {
           allinone: true

@@ -5,7 +5,7 @@
             <span class="wpsr-upgrade-crown">
             <ProCrownIcon :width="20" :height="20" />
             </span>
-            Upgrade Now
+            {{ upgradeBtnConfig.text || 'Upgrade Now' }}
         </button>
     </div>
 </template>
@@ -16,9 +16,18 @@ export default {
     components: {
         ProCrownIcon
     },
+    computed: {
+        upgradeBtnConfig() {
+            return {
+                text: 'Upgrade Now',
+                pro_purchase_url: 'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade',
+                ...(this.appVars?.upgrade_btn_config || {})
+            };
+        }
+    },
     methods: {
         upgradeNow() {
-            window.open('https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade', '_blank');
+            window.open(this.upgradeBtnConfig.pro_purchase_url, '_blank');
         }
     }
 }

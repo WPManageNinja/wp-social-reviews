@@ -2,7 +2,7 @@
     <div class="wpsr-yt-header" :class="layout_type !== 'carousel' ? 'wpsr-gap-'+columnGaps : ''" v-if="settings.display_header === 'true' && Object.entries(header).length">
       <div v-if="settings && settings.display_banner === 'true'" class="wpsr-yt-header-banner">
             <img v-if="settings.custom_banner" class="wpsr-yt-header-banner-desktop" :src="settings.custom_banner" />
-            <img v-else class="wpsr-yt-header-banner-desktop" :src="get_header_cover(header)" />
+            <img v-else-if="get_header_cover(header)" class="wpsr-yt-header-banner-desktop" :src="get_header_cover(header)" />
       </div>
         <div class="wpsr-yt-header-inner">
             <div class="wpsr-yt-header-logo" v-if="settings.display_logo === 'true'">
@@ -56,7 +56,7 @@ import {ytMixin} from "../../../../../mixins/ytMixin";
                 : '';
             }
 
-            return placeholder;
+            return '';
           }
         }
     }

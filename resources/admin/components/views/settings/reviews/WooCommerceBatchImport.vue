@@ -37,7 +37,7 @@
       <p class="wpsr-import-description wpsr-pb-20">{{ $t('Need Help?') }}<a href="https://wpsocialninja.com/docs/collect-woocommerce-custom-reviews-with-fluent-forms/" target="_blank"> Check Our WooCommerce Guide</a>.</p>
     
       <div class="wpsr-import-status wpsr-mb-10" v-if="importLoading || importProgressInterval">
-        <i class="el-icon-loading"></i>
+        <el-icon><Loading /></el-icon>
         <div class="wpsr-import-status-text">
           <p>
             Product reviews are syncing… Please wait, this may take a little time.
@@ -47,7 +47,7 @@
 
 
       <div class="wpsr-import-status wpsr-mb-15" v-if="(importProgress && importProgress.completed) && !importLoading">
-        <i class="el-icon-circle-check"></i>
+        <el-icon><CircleCheck /></el-icon>
         <div class="wpsr-import-status-text">
           <h3>Sync Complete</h3>
           <span>Last sync on {{importProgress.updated_at}}</span>

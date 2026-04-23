@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="products.length">
+    <div v-if="hasProducts">
       <el-button
           v-if="Object.keys(reviewsinfo).length"
           style="width: 100%"
@@ -21,15 +21,16 @@
               {{$t('Select a product to fetch reviews')}}
             </h4>
           </div>
-          <el-select class="wpsr-text-input wpsr-select-input-field" style="width: 100%;" v-model="selectedProductId" @change="onProductChange" filterable="true" clearable placeholder="Select a product" size="large">
-            <el-option
-                v-for="(product, key) in products"
-                :key="key"
-                :label="product.post_title"
-                :value="product.ID"
-            >
-            </el-option>
-          </el-select>
+          <AsyncMultipleSelect
+              v-model="selectedProductId"
+              searchRoute="pages/search"
+              :multiple="false"
+              :includeEverywhere="false"
+              :extraParams="{ post_type: 'product' }"
+              class="wpsr-text-input wpsr-select-input-field"
+              style="width: 100%;"
+              @update:modelValue="onProductChange"
+          />
         </div>
         <SaveAndResetButton
             :platFormName="platFormName"
@@ -48,10 +49,12 @@
 </template>
 <script>
 import SaveAndResetButton from './SaveAndResetButton';
+import AsyncMultipleSelect from '../../../core-ui/editor/AsyncMultipleSelect';
 export default {
   name: 'WoocommerceForm',
   components: {
-    SaveAndResetButton
+    SaveAndResetButton,
+    AsyncMultipleSelect
   },
   props: {
     sourceId: {
@@ -70,9 +73,9 @@ export default {
       type: Object,
       default: () => ({})
     },
-    products: {
-      type: Array,
-      default: () => []
+    hasProducts: {
+      type: Boolean,
+      default: false
     },
   },
   emits: ['update:sourceId', 'save-reviews'],

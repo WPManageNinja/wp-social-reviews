@@ -321,6 +321,14 @@ class FacebookFeed extends BaseFeed
     {
         $configs = get_option('wpsr_facebook_feed_connected_sources_config', []);
         $sourceList = Arr::get($configs, 'sources') ? $configs['sources'] : [];
+
+//        if(!empty($sourceList)){
+//            foreach ($sourceList as $index => $source) {
+//                $accessToken = Arr::get($source, 'access_token', '');
+//                $sourceList[$index]['access_token'] = $this->protector->decrypt($accessToken) ? $this->protector->decrypt($accessToken) : $accessToken;
+//            }
+//        }
+
         return $sourceList;
     }
 
@@ -584,11 +592,14 @@ class FacebookFeed extends BaseFeed
         $multiple_feeds = [];
         $errorMessage = '';
         $multipleAccountsConnected = count($ids) > 1;
+        $feedType = Arr::get($apiSettings, 'feed_type');
+
         foreach ($ids as $id) {
+            if($feedType == 'event_feed') {
+                $id = 'event_feed_' . $id;
+            }
             if (isset($connectedAccounts[$id])) {
                 $pageInfo = $connectedAccounts[$id];
-
-                $feedType = Arr::get($apiSettings, 'feed_type');
                 // if($feedType == 'event_feed' && !Arr::get($pageInfo, 'is_event_enabled', false)) {
                 //     return ['error_message' => __('You have no access to this page events.', 'wp-social-reviews' )];
                 // }
@@ -601,12 +612,14 @@ class FacebookFeed extends BaseFeed
                     $multiple_feeds[] = $feed;
                 }
             } else {
-                // translators: %s is the Page ID that was deleted
-                $base_error_message = __('The Page ID (%s) linked to your configuration has been deleted. To continue displaying your feed from this page, please reauthorize and reconnect it in the configuration settings. Then, go to the template editor, navigate to Source → Select Pages, and choose the page again.', 'wp-social-reviews');
-                if ($multipleAccountsConnected) {
-                    $errorMessage = __('There are multiple accounts being used on this template. ', 'wp-social-reviews') . sprintf($base_error_message, $id);
-                } else {
-                    $errorMessage = sprintf($base_error_message, $id);
+                if($feedType !== 'event_feed'){
+                    // translators: %s is the Page ID that was deleted
+                    $base_error_message = __('The Page ID (%s) linked to your configuration has been deleted. To continue displaying your feed from this page, please reauthorize and reconnect it in the configuration settings. Then, go to the template editor, navigate to Source → Select Pages, and choose the page again.', 'wp-social-reviews');
+                    if ($multipleAccountsConnected) {
+                        $errorMessage = __('There are multiple accounts being used on this template. ', 'wp-social-reviews') . sprintf($base_error_message, $id);
+                    } else {
+                        $errorMessage = sprintf($base_error_message, $id);
+                    }
                 }
             }
         }

@@ -17,7 +17,7 @@
       <ul class="wpsr-element-spacing-dimensions">
         <template v-if="spacing">
           <li v-for="(item, index) in spacing" :key="index">
-            <template v-if="typeof item === 'object'">
+            <template v-if="item != null && typeof item === 'object'">
               <input v-model="spacing[index][device]" type="number" placeholder="" @input="handleClick($event)" :disabled="!has_pro"/>
               <label>{{index}}</label>
             </template>

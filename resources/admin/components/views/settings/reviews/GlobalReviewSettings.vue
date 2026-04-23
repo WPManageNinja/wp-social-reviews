@@ -94,6 +94,147 @@
           </div>
         </div>
 
+        <div class="wpsr-settings-container wpsr-feed-global-settings-wrapper">
+          <div class="wpsr-settings-header">
+            <h2 class="wpsr-feed-settings-title">
+              {{ $t("Review Publishing Settings") }}
+            </h2>
+            <p class="wpsr-feed-settings-description">
+              {{ $t("Choose how and when reviews are published on your site.") }}
+            </p>
+          </div>
+
+          <div class="wpsr-feed-settings-content">
+            <div class="wpsr-setting-row">
+              <div class="wpsr-setting-left">
+                <h3 class="wpsr-setting-title">
+                  {{ $t("Review Publishing Mode") }}
+                  <el-tooltip placement="right" effect="dark">
+                    <template #content>
+                      <div class="wpsn-tooltip-content">
+                        <p><strong>Publish Automatically</strong>: Reviews are published immediately without review.</p>
+                        <p><strong>Require Approval</strong>: All reviews go to the moderation queue for manual approval.</p>
+                        <p><strong>Conditional</strong>: Apply rules to decide if reviews are published automatically or sent to moderation.</p>
+                      </div>
+                    </template>
+                    <el-icon size="18" color="var(--wpsr-icon-info-secondary-color)"><InfoFilled /></el-icon>
+                  </el-tooltip>
+                </h3>
+              </div>
+              <div class="wpsr-setting-right">
+                <el-select
+                    v-model="advance_settings.review_publish_mode"
+                    class="wpsr-text-input"
+                    placeholder="Select"
+                >
+                  <el-option
+                      v-for="item in reviewsPublishTypeOptions"
+                      :key="item.value"
+                      :label="item.label + (item.is_pro && !has_pro ? ' (Pro)' : '')"
+                      :value="item.value"
+                      :disabled="item.is_pro && !has_pro"
+                  >
+                  </el-option>
+                </el-select>
+              </div>
+            </div>
+
+            <div v-if="advance_settings.review_publish_mode === 'conditional'">
+              <div class="wpsr-setting-row">
+                <div class="wpsr-setting-left">
+                  <h3 class="wpsr-setting-title">
+                    {{ $t("Conditional Publishing Rules") }}
+                  </h3>
+                  <p class="wpsr-feed-settings-description">Automatically decide which reviews are published and which ones require moderation based on your rules.</p>
+                </div>
+              </div>
+
+              <div class="wpsr-setting-row">
+                <div class="wpsr-setting-left">
+                  <h3 class="wpsr-setting-title">
+                    {{ $t("Minimum Rating Required") }}
+                  </h3>
+                  <p class="wpsr-text-muted">{{ $t('Reviews with a rating below this value will be sent to moderation instead of being published automatically.') }}</p>
+                </div>
+                <div class="wpsr-setting-right">
+                  <el-select v-model="advance_settings.conditional_rules.min_rating" class="wpsr-text-input" placeholder="Select minimum rating" size="mini">
+                    <el-option
+                        v-for="rating in ratingOptions"
+                        :key="rating.value"
+                        :label="rating.label"
+                        :value="rating.value"
+                    >
+                    </el-option>
+                  </el-select>
+                </div>
+              </div>
+
+              <!-- Blocked Keywords Rule -->
+              <div class="wpsr-setting-row">
+                <div class="wpsr-setting-left">
+                  <h3 class="wpsr-setting-title">
+                    {{ $t("Blocked/Spam Words") }}
+                  </h3>
+                  <p class="wpsr-text-muted">{{ $t('Add keywords that should trigger spam detection. Reviews containing any of these words will be marked as spam automatically.') }}</p>
+                </div>
+                <div class="wpsr-setting-right">
+                  <el-input
+                      class="wpsr-text-input wpsr-input-border"
+                      v-model="advance_settings.conditional_rules.blocked_keywords"
+                      type="textarea"
+                      :rows="3"
+                      :placeholder="$t('Enter keywords separated by commas (e.g. scam, fake, spam)')"
+                      size="mini"
+                  />
+                </div>
+              </div>
+
+              <!-- Verified Purchase Rule -->
+<!--              <div class="wpsr-setting-row">-->
+<!--                <div class="wpsr-setting-left">-->
+<!--                  <h3 class="wpsr-setting-title">-->
+<!--                    {{ $t("Verified Purchase Required") }}-->
+<!--                  </h3>-->
+<!--                  <p class="wpsr-text-muted">{{ $t('Only publish reviews from verified purchases automatically.') }}</p>-->
+<!--                </div>-->
+<!--                <div class="wpsr-setting-right">-->
+<!--                  <el-switch-->
+<!--                      v-model="advance_settings.conditional_rules.require_verified_purchase"-->
+<!--                      active-color="#5c8df6"-->
+<!--                      inactive-color="#b7b7b9"-->
+<!--                      active-value="true"-->
+<!--                      inactive-value="false"-->
+<!--                  >-->
+<!--                  </el-switch>-->
+<!--                </div>-->
+<!--              </div>-->
+
+              <!-- Minimum Review Length Rule -->
+              <div class="wpsr-setting-row">
+                <div class="wpsr-setting-left">
+                  <h3 class="wpsr-setting-title">
+                    {{ $t("Minimum Review Length") }}
+                  </h3>
+                  <p class="wpsr-text-muted">{{ $t('Set the minimum number of characters required. Shorter reviews will be sent for moderation.') }}</p>
+                </div>
+                <div class="wpsr-setting-right">
+                  <el-input-number
+                      v-model="advance_settings.conditional_rules.min_review_length"
+                      :min="0"
+                      :max="1000"
+                      :step="10"
+                      size="mini"
+                      placeholder=""
+                  />
+                  <span class="wpsr-ml-10">{{ $t('characters') }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <NativeFormCaptchaSettings v-if="has_pro && canManageCaptchaSettings" />
+
         <div
           class="wpsr-settings-container" 
           id="wpsr-ai-review-summarizer-api-settings"
@@ -232,6 +373,7 @@
 
 <script>
 import RemoveConfirm from "../../../core-ui/editor/RemoveConfirm";
+import NativeFormCaptchaSettings from "./NativeFormCaptchaSettings.vue";
 import { InfoFilled } from "@element-plus/icons-vue";
 import { settingsMixin } from "../../../../mixins/settingsMixin";
 
@@ -240,6 +382,7 @@ export default {
   mixins: [settingsMixin],
   components: {
     RemoveConfirm,
+    NativeFormCaptchaSettings,
     InfoFilled,
   },
   data() {
@@ -270,7 +413,24 @@ export default {
       open_ai_supported_models: [],
       open_router_supported_models: [],
       deepseek_supported_models: [],
+      reviewsPublishTypeOptions: [
+        { value: 'auto', label: 'Publish Automatically' },
+        { value: 'manually', label: 'Require Approval' },
+        { value: 'conditional', label: 'Auto Publish with Filters', is_pro: true },
+      ],
+      ratingOptions: [
+        { value: 1, label: 'At least 1 stars' },
+        { value: 2, label: 'At least 2 stars' },
+        { value: 3, label: 'At least 3 stars' },
+        { value: 4, label: 'At least 4 stars' },
+        { value: 5, label: '5 Stars Only' },
+      ],
     };
+  },
+  computed: {
+    canManageCaptchaSettings() {
+      return this.hasPermission(['wpsn_reviews_platforms_settings', 'wpsn_full_access']);
+    }
   },
 
   methods: {
@@ -293,9 +453,7 @@ export default {
       this.$post("settings/advance-settings", {
         advance_settings: this.advance_settings,
       })
-        .then((response) => {
-          console.log(response);
-          
+        .then((response) => {          
           if (response) {
             this.handleSuccess(response.message);
             this.getAdvanceSettings();
@@ -314,6 +472,10 @@ export default {
         .then((response) => {
           if (response) {
             this.advance_settings = response.advance_settings;
+            // Reset conditional (Auto Publish with Filters) to auto when not Pro
+            if (!this.has_pro && this.advance_settings?.review_publish_mode === 'conditional') {
+              this.advance_settings.review_publish_mode = 'auto';
+            }
             this.available_ai_platforms =
               response.ai_summarizer_settings_options.available_ai_platforms;
             this.open_ai_supported_models =

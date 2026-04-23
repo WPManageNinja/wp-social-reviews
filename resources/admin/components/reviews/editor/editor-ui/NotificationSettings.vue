@@ -13,7 +13,7 @@ import EditorGroup from '../../../core-ui/editor/EditorGroup';
 
 export default {
   name: "NotificationSettings",
-  props: ['pages', 'post_types', 'template_meta'],
+  props: ['post_types', 'template_meta'],
   components: {
     EditorGroup
   },
@@ -78,14 +78,11 @@ export default {
         },
         {
           fieldKey: 'id',
-          type: 'dynamic_select',
+          type: 'async_multiple_select',
           title: this.$t('Select a redirect page'),
-          options: JSON.parse(JSON.stringify(this.pages)).splice(1),
-          placeholder: this.$t('Select a redirect page'),
-          label: 'title',
-          value: 'id',
+          searchRoute: 'pages/search',
           multiple: false,
-          event: 'on_change',
+          includeEverywhere: false,
           condition: {
             'key': 'display_mode',
             'selector': 'page'
@@ -125,17 +122,17 @@ export default {
         },
         {
           fieldKey: 'page_list',
-          type: 'multiple_select',
+          type: 'async_multiple_select',
           title: this.$t('Include Pages to Display Notification'),
-          options: this.pages,
+          searchRoute: 'pages/search',
           label: 'title',
           value: 'id'
         },
         {
           fieldKey: 'exclude_page_list',
-          type: 'multiple_select',
+          type: 'async_multiple_select',
           title: this.$t('Exclude Pages to Hide Notification'),
-          options: this.pages,
+          searchRoute: 'pages/search',
           disabled: !this.has_pro,
           label: 'title',
           value: 'id'

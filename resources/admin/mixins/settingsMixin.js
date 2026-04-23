@@ -9,10 +9,14 @@ export const settingsMixin = {
             }).then(response => {
                 if (response.data) {
                     this.allGlobalSettings = response.data.settings;
+                    // Ensure expiration is a number so el-select can match it against numeric option values
+                    if (this.allGlobalSettings && this.allGlobalSettings.global_settings && this.allGlobalSettings.global_settings.expiration) {
+                        this.allGlobalSettings.global_settings.expiration = parseInt(this.allGlobalSettings.global_settings.expiration, 10);
+                    }
                     this.is_enabled_platform = response.data.settings.global_settings ? response.data.settings.global_settings.is_enabled_platform : false;
                     
-                    // Populate available templates for WooCommerce platform
-                    if (platform === 'woocommerce' && response.data.templates) {
+                    // Populate available templates for WooCommerce and FluentCart platforms
+                    if ((platform === 'woocommerce' || platform === 'fluent-cart') && response.data.templates) {
                         this.availableTemplates = Object.keys(response.data.templates).map(key => ({
                             value: key,
                             label: response.data.templates[key]

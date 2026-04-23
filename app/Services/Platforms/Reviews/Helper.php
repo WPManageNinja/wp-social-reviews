@@ -47,8 +47,8 @@ class Helper
         $downloadedReviews = Arr::get($businessInfo, 'total_fetched_reviews');
         $platform_name = Arr::get($businessInfo, $key . '.platform_name');
         $businessName = Arr::get($businessInfo, $key . '.name');
-        $message = $platform_name === 'woocommerce' ? __('Product connected successfully!!', 'wp-social-reviews') : __('Reviews fetched successfully!!', 'wp-social-reviews');
-        if($platform_name === 'woocommerce' && (empty($downloadedReviews))) {
+        $message = $platform_name === 'woocommerce' || $platform_name === 'fluent-cart' ? __('Product connected successfully!!', 'wp-social-reviews') : __('Reviews fetched successfully!!', 'wp-social-reviews');
+        if ($platform_name === 'fluent-cart' || ($platform_name === 'woocommerce' && (empty($downloadedReviews)))) {
             return $message;
         }
 
@@ -58,7 +58,7 @@ class Helper
         } else if ($downloadedReviews && $downloadedReviews > 0) {
             // translators: Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
             $message = sprintf(__('%s reviews fetched successfully!!', 'wp-social-reviews'), $downloadedReviews);
-        } else if ( $platform_name !== 'woocommerce' && (empty($downloadedReviews) || $downloadedReviews < 1)) {
+        } else if ($platform_name !== 'woocommerce' && (empty($downloadedReviews) || $downloadedReviews < 1)) {
             throw new \Exception(
                 esc_html__('Reviews fetched failed, Please try again!!', 'wp-social-reviews')
             );
@@ -124,10 +124,10 @@ class Helper
             'timestamp' => Arr::get($settings, 'timestamp', $timestamp),
             'reviewerrating' => Arr::get($settings, 'reviewerrating', 'true'),
             'enable_verified_badge' => Arr::get($settings, 'enable_verified_badge', 'false'),
-            'verified_badge_tooltip_text' => sanitize_text_field(Arr::get($settings, 'verified_badge_tooltip_text', __('Verified Customer', 'wp-social-reviews'))),
+            'verified_badge_tooltip_text' => Arr::get($settings, 'verified_badge_tooltip_text', __('Verified Customer', 'wp-social-reviews')),
             'resolution' => Arr::get($settings, 'resolution', 'full'),
 
-            'platform_label' => sanitize_text_field(Arr::get($settings, 'platform_label', __('On Site', 'wp-social-reviews'))),
+            'platform_label' => Arr::get($settings, 'platform_label', __('On Site', 'wp-social-reviews')),
 
             'equal_height' => Arr::get($settings, 'equal_height', 'false'),
             'equalHeightLen' => (int) Arr::get($settings, 'equalHeightLen', '250'),
@@ -138,6 +138,7 @@ class Helper
 
             'display_review_title' => Arr::get($settings, 'display_review_title', 'true'),
             'isReviewerText' => Arr::get($settings, 'isReviewerText', 'true'),
+            'show_review_images' => Arr::get($settings, 'show_review_images', 'true'),
             'isPlatformIcon' => Arr::get($settings, 'isPlatformIcon', 'true'),
             'current_template_type' => Arr::get($settings, 'current_template_type', 'grid'),
 
@@ -171,49 +172,55 @@ class Helper
             'filterByTitle' => $filterByTitle,
             'selectedIncList' => $selectedIncList,
             'selectedExcList' => $selectedExcList,
-            'includes_inputs' => sanitize_text_field(Arr::get($settings, 'includes_inputs', '')),
-            'excludes_inputs' => sanitize_text_field(Arr::get($settings, 'excludes_inputs', '')),
+            'includes_inputs' => Arr::get($settings, 'includes_inputs', ''),
+            'excludes_inputs' => Arr::get($settings, 'excludes_inputs', ''),
             'order' => Arr::get($settings, 'order', 'desc'),
             'hide_empty_reviews' => Arr::get($settings, 'hide_empty_reviews', false),
             'selectedBusinesses' => Arr::get($settings, 'selectedBusinesses', []),
             'selectedCategories' => Arr::get($settings, 'selectedCategories', []),
 
             //header
-            'show_header'                  => Arr::get($settings,'show_header','true'),
+            'show_header' => Arr::get($settings, 'show_header', 'true'),
             'display_header_business_logo' => Arr::get($settings, 'display_header_business_logo', true),
             'display_header_business_name' => Arr::get($settings, 'display_header_business_name', true),
             'display_header_rating' => Arr::get($settings, 'display_header_rating', true),
             'display_header_reviews' => Arr::get($settings, 'display_header_reviews', true),
             'display_header_write_review' => Arr::get($settings, 'display_header_write_review', true),
             'header_template' => Arr::get($settings, 'header_template', 'template1'),
-            'custom_write_review_text' => sanitize_text_field(Arr::get($settings, 'custom_write_review_text', __('Write a Review', 'wp-social-reviews'))),
+            'custom_write_review_text' => Arr::get($settings, 'custom_write_review_text', __('Write a Review', 'wp-social-reviews')),
             'add_custom_war_btn_url' => Arr::get($settings, 'add_custom_war_btn_url', false),
             'war_btn_source' => Arr::get($settings, 'war_btn_source', 'custom_url'),
-            'war_btn_source_custom_url' => sanitize_url(Arr::get($settings, 'war_btn_source_custom_url', '')),
+            'war_btn_source_custom_url' => Arr::get($settings, 'war_btn_source_custom_url', ''),
             'war_btn_open_in_new_window' => Arr::get($settings, 'war_btn_open_in_new_window', 'true'),
-            'war_btn_source_form_shortcode_id' => sanitize_text_field(Arr::get($settings, 'war_btn_source_form_shortcode_id', null)),
-            'custom_title_text' => sanitize_text_field(Arr::get($settings, 'custom_title_text', '')),
+            'war_btn_source_form_shortcode_id' => Arr::get($settings, 'war_btn_source_form_shortcode_id', null),
+            'war_btn_source_native_form_id' => Arr::get($settings, 'war_btn_source_native_form_id', null),
+            'custom_title_text' => Arr::get($settings, 'custom_title_text', ''),
             // translators: {total_reviews} is a placeholder for the total number of reviews
-            'custom_number_of_reviews_text' => sanitize_text_field(Arr::get($settings, 'custom_number_of_reviews_text', __('Based on {total_reviews} Reviews', 'wp-social-reviews'))),
+            'custom_number_of_reviews_text' => Arr::get($settings, 'custom_number_of_reviews_text', __('Based on {total_reviews} Reviews', 'wp-social-reviews')),
             'display_tp_brand' => Arr::get($settings, 'display_tp_brand', 'false'),
 
             //pagination
             'pagination_type' => Arr::get($settings, 'pagination_type', 'none'),
-            'load_more_button_text' => sanitize_text_field(Arr::get($settings, 'load_more_button_text', __('Load More', 'wp-social-reviews'))),
+            'load_more_button_text' => Arr::get($settings, 'load_more_button_text', __('Load More', 'wp-social-reviews')),
             'paginate' => (int) Arr::get($settings, 'paginate', '6'),
+            'paginate_number' => array(
+                'desktop' => (int) Arr::get($settings, 'paginate_number.desktop', Arr::get($settings, 'paginate', '6')),
+                'mobile' => (int) Arr::get($settings, 'paginate_number.mobile', '6')
+            ),
 
             //Badge Settings
             'badge_settings' => array(
                 'template' => Arr::get($settings, 'badge_settings.template', 'badge1'),
                 'badge_position' => Arr::get($settings, 'badge_settings.badge_position', 'default'),
                 'display_platform_icon' => Arr::get($settings, 'badge_settings.display_platform_icon', 'true'),
-                'custom_title' => sanitize_text_field(Arr::get($settings, 'badge_settings.custom_title', __('Rating', 'wp-social-reviews'))),
+                'custom_title' => Arr::get($settings, 'badge_settings.custom_title', __('Rating', 'wp-social-reviews')),
                 // translators: {reviews_count} is a placeholder for the number of reviews
-                'custom_num_of_reviews_text' => sanitize_text_field(Arr::get($settings, 'badge_settings.custom_num_of_reviews_text', __('Read our {reviews_count} Reviews', 'wp-social-reviews'))),
+                'custom_num_of_reviews_text' => Arr::get($settings, 'badge_settings.custom_num_of_reviews_text', __('Read our {reviews_count} Reviews', 'wp-social-reviews')),
                 'display_mode' => Arr::get($settings, 'badge_settings.display_mode', 'popup'),
-                'url' => sanitize_url(Arr::get($settings, 'badge_settings.url', '')),
-                'custom_url' => sanitize_url(Arr::get($settings, 'badge_settings.custom_url', '')),
-                'form_shortcode_id' => sanitize_text_field(Arr::get($settings, 'badge_settings.form_shortcode_id', null)),
+                'url' => Arr::get($settings, 'badge_settings.url', ''),
+                'custom_url' => Arr::get($settings, 'badge_settings.custom_url', ''),
+                'form_shortcode_id' => Arr::get($settings, 'badge_settings.form_shortcode_id', null),
+                'native_form_id' => Arr::get($settings, 'badge_settings.native_form_id', null),
                 'id' => Arr::get($settings, 'badge_settings.id', ''),
                 'open_in_new_window' => Arr::get($settings, 'badge_settings.open_in_new_window', 'true'),
             ),
@@ -223,9 +230,9 @@ class Helper
                 'template' => Arr::get($settings, 'notification_settings.template', 'notification1'),
                 'notification_position' => Arr::get($settings, 'notification_settings.notification_position', 'float_left_bottom'),
                 'display_mode' => Arr::get($settings, 'notification_settings.display_mode', 'popup'),
-                'custom_url' => sanitize_url(Arr::get($settings, 'notification_settings.custom_url', '')),
+                'custom_url' => Arr::get($settings, 'notification_settings.custom_url', ''),
                 'id' => Arr::get($settings, 'notification_settings.id', null),
-                'url' => sanitize_url(Arr::get($settings, 'notification_settings.url', '')),
+                'url' => Arr::get($settings, 'notification_settings.url', ''),
                 'page_list' => Arr::get($settings, 'notification_settings.page_list', array('-1')),
                 'exclude_page_list' => Arr::get($settings, 'notification_settings.exclude_page_list', array()),
                 'post_types' => Arr::get($settings, 'notification_settings.post_types', array()),
@@ -235,33 +242,36 @@ class Helper
                 'display_close_button' => Arr::get($settings, 'notification_settings.display_close_button', 'true'),
                 'display_date' => Arr::get($settings, 'notification_settings.display_date', 'true'),
                 // translators: {review_rating} is a placeholder for the star rating value
-                'custom_notification_text' => sanitize_text_field(Arr::get($settings, 'notification_settings.custom_notification_text', __('Just left us a {review_rating} star review', 'wp-social-reviews'))),
+                'custom_notification_text' => Arr::get($settings, 'notification_settings.custom_notification_text', __('Just left us a {review_rating} star review', 'wp-social-reviews')),
                 'initial_delay' => (int) Arr::get($settings, 'notification_settings.initial_delay', 6000),
                 'notification_delay' => (int) Arr::get($settings, 'notification_settings.notification_delay', 5000),
                 'delay_for' => (int) Arr::get($settings, 'notification_settings.delay_for', 5000),
                 'display_read_all_reviews_btn' => Arr::get($settings, 'notification_settings.display_read_all_reviews_btn', 'false'),
-                'read_all_reviews_btn_url' => sanitize_url(Arr::get($settings, 'notification_settings.read_all_reviews_btn_url', '#')),
+                'read_all_reviews_btn_url' => Arr::get($settings, 'notification_settings.read_all_reviews_btn_url', '#'),
             ),
             'enable_schema' => Arr::get($settings, 'enable_schema', 'false'),
             'schema_settings' => array(
+                'schema_type' => Arr::get($settings, 'schema_settings.schema_type', 'aggregate_rating'),
                 'business_logo' => Arr::get($settings, 'schema_settings.business_logo', ''),
-                'business_name' => sanitize_text_field(Arr::get($settings, 'schema_settings.business_name', '')),
-                'business_type' => sanitize_text_field(Arr::get($settings, 'schema_settings.business_type', '')),
-                'business_telephone' => sanitize_text_field(Arr::get($settings, 'schema_settings.business_telephone', '')),
+                'business_name' => Arr::get($settings, 'schema_settings.business_name', ''),
+                'business_description' => Arr::get($settings, 'schema_settings.business_description', ''),
+                'business_type' => Arr::get($settings, 'schema_settings.business_type', ''),
+                'business_telephone' => Arr::get($settings, 'schema_settings.business_telephone', ''),
                 'include_business_address' => Arr::get($settings, 'schema_settings.include_business_address', 'false'),
-                'business_street_address' => sanitize_text_field(Arr::get($settings, 'schema_settings.business_street_address', '')),
-                'business_address_city' => sanitize_text_field(Arr::get($settings, 'schema_settings.business_address_city', '')),
-                'business_address_state' => sanitize_text_field(Arr::get($settings, 'schema_settings.business_address_state', '')),
-                'business_address_postal_code' => sanitize_text_field(Arr::get($settings, 'schema_settings.business_address_postal_code', '')),
-                'business_address_country' => sanitize_text_field(Arr::get($settings, 'schema_settings.business_address_country', '')),
+                'business_street_address' => Arr::get($settings, 'schema_settings.business_street_address', ''),
+                'business_address_city' => Arr::get($settings, 'schema_settings.business_address_city', ''),
+                'business_address_state' => Arr::get($settings, 'schema_settings.business_address_state', ''),
+                'business_address_postal_code' => Arr::get($settings, 'schema_settings.business_address_postal_code', ''),
+                'business_address_country' => Arr::get($settings, 'schema_settings.business_address_country', ''),
                 'business_average_rating' => Arr::get($settings, 'schema_settings.business_average_rating', null),
                 'business_total_rating' => Arr::get($settings, 'schema_settings.business_total_rating', null),
+                'include_reviews_in_schema' => Arr::get($settings, 'schema_settings.include_reviews_in_schema', 1),
             ),
 
             //styles
             'feed_settings' => array(
                 'enable_style' => 'true',
-                'created_from_onboarding'  => Arr::get($settings,'feed_settings.created_from_onboarding', false),
+                'created_from_onboarding' => Arr::get($settings, 'feed_settings.created_from_onboarding', false),
             ),
             'template_width' => Arr::get($settings, 'template_width', ''),
             'template_height' => Arr::get($settings, 'template_height', ''),
@@ -300,7 +310,7 @@ class Helper
             $activePlatforms['custom'] = __('Custom', 'wp-social-reviews');
         }
         $customValidPlatforms = get_option('wpsr_available_valid_platforms', []);
-        if(!empty($customValidPlatforms)){
+        if (!empty($customValidPlatforms)) {
             $activePlatforms = array_merge($activePlatforms, $customValidPlatforms);
         }
         if (!empty($platforms)) {
@@ -334,7 +344,7 @@ class Helper
 //        return $business_info;
 //    }
 
-    public static function getBusinessInfoByPlatforms($platforms)
+    public static function getBusinessInfoByPlatforms($platforms, $calculateBreakdown = true)
     {
         $multi_business_info = [];
         $platform_urls = [];
@@ -371,7 +381,7 @@ class Helper
                 'product_url' => Arr::get($business_info, 'platform_name') === 'woocommerce' ? get_the_post_thumbnail_url($place_id) : ''
             ];
 
-            if (!empty(Arr::get($business_info, 'url'))) {
+            if (!empty(Arr::get($business_info, 'url')) || !empty(Arr::get($business_info, 'logo'))) {
                 $cnt++;
                 $url = Arr::get($business_info, 'url');
                 $platform_name = Arr::get($business_info, 'platform_name');
@@ -403,8 +413,10 @@ class Helper
             }
         }
 
-        // Calculate star rating breakdown for all reviews
-        $multi_business_info['rating_breakdown'] = static::calculateStarRatingBreakdown($platforms, $platform_urls);
+        if ($calculateBreakdown) {
+            // Calculate star rating breakdown for all reviews
+            $multi_business_info['rating_breakdown'] = static::calculateStarRatingBreakdown($platforms, $platform_urls);
+        }
 
         $multi_business_info['url'] = $url;
         $multi_business_info['platform_name'] = $platform_name;
@@ -416,7 +428,9 @@ class Helper
     public static function getSelectedBusinessInfoByPlatforms($platforms, $selectedBusinesses)
     {
         $cnt = 0; // Reset the count
-        $multi_business_info = static::getBusinessInfoByPlatforms($platforms);
+        // Only skip breakdown calculation if we have selected businesses to filter
+        $shouldCalculateBreakdown = empty($selectedBusinesses);
+        $multi_business_info = static::getBusinessInfoByPlatforms($platforms, $shouldCalculateBreakdown);
         $cnt = Arr::get($multi_business_info, 'total_business', 0);
         $url = Arr::get($multi_business_info, 'url', '');
         $platform_name = Arr::get($multi_business_info, 'platform_name', '');
@@ -625,7 +639,7 @@ class Helper
 
     public static function getPlatformsWithCategories()
     {
-        return apply_filters('wpsocialreviews/platforms_with_categories', ['fluent_forms', 'custom', 'testimonial', 'ai']);
+        return apply_filters('wpsocialreviews/platforms_with_categories', ['fluent_forms', 'custom', 'testimonial', 'ai', 'native_form']);
     }
 
     public static function hasReviewApproved()
@@ -713,7 +727,7 @@ class Helper
     {
         $mediaManager = new MediaManager($resizedImages, $advanceSettings, $imageSize, $platformName);
         foreach ($filteredReviews as $index => $item) {
-            if ($isOptimizedImage == 'true' && $item->platform_name != 'custom' && $item->platform_name != 'testimonial') {
+            if ($isOptimizedImage == 'true' && !static::isCustomReviewPlatform($item->platform_name) && $item->platform_name != 'testimonial') {
                 $item['media_url'] = $mediaManager->getMediaUri($item);
             } else {
                 $item['media_url'] = Arr::get($item, 'reviewer_img');
@@ -721,6 +735,24 @@ class Helper
         }
 
         return $filteredReviews;
+    }
+
+    public static function isCustomReviewPlatform($platformName)
+    {
+        if (empty($platformName)) {
+            return false;
+        }
+
+        if ($platformName === 'custom') {
+            return true;
+        }
+
+        static $customValidPlatforms = null;
+        if ($customValidPlatforms === null) {
+            $customValidPlatforms = (array) get_option('wpsr_available_valid_platforms', []);
+        }
+
+        return !empty($customValidPlatforms) && array_key_exists($platformName, $customValidPlatforms);
     }
 
     public static function handleReviewerName($reviews, $templateMeta)
@@ -777,7 +809,8 @@ class Helper
      * @param array|Collection $reviews
      * @return bool
      */
-    public static function hasReviewImages($reviews){
+    public static function hasReviewImages($reviews)
+    {
         if (empty($reviews)) {
             return false;
         }
@@ -849,8 +882,9 @@ class Helper
             return static::getDefaultRatingBreakdown();
         }
 
-        $allReviews = [];
-        $processedReviews = [];
+        // Group source IDs by platform
+        $platformSources = [];
+        $needsCustomAll = false;
 
         foreach ($businessInfo as $sourceId => $business) {
             $platformName = Arr::get($business, 'platform_name');
@@ -859,32 +893,101 @@ class Helper
                 continue;
             }
 
-            $query = Review::where('platform_name', $platformName)
-                           ->where('review_approved', 1);
-
-            if ($platformName !== 'custom') {
-                $query->where('source_id', $sourceId);
+            if ($platformName === 'custom') {
+                $needsCustomAll = true;
+                continue;
             }
 
-            $reviews = $query->get();
-            foreach ($reviews as $review) {
-                if ($platformName === 'custom') {
-                    $reviewKey = $review->id . '_' . $review->platform_name . '_' . $review->source_id;
-                    if (!isset($processedReviews[$reviewKey])) {
-                        $allReviews[] = $review->toArray();
-                        $processedReviews[$reviewKey] = true;
+            $platformSources[$platformName][] = $sourceId;
+        }
+
+        // Build a single optimized query using raw SQL with GROUP BY for counting
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'wpsr_reviews';
+
+        $counts = [
+            '5' => 0,
+            '4' => 0,
+            '3' => 0,
+            '2' => 0,
+            '1' => 0,
+            '0' => 0
+        ];
+        $totalReviews = 0;
+
+        // Build conditions for non-custom platforms (single query with OR conditions)
+        $conditions = [];
+        $values = [];
+
+        foreach ($platformSources as $platformName => $sourceIds) {
+            $uniqueIds = array_values(array_unique(array_map('strval', $sourceIds)));
+            if (empty($uniqueIds)) {
+                continue;
+            }
+
+            $placeholders = implode(',', array_fill(0, count($uniqueIds), '%s'));
+            $conditions[] = "(platform_name = %s AND source_id IN ($placeholders))";
+            $values[] = $platformName;
+            $values = array_merge($values, $uniqueIds);
+        }
+
+        // Add custom platform condition if needed
+        if ($needsCustomAll) {
+            $conditions[] = "(platform_name = %s)";
+            $values[] = 'custom';
+        }
+
+        if (!empty($conditions)) {
+            // Build the WHERE clause with placeholders
+            $whereClause = implode(' OR ', $conditions);
+
+            // Single aggregated query to count ratings grouped by star value
+            // Table name is safe (uses $wpdb->prefix which is trusted)
+            // All placeholders in $whereClause are matched with values in $values array
+            // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- $whereClause contains only %s placeholders that are properly escaped by $wpdb->prepare() with matching $values
+            $query = $wpdb->prepare(
+                "SELECT rating, COUNT(*) as count 
+                 FROM `{$table_name}` 
+                 WHERE review_approved = 1 
+                   AND rating BETWEEN 0 AND 5
+                   AND (" . $whereClause . ")
+                 GROUP BY rating",
+                $values
+            );
+            
+            // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- $query is prepared and escaped by $wpdb->prepare() above
+            $results = $wpdb->get_results($query);
+
+            if (!empty($results)) {
+                foreach ($results as $row) {
+                    $rating = (int) $row->rating;
+                    if ($rating >= 0 && $rating <= 5) {
+                        $counts[(string) $rating] = (int) $row->count;
+                        $totalReviews += (int) $row->count;
                     }
-                } else {
-                    $allReviews[] = $review->toArray();
                 }
             }
         }
 
-        if (empty($allReviews)) {
+        if ($totalReviews === 0) {
             return static::getDefaultRatingBreakdown();
         }
 
-        return static::calculateStarRatingBreakdownFromReviews($allReviews);
+        // Build the breakdown array in the required format
+        $breakdown = [];
+        for ($star = 5; $star >= 0; $star--) {
+            $count = $counts[(string) $star];
+            $percentage = static::calculatePercentage($count, $totalReviews);
+
+            $breakdown[] = [
+                'type' => 'star_rating',
+                'star' => $star,
+                'count' => $count,
+                'percentage' => $percentage
+            ];
+        }
+
+        return $breakdown;
     }
 
     /**
@@ -895,7 +998,7 @@ class Helper
     private static function getDefaultRatingBreakdown()
     {
         $breakdown = [];
-        for ($star = 5; $star >= 1; $star--) {
+        for ($star = 5; $star >= 0; $star--) {
             $breakdown[] = [
                 'type' => 'star_rating',
                 'star' => $star,
@@ -923,7 +1026,8 @@ class Helper
             '4' => 0,
             '3' => 0,
             '2' => 0,
-            '1' => 0
+            '1' => 0,
+            '0' => 0
         ];
 
         $totalReviews = count($reviews);
@@ -932,15 +1036,15 @@ class Helper
         foreach ($reviews as $review) {
             $rating = isset($review['rating']) ? (int) $review['rating'] : 0;
 
-            // Ensure rating is between 1-5
-            if ($rating >= 1 && $rating <= 5) {
+            // Ensure rating is between 0-5
+            if ($rating >= 0 && $rating <= 5) {
                 $counts[(string) $rating]++;
             }
         }
 
         // Build the breakdown array in the required format
         $breakdown = [];
-        for ($star = 5; $star >= 1; $star--) {
+        for ($star = 5; $star >= 0; $star--) {
             $count = $counts[(string) $star];
             $percentage = $totalReviews > 0 ? static::calculatePercentage($count, $totalReviews) : '0%';
 
@@ -973,7 +1077,8 @@ class Helper
             '4' => 0,
             '3' => 0,
             '2' => 0,
-            '1' => 0
+            '1' => 0,
+            '0' => 0
         ];
 
         $totalReviews = count($reviews);
@@ -989,15 +1094,15 @@ class Helper
 
             $starRating = round($rating);
 
-            // Ensure rating is between 1-5
-            if ($starRating >= 1 && $starRating <= 5) {
+            // Ensure rating is between 0-5
+            if ($starRating >= 0 && $starRating <= 5) {
                 $counts[(string) $starRating]++;
             }
         }
 
         // Build the breakdown array in the required format
         $breakdown = [];
-        for ($star = 5; $star >= 1; $star--) {
+        for ($star = 5; $star >= 0; $star--) {
             $count = $counts[(string) $star];
             $percentage = $totalReviews > 0 ? static::calculatePercentage($count, $totalReviews) : '0%';
 

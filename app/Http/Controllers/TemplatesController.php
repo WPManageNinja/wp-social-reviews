@@ -32,23 +32,24 @@ class TemplatesController extends Controller
      **/
     public function index(Request $request, Template $template, Post $post)
     {
-        $excludeWooCommerce = $request->has('exclude_woocommerce')
-            ? $request->get('exclude_woocommerce')
-            : false;
+        $excludeWooCommerce = rest_sanitize_boolean($request->get('exclude_woocommerce', false));
 
-        $templateType = $request->has('templateType') ? $request->get('templateType') : null;
+        $templateType = sanitize_text_field($request->get('templateType', ''));
         if ($request->has('templateType') && $templateType !== 'template') {
-            $modifiedPostType = $templateType === 'notifications' 
-                ? 'wpsr_reviews_notify' 
+            $modifiedPostType = $templateType === 'notifications'
+                ? 'wpsr_reviews_notify'
                 : 'wpsr_social_chats';
         } else {
             $modifiedPostType = $this->postType;
         }
 
+        $search = sanitize_text_field($request->get('search', ''));
+        $filter = sanitize_text_field($request->get('filter', ''));
+
         $templates = $post->getPosts(
             $modifiedPostType,
-            $request->get('search'),
-            $request->get('filter'),
+            $search,
+            $filter,
             $excludeWooCommerce
         );
 
@@ -83,11 +84,10 @@ class TemplatesController extends Controller
     public function create(Request $request, Template $template, Post $post)
     {
         try {
-            $platform     = $request->get('platform');
-            $onboarding   = $request->get('onboarding');
-            $formId       = $request->get('form_id');
-
-            // $postTitle = $post->generatePostTitle($platform);
+            $platform     = sanitize_text_field($request->get('platform', ''));
+            $onboarding   = rest_sanitize_boolean($request->get('onboarding', false));
+            $formId       = intval($request->get('form_id'));
+            
             $postTitle = ucfirst($platform) . __(' Template', 'wp-social-reviews');
             if($platform === 'google') {
                 $postTitle = __('Google Business Profile Template', 'wp-social-reviews');
@@ -117,8 +117,14 @@ class TemplatesController extends Controller
             // if created from custom source create template, set the default header form id
             if($formId){
                 $postMeta['add_custom_war_btn_url'] = 'true';
-                $postMeta['war_btn_source'] = 'form_id';
-                $postMeta['war_btn_source_form_shortcode_id'] = $formId;
+                $formType = sanitize_text_field($request->get('form_type', ''));
+                if ($formType === 'native_form') {
+                    $postMeta['war_btn_source'] = 'native_form';
+                    $postMeta['war_btn_source_native_form_id'] = $formId;
+                } else {
+                    $postMeta['war_btn_source'] = 'form_id';
+                    $postMeta['war_btn_source_form_shortcode_id'] = $formId;
+                }
                 $postMeta['selectedBusinesses'] = [$formId];
             }
             $post->updatePostMeta($postId, $postMeta, $platform);
@@ -145,7 +151,8 @@ class TemplatesController extends Controller
      **/
     public function duplicate(Request $request, Post $post)
     {
-        $ids = $request->get('ids', []);
+        $ids = (array) $request->get('ids', []);
+        $ids = array_map('intval', $ids);
 
         if (empty($ids)) {
             return __('No templates selected', 'wp-social-reviews');
@@ -218,7 +225,8 @@ class TemplatesController extends Controller
      **/
     public function delete(Request $request, Post $post)
     {
-        $ids = $request->get('ids', []);
+        $ids = (array) $request->get('ids', []);
+        $ids = array_map('intval', $ids);
 
         if (empty($ids)) {
             return __('No templates selected', 'wp-social-reviews');
@@ -259,7 +267,7 @@ class TemplatesController extends Controller
     public function updateTitle(Request $request, Post $post, $templateId)
     {
         try {
-            $templateTitle = $request->get('template_title');
+            $templateTitle = sanitize_text_field($request->get('template_title', ''));
 
             $this->app->doCustomAction('before_save_title', $templateId);
             $updateArgs = [
@@ -283,3 +291,4 @@ class TemplatesController extends Controller
         }
     }
 }
+

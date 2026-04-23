@@ -109,6 +109,7 @@ export default {
         case 'page':
           return url || '#';
         case 'form_shortcode_id':
+        case 'native_form':
           return 'javascript:void(0)';
         case 'custom_url':
           return custom_url || '#';
@@ -117,7 +118,8 @@ export default {
       }
     },
     badgeTarget() {
-      return this.badgeSettings.display_mode === 'form_shortcode_id' ? '_self'
+      const mode = this.badgeSettings.display_mode;
+      return (mode === 'form_shortcode_id' || mode === 'native_form') ? '_self'
           : (this.badgeSettings.open_in_new_window === 'true' ? '_blank' : '_self');
     },
     shouldShowPlatformSection() {

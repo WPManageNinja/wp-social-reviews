@@ -207,7 +207,7 @@
 <script>
 import FeedEditorGroup from './../../../core-ui/editor/EditorGroup';
 import UpgradeToProButton from '../../../views/advertise/UpgradeToProButton';
-import debounced from "lodash/debounce";
+import { debounce } from '../../../../utils';
 import EditorCollapsiblePanel from '../../../core-ui/editor/EditorCollapsiblePanel.vue';
 import AccountSelector from '../../../core-ui/editor/AccountSelector.vue';
 import UpgradeToProBanner from '../../../views/advertise/UpgradeToProBanner.vue';
@@ -373,16 +373,19 @@ export default {
           }
         },
         {
-          fieldKey: 'paginate',
+          fieldKey: 'paginate_number',
           type: 'number',
           title: this.$t('Feeds Per Page'),
           min: 1,
-          max: 20,
           flex: true,
+          responsive: true,
+          hide_tablet: true,
           condition: {
             'key': 'pagination_type',
             'selector': 'load_more'
-          }
+          },
+          tooltip: true,
+          tooltipText: this.$t("The Feeds per Page is only visible on preview and live pages/posts, not in the WordPress Editor's editing mode."),
         },
       ],
       feed_settings: {
@@ -506,7 +509,7 @@ export default {
           title: this.$t('Display Sidebar'),
           active_value: 'true',
           inactive_value: 'false',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         },
         {
           fieldKey: 'display_profile_photo',
@@ -522,7 +525,7 @@ export default {
           title: this.$t('Display Username'),
           active_value: 'true',
           inactive_value: 'false',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         },
         {
           fieldKey: 'display_caption',
@@ -530,7 +533,7 @@ export default {
           title: this.$t('Display Caption'),
           active_value: 'true',
           inactive_value: 'false',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         },
         {
           fieldKey: 'display_date',
@@ -538,7 +541,7 @@ export default {
           title: this.$t('Display Date'),
           active_value: 'true',
           inactive_value: 'false',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         },
         {
           fieldKey: 'display_comments',
@@ -546,7 +549,7 @@ export default {
           title: this.$t('Display Comments'),
           active_value: 'true',
           inactive_value: 'false',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         },
         {
           fieldKey: 'display_comments_user_picture',
@@ -554,7 +557,7 @@ export default {
           title: this.$t('Display Comments User Photo'),
           active_value: 'true',
           inactive_value: 'false',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         },
         {
           fieldKey: 'display_likes_count',
@@ -562,7 +565,7 @@ export default {
           title: this.$t('Display Likes Count'),
           active_value: 'true',
           inactive_value: 'false',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         },
         {
           fieldKey: 'display_cta_btn',
@@ -570,7 +573,7 @@ export default {
           title: this.$t('Display Call to Action Button'),
           active_value: 'true',
           inactive_value: 'false',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         },
         {
           fieldKey: 'display_next_prev_arrows',
@@ -578,7 +581,7 @@ export default {
           title: this.$t('Display Next Prev Arrows'),
           active_value: 'true',
           inactive_value: 'false',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         }
       ],
       like_button_settings: [
@@ -736,7 +739,7 @@ export default {
       this.feed_config.edit_mode = false;
       this.fetchFeeds();
     }, 
-    fetch : debounced(function () {
+    fetch : debounce(function () {
       this.$emit('fetchFeed', 'fetching');
     }, 500),
     setAccount(val) {
@@ -977,7 +980,7 @@ export default {
           title: this.$t('Display Event Photo'),
           active_value: 'true',
           inactive_value: 'false',
-          disabled : this.has_pro,
+          disabled : !this.has_pro,
           condition: {
             'key': 'feed_type',
             'data': this.feed_config.source_settings,
@@ -991,7 +994,7 @@ export default {
           title: this.$t('Display Event Name'),
           active_value: 'true',
           inactive_value: 'false',
-          disabled : this.has_pro,
+          disabled : !this.has_pro,
           condition: {
             'key': 'feed_type',
             'data': this.feed_config.source_settings,
@@ -1005,7 +1008,7 @@ export default {
           title: this.$t('Display Event Location'),
           active_value: 'true',
           inactive_value: 'false',
-          disabled : this.has_pro,
+          disabled : !this.has_pro,
           condition: {
             'key': 'feed_type',
             'data': this.feed_config.source_settings,
@@ -1019,7 +1022,7 @@ export default {
           title: this.$t('Display Event Meta'),
           active_value: 'true',
           inactive_value: 'false',
-          disabled : this.has_pro,
+          disabled : !this.has_pro,
           condition: {
             'key': 'feed_type',
             'data': this.feed_config.source_settings,
@@ -1237,31 +1240,27 @@ export default {
           type: 'select',
           title: this.$t('Posts Order'),
           event: 'on_change',
-          options: [
-            {
-              value: 'ascending',
-              label: this.$t('Newest')
-            },
-            {
-              value: 'descending',
-              label: this.$t('Oldest')
-            },
-            {
-              value: 'most_popular',
-              label: this.$t('Most Popular'),
-              disabled: !this.has_pro,
-            },
-            {
-              value: 'least_popular',
-              label: this.$t('Least Popular'),
-              disabled: !this.has_pro,
-            },
-            {
-              value: 'random',
-              label: this.$t('Random'),
-              disabled: !this.has_pro,
+          options: (() => {
+            const options = [
+              { value: 'ascending', label: this.$t('Newest') },
+              { value: 'descending', label: this.$t('Oldest') },
+              { value: 'most_popular', label: this.$t('Most Popular'), disabled: !this.has_pro },
+              { value: 'least_popular', label: this.$t('Least Popular'), disabled: !this.has_pro },
+              { value: 'random', label: this.$t('Random'), disabled: !this.has_pro }
+            ];
+
+            const feedType = this.feed_config?.source_settings?.feed_type;
+
+            if (feedType === 'event_feed') {
+              options.splice(2, 0, {
+                value: 'facebook_event_default',
+                label: this.$t('Facebook Event Default'),
+                disabled: !this.has_pro
+              });
             }
-          ],
+
+            return options;
+          })(),
         },
         {
           fieldKey: 'display_posts',
@@ -1304,7 +1303,12 @@ export default {
               value: 'photo',
               label: this.$t('Single Photo'),
               disabled: !this.has_pro,
-            }
+            },
+            {
+              value: 'story',
+              label: this.$t('Auto-Generated Activity Stories'),
+              disabled: !this.has_pro,
+            },
           ],
         },
         {
@@ -1338,7 +1342,6 @@ export default {
         {
           fieldKey: 'date_range',
           type: 'switch',
-          disabled: !this.has_pro,
           title: this.$t('Show Posts Within a Date Range'),
           event: 'on_change',
           activeValue: 'true',
@@ -1354,12 +1357,10 @@ export default {
             {
               value: 'specific_date',
               label: this.$t('Specific'),
-              disabled: !this.has_pro,
             },
             {
               value: 'relative_date',
               label: this.$t('Relative'),
-              disabled: !this.has_pro,
             },
           ],
           condition: {
@@ -1518,7 +1519,7 @@ export default {
     this.setLayouts();
     this.setFilters();
     this.setPagesAfterMount();
-    this.updateSourceSettings()
+    this.updateSourceSettings();
   }
 }
 </script>

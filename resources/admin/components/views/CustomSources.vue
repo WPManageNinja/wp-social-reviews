@@ -96,11 +96,13 @@
                 <div class="wpsr-item-group wpsr-d-flex wpsr-flex-align-center">
                   <div @click.prevent="handleRowAction('edit', scope.row)" class="wpsr-item-editable wpsr-platform-cell wpsr-d-flex wpsr-flex-align-center">
                     <img v-if="scope.row.logo" class="wpsr-cell-logo" :src="scope.row.logo" alt="">
-                    <div v-if="scope.row.title" @click.prevent="handleRowAction('edit', scope.row)" :class="scope.row.logo ? 'wpsr-ml-10' : ''" class="wpsr-item-editable wpsr-cell-logo-secondary wpsr-item-title wpsr-d-flex wpsr-flex-align-center">
-                      {{ $trimWords(scope.row.title, 3, true) }}
+                    <div v-else class="wpsr-mr-10 wpsr-cell-logo-secondary" v-html="getPlatformIconsHtml(scope.row.name)"></div>
+
+                    <div v-if="scope.row.title || scope.row.name" @click.prevent="handleRowAction('edit', scope.row)" :class="scope.row.logo ? 'wpsr-ml-10' : ''" class="wpsr-item-editable wpsr-cell-logo-secondary wpsr-item-title wpsr-d-flex wpsr-flex-align-center">
+                      {{ $trimWords(scope.row.title || scope.row.name, 3, true) }}
                       <el-icon class="wpsr-ml-5 wpsr-display-on-hover"><Edit /></el-icon>
                     </div>
-                    <div v-else :class="scope.row.logo ? 'wpsr-ml-10' : ''" class="wpsr-cell-logo-secondary" v-html="getPlatformIconsHtml(scope.row.name)"></div>
+                    
                   </div>
 
                 </div>
@@ -110,7 +112,7 @@
             <el-table-column show-overflow-tooltip :label="$t('Source ID')" width="100">
               <template #default="scope">
                 <div class="wpsr-item-group wpsr-d-flex wpsr-flex-align-center">
-                  <strong class="wpsr-platform-name">{{ scope.row.type === 'fluent_forms' ? scope.row.form_id : scope.row.id }}</strong>
+                  <strong class="wpsr-platform-name">{{ scope.row.type === 'fluent_forms' ? scope.row.form_id : scope.row.type === 'native_form' ? scope.row.native_form_id : scope.row.id }}</strong>
                 </div>
               </template>
             </el-table-column>
@@ -146,6 +148,11 @@
                       <el-dropdown-item command="edit">
                         <el-icon><Edit /></el-icon> Edit
                       </el-dropdown-item>
+                      <div v-if="scope.row.type === 'native_form' && scope.row.native_form_id">
+                        <el-dropdown-item command="edit_native_form">
+                          <el-icon><Edit /></el-icon> Edit Review Form
+                        </el-dropdown-item>
+                      </div>
                       <div v-if="scope.row.type === 'fluent_forms'">
                         <el-dropdown-item command="edit_form">
                           <el-icon><Edit /></el-icon> Edit Form
@@ -228,6 +235,7 @@
                   </template>
                   <el-radio-group v-model="sourceForm.type" @change="handleSourceTypeChange">
                     <el-radio value="custom">Custom</el-radio>
+                    <el-radio value="native_form">Native Review Form</el-radio>
                     <el-radio value="fluent_forms">Fluent Forms</el-radio>
                   </el-radio-group>
                 </el-form-item>
@@ -245,6 +253,38 @@
                     ref="sourceNameInput"
                   />
                 </el-form-item>
+              </div>
+
+              <div v-if="sourceForm.type === 'native_form'" class="wpsr-d-flex">
+                <el-form-item>
+                  <template #label>
+                    <h3 class="wpsr-connection-modal-input-heading">Select a Review Form</h3>
+                  </template>
+                  <el-select
+                    v-model="sourceForm.native_form_id"
+                    placeholder="Select a review form"
+                    class="wpsr-input-default wpsr-border-all-around"
+                    style="width: 100%;"
+                  >
+                    <el-option
+                      v-for="form in nativeForms"
+                      :key="form.id"
+                      :label="form.title"
+                      :value="form.id"
+                    />
+                  </el-select>
+                  <div v-if="nativeFormsFetchError && !fetching" class="wpsr-mt-10">
+                    <p>Failed to load review forms. <a href="#" @click.prevent="fetchNativeForms()">Retry</a>.</p>
+                  </div>
+                  <div v-else-if="!nativeForms.length && !fetching" class="wpsr-mt-10">
+                    <p>No review forms found. <router-link :to="{ name: 'review-forms' }" @click="showAddSourceDialog = false">Create one first</router-link>.</p>
+                  </div>
+                </el-form-item>
+              </div>
+
+              <div v-if="sourceForm.type === 'native_form' && sourceForm.native_form_id" class="wpsr-alert wpsr-alert-info wpsr-d-flex wpsr-flex-align-center wpsr-mb-30">
+                <el-icon size="18" color="var(--wpsr-svg-secondary-color)"><InfoFilled /></el-icon>
+                <p>This will create a custom source linked to your native review form. Reviews submitted through the form will appear under this source.</p>
               </div>
 
               <div v-if="sourceForm.type === 'custom'" class="wpsr-alert wpsr-alert-info wpsr-d-flex wpsr-flex-align-center wpsr-mb-30">
@@ -390,8 +430,11 @@ export default {
       manualFormId: null,
       sourceForm: {
         name: '',
-        type: 'custom'
+        type: 'custom',
+        native_form_id: null
       },
+      nativeForms: [],
+      nativeFormsFetchError: false,
       selectedItems: [],
       installing_ff: false,
       need_installation: !this.appVars.has_fluent_form,
@@ -452,14 +495,41 @@ export default {
     },
     handleSourceTypeChange(type) {
       // Reset form when type changes
-      if (type !== this.sourceForm.type) {
-        this.sourceForm.name = '';
+      this.sourceForm.name = '';
+      this.sourceForm.native_form_id = null;
+      if (type === 'native_form') {
+        this.fetchNativeForms();
       }
+    },
+    fetchNativeForms() {
+      this.fetching = true;
+      this.nativeFormsFetchError = false;
+      this.$get('pro/review-forms', { per_page: 100 })
+        .then(response => {
+          const forms = (response.items && response.items.data) || [];
+          this.nativeForms = forms.filter(f => f.status === 'active');
+        })
+        .catch(() => {
+          this.nativeForms = [];
+          this.nativeFormsFetchError = true;
+        })
+        .always(() => {
+          this.fetching = false;
+        });
     },
 
     handleCreateSource() {
       if (this.sourceForm.type === 'custom' && !this.sourceForm.name.trim()) {
         this.handleError('Please enter a source name');
+        return;
+      }
+
+      if (this.sourceForm.type === 'native_form') {
+        if (!this.sourceForm.native_form_id) {
+          this.handleError('Please select a review form');
+          return;
+        }
+        this.createNativeFormSource();
         return;
       }
 
@@ -518,6 +588,34 @@ export default {
       const numericValue = value.replace(/[^0-9]/g, '');
       this.manualFormId = numericValue;
     },
+    createNativeFormSource() {
+      const selectedForm = this.nativeForms.find(f => f.id === this.sourceForm.native_form_id);
+      const label = selectedForm ? selectedForm.title : 'Native Review Form';
+
+      this.loading = true;
+      this.$post('pro/custom-sources', {
+        type: 'native_form',
+        name: 'native_form',
+        label: label,
+        native_form_id: this.sourceForm.native_form_id
+      })
+        .then(response => {
+          if (response && response.source_id) {
+            this.showAddSourceDialog = false;
+            this.resetSourceForm();
+            this.$router.push({
+              name: 'edit-custom-source',
+              params: { template_id: response.source_id }
+            });
+          }
+        })
+        .catch(error => {
+          this.handleError(error);
+        })
+        .always(() => {
+          this.loading = false;
+        });
+    },
     createFluentFormSource() {
       // Use manual form ID if provided, otherwise use selected template
       const formId = this.manualFormId || this.selectedTemplate;
@@ -566,7 +664,8 @@ export default {
     resetSourceForm() {
       this.sourceForm = {
         name: '',
-        type: 'custom'
+        type: 'custom',
+        native_form_id: null
       };
       this.selectedTemplate = '';
       this.manualFormId = null;
@@ -576,6 +675,9 @@ export default {
     getButtonDisabled() {
       if (this.sourceForm.type === 'custom') {
         return !this.sourceForm.name.trim();
+      }
+      if (this.sourceForm.type === 'native_form') {
+        return !this.sourceForm.native_form_id;
       }
       if (this.showTemplateSelection) {
         return !this.selectedTemplate && !this.manualFormId;
@@ -604,6 +706,9 @@ export default {
           break;
         case 'edit':
           this.$router.push({ name: 'edit-custom-source', params: { template_id: row.id } });
+          break;
+        case 'edit_native_form':
+          this.$router.push({ name: 'review-form-edit', params: { id: row.native_form_id } });
           break;
         case 'delete':
           this.beforeDeleteHandler(row);

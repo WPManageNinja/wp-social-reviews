@@ -93,6 +93,11 @@ export default {
   watch: {
     border: {
       handler(val) {
+        if (!val || typeof val.border_style === 'undefined') {
+          this.show_property = false;
+          return;
+        }
+
         if (val.border_style !== '') {
           this.show_property = true;
         }

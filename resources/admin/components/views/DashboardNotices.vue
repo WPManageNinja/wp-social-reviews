@@ -34,21 +34,21 @@
         <div class="wpsr_review_notice_actions">
           <div class="wpsr_dashboard_newsletter_input_field">
             <span class="label">Full Name</span>
-            <el-input v-model="userData.name"  placeholder="Enter your full name"></el-input>
+            <el-input class="wpsr-text-input" v-model="userData.name"  placeholder="Enter your full name"></el-input>
           </div>
           <div class="wpsr_dashboard_newsletter_input_field">
             <span class="label">Email</span>
-            <el-input v-model="userData.email" placeholder="Enter your email address"></el-input>
+            <el-input class="wpsr-text-input" v-model="userData.email" placeholder="Enter your email address"></el-input>
           </div>
          <div class="wpsr-mt-20">
-           <el-button :disabled="!userData.name || !userData.email ? true : false" class="wpsr_newsletter_subscribe" @click="updateSubscribeForm" slot="append">
+           <el-button :disabled="!userData.name || !userData.email ? true : false" class="wpsr_primary_btn wpsr_newsletter_subscribe" @click="updateSubscribeForm" slot="append">
              {{ $t('Subscribe') }}
            </el-button>
          </div>
         </div>
       </div>
       <a class="wpsr_hide_pro_upgrade_notice" @click="updateStatus('hide_newsletter', '1')">
-        <i class="el-icon-circle-close"></i>
+        <el-icon><Close /></el-icon>
       </a>
     </div>
 
@@ -67,7 +67,7 @@
         </p>
       </div>
       <a class="wpsr_hide_pro_upgrade_notice" @click="updateStatus('hide_pro_upgrade_notice', '1')">
-        <i class="el-icon-circle-close"></i>
+        <el-icon><Close /></el-icon>
       </a>
     </div>
   </div>

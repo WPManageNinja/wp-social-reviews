@@ -49,6 +49,24 @@ class OnboardingController extends Controller
         try {
             $data = $request->all();
             $templateId = $request->get('template_id', null);
+            $templateId = isset($templateId) ? intval($templateId) : null;
+
+            $sanitizeMap = [
+                'platform_name'    => 'sanitize_text_field',
+                'review_platforms'    => 'sanitize_text_field',
+                'platform_types'    => 'sanitize_text_field',
+                'post_type'    => 'sanitize_text_field',
+                'feed_platforms'    => 'sanitize_text_field',
+                'chat_platforms'    => 'sanitize_text_field',
+                'subscribe_to_newsletter'    => 'sanitize_text_field',
+                'share_data'    => 'sanitize_text_field',
+                'template_id'      => 'intval',
+                //  defined nested keys using dot notation
+                'template.name'             => 'sanitize_text_field',
+                'template.type'             => 'sanitize_text_field',
+            ];
+
+            $data = wpsr_backend_sanitizer($data, $sanitizeMap);
 
             // Validate required fields
             $requiredFields = ['platform_types', 'platform_name', 'template'];

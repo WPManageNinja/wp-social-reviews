@@ -25,7 +25,6 @@
                             <el-collapse accordion v-model="activeNames" v-if="chatConfig">
                                 <ChatEditor
                                     :chat_config="chatConfig"
-                                    :pages="pages"
                                     :languages="languages"
                                     :menu_order="menu_order"
                                     :post_types="post_types"
@@ -91,7 +90,6 @@ export default {
             template_id: '',
             activeNames: ['1'],
             chatConfig: false,
-            pages: [],
             languages: [],
             post_types: [],
             component: Template1,
@@ -143,7 +141,6 @@ export default {
             this.$get(`chat-widgets/meta/chats/${widget_id}`).then(response => {
               if (response.data && response.data.settings) {
                 this.chatConfig = response.data.settings.chat_settings;
-                this.pages = response.data.pages;
                 this.languages = response.data.languages;
                 this.post_types = response.data.post_types;
 

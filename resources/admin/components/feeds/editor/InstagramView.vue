@@ -46,7 +46,6 @@
                       <ShoppableModal
                           :shoppable_fields="shoppable_fields"
                           :post_types="post_types"
-                          :posts="posts"
                           @add_template_settings="addShoppableTemplateSettings"
                           @close_shoppable_modal="show_shoppable_popup = false"
                           @on_post_source_change="onPostSourceChange"
@@ -168,7 +167,6 @@ export default {
     data() {
         return {
             prevLink: '',
-            posts: [],
             image_settings: [],
             loading: false,
             activeNames: ['1'],
@@ -214,25 +212,6 @@ export default {
         }
       },
 
-      getPostsByPostType(source_type){
-        let tempId = this.shoppable_fields.url_settings.id;
-        this.shoppable_fields.url_settings.id = null;
-        this.$get(`shoppable/posts`, {
-          postType: source_type
-        }).then(response => {
-          if( response ) {
-            this.posts = response.posts.splice(1);
-            let that = this;
-            setTimeout(function() {
-              that.shoppable_fields.url_settings.id = tempId;
-            }, 50);
-          }
-        }).catch(errors => {
-          this.handleError(errors);
-        }).always(() => {
-        });
-      },
-
       addSelectedShoppableFeed(feed) {
         this.errors.record({});
         this.show_shoppable_popup = true;
@@ -246,13 +225,10 @@ export default {
 
         this.selectedFeed = feed;
         if (this.feedConfig.feed_settings.shoppable_settings.shoppable_feeds[feed.username]) {
-          if (this.feedConfig.feed_settings.shoppable_settings.shoppable_feeds[feed.username][feed.id]) { //if already added this feed then remove it
+          if (this.feedConfig.feed_settings.shoppable_settings.shoppable_feeds[feed.username][feed.id]) {
             this.shoppable_fields = this.feedConfig.feed_settings.shoppable_settings.shoppable_feeds[feed.username][feed.id];
           }
         }
-
-        let source_type = this.shoppable_fields.source_type;
-        this.getPostsByPostType(source_type);
       },
 
       removeShoppableFeed(feed) {
@@ -333,13 +309,14 @@ export default {
       },
 
       onPostSourceChange(){
-        if(this.shoppable_fields.source_type !== this.selectedFeed.shoppable_options.url_settings.source_type){
+        const prevSourceType = this.selectedFeed?.shoppable_options?.url_settings?.source_type;
+        if(this.shoppable_fields.source_type !== prevSourceType){
           this.shoppable_fields.url_settings.id = null;
           this.shoppable_fields.url_settings.url = '';
           this.shoppable_fields.url_settings.url_title = '';
         }
-        this.getPostsByPostType(this.shoppable_fields.source_type);
-        this.shoppable_fields.link = this.selectedFeed.shoppable_options.post_type === this.shoppable_fields.source_type ? this.selectedFeed.shoppable_options.link : '';
+        const prevPostType = this.selectedFeed?.shoppable_options?.post_type;
+        this.shoppable_fields.link = prevPostType === this.shoppable_fields.source_type ? (this.selectedFeed?.shoppable_options?.link || '') : '';
       },
 
       setupEventListeners() {

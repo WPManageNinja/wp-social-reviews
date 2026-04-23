@@ -32,27 +32,27 @@
           <div class="wpsr-header-right">
             <el-button v-if="settingsForm && settingsForm.form_id" class="wpsr_default_btn" size="small" type="primary" @click="generateQRcode">
               <img style="width: 14px; height: 14px;" class="wpsr-mr-5 wpsr-qr-code-icon" :src="assets_url+'/images/icon/get_a_review.png'" alt="">
-              Get Reviews via QR Code
+              {{ $t('Get Reviews via QR Code') }}
             </el-button>
 
             <router-link to="/tools/import" class="el-button wpsr_default_btn wpsr_default_btn_primary">
               <el-icon class="wpsr-mr-5"><Upload /></el-icon>
-              Import
+              {{ $t('Import') }}
             </router-link>
 
             <el-button class="wpsr_default_btn wpsr_default_btn_primary" @click="exportCustomReviews" :disabled="!has_pro">
               <el-icon class="wpsr-mr-5"><Download /></el-icon>
-              Export
+              {{ $t('Export') }}
             </el-button>
 
             <el-button class="wpsr_default_btn wpsr_default_btn_primary" size="small" type="primary" @click="showGeneralSettingsDialog = true">
               <el-icon class="wpsr-mr-5"><Setting /></el-icon>
-              General Settings
+              {{ $t('General Settings') }}
             </el-button>
 
             <el-button class="wpsr_default_btn wpsr_default_btn_primary" size="small" type="primary" @click="addNewItem">
               <el-icon class="wpsr-mr-5"><Plus /></el-icon>
-              Create Template
+              {{ $t('Create Template') }}
             </el-button>
 
             <el-button size="small" type="primary" class="wpsr_primary_btn" @click.prevent="beforeAddHandler">
@@ -61,41 +61,81 @@
           </div>
         </div>
 
-        <div v-if="total">
+        <div>
           <!-- Filters and Actions -->
           <div class="wpsr-table-controls">
             <div class="wpsr-controls-left">
-              <div class="wpsr-controls-bulk-actions">
-                <el-select class="wpsr-select-field-primary" v-model="bulkAction" placeholder="Bulk Action" size="default" style="width: 160px;">
-                  <el-option label="Enable" value="enable">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><CircleCheck /></el-icon>
-                    <span>Enable</span>
-                  </span>
-                  </el-option>
-                  <el-option label="Disable" value="disable">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><CircleClose /></el-icon>
-                    <span>Disable</span>
-                  </span>
-                  </el-option>
-                  <el-option label="Delete" value="delete">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><Delete /></el-icon>
-                    <span>Delete</span>
-                  </span>
-                  </el-option>
-                  <el-option label="Duplicate" value="duplicate">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><DocumentCopy /></el-icon>
-                    <span>Duplicate</span>
-                  </span>
-                  </el-option>
-                </el-select>
-                <el-button @click="applyBulkAction" :disabled="!selectedItems.length">Apply</el-button>
+              <div class="wpsr_status_tabs">
+                <div class="wpsr_segmented_control">
+                  <button
+                    :class="['wpsr-tab-button', { active: statusFilter === 'all' }]"
+                    @click="changeStatusTab('all')"
+                  >
+                    {{ $t('All') }}
+                  </button>
+                  <button
+                    :class="['wpsr-tab-button', { active: statusFilter === 'publish' }]"
+                    @click="changeStatusTab('publish')"
+                  >
+                    {{ $t('Approved') }}
+                  </button>
+                  <button
+                    :class="['wpsr-tab-button', { active: statusFilter === 'unpublish' }]"
+                    @click="changeStatusTab('unpublish')"
+                  >
+                    {{ $t('Pending') }}
+                  </button>
+                  <button
+                      :class="['wpsr-tab-button', { active: statusFilter === 'spam' }]"
+                      @click="changeStatusTab('spam')"
+                  >
+                    {{ $t('Spam') }}
+                  </button>
+                </div>
               </div>
             </div>
             <div class="wpsr-controls-right">
+              <div class="wpsr-controls-bulk-actions">
+                <el-select class="wpsr-select-field-primary" v-model="bulkAction" :placeholder="$t('Bulk Action')" size="default" style="width: 160px;">
+                  <el-option :label="$t('Approve')" value="enable">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><CircleCheck /></el-icon>
+                    <span>{{ $t('Approve') }}</span>
+                  </span>
+                  </el-option>
+                  <el-option :label="$t('Disapprove')" value="disable">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><CircleClose /></el-icon>
+                    <span>{{ $t('Disapprove') }}</span>
+                  </span>
+                  </el-option>
+                  <el-option :label="$t('Delete')" value="delete">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><Delete /></el-icon>
+                    <span>{{ $t('Delete') }}</span>
+                  </span>
+                  </el-option>
+                  <el-option :label="$t('Duplicate')" value="duplicate">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><DocumentCopy /></el-icon>
+                    <span>{{ $t('Duplicate') }}</span>
+                  </span>
+                  </el-option>
+                  <el-option :label="$t('Mark as Spam')" value="mark-spam">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><WarningFilled /></el-icon>
+                    <span>{{ $t('Mark as Spam') }}</span>
+                  </span>
+                  </el-option>
+                  <el-option :label="$t('Not Spam')" value="not-spam">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><CircleCheck /></el-icon>
+                    <span>{{ $t('Not Spam') }}</span>
+                  </span>
+                  </el-option>
+                </el-select>
+                <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
+              </div>
               <el-input
                   class="wpsr-input-default"
                   v-model="search_string"
@@ -111,8 +151,7 @@
               </el-input>
             </div>
           </div>
-
-          <div class="wpsr-table-wrapper" v-loading.fullscreen.lock="duplicatingItem" element-loading-text="Please wait...">
+          <div v-if="total" class="wpsr-table-wrapper" v-loading.fullscreen.lock="duplicatingItem" element-loading-text="Please wait...">
             <el-table
                 ref="customSourceTable"
                 class="wpsr-templates-table"
@@ -169,7 +208,11 @@
 
               <el-table-column :label="$t('Status')" width="90">
                 <template #default="scope">
+                  <el-tag v-if="scope.row.review_approved === '2'" type="danger" size="small">
+                    {{ $t('Spam') }}
+                  </el-tag>
                   <el-switch
+                      v-else
                       v-model="scope.row.review_approved"
                       active-value="1"
                       inactive-value="0"
@@ -189,12 +232,19 @@
                     </el-button>
                     <template #dropdown>
                       <el-dropdown-menu>
-                        <el-dropdown-item command="approve">
+                        <el-dropdown-item command="approve" v-if="scope.row.review_approved !== '2'">
                           <el-icon v-if="scope.row.review_approved === '0'"><CircleCheck /></el-icon>
                           <el-icon v-else><CircleClose /></el-icon>
                           <span>
                         {{ scope.row.review_approved === '0' ? $t('Approve') : $t('Disapprove') }}
                         </span>
+                        </el-dropdown-item>
+
+                        <el-dropdown-item v-if="scope.row.review_approved !== '2'" command="mark-spam" class="wpsr-action-spam">
+                          <el-icon><WarningFilled /></el-icon> Mark as Spam
+                        </el-dropdown-item>
+                        <el-dropdown-item v-if="scope.row.review_approved === '2'" command="not-spam">
+                          <el-icon><CircleCheck /></el-icon> Not Spam
                         </el-dropdown-item>
 
                         <el-dropdown-item command="edit">
@@ -234,7 +284,7 @@
           </div>
         </div>
         <!-- Empty State -->
-        <div v-else-if="!loading && !total">
+        <div v-if="!loading && !total">
             <div class="wpsr-empty-state">
               <div class="wpsr-empty-content">
               <span class="wpsr-empty-state-icon-zero-width wpsr-mb-20">
@@ -476,7 +526,7 @@
 <script>
 import GlobalMainNav from '../../global/Index.vue';
 import {
-  Upload, Download, Setting, Plus, ArrowDown, Search, MoreFilled, Delete, CircleCheck, CircleClose, DocumentCopy
+  Upload, Download, Setting, Plus, ArrowDown, Search, MoreFilled, Delete, CircleCheck, CircleClose, DocumentCopy, Edit, WarningFilled
 } from "@element-plus/icons-vue";
 import ReviewForm from "../../views/ReviewForm.vue";
 import {tableMixin} from "../../../mixins/tableMixin";
@@ -530,6 +580,7 @@ export default {
         source_label: '',
         source_url: '',
         form_id: null,
+        native_form_id: null,
         privacy_policy_url: ''
       },
       filter_value: '',
@@ -557,12 +608,19 @@ export default {
     },
     handleCurrentChange(val) {
       this.page_number = val;
+
+      const query = {
+        page: val,
+        per_page: this.per_page
+      };
+
+      // Preserve statusFilter in route if it's not 'all'
+      if (this.statusFilter && this.statusFilter !== 'all') {
+        query.status = this.statusFilter;
+      }
+
       this.$router.push({
-        path: this.$route.params.template_id,
-        query: {
-          page: val,
-          per_page: this.per_page
-        }
+        query: query
       }).catch(() => {});
       this.getItems();
     },
@@ -572,6 +630,12 @@ export default {
       // Check if this is a Fluent Forms source
       if (this.settingsForm.source_name === 'fluent_forms' || this.filter_value === 'fluent_forms') {
         payload.form_id = this.settingsForm.form_id;
+        payload.form_type = 'fluent_forms';
+      }
+      // Check if this is a Native Review Form source
+      if (this.settingsForm.source_type === 'native_form' && this.settingsForm.native_form_id) {
+        payload.form_id = this.settingsForm.native_form_id;
+        payload.form_type = 'native_form';
       }
 
       this.$post('templates', payload).then(response => {
@@ -602,27 +666,27 @@ export default {
               this.sourceData = response.source;
               this.settingsForm.source_type = response.settings.source_settings.type;
               this.settingsForm.form_id = response.settings.source_settings.form_id || null;
+              this.settingsForm.native_form_id = response.settings.source_settings.native_form_id || null;
               this.settingsForm.source_name = response.settings.source_settings.name || '';
               this.settingsForm.source_label = response.settings.source_settings.label || '';
-              let ID = this.settingsForm.form_id || sourceId;
+              let ID = this.settingsForm.form_id || this.settingsForm.native_form_id || sourceId;
 
               if (response.business_info && response.business_info[ID]) {
                 const businessData = response.business_info[ID];
                 this.settingsForm = {
                   logo: businessData.logo || '',
                   source_name: businessData.platform_name || response.settings.source_settings.name,
+                  source_type: this.settingsForm.source_type,
                   source_label: businessData.platform_label || response.settings.source_settings.label,
                   source_url: businessData.url || '',
                   privacy_policy_url: businessData.privacy_policy_url || '',
-                  form_id: this.settingsForm.form_id || null
+                  form_id: this.settingsForm.form_id || null,
+                  native_form_id: this.settingsForm.native_form_id || null
                 };
               }
 
-              if(this.settingsForm.form_id !== null){
-                this.getAll('reviews', { order_by: 'review_time', type: 'custom_review', sourceId: this.settingsForm.form_id});
-              } else {
-                this.getAll('reviews', { order_by: 'review_time', type: 'custom_review', sourceId: sourceId});
-              }
+              let reviewSourceId = this.settingsForm.form_id || this.settingsForm.native_form_id || sourceId;
+              this.getAll('reviews', { order_by: 'review_time', type: 'custom_review', sourceId: reviewSourceId, status_filter: this.statusFilter});
 
             })
             .catch(error => {
@@ -638,11 +702,7 @@ export default {
     beforeEditHandler(row) {
       this.editRow = row;
       this.editRow.platform_name = this.settingsForm.source_name;
-      if(this.settingsForm.form_id){
-        this.editRow.source_id = this.settingsForm.form_id;
-      } else {
-        this.editRow.source_id = this.$route.params.template_id ? this.$route.params.template_id : null;
-      }
+      this.editRow.source_id = this.settingsForm.form_id || this.settingsForm.native_form_id || this.$route.params.template_id || null;
 
       if (!this.has_pro) {
         this.handlePro();
@@ -662,12 +722,7 @@ export default {
       this.showAddReviewDialog = true;
       //for empty fields after two consecutive add
       this.reviewForm.platform_name = this.settingsForm.source_name;
-
-      if(this.settingsForm.form_id){
-        this.reviewForm.source_id = this.settingsForm.form_id;
-      } else {
-        this.reviewForm.source_id = this.$route.params.template_id ? this.$route.params.template_id : null;
-      }
+      this.reviewForm.source_id = this.settingsForm.form_id || this.settingsForm.native_form_id || this.$route.params.template_id || null;
 
       let fields = JSON.parse(JSON.stringify(this.reviewForm));
       this.review_fields = fields;
@@ -703,6 +758,12 @@ export default {
           const newStatus = row.review_approved === '0' ? 'enable' : 'disable';
           this.updateItemStatus(row, newStatus);
           break;
+        case 'mark-spam':
+          this.markAsSpam(row);
+          break;
+        case 'not-spam':
+          this.markAsNotSpam(row);
+          break;
         case 'edit':
           this.beforeEditHandler(row);
           break;
@@ -713,15 +774,6 @@ export default {
           this.beforeDeleteHandler(row);
           break;
       }
-    },
-    handleSwitchChange(row, newValue) {
-      // When newValue is '1', we want to enable (approve)
-      // When newValue is '0', we want to disable (disapprove)
-      const newStatus = newValue === '1' ? 'enable' : 'disable';
-
-      // Update the row value first
-      row.review_approved = newValue;
-      this.updateItemStatus(row, newStatus);
     },
     applyBulkAction() {
       if (!this.selectedItems || !this.selectedItems.length) {
@@ -744,6 +796,12 @@ export default {
         case 'enable':
         case 'disable':
           this.bulkStatusItems();
+          break;
+        case 'mark-spam':
+          this.bulkMarkAsSpam();
+          break;
+        case 'not-spam':
+          this.bulkMarkAsNotSpam();
           break;
         default:
           this.$notify.warning('Selected action is not supported yet');
@@ -800,15 +858,16 @@ export default {
       }
 
       // Build the export URL with dynamic type
-      let url = `${ajaxurl}?action=wpsr_export_data&type=${this.settingsForm.source_name}`;
+      const security = window.WPSocialReviewsAdmin && window.WPSocialReviewsAdmin.wpsr_admin_nonce ? window.WPSocialReviewsAdmin.wpsr_admin_nonce : "";
+      let url = `${ajaxurl}?action=wpsr_export_data&type=${this.settingsForm.source_name}&security=${encodeURIComponent(security)}`;
 
       // Add source ID filter if available
-      const sourceId = this.settingsForm.form_id || this.$route.params.template_id;
+      const sourceId = this.settingsForm.form_id || this.settingsForm.native_form_id || this.$route.params.template_id;
       if (sourceId) {
         url += `&sourceId=${sourceId}`;
       }
       location.href = url;
-    },
+    }
   },
 };
 </script>

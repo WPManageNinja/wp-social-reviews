@@ -1,4 +1,4 @@
-import debounced from "lodash/debounce";
+import { debounce } from '../utils';
 export const AISummarizerMixin = {
     data() {
         return {
@@ -46,7 +46,7 @@ export const AISummarizerMixin = {
             this.template_meta.ai_summary.force_regenerate = true;
 
             let that = this;
-            debounced(function (){
+            debounce(function (){
                 setTimeout(function() {
                     that.getUpdatedPostMetaWithReviews();
                 }, 500);

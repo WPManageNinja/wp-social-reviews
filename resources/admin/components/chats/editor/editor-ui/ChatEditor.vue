@@ -117,7 +117,7 @@ import ChatEditorAccordionsIconPack from '../../../pieces/icons/ChatEditorAccord
 import EditorCollapsiblePanel from '../../../core-ui/editor/EditorCollapsiblePanel.vue';
 export default {
   inheritAttrs: false,
-  props: ['chat_config', 'pages', 'languages', 'post_types', 'menu_order', 'pre_selected_channels'],
+  props: ['chat_config', 'languages', 'post_types', 'menu_order', 'pre_selected_channels'],
   components: {
       ChatEditorGroup,
       Remove,
@@ -281,23 +281,21 @@ export default {
               // },
               {
                   fieldKey: 'page_list',
-                  type: 'multiple_select',
+                  type: 'async_multiple_select',
                   title: this.$t('Include Pages to Display Chat'),
-                  options: this.pages,
+                  searchRoute: 'pages/search',
                   label: 'title',
                   value: 'id',
                   disabled: !this.has_pro,
-                  isFilterable: true
               },
               {
                 fieldKey: 'exclude_page_list',
-                type: 'multiple_select',
+                type: 'async_multiple_select',
                 title: this.$t('Exclude Pages to Hide Chat'),
-                options: this.pages,
+                searchRoute: 'pages/search',
                 disabled: !this.has_pro,
                 label: 'title',
                 value: 'id',
-                isFilterable: true
               },
               {
                   fieldKey: 'post_types',

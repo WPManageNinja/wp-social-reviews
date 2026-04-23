@@ -6,7 +6,7 @@
         @click="upgradeNow"
       >
         <span class="wpsr-crown-icon"><ProCrownIcon/></span>
-        {{ btn_label || 'Upgrade to Pro' }}
+        {{ upgradeButtonText }}
       </button>
   </div>
 </template>
@@ -24,9 +24,20 @@ export default {
 
     }
   },
+  computed: {
+    upgradeBtnConfig() {
+      return this.appVars?.upgrade_btn_config || {};
+    },
+    upgradeButtonText() {
+      return this.upgradeBtnConfig.text || this.btn_label || 'Upgrade to Pro';
+    },
+    upgradeButtonUrl() {
+      return this.upgradeBtnConfig.pro_purchase_url || 'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade';
+    }
+  },
   methods: {
     upgradeNow() {
-      window.open('https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade', '_blank');
+      window.open(this.upgradeButtonUrl, '_blank');
     }
   }
 }

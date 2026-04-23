@@ -73,29 +73,31 @@
                         </div>
                         <!-- For other platforms, show traditional star breakdown -->
                         <div v-else>
-                            <div v-for="star in [5, 4, 3, 2, 1]" 
-                                :key="star" 
-                                class="wpsr-reviews-header-template-2-star-row"
-                                :class="[
-                                    'wpsr-clickable-rating-bar',
-                                    { 
-                                        'wpsr-active-progressbar-filter': isActiveStarFilter(star),
-                                        'wpsr-disabled-rating-bar': getStarCount(star) === 0
-                                    }
-                                ]"
-                                >
-                                <div class="wpsr-rating wpsr-reviews-header-template-2-star-label">
-                                    <div class="wpsr-reviews-header-template-2-star-icons" v-html="ratingIcon(star)"></div>
-                                </div>
-                                <div class="wpsr-reviews-header-template-2-progress-bar">
-                                    <div class="wpsr-reviews-header-template-2-progress-fill" 
-                                        :style="{width: getStarPercentage(star) + '%'}">
+                            <template v-for="star in [5, 4, 3, 2, 1, 0]">
+                                <div v-if="star !== 0 || getStarCount(0) > 0"
+                                    :key="star" 
+                                    class="wpsr-reviews-header-template-2-star-row"
+                                    :class="[
+                                        'wpsr-clickable-rating-bar',
+                                        { 
+                                            'wpsr-active-progressbar-filter': isActiveStarFilter(star),
+                                            'wpsr-disabled-rating-bar': getStarCount(star) === 0
+                                        }
+                                    ]"
+                                    >
+                                    <div class="wpsr-rating wpsr-reviews-header-template-2-star-label">
+                                        <div class="wpsr-reviews-header-template-2-star-icons" v-html="ratingIcon(star)"></div>
+                                    </div>
+                                    <div class="wpsr-reviews-header-template-2-progress-bar">
+                                        <div class="wpsr-reviews-header-template-2-progress-fill" 
+                                            :style="{width: getStarPercentage(star) + '%'}">
+                                        </div>
+                                    </div>
+                                    <div class="wpsr-reviews-header-template-2-star-count">
+                                        {{ getStarCount(star) }}
                                     </div>
                                 </div>
-                                <div class="wpsr-reviews-header-template-2-star-count">
-                                    {{ getStarCount(star) }}
-                                </div>
-                            </div>
+                            </template>
                         </div>
                     </div>
                     <!-- Clear filter button (only show when filter is active) -->

@@ -4,7 +4,7 @@
          :class="businessInfoWrapperClasses"
     >
         <div class="wpsr-business-info-left wpsr-template-1-left">
-          <div v-if="filteredPlatforms.length >= 0" class="wpsr-business-info-paltforms wpsr-template-1-platforms">
+          <div v-if="hasMultipleBusinesses" class="wpsr-business-info-paltforms wpsr-template-1-platforms">
             <div v-for="(platform, index ) in filteredPlatforms" :key="index" class="wpsr-template-1-platform-item">
               <img v-if="platform.logo && platform.logo !== ''" :src="platform.logo" alt="">
               <div v-else-if="shouldShowPlatformIcon(platform)">

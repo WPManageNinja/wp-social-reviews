@@ -63,6 +63,40 @@ export const helperStyle = {
             return validatedBorder;
         },
 
+        validateBorderRadius: function (borderRadius, device = 'desktop', unit = 'px') {
+            let validatedBorderRadius = '';
+            // Follow exact same pattern as validateSpacing - use values directly
+            if (borderRadius) {
+                let top = borderRadius.top && borderRadius.top[device] > 0 ? borderRadius.top[device] : 0;
+                let right = borderRadius.right && borderRadius.right[device] > 0 ? borderRadius.right[device] : 0;
+                let bottom = borderRadius.bottom && borderRadius.bottom[device] > 0 ? borderRadius.bottom[device] : 0;
+                let left = borderRadius.left && borderRadius.left[device] > 0 ? borderRadius.left[device] : 0;
+                
+                // Generate border-radius if at least one value > 0 (same pattern as validateSpacing)
+                if (top > 0 || right > 0 || bottom > 0 || left > 0) {
+                    validatedBorderRadius = 'border-radius: ' + top + unit + ' ' + right + unit + ' ' + bottom + unit + ' ' + left + unit + ';';
+                }
+            }
+            return validatedBorderRadius;
+        },
+
+        validateBoxShadow: function (boxShadow, unit = 'px') {
+            let validatedBoxShadow = '';
+            if (!boxShadow || boxShadow.box_shadow_style !== 'custom') {
+                return validatedBoxShadow;
+            }
+            const horizontal = parseFloat(boxShadow.horizontal) || 0;
+            const vertical = parseFloat(boxShadow.vertical) || 0;
+            const blur = parseFloat(boxShadow.blur) || 0;
+            const spread = parseFloat(boxShadow.spread) || 0;
+            const color = boxShadow.color || 'rgba(0,0,0,0.1)';
+            const inset = boxShadow.inset === 'yes' ? 'inset ' : '';
+            if (horizontal !== 0 || vertical !== 0 || blur !== 0 || spread !== 0 || color) {
+                validatedBoxShadow = 'box-shadow: ' + inset + horizontal + unit + ' ' + vertical + unit + ' ' + blur + unit + ' ' + spread + unit + ' ' + color + ';';
+            }
+            return validatedBoxShadow;
+        },
+
         validateResponsiveTypography: function (typography, selector, device = 'tablet', unit = 'px') {
             // Check if typography is defined and has the required properties
             if (!typography || !selector) {
@@ -135,6 +169,19 @@ export const helperStyle = {
             }
         },
 
+        validateResponsiveBorderRadius: function (borderRadius, selector, device = 'tablet' , unit = 'px' ){
+            if (borderRadius !== undefined && ((borderRadius.top && borderRadius.top[device] > 0) || (borderRadius.right && borderRadius.right[device] > 0) || (borderRadius.bottom && borderRadius.bottom[device] > 0) || (borderRadius.left && borderRadius.left[device] > 0))) {
+                let width = device === 'tablet' ? 960 : 480;
+                let customResponsiveStyleTablet = '';
+                let customStyleTablet = this.validateBorderRadius(borderRadius, device, unit);
+                if (customStyleTablet) {
+                    customResponsiveStyleTablet += '@media screen and (max-width: ' + width + 'px){'
+                        + selector + '{' + customStyleTablet + '}' + '}';
+                }
+                return customResponsiveStyleTablet;
+            }
+        },
+
         validateResponsiveStyle: function ( styles, selector,  spacing_unit = '' ) {
             let customResponsiveStyleTablet = '';
             let customResponsiveStyleMobile = '';
@@ -142,6 +189,7 @@ export const helperStyle = {
             let margin = styles.margin;
             let padding = styles.padding;
             let border = styles.border;
+            let border_radius = styles.border_radius;
             let slider = styles.slider;
             let unit = 'px';
             if(typography !== undefined && (typography.font_size.tablet > 0 || typography.letter_spacing.tablet > 0 || typography.line_height.tablet > 0)) {
@@ -159,6 +207,10 @@ export const helperStyle = {
             if (border !== undefined && (border.top.tablet > 0 || border.right.tablet > 0 || border.bottom.tablet > 0 || border.left.tablet > 0)) {
                 let validatedResponsiveBorderTablet = this.validateResponsiveBorder(border, selector, 'tablet', unit );
                 customResponsiveStyleTablet += validatedResponsiveBorderTablet;
+            }
+            if (border_radius !== undefined && ((border_radius.top && border_radius.top.tablet > 0) || (border_radius.right && border_radius.right.tablet > 0) || (border_radius.bottom && border_radius.bottom.tablet > 0) || (border_radius.left && border_radius.left.tablet > 0))) {
+                let validatedResponsiveBorderRadiusTablet = this.validateResponsiveBorderRadius(border_radius, selector, 'tablet', unit );
+                customResponsiveStyleTablet += validatedResponsiveBorderRadiusTablet;
             }
             if (slider !== undefined && (slider.top && slider.top.tablet > 0 || slider.right && slider.right.tablet > 0 || slider.bottom && slider.bottom.tablet > 0 || slider.left && slider.left.tablet > 0)) {
                 let validatedResponsiveSpacingTablet = this.validateResponsiveSpacing(slider, selector, 'tablet', unit, 'margin');
@@ -179,6 +231,10 @@ export const helperStyle = {
             if (border !== undefined && (border.top.mobile > 0 || border.right.mobile > 0 || border.bottom.mobile > 0 || border.left.mobile > 0)) {
                 let validatedResponsiveBorderMobile = this.validateResponsiveBorder(border, selector, 'mobile', unit);
                 customResponsiveStyleMobile += validatedResponsiveBorderMobile;
+            }
+            if (border_radius !== undefined && ((border_radius.top && border_radius.top.mobile > 0) || (border_radius.right && border_radius.right.mobile > 0) || (border_radius.bottom && border_radius.bottom.mobile > 0) || (border_radius.left && border_radius.left.mobile > 0))) {
+                let validatedResponsiveBorderRadiusMobile = this.validateResponsiveBorderRadius(border_radius, selector, 'mobile', unit);
+                customResponsiveStyleMobile += validatedResponsiveBorderRadiusMobile;
             }
             if (slider !== undefined && (slider.top && slider.top.mobile > 0 || slider.right && slider.right.mobile > 0 || slider.bottom && slider.bottom.mobile > 0 || slider.left && slider.left.mobile > 0)) {
                 let validatedResponsiveSpacingMobile = this.validateResponsiveSpacing(slider, selector, 'mobile', unit, 'margin');
@@ -240,6 +296,8 @@ export const helperStyle = {
                 let margin_style = style.margin;
                 let padding_style = style.padding;
                 let border_style = style.border;
+                let border_radius_style = style.border_radius;
+                let box_shadow_style = style.box_shadow;
                 let spacing_style = style.slider;
 
                 let validated_typography = typography_style ? this.validateTypography(typography_style) : '';
@@ -247,10 +305,11 @@ export const helperStyle = {
                 let validated_margin = margin_style ? this.validateSpacing(margin_style , 'margin', 'desktop', 'px') : '';
                 let validated_padding = padding_style ? this.validateSpacing(padding_style , 'padding', 'desktop', 'px') : '';
                 let validated_border = border_style ? this.validateBorder(border_style, 'desktop', 'px') : '';
+                let validated_border_radius = border_radius_style ? this.validateBorderRadius(border_radius_style, 'desktop', 'px') : '';
+                let validated_box_shadow = box_shadow_style ? this.validateBoxShadow(box_shadow_style, 'px') : '';
                 let validated_spacing = spacing_style ? this.validateSpacing(spacing_style , 'margin', 'desktop', 'px') : '';
-                
                 // Standard processing for all styles
-                let combined_style =  validated_typography + validated_color + validated_margin + validated_padding + validated_border + validated_spacing;
+                let combined_style =  validated_typography + validated_color + validated_margin + validated_padding + validated_border + validated_border_radius + validated_box_shadow + validated_spacing;
                 if(combined_style) {
                     let css_style = style_selector + '{' + combined_style + '}';
                     if(css_style){

@@ -11,7 +11,7 @@ export default {
     upgradeBtnConfig() {
       return this.appVars?.upgrade_btn_config || {
         text: 'Upgrade to Pro',
-        url: 'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade',
+        pro_purchase_url: 'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade',
         discount_percentage: 0,
         urgency_text: null,
         has_offer: false,

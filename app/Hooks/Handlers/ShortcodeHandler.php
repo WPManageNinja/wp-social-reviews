@@ -27,27 +27,37 @@ class ShortcodeHandler
     private $scripts = [];
     public $platform = '';
     public $imageSettings = [];
+    public $productId = null;
 
     public function addShortcode()
     {
         add_shortcode('wp_social_ninja', array($this, 'makeShortcode'));
-       // add_shortcode('wp_social_ninja_wall_feed', array($this, 'makeSocialWallFeedShortcode'));
+        // add_shortcode('wp_social_ninja_wall_feed', array($this, 'makeSocialWallFeedShortcode'));
         add_action('wp_enqueue_scripts', array($this, 'registerScripts'), 999);
         add_action('wp_social_ninja_add_layout_script', array($this, 'enqueueScripts'));
     }
 
     public function makeShortcode($args = [], $content = null, $tag = '')
     {
+        // Skip processing during Elementor save/editor to prevent memory exhaustion
+        if (defined('ELEMENTOR_VERSION')) {
+            // skip during REST API requests when Elementor is active (block editor compatibility)
+            if (defined('REST_REQUEST') && REST_REQUEST) {
+                return '';
+            }
+        }
+
         $args = shortcode_atts(array(
-            'id'       => '',
-            'platform' => ''
+            'id' => '',
+            'platform' => '',
+            'product_id' => '',
         ), $args);
 
         if (!$args['id']) {
             return '';
         }
-        $platform = Arr::get($args, 'platform', '');
-        $platform = sanitize_text_field($platform);
+        $platform = sanitize_text_field(Arr::get($args, 'platform', ''));
+        $product_id = absint(Arr::get($args, 'product_id', 0));
 
         if (empty($platform) || empty($args['id'])) {
             return __('Please, set a template platform name or template id on your shortcode', 'wp-social-reviews');
@@ -55,12 +65,12 @@ class ShortcodeHandler
 
         $templateId = absint($args['id']);
 
-
         if (!in_array($platform, GlobalHelper::shortcodeAllowedPlatforms())) {
             return __('Provided platform name is not valid.', 'wp-social-reviews');
         }
 
         $this->platform = $platform;
+        $this->productId = $product_id;
 
         if (!did_action('wp_enqueue_scripts')) {
             $this->registerStyles();
@@ -158,7 +168,7 @@ class ShortcodeHandler
         $platforms = Arr::get($template_meta, 'platform', []);
         $badge_settings = Arr::get($template_meta, 'badge_settings', []);
         $selectedBusinesses = Arr::get($template_meta, 'selectedBusinesses', []);
-        $business_info = $this->getRelevantBusinessInfo($platforms, $selectedBusinesses);
+        $business_info = $this->getRelevantBusinessInfo($platforms, $selectedBusinesses, $templateId);
 
         $validTemplatePlatforms = Helper::validPlatforms($platforms);
         $templateType = Arr::get($template_meta, 'templateType');
@@ -184,14 +194,15 @@ class ShortcodeHandler
         $data = [];
         
         if (!empty($validTemplatePlatforms)) {
-
-            $template_meta = $this->processTemplateMetaForWooCommerce($template_meta);
+            if(in_array('woocommerce', $validTemplatePlatforms) || in_array('fluent-cart', $validTemplatePlatforms)) {
+                $template_meta = apply_filters('wpsocialreviews/process_product_context_template_meta', $template_meta, $templateId, $this->productId);
+                $platforms = Arr::get($template_meta, 'platform', []);
+                $validTemplatePlatforms = Helper::validPlatforms($platforms);
+            }
             $data = Review::paginatedReviews($validTemplatePlatforms, $template_meta);
             $reviews = $data['reviews'];
 
-            if (defined('WC_PLUGIN_FILE')) {
-                $reviews = Helper::trimProductTitle($reviews);
-            }
+            $reviews = apply_filters('wpsocialreviews/after_reviews_fetch', $reviews, $validTemplatePlatforms);
 
             $totalReviews = $data['total_reviews'];
         }
@@ -334,28 +345,11 @@ class ShortcodeHandler
         return $html;
     }
 
-    public function processTemplateMetaForWooCommerce($template_meta){
-        // Check if WooCommerce Pro is available
-        if(defined('WPSOCIALREVIEWS_PRO') && class_exists('\WPSocialReviewsPro\App\Services\Platforms\Reviews\WooCommerce\WooCommerceHelper')){
-            // Get WooCommerce-specific template meta if applicable
-            $wooTemplate = \WPSocialReviewsPro\App\Services\Platforms\Reviews\WooCommerce\WooCommerceHelper::getRelevantReviewsForProduct($template_meta);
-            if($wooTemplate){
-                $template_meta = $wooTemplate;
-            }
-        }
-
-        return $template_meta;
-    }
-
-    public function getRelevantBusinessInfo($platforms, $selectedBusinesses){
-        // Check if WooCommerce Pro is available
-        if(defined('WPSOCIALREVIEWS_PRO') && class_exists('\WPSocialReviewsPro\App\Services\Platforms\Reviews\WooCommerce\WooCommerceHelper')){
-            // Get WooCommerce-specific business info if applicable
-            $wooBusinessInfo = \WPSocialReviewsPro\App\Services\Platforms\Reviews\WooCommerce\WooCommerceHelper::getRelevantBusinessInfoForProduct();
-
-            if($wooBusinessInfo && $wooBusinessInfo['use_product_info']){
-                return Helper::getSelectedBusinessInfoByPlatforms($platforms, [$wooBusinessInfo['product_id']]);
-            }
+    public function getRelevantBusinessInfo($platforms, $selectedBusinesses, $templateId = null)
+    {
+        $productContext = apply_filters('wpsocialreviews/get_product_context_business_info', null, $templateId);
+        if ($productContext) {
+            return Helper::getSelectedBusinessInfoByPlatforms($platforms, [$productContext]);
         }
 
         return Helper::getSelectedBusinessInfoByPlatforms($platforms, $selectedBusinesses);
@@ -395,7 +389,11 @@ class ShortcodeHandler
             do_action('wp_social_review_loading_layout_carousel', $templateId, $settings);
         }
 
-        if (Arr::get($settings['feed_settings'], 'pagination_settings.pagination_type') != 'none') {
+        $hasPagination   = Arr::get($settings['feed_settings'], 'pagination_settings.pagination_type') !== 'none';
+        $hasTwitterCards = defined('WPSOCIALREVIEWS_PRO') &&
+                           Arr::get($settings['feed_settings'], 'advance_settings.show_twitter_card') === 'true';
+
+        if ($hasPagination || $hasTwitterCards) {
             $this->enqueueScripts();
         }
 
@@ -441,7 +439,7 @@ class ShortcodeHandler
 
         $html .= $app->view->make('public.feeds-templates.twitter.footer', [
             'templateId'      => $templateId,
-            'header'          => $settings['header'],
+            'header'          => Arr::get($settings, 'dynamic.header', []),
             'feed_settings'   => $settings['feed_settings'],
             'column_gaps'     => $settings['column_gaps'],
             'layout_type'     => $settings['layout_type'],
@@ -877,7 +875,20 @@ class ShortcodeHandler
     {
         $settings = $this->formatFeedSettings($feed);
         $sinceId = 0;
-        $paginate = intval(Arr::get($settings['feed_settings'], 'pagination_settings.paginate', 6));
+        
+        // Get responsive paginate_number if available (for Instagram and other feeds)
+        $paginateNumber = Arr::get($settings, 'feed_settings.pagination_settings.paginate_number', []);
+        $fallbackPaginate = intval(Arr::get($settings, 'feed_settings.pagination_settings.paginate', 6));
+        
+        // Use responsive paginate_number if available, otherwise fall back to paginate
+        if (!empty($paginateNumber)) {
+            $paginate = wp_is_mobile() 
+                ? (int) Arr::get($paginateNumber, 'mobile', $fallbackPaginate)
+                : (int) Arr::get($paginateNumber, 'desktop', $fallbackPaginate);
+        } else {
+            $paginate = $fallbackPaginate;
+        }
+        
         $maxId = ($sinceId + $paginate) - 1;
         $totalFeed = is_array($settings['feeds']) ? count($settings['feeds']) : 0;
 
@@ -999,14 +1010,11 @@ class ShortcodeHandler
         $this->registerStyles();
 
         global $post;
-        // load assets for woo products
-        $woo_wpsn_ids = get_option('_wpsn_ids', []);
-        if(!empty($woo_wpsn_ids) && in_array($post->ID, $woo_wpsn_ids)) {
-            $this->enqueueStyles(['woocommerce']);
-        }
+        $post_id = $post->ID ?? null;
+        do_action('wpsocialreviews/enqueue_product_context_styles', $post_id);
 
         // load assets in single page/products
-        if ((is_a($post, 'WP_Post') && $shortcodeIds = get_post_meta($post->ID, '_wpsn_ids', true))) {
+        if ((is_a($post, 'WP_Post') && $shortcodeIds = get_post_meta($post_id, '_wpsn_ids', true))) {
             $this->enqueueStyles($shortcodeIds);
         }
     }
@@ -1098,20 +1106,27 @@ class ShortcodeHandler
         }
     }
 
-    public function loadLocalizeScripts()
+    /**
+     * Build the localization params array for frontend scripts.
+     *
+     * @return array
+     */
+    private function buildLocalizeParams()
     {
-        static $jsLoaded;
-
-        if ($jsLoaded) {
-            return;
-        }
-
         $upload     = wp_upload_dir();
         $upload_url = trailingslashit($upload['baseurl']) . WPSOCIALREVIEWS_UPLOAD_DIR_NAME;
         $translations = GlobalSettings::getTranslations();
         $platform = $this->platform ?: '';
+        $image_settings = !empty($this->imageSettings) ? $this->imageSettings : Helper::getImageSettings($platform ?: 'reviews');
+        $image_settings = is_array($image_settings) ? $image_settings : [];
+        $image_settings = wp_parse_args($image_settings, [
+            'optimized_images' => 'false',
+            'has_gdpr'         => 'false',
+            'image_format'     => GlobalHelper::getOptimizeImageFormat(),
+        ]);
+        $image_settings['image_format'] = in_array($image_settings['image_format'], ['jpg', 'webp'], true) ? $image_settings['image_format'] : 'jpg';
 
-        $params = apply_filters('wpsocialreviews/frontend_vars', array(
+        return apply_filters('wpsocialreviews/frontend_vars', array(
             'ajax_url'   => admin_url('admin-ajax.php'),
             'wpsr_nonce' => wp_create_nonce('wpsr-ajax-nonce'),
             'has_pro'    => defined('WPSOCIALREVIEWS_PRO'),
@@ -1129,9 +1144,9 @@ class ShortcodeHandler
             'went'       => Arr::get($translations, 'went') ?: __( 'went', 'wp-social-reviews' ),
             'ai_generated_summary' => Arr::get($translations, 'ai_generated_summary') ?: __( 'AI-Generated Summary', 'wp-social-reviews' ),
             'plugin_url' => WPSOCIALREVIEWS_URL,
-            'image_settings'   => Helper::getImageSettings($platform),
+            'image_settings'   => $image_settings,
             'upload_url' => $upload_url,
-            'user_role' => current_user_can('administrator'), 
+            'user_role' => current_user_can('administrator'),
             'a11y'       => [
                     'prevSlideMessage' => __('Previous slide', 'wp-social-reviews'),
                     'nextSlideMessage' => __('Next slide', 'wp-social-reviews'),
@@ -1141,6 +1156,32 @@ class ShortcodeHandler
                     'paginationBulletMessage' => sprintf(__('Go to slide %s', 'wp-social-reviews'), '{{index}}'),
             ]
         ));
+    }
+
+    /**
+     * Build the inline JS string that defines window.wpsr_ajax_params.
+     *
+     * @return string
+     */
+    private function buildLocalizeJs()
+    {
+        $params = $this->buildLocalizeParams();
+        return 'window.wpsr_ajax_params = ' . wp_json_encode($params) . ';';
+    }
+
+    /**
+     * @deprecated Use wp_add_inline_script in registerScripts() instead.
+     * Kept public for backward compatibility with Oxygen widget integrations.
+     */
+    public function loadLocalizeScripts()
+    {
+        static $jsLoaded;
+
+        if ($jsLoaded) {
+            return;
+        }
+
+        $params = $this->buildLocalizeParams();
         ?>
         <script type="text/javascript" id="wpsr-localize-script">
             window.wpsr_ajax_params = <?php echo json_encode($params); ?>;
@@ -1153,12 +1194,13 @@ class ShortcodeHandler
     {
         static $jsLoaded;
 
+        wp_add_inline_script('wp-social-review', $this->buildLocalizeJs(), 'before');
+
         if ($jsLoaded) {
             return;
         }
 
         wp_enqueue_script('wp-social-review');
-        add_action('wp_footer', array($this, 'loadLocalizeScripts'), 99);
         $jsLoaded = true;
     }
 

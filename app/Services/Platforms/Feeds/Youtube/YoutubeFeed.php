@@ -247,7 +247,9 @@ class YoutubeFeed extends BaseFeed
         if ($has_gdpr === "true" && $optimized_images == "false") {
             $settings['dynamic']['items'] = [];
             $settings['dynamic']['header'] = [];
-            $settings['dynamic']['error_message']['error_message'] = __('YouTube feeds are not being displayed due to the "optimize images" option being disabled. If the GDPR settings are set to "Yes," it is necessary to enable the optimize images option.', 'wp-social-reviews');
+            $settings['dynamic']['error_message'] = [
+                'error_message' => __('YouTube feeds are not being displayed due to the "optimize images" option being disabled. If the GDPR settings are set to "Yes," it is necessary to enable the optimize images option.', 'wp-social-reviews')
+            ];
         }
 
         if (Arr::get($settings, 'feed_settings.created_from_onboarding')) {
@@ -836,9 +838,12 @@ class YoutubeFeed extends BaseFeed
                 $channelId = Arr::get($videoLists, 'items.0.snippet.channelId', '');
             }
 
-            $channelApiParams = 'id=' . $channelId;
-            $channelCacheName = 'channel_header_' . $channelId;
+            $channelApiParams = $this->determineChannelIdentifierType($channelId);
+            if (isset($channelApiParams['error_message'])) {
+                return $channelApiParams;
+            }
 
+            $channelCacheName = 'channel_header_' . $channelId;
             $youtubeChannelApiUrl = $this->remoteFetchUrl . 'channels?part=id,snippet,contentDetails,statistics,brandingSettings&maxResults=1&' . $channelApiParams . '&';
             $response             = wp_remote_get($youtubeChannelApiUrl . $youtubeApiKeyOrToken);
 

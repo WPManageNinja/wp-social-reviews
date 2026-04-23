@@ -18,23 +18,16 @@
               <label v-if="shoppable_fields.source_type === 'custom_url'" class="wpsr-field-label">{{$t('URL')}}</label>
               <label v-else class="wpsr-field-label">{{$t('Link To')}}</label>
 
-              <el-select
+              <AsyncMultipleSelect
                   v-if="shoppable_fields.source_type !== 'custom_url'"
                   v-model="shoppable_fields.url_settings.id"
+                  searchRoute="pages/search"
+                  :multiple="false"
+                  :includeEverywhere="false"
+                  :extraParams="{ post_type: shoppable_fields.source_type }"
+                  :key="shoppable_fields.source_type"
                   class="wpsr-modal-select wpsr-select-input-field"
-                  size="large"
-                  filterable
-                  clearable
-                  allow-create
-                  default-first-option
-                  placeholder="Select or start typing...">
-                <el-option
-                    v-for="(item, index) in posts"
-                    :key="index"
-                    :label="item.title"
-                    :value="item.id">
-                </el-option>
-              </el-select>
+              />
               <error-view :errors="errors" :field="'id'" />
 
               <el-input v-if="shoppable_fields.source_type === 'custom_url'" type="text" size="small" placeholder="Enter your URL" v-model="shoppable_fields.url_settings.url" class="wpsr-modal-input wpsr-input-default wpsr-text-input wpsr-input-default wpsr-border-all-around"></el-input>
@@ -70,11 +63,13 @@
 
 <script>
 import ErrorView from './../../errors/errorView'
+import AsyncMultipleSelect from './../core-ui/editor/AsyncMultipleSelect'
 
 export default {
   name: 'ShoppableModal',
   components: {
-    ErrorView
+    ErrorView,
+    AsyncMultipleSelect
   },
   props: {
     shoppable_fields: {
@@ -85,15 +80,11 @@ export default {
       type: Array,
       default: () => []
     },
-    posts: {
-      type: Array,
-      default: () => []
-    },
     errors: {
       type: Object,
       default: () => ({})
     }
   },
-  emits: ['on_post_source_change', 'add_template_settings']
+  emits: ['on_post_source_change', 'add_template_settings', 'close_shoppable_modal']
 }
 </script>

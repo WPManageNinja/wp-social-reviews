@@ -943,3 +943,7 @@ hr{
 .el-dialog__title {
   color: var(--wpsr-heading-text, #0E121B);
 }
+
+.el-date-editor.wpsr-text-input .el-input__wrapper{
+  box-shadow: none !important;
+}

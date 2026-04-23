@@ -1,4 +1,5 @@
 <?php
+defined('ABSPATH') or die;
 
 return [
     'name'      => 'wpfluent',

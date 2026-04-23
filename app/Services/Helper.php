@@ -16,11 +16,20 @@ class Helper
     {
         return apply_filters('wpsr_admin_permission', 'manage_options');
     }
+
+    /**
+     * Get allowed HTML tags for wp_kses sanitization
+     * This defines what HTML is safe to display in review content
+     *
+     * @return array Allowed HTML tags and their attributes
+     */
     public static function allowedHtmlTags()
     {
         $allowed_tags = array(
             'br'     => [],
-            'p'      => [],
+            'p'      => [
+                'class' => [],
+            ],
             'strong' => [],
             'em'     => [],
             'b'      => [],
@@ -28,10 +37,25 @@ class Helper
             'ul'     => [],
             'ol'     => [],
             'li'     => [],
-            // Links with validation
+            // Span for Read More/Less buttons and other inline elements
+            'span'   => [
+                'class'      => [],
+                'aria-label' => [],
+                'tabindex'   => [],
+            ],
+            // Links with safe attributes only
             'a'      => [
-                'href' => [],
-                'rel'  => [],
+                'href'   => [],
+                'target' => [],
+                'rel'    => [],
+            ],
+            // Images for emojis and other safe images
+            'img'    => [
+                'src'       => [],
+                'alt'       => [],
+                'class'     => [],
+                'draggable' => [],
+                'role'      => [],
             ],
         );
 
@@ -109,12 +133,15 @@ class Helper
      */
     public static function removeEventHandlers($text)
     {
-        // Remove event handlers with quotes
-        $text = preg_replace('/\s*on\w+\s*=\s*["\'][^"\']*["\']/i', '', $text);
+        // Remove event handlers with double quotes
+        $text = preg_replace('/\s*on\w+\s*=\s*"[^"]*"/i', '', $text);
+        // Remove event handlers with single quotes
+        $text = preg_replace('/\s*on\w+\s*=\s*\'[^\']*\'/i', '', $text);
         // Remove event handlers without quotes
-        $text = preg_replace('/\s*on\w+\s*=\s*\S+/i', '', $text);
-        // Remove with spaces (on mouse over)
-        $text = preg_replace('/\s*on\s*\w+\s*=\s*["\'][^"\']*["\']/i', '', $text);
+        $text = preg_replace('/\s*on\w+\s*=\s*[^\s>]+/i', '', $text);
+        // Remove with spaces (on mouse over = "...")
+        $text = preg_replace('/\s*on\s+\w+\s*=\s*"[^"]*"/i', '', $text);
+        $text = preg_replace('/\s*on\s+\w+\s*=\s*\'[^\']*\'/i', '', $text);
 
         return $text;
     }
@@ -143,7 +170,11 @@ class Helper
             $number /= 1000;
         }
 
-        return round($number, 1) . $units[$i];
+        $formatted = number_format($number, 1);
+        // Trim trailing zero after decimal (e.g. "2.0" → "2") but keep meaningful decimals (e.g. "1.6")
+        $formatted = rtrim(rtrim($formatted, '0'), '.');
+
+        return $formatted . $units[$i];
     }
 
     public static function getVideoDuration($duration)
@@ -243,22 +274,70 @@ class Helper
 
         $page_list = array(array('id' => '-1', 'title' => __('Everywhere', 'wp-social-reviews')));
         if (!empty($pages) && !is_wp_error($pages)) {
-            foreach ($pages as $page) {
-                $lang = '';
-                if(defined('POLYLANG_VERSION')){
-                    $lang = pll_get_post_language( $page->ID, 'name');
-                    $lang = $lang ? ' ('. $lang .')' : '';
-                }
-
-                $page_list[] = array('id'    => $page->ID . '',
-                    'title' => $page->post_title ? $page->post_title . $lang : __('Untitled',
-                        'wp-social-reviews') . $lang,
-                    'url'   => get_permalink($page->ID)
-                );
-            }
+            $page_list = array_merge($page_list, static::formatPostResults($pages));
         }
 
         return $page_list;
+    }
+
+    public static function searchPagesList($search = '', $page = 1, $perPage = 20, $includeIds = [], $postType = '')
+    {
+        $postTypes = !empty($postType) ? [$postType] : static::getPostTypes(false);
+        $results = [];
+
+        // Resolve specific posts by ID (for pre-selected label display)
+        if (!empty($includeIds) && empty($search) && $page === 1) {
+            $query = new \WP_Query([
+                'post_type'      => $postTypes,
+                'post_status'    => 'publish',
+                'post__in'       => $includeIds,
+                'posts_per_page' => count($includeIds),
+                'orderby'        => 'post__in',
+                'no_found_rows'  => true,
+            ]);
+
+            return ['results' => static::formatPostResults($query->posts), 'has_more' => false];
+        }
+
+        if ($page === 1) {
+            $results[] = ['id' => '-1', 'title' => __('Everywhere', 'wp-social-reviews')];
+        }
+
+        $args = [
+            'post_type'      => $postTypes,
+            'post_status'    => 'publish',
+            'posts_per_page' => $perPage,
+            'paged'          => $page,
+            'orderby'        => 'title',
+            'order'          => 'ASC',
+        ];
+
+        if (!empty($search)) {
+            $args['s'] = $search;
+        }
+
+        $query = new \WP_Query($args);
+        $results = array_merge($results, static::formatPostResults($query->posts));
+        $hasMore = $page < $query->max_num_pages;
+
+        return ['results' => $results, 'has_more' => $hasMore];
+    }
+
+    private static function formatPostResults($posts)
+    {
+        $results = [];
+        foreach ($posts as $post) {
+            $lang = '';
+            if (defined('POLYLANG_VERSION')) {
+                $lang = pll_get_post_language($post->ID, 'name');
+                $lang = $lang ? ' (' . $lang . ')' : '';
+            }
+            $results[] = [
+                'id'    => $post->ID . '',
+                'title' => ($post->post_title ? $post->post_title : __('Untitled', 'wp-social-reviews')) . $lang,
+            ];
+        }
+        return $results;
     }
 
     public static function getPostsByPostType($postType = 'post')
@@ -334,6 +413,16 @@ class Helper
         $postTypes = Arr::get($settings, 'post_types');
         $pageList = Arr::get($settings, 'page_list', []);
         $chat_lang = Arr::get($settings, 'chat_lang', '');
+
+        // Treat 'all' the same as '' (no language filter)
+        if ($chat_lang === 'all') {
+            $chat_lang = '';
+        }
+
+        // Treat empty page_list as "everywhere"
+        if (empty($pageList)) {
+            $pageList = ['-1'];
+        }
 
         if(empty($postTypes) && empty($pageList) && $chat_lang && $chat_lang === get_locale()){
             return true;
@@ -490,7 +579,9 @@ class Helper
     public static function getOptimizeImageFormat()
     {
         $image_format = get_option('wpsr_global_settings', []);
-        return Arr::get($image_format, 'global_settings.advance_settings.optimize_image_format', 'jpg');
+        $image_format = Arr::get($image_format, 'global_settings.advance_settings.optimize_image_format', 'jpg');
+
+        return in_array($image_format, ['jpg', 'webp'], true) ? $image_format : 'jpg';
     }
 
     public static function getEncryptionErrorData()

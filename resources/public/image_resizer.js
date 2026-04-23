@@ -1,5 +1,16 @@
 jQuery(document).ready(function($) {
     "use strict";
+
+    function getWpsrImageFormat() {
+        let imageFormat = window.wpsr_ajax_params
+            && window.wpsr_ajax_params.image_settings
+            && window.wpsr_ajax_params.image_settings.image_format
+            ? window.wpsr_ajax_params.image_settings.image_format
+            : '';
+
+        return ['jpg', 'webp'].includes(imageFormat) ? imageFormat : 'jpg';
+    }
+
     //request to save images
     let platforms = [
         { name: 'instagram', selector: '.wpsr-ig-feed-wrapper' },
@@ -50,7 +61,7 @@ jQuery(document).ready(function($) {
 
                     let jsonObjects = response.match(/({[^{}]+})/g);
                     let image_data_arrays = JSON.parse(jsonObjects);
-                    let image_format = window.wpsr_ajax_params.image_settings.image_format;
+                    let image_format = getWpsrImageFormat();
 
                     if(image_data_arrays.account_id) {
                         $(template_id).find('.wpsr-ig-header-logo').each(function (index) {

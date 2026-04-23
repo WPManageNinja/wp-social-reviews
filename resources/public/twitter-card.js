@@ -58,11 +58,16 @@ export default {
                     let column = gridId.data("column");
 
                     if( templateType === 'masonry' ) {
-                        gridId.find('.wpsr-twitter-all-tweets').imagesLoaded(function () {
-                            gridId.find('.wpsr-twitter-all-tweets').masonry({
-                                itemSelector: '.wpsr-col-' + column,
+                        const $masonryElement = gridId.find('.wpsr-twitter-all-tweets');
+                        if ($masonryElement.length && typeof $masonryElement.imagesLoaded === 'function') {
+                            $masonryElement.imagesLoaded(function () {
+                                if ($masonryElement.length && typeof $masonryElement.masonry === 'function') {
+                                    $masonryElement.masonry({
+                                        itemSelector: '.wpsr-col-' + column,
+                                    });
+                                }
                             });
-                        });
+                        }
                     }
                     let imgHtml = '',
                         domainUrl = (typeof link !== 'undefined') ? link.replace(/^https?\:\/\//i, "").split('/')[0] : '';

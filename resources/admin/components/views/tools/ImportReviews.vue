@@ -264,7 +264,8 @@ export default {
       formData.append('file', this.file);
       formData.append('action', 'wpsr_import_data');
       formData.append('type', this.selectedImport);
-
+      formData.append('security', window.WPSocialReviewsAdmin && window.WPSocialReviewsAdmin.wpsr_admin_nonce ? window.WPSocialReviewsAdmin.wpsr_admin_nonce : '');
+      
       // Add source ID if provided
       if (this.selectedSourceId) {
         formData.append('source_id', this.selectedSourceId);

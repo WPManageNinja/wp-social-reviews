@@ -22,6 +22,7 @@
             :isAiSummary="template_meta.ai_summary.enabled === 'true' && review.platform_name === 'ai'"
             :isAiReadmoreEnabled="template_meta.ai_summary.display_readmore"
             :isTextTypingAnimationEnabled="template_meta.ai_summary.text_typing_animation"
+            :showReviewImages="template_meta.show_review_images !== 'false'"
             :review="review"
             @expandContent="expandContent"
         />

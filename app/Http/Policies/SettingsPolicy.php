@@ -13,16 +13,13 @@ class SettingsPolicy extends BasePolicy
      */
     public function verifyRequest(Request $request)
     {
-        $url = $request->url();
-        if (str_contains($url, '/advance-settings')) {
-            return true;
-        }
-
         return $this->currentUserCan('wpsn_feeds_platforms_settings')
             || $this->currentUserCan('wpsn_reviews_platforms_settings')
             || $this->currentUserCan('wpsn_shoppable_settings')
             || $this->currentUserCan('wpsn_translation_settings')
-            || $this->currentUserCan('wpsn_license_settings');
+            || $this->currentUserCan('wpsn_license_settings')
+            || $this->currentUserCan('wpsn_feeds_advance_settings')
+            || $this->currentUserCan('wpsn_manage_qr_codes');
     }
 
 }

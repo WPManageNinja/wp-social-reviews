@@ -27,6 +27,7 @@ class Review extends Model
         'platform_name',
         'review_title',
         'reviewer_name',
+        'reviewer_email',
         'reviewer_text',
         'review_time',
         'review_id',
@@ -86,8 +87,12 @@ class Review extends Model
         $validTemplatePlatforms = array_intersect($platforms, array_keys($activePlatforms));
 
         //add custom with platforms if custom reviews exists
-        $isCustomReviewsExists = self::where('platform_name', 'custom')->count();
-        if ($isCustomReviewsExists && in_array("custom", $platforms)) {
+        // Cache this check to avoid repeated queries
+        static $customReviewsCache = null;
+        if ($customReviewsCache === null) {
+            $customReviewsCache = self::where('platform_name', 'custom')->exists();
+        }
+        if ($customReviewsCache && in_array("custom", $platforms)) {
             $index                          = array_search('custom', $platforms);
             $validTemplatePlatforms[$index] = 'custom';
         }
@@ -155,18 +160,37 @@ class Review extends Model
 			$platforms = array_diff($platforms, $platformsWithCategories);
 		}
 
-        $reviews = self::whereIn('platform_name', $platforms);
+        $allFilteredPlatforms = array_merge($platforms, $platformsWithCategories);
+        $reviews = empty($allFilteredPlatforms) ? self::whereIn('platform_name', []) : self::query();
 
-        $has_column = Helper::hasReviewApproved();
-        if($has_column && (in_array('fluent_forms', $platforms) || in_array('testimonial', $platforms) || in_array('woocommerce', $platforms) || in_array('custom', $platforms))) {
-            $reviews = $reviews->where('review_approved', '1');
+        if (!empty($allFilteredPlatforms)) {
+            $reviews = $reviews->where(function ($query) use ($platforms, $platformsWithCategories, $categories) {
+                $hasPlatformBranch = false;
+
+                if (count($platforms)) {
+                    $query->whereIn('platform_name', $platforms);
+                    $hasPlatformBranch = true;
+                }
+
+                if (count($platformsWithCategories)) {
+                    $categoryBranch = function ($categoryQuery) use ($platformsWithCategories, $categories) {
+                        $categoryQuery->whereIn('platform_name', $platformsWithCategories)
+                                      ->whereIn('category', $categories);
+                    };
+
+                    if ($hasPlatformBranch) {
+                        $query->orWhere($categoryBranch);
+                    } else {
+                        $query->where($categoryBranch);
+                    }
+                }
+            });
         }
 
-	    if (count($platformsWithCategories)) {
-		    $reviews->orWhere(function ($query) use ($platformsWithCategories, $categories) {
-			    $query->whereIn('platform_name', $platformsWithCategories)->whereIn('category', $categories);
-		    });
-	    }
+        $has_column = Helper::hasReviewApproved();
+        if($has_column) {
+            $reviews = $reviews->where('review_approved', '1');
+        }
 
         if ($order === 'random' ) {
             if($filters['pagination_type'] === 'none') {
@@ -191,14 +215,65 @@ class Review extends Model
 
         //filter by included or excluded
         if ($filterByTitle === 'include' && count($includeIds)) {
-            $reviews = $reviews->whereIn('id', $includeIds);
+            $includeIds = array_unique(array_map('intval', $includeIds));
+            // Chunk large arrays to avoid very long IN clauses
+            $chunkSize = 100;
+            if (count($includeIds) <= $chunkSize) {
+                $reviews = $reviews->whereIn('id', $includeIds);
+            } else {
+                $reviews->where(function($query) use ($includeIds, $chunkSize) {
+                    $chunks = array_chunk($includeIds, $chunkSize);
+                    $firstChunk = true;
+                    foreach ($chunks as $chunk) {
+                        if ($firstChunk) {
+                            $query->whereIn('id', $chunk);
+                            $firstChunk = false;
+                        } else {
+                            $query->orWhereIn('id', $chunk);
+                        }
+                    }
+                });
+            }
         }
         if ($filterByTitle === 'exclude' && count($excludeIds)) {
-            $reviews = $reviews->whereNotIn('id', $excludeIds);
+            $excludeIds = array_unique(array_map('intval', $excludeIds));
+            // Chunk large arrays to avoid very long NOT IN clauses
+            $chunkSize = 100;
+            if (count($excludeIds) <= $chunkSize) {
+                $reviews = $reviews->whereNotIn('id', $excludeIds);
+            } else {
+                // For NOT IN with chunks, we need to use whereNotIn for each chunk
+                // This is less efficient but necessary for very large arrays
+                foreach (array_chunk($excludeIds, $chunkSize) as $chunk) {
+                    $reviews = $reviews->whereNotIn('id', $chunk);
+                }
+            }
         }
 
         if(!empty($selectedBusinesses)) {
-            $reviews = $reviews->whereIn('source_id', $selectedBusinesses);
+            // Chunk large arrays to avoid very long IN clauses which are slow
+            // MySQL has a limit on the number of items in an IN clause, and large IN clauses are slow
+            $chunkSize = 100; // Optimal chunk size for MySQL performance
+            $selectedBusinesses = array_unique($selectedBusinesses);
+            
+            if (count($selectedBusinesses) <= $chunkSize) {
+                // Small array, use single query
+                $reviews = $reviews->whereIn('source_id', $selectedBusinesses);
+            } else {
+                // Large array, use chunked queries with OR conditions
+                $reviews->where(function($query) use ($selectedBusinesses, $chunkSize) {
+                    $chunks = array_chunk($selectedBusinesses, $chunkSize);
+                    $firstChunk = true;
+                    foreach ($chunks as $chunk) {
+                        if ($firstChunk) {
+                            $query->whereIn('source_id', $chunk);
+                            $firstChunk = false;
+                        } else {
+                            $query->orWhereIn('source_id', $chunk);
+                        }
+                    }
+                });
+            }
         }
 
         //filter by words
@@ -224,7 +299,10 @@ class Review extends Model
                 // If numOfReviews is not set, load all selected reviews (no limit)
             } else {
                 // Normal pagination behavior - limit to paginate value for load more
-                $paginate = (int) Arr::get($filters, 'paginate', 6);
+                $paginateNumber = Arr::get($filters, 'paginate_number');
+                $fallbackPaginate = (int) Arr::get($filters, 'paginate', 6);
+                $paginate = wp_is_mobile() ? (int) Arr::get($paginateNumber, 'mobile', $fallbackPaginate) : (int) Arr::get($paginateNumber, 'desktop', $fallbackPaginate);
+
                 $reviews = $reviews->limit($paginate);
             }
         } elseif($numOfReviews > 0) {
@@ -315,14 +393,23 @@ class Review extends Model
 
     public static function paginatedReviews($platforms, $filters = array(), $page = 1)
     {
-        $paginate = (int)Arr::get($filters, 'paginate', 6);
+        // Get responsive paginate value
+        $paginateNumber = Arr::get($filters, 'paginate_number');
+        $fallbackPaginate = (int) Arr::get($filters, 'paginate', 6);
+        $paginate = wp_is_mobile() ? (int) Arr::get($paginateNumber, 'mobile', $fallbackPaginate) : (int) Arr::get($paginateNumber, 'desktop', $fallbackPaginate);
+        
         $offset   = ($paginate * $page) - $paginate;
 
         $paginationType = Arr::get($filters, 'pagination_type', '');
         $templateType   = Arr::get($filters, 'templateType', 'grid');
 
+        // Get the filtered query with all conditions applied
         $filterReviewsQuery = self::filteredReviewsQuery($platforms, $filters);
-        $totalFilterReviews       = count($filterReviewsQuery->get());
+        
+        // Use SQL COUNT instead of fetching all rows - much more efficient
+        // Clone the query before applying count to preserve the original for later use
+        $countQuery = clone $filterReviewsQuery;
+        $totalFilterReviews = $countQuery->count();
 
         // activate pagination
         if ($paginationType === 'load_more' && $templateType !== 'slider') {
@@ -402,16 +489,16 @@ class Review extends Model
 
 
         $businessInfo = array(
-            'place_id'          => intval($sourceId),
-            'name'              => $handle,
+            'place_id'          => $sourceId,
+            'name'              => $handle ? $handle : Arr::get($existingInfos, $sourceId.'.name', ''),
             'url'               => Arr::get($existingInfos, $sourceId.'.url', ''),
             'logo'              => Arr::get($existingInfos, $sourceId.'.logo', ''),
             'platform_label'    => Arr::get($existingInfos, $sourceId.'.platform_label', ''),
             'privacy_policy_url'=> Arr::get($existingInfos, $sourceId.'.privacy_policy_url', ''),
-            'address'           => '',
+            'address'           => Arr::get($existingInfos, $sourceId.'.address', ''),
             'average_rating'    => $avgRating,
             'total_rating'      => $totalReviews,
-            'phone'             => '',
+            'phone'             => Arr::get($existingInfos, $sourceId.'.phone', ''),
             'platform_name'     => $platform,
             'is_imported'       => $isImported,
             'status'            => true

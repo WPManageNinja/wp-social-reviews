@@ -11,7 +11,7 @@ class ComposerStaticInit0fd2dd2c383b895d4bb22d509da50f97
     );
 
     public static $prefixLengthsPsr4 = array (
-        'W' => 
+        'W' =>
         array (
             'WPSocialReviews\\Framework\\' => 26,
             'WPSocialReviews\\App\\' => 20,
@@ -20,15 +20,15 @@ class ComposerStaticInit0fd2dd2c383b895d4bb22d509da50f97
     );
 
     public static $prefixDirsPsr4 = array (
-        'WPSocialReviews\\Framework\\' => 
+        'WPSocialReviews\\Framework\\' =>
         array (
             0 => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent',
         ),
-        'WPSocialReviews\\App\\' => 
+        'WPSocialReviews\\App\\' =>
         array (
             0 => __DIR__ . '/../..' . '/app',
         ),
-        'WPFluent\\' => 
+        'WPFluent\\' =>
         array (
             0 => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent',
         ),
@@ -56,6 +56,7 @@ class ComposerStaticInit0fd2dd2c383b895d4bb22d509da50f97
         'WPSocialReviews\\App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'WPSocialReviews\\App\\Http\\Controllers\\NotificationsController' => __DIR__ . '/../..' . '/app/Http/Controllers/NotificationsController.php',
         'WPSocialReviews\\App\\Http\\Controllers\\OnboardingController' => __DIR__ . '/../..' . '/app/Http/Controllers/OnboardingController.php',
+        'WPSocialReviews\\App\\Http\\Controllers\\PagesController' => __DIR__ . '/../..' . '/app/Http/Controllers/PagesController.php',
         'WPSocialReviews\\App\\Http\\Controllers\\Platforms\\AddonController' => __DIR__ . '/../..' . '/app/Http/Controllers/Platforms/AddonController.php',
         'WPSocialReviews\\App\\Http\\Controllers\\Platforms\\Chats\\MetaController' => __DIR__ . '/../..' . '/app/Http/Controllers/Platforms/Chats/MetaController.php',
         'WPSocialReviews\\App\\Http\\Controllers\\Platforms\\Feeds\\ConfigsController' => __DIR__ . '/../..' . '/app/Http/Controllers/Platforms/Feeds/ConfigsController.php',
@@ -69,10 +70,14 @@ class ComposerStaticInit0fd2dd2c383b895d4bb22d509da50f97
         'WPSocialReviews\\App\\Http\\Controllers\\ShoppablesController' => __DIR__ . '/../..' . '/app/Http/Controllers/ShoppablesController.php',
         'WPSocialReviews\\App\\Http\\Controllers\\TemplatesController' => __DIR__ . '/../..' . '/app/Http/Controllers/TemplatesController.php',
         'WPSocialReviews\\App\\Http\\Controllers\\WidgetsController' => __DIR__ . '/../..' . '/app/Http/Controllers/WidgetsController.php',
+        'WPSocialReviews\\App\\Http\\Policies\\AdminPolicy' => __DIR__ . '/../..' . '/app/Http/Policies/AdminPolicy.php',
         'WPSocialReviews\\App\\Http\\Policies\\BasePolicy' => __DIR__ . '/../..' . '/app/Http/Policies/BasePolicy.php',
         'WPSocialReviews\\App\\Http\\Policies\\CustomSourcesPolicy' => __DIR__ . '/../..' . '/app/Http/Policies/CustomSourcesPolicy.php',
         'WPSocialReviews\\App\\Http\\Policies\\NotificationsPolicy' => __DIR__ . '/../..' . '/app/Http/Policies/NotificationsPolicy.php',
+        'WPSocialReviews\\App\\Http\\Policies\\PagesPolicy' => __DIR__ . '/../..' . '/app/Http/Policies/PagesPolicy.php',
         'WPSocialReviews\\App\\Http\\Policies\\PlatformPolicy' => __DIR__ . '/../..' . '/app/Http/Policies/PlatformPolicy.php',
+        'WPSocialReviews\\App\\Http\\Policies\\ReviewFormCaptchaSettingsPolicy' => __DIR__ . '/../..' . '/app/Http/Policies/ReviewFormCaptchaSettingsPolicy.php',
+        'WPSocialReviews\\App\\Http\\Policies\\ReviewFormPolicy' => __DIR__ . '/../..' . '/app/Http/Policies/ReviewFormPolicy.php',
         'WPSocialReviews\\App\\Http\\Policies\\ReviewPolicy' => __DIR__ . '/../..' . '/app/Http/Policies/ReviewPolicy.php',
         'WPSocialReviews\\App\\Http\\Policies\\SettingsPolicy' => __DIR__ . '/../..' . '/app/Http/Policies/SettingsPolicy.php',
         'WPSocialReviews\\App\\Http\\Policies\\ShoppablePolicy' => __DIR__ . '/../..' . '/app/Http/Policies/ShoppablePolicy.php',
@@ -87,6 +92,7 @@ class ComposerStaticInit0fd2dd2c383b895d4bb22d509da50f97
         'WPSocialReviews\\App\\Models\\OptimizeImage' => __DIR__ . '/../..' . '/app/Models/OptimizeImage.php',
         'WPSocialReviews\\App\\Models\\Post' => __DIR__ . '/../..' . '/app/Models/Post.php',
         'WPSocialReviews\\App\\Models\\Review' => __DIR__ . '/../..' . '/app/Models/Review.php',
+        'WPSocialReviews\\App\\Models\\ReviewForm' => __DIR__ . '/../..' . '/app/Models/ReviewForm.php',
         'WPSocialReviews\\App\\Models\\Template' => __DIR__ . '/../..' . '/app/Models/Template.php',
         'WPSocialReviews\\App\\Models\\Traits\\SearchableScope' => __DIR__ . '/../..' . '/app/Models/Traits/SearchableScope.php',
         'WPSocialReviews\\App\\Models\\Widget' => __DIR__ . '/../..' . '/app/Models/Widget.php',
@@ -145,6 +151,7 @@ class ComposerStaticInit0fd2dd2c383b895d4bb22d509da50f97
         'WPSocialReviews\\App\\Services\\Platforms\\Reviews\\GoogleMyBusiness' => __DIR__ . '/../..' . '/app/Services/Platforms/Reviews/GoogleMyBusiness.php',
         'WPSocialReviews\\App\\Services\\Platforms\\Reviews\\Helper' => __DIR__ . '/../..' . '/app/Services/Platforms/Reviews/Helper.php',
         'WPSocialReviews\\App\\Services\\Platforms\\Reviews\\ReviewsTrait' => __DIR__ . '/../..' . '/app/Services/Platforms/Reviews/ReviewsTrait.php',
+        'WPSocialReviews\\App\\Services\\ReviewApprovalService' => __DIR__ . '/../..' . '/app/Services/ReviewApprovalService.php',
         'WPSocialReviews\\App\\Services\\SidebarWidgets' => __DIR__ . '/../..' . '/app/Services/SidebarWidgets.php',
         'WPSocialReviews\\App\\Services\\TranslationString' => __DIR__ . '/../..' . '/app/Services/TranslationString.php',
         'WPSocialReviews\\App\\Services\\Widgets\\Beaver\\BeaverWidget' => __DIR__ . '/../..' . '/app/Services/Widgets/Beaver/BeaverWidget.php',
@@ -166,6 +173,7 @@ class ComposerStaticInit0fd2dd2c383b895d4bb22d509da50f97
         'WPSocialReviews\\Database\\DBSeeder' => __DIR__ . '/../..' . '/database/DBSeeder.php',
         'WPSocialReviews\\Database\\Migrations\\CacheMigrator' => __DIR__ . '/../..' . '/database/Migrations/CacheMigrator.php',
         'WPSocialReviews\\Database\\Migrations\\ImageOptimizationMigrator' => __DIR__ . '/../..' . '/database/Migrations/ImageOptimizationMigrator.php',
+        'WPSocialReviews\\Database\\Migrations\\ReviewFormsMigrator' => __DIR__ . '/../..' . '/database/Migrations/ReviewFormsMigrator.php',
         'WPSocialReviews\\Database\\Migrations\\ReviewsMigrator' => __DIR__ . '/../..' . '/database/Migrations/ReviewsMigrator.php',
         'WPSocialReviews\\Framework\\Database\\BaseGrammar' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/BaseGrammar.php',
         'WPSocialReviews\\Framework\\Database\\ConnectionInterface' => __DIR__ . '/..' . '/wpfluent/framework/src/WPFluent/Database/ConnectionInterface.php',

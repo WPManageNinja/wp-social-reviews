@@ -4,7 +4,18 @@
           <span class="review-badge" :class=[this.platformName]>{{ parseFloat(reviewerRating).toFixed(1) }}</span>
         </div>
         <template v-else-if="starStyle === 'default' && platformName !== 'facebook' && platformName !== 'booking.com' ">
-            <div class="wpsr-rating" v-html="ratingIcon(Number(reviewerRating).toFixed(1))"></div>
+            <div class="wpsr-rating">
+                <div
+                    v-for="(star, index) in starFills"
+                    :key="index"
+                    class="wpsr-star-container"
+                    :class="star.fill > 10 ? 'wpsr-star-background-filled' : 'wpsr-star-background-empty'"
+                    :style="{ '--wpsr-review-star-fill': star.fill + '%' }"
+                >
+                    <div class="wpsr-star-empty"></div>
+                    <div class="wpsr-star-filled"></div>
+                </div>
+            </div>
         </template>
 
         <div class="wpsr-booking-rating-style" v-else-if="starStyle === 'default' && platformName === 'booking.com' && platformName !== 'facebook'">
@@ -17,7 +28,18 @@
 
         <div class="wpsr-rating-style-2" v-else-if="starStyle === 'style2' && platformName !== 'facebook'">
             <span>{{ parseFloat(reviewerRating).toFixed(1) }}</span>
-            <div class="wpsr-rating" v-html="ratingIcon(Number(reviewerRating).toFixed(1))"></div>
+            <div class="wpsr-rating">
+                <div
+                    v-for="(star, index) in starFills"
+                    :key="index"
+                    class="wpsr-star-container"
+                    :class="star.fill > 10 ? 'wpsr-star-background-filled' : 'wpsr-star-background-empty'"
+                    :style="{ '--wpsr-review-star-fill': star.fill + '%' }"
+                >
+                    <div class="wpsr-star-empty"></div>
+                    <div class="wpsr-star-filled"></div>
+                </div>
+            </div>
         </div>
 
         <div class="wpsr-recommends" v-else-if="platformName === 'facebook'">
@@ -32,13 +54,29 @@
 
 export default {
     props:['isReviewerRating','starStyle','reviewerRating', 'platformName', 'recommendationType', 'platformsArray'],
+    computed: {
+        starFills() {
+            const rating = Number(this.reviewerRating) || 0;
+            const stars = [];
+            for (let i = 0; i < 5; i++) {
+                const score = rating - i;
+                let fill = 0;
+                if (score >= 1) {
+                    fill = 100;
+                } else if (score > 0) {
+                    fill = score * 100;
+                }
+                stars.push({ fill });
+            }
+            return stars;
+        }
+    },
     methods:{
       shouldShowBookingRating(){
         return  this.platformName === 'ai'
                 && this.platformsArray
                 && this.platformsArray.includes('booking.com');
       }
-
     }
 }
 </script>

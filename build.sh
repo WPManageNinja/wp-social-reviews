@@ -1,5 +1,22 @@
 #!/bin/bash
 
+# Function to create index.php files recursively
+# Skips any directory that already contains a PHP file (other than index.php itself)
+create_index_files() {
+  local dir="$1"
+
+  find "$dir" -type d -not -path "*/\.*" | while read -r subdir; do
+    # Check whether this directory already contains a .php file (excluding index.php)
+    has_php=$(find "$subdir" -maxdepth 1 -type f -name "*.php" ! -name "index.php" -print -quit 2>/dev/null)
+    if [ -n "$has_php" ]; then
+      echo "Skipped $subdir (already contains PHP files)"
+    else
+      printf '%s\n' '<?php' '// Silence Is Golden.' > "$subdir/index.php"
+      echo "Created index.php in $subdir"
+    fi
+  done
+}
+
 # Function to handle copying and compressing
 copy_and_compress() {
   local source_dir="$1"
@@ -26,6 +43,18 @@ copy_and_compress() {
   done
 
   echo -e "\nCopy completed."
+
+  # Create index.php files with "Silence Is Golden" comment in assets folder and its subdirectories
+  if [ -d "$destination_dir/assets" ]; then
+    echo "Creating index.php files in assets directory and subdirectories..."
+    create_index_files "$destination_dir/assets"
+  fi
+
+  # Create index.php files in vendor folder (only in directories without existing PHP files)
+  if [ -d "$destination_dir/vendor" ]; then
+    echo "Creating index.php files in vendor directory and subdirectories..."
+    create_index_files "$destination_dir/vendor"
+  fi
 
   # Run the zip command and suppress output
 
@@ -100,3 +129,7 @@ echo -e "\nComposer dump-autoload for Pro addon completed\n"
 
 # Copy and compress WP Social Ninja Pro
 copy_and_compress "../wp-social-ninja-pro" "builds/wp-social-ninja-pro" "app" "assets" "boot" "language" "wp-social-ninja-pro.php" "wp-social-ninja-pro-boot.php" "index.php" "readme.txt"
+
+# Copy and compress Custom Feed for TikTok
+echo -e "\nReadying Custom Feed for TikTok\n"
+copy_and_compress "../custom-feed-for-tiktok" "builds/custom-feed-for-tiktok" "app" "language" "custom-feed-for-tiktok.php" "custom-feed-for-tiktok-boot.php" "index.php" "readme.txt"

@@ -399,9 +399,7 @@ class YouTubeWidget extends OxygenEl
                 WPSOCIALREVIEWS_VERSION
             );
             wp_enqueue_script('wp-social-review');
-            $shortcodeHandler = new ShortcodeHandler();
-            add_action('wp_footer', array($shortcodeHandler, 'loadLocalizeScripts'), 99);
-            add_action('wp_footer', array($shortcodeHandler, 'localizePopupScripts'), 99);
+            add_action('wp_footer', array(new ShortcodeHandler(), 'localizePopupScripts'), 99);
 
             if(defined('WPSOCIALREVIEWS_PRO')){
                 wp_enqueue_style(

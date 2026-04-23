@@ -191,6 +191,7 @@
           :configurationInfo="configurationInfo"
           :isDarkModeActive="isDarkMode"
           :activeSearchQuery="activeSearchQuery"
+          :show-custom-sources="screenOptions.reviews.custom_sources"
       />
 
       
@@ -329,6 +330,8 @@ export default {
             woocommerce: true,
             trustpilot: true,
             'booking.com': true,
+            'fluent-cart': true,
+            custom_sources: true
           },
           chats: {
             allinone: true,
@@ -513,6 +516,8 @@ export default {
                     facebook: true,
                     woocommerce: true,
                     trustpilot: true,
+                    'fluent-cart': true,
+                    custom_sources: true,
                     ...platformsStatuses.reviews
                   },
                   chats: {

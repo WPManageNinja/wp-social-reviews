@@ -535,7 +535,6 @@ class InstagramFeed extends BaseFeed
             'settings'         => $settings,
             'template_details' => $templateDetails,
             'elements'         => $instagramConfig->getStyleElement(),
-            'posts'            => GlobalHelper::getPostsByPostType($postType),
             'post_types'       => GlobalHelper::getPostTypes()
         ]);
     }

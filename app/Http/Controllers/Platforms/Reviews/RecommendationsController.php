@@ -16,19 +16,30 @@ class RecommendationsController extends Controller
         $valid_platforms = apply_filters('wpsocialreviews/available_valid_reviews_platforms', []);
         $customValidPlatforms = get_option('wpsr_available_valid_platforms', []);
 
-        $type = $request->get('type');
-        $sourceId = $request->get('source_id');
+        $type = sanitize_text_field(wp_unslash((string) $request->get('type', '')));
+        $sourceId = intval($request->get('source_id'));
 
-        $search  = $request->get('search');
-        $filter  = $request->get('filter') === 'all' ? '' : $request->get('filter');
-        $orderBy = $request->get('order_by') ? $request->get('order_by') : '';
+        $search  = sanitize_text_field(wp_unslash((string) $request->get('search', '')));
+        $filterRaw = wp_unslash((string) $request->get('filter', ''));
+        $filter  = $filterRaw === 'all' ? '' : sanitize_text_field($filterRaw);
+        $order_by_raw = wp_unslash((string) $request->get('order_by', ''));
+        $orderBy = sanitize_sql_orderby($order_by_raw) ?: '';
+        $statusFilterRaw = wp_unslash((string) $request->get('status_filter', 'all'));
+        $statusFilter = sanitize_text_field($statusFilterRaw);
 
         if($type === 'testimonial') {
             $filter = $type;
         }
 
         if($type !== 'custom_review'){
-            $reviews = Review::searchBy($search)->where('platform_name', 'like', '%'.$filter.'%');
+            // Use exact match instead of LIKE with leading % for better performance
+            // LIKE '%value%' cannot use indexes and is very slow
+            $reviews = Review::searchBy($search);
+
+            if (!empty($filter)) {
+                // When a specific platform filter is set, use exact match
+                $reviews = $reviews->where('platform_name', $filter);
+            }
         } else {
             $reviews = Review::searchBy($search);
         }
@@ -54,12 +65,20 @@ class RecommendationsController extends Controller
         $diff1 = array_diff_key($valid_platforms, $customValidPlatforms);
         $diff2 = array_diff_key($customValidPlatforms, $valid_platforms);
 
-        if ($type === 'review' && ($diff1 || $diff2)) {
+        // Only apply platform filtering logic if no specific filter was set
+        // This ensures that when filtering by a specific platform (like trustpilot or airbnb),
+        // the filter is respected and not overridden
+        if ($type === 'review' && ($diff1 || $diff2) && empty($filter)) {
             if(in_array('fluent_forms', array_keys($valid_platforms))){
                 unset($customValidPlatforms['fluent_forms']);
             }
-            // Include only $valid_platforms, exclude $customValidPlatforms
-            $reviews = $reviews->whereIn('platform_name', array_keys($valid_platforms))
+            $allowedPlatforms = array_keys($valid_platforms);
+            // native_form is not a named platform in valid_platforms but its non-custom-source
+            // reviews belong in All Reviews — include it here so the whereIn does not drop them
+            if (!in_array('native_form', $allowedPlatforms, true)) {
+                $allowedPlatforms[] = 'native_form';
+            }
+            $reviews = $reviews->whereIn('platform_name', $allowedPlatforms)
                 ->whereNotIn('platform_name', array_keys($customValidPlatforms))
                 ->where('platform_name', '!=', 'testimonial');
         } elseif ($type === 'custom_review') {
@@ -67,15 +86,66 @@ class RecommendationsController extends Controller
                 $reviews = $reviews->where('source_id', $sourceId);
             }
             // Include only $customValidPlatforms, exclude $valid_platforms
-            $reviews = $reviews->whereIn('platform_name', array_keys($customValidPlatforms))
-                ->where('platform_name', '!=', 'testimonial');
+            // But only if no specific filter was set
+            if (empty($filter)) {
+                $allowedPlatforms = array_keys($customValidPlatforms);
+                // native_form reviews belong to custom sources but are not stored in
+                // wpsr_available_valid_platforms, so add it explicitly
+                if (!in_array('native_form', $allowedPlatforms, true)) {
+                    $allowedPlatforms[] = 'native_form';
+                }
+                $reviews = $reviews->whereIn('platform_name', $allowedPlatforms)
+                    ->where('platform_name', '!=', 'testimonial');
+            }
+        }
+
+        // Exclude native_form reviews that belong to a custom source.
+        // Applies both to All Reviews (no filter) and when filtered specifically by native_form.
+        // Reviews submitted through a standalone native form (not linked to any custom source)
+        // should remain visible in both views.
+        if ($type === 'review' && ($filter === '' || $filter === 'native_form')) {
+            $nativeFormCustomSourceIds = $this->getNativeFormCustomSourceIds();
+            if (!empty($nativeFormCustomSourceIds)) {
+                if (empty($filter)) {
+                    // All Reviews: show everything except native_form reviews from custom sources
+                    $reviews = $reviews->where(function ($q) use ($nativeFormCustomSourceIds) {
+                        $q->where('platform_name', '!=', 'native_form')
+                          ->orWhereNotIn('source_id', $nativeFormCustomSourceIds);
+                    });
+                } else {
+                    // Already filtered to native_form — just exclude the custom-source ones
+                    $reviews = $reviews->whereNotIn('source_id', $nativeFormCustomSourceIds);
+                }
+            }
+        }
+        
+        // Apply status filter based on review_approved field
+        // This applies to all review types
+        if ($statusFilter !== 'all') {
+            switch ($statusFilter) {
+                case 'publish':
+                    $reviews = $reviews->where('review_approved', '1');
+                    break;
+                case 'spam':
+                    // Spam reviews: review_approved = 2
+                    $reviews = $reviews->where('review_approved', '2');
+                    break;
+                case 'unpublish':
+                    // Pending reviews: review_approved = 0
+                    $reviews = $reviews->where('review_approved', '0');
+                    break;
+            }
         }
 
         $reviews = $reviews->paginate();
 
-        $totalReviews = $type === 'testimonial' ? Review::where('platform_name', $filter)->get() : Review::all();
-
-        $totalReviews = count($totalReviews);
+        // Use count() instead of get()->count() or all()->count() for better performance
+        if ($type === 'testimonial') {
+            $totalReviews = Review::where('platform_name', $filter)->count();
+        } else {
+            // For non-testimonial, count all reviews efficiently
+            $totalReviews = Review::count();
+        }
 
         return [
             'all_valid_platforms'   => $valid_platforms,
@@ -113,21 +183,26 @@ class RecommendationsController extends Controller
 
     public function duplicate(Request $request)
     {
-        $ids = $request->get('ids', []);
+        $ids = (array) $request->get('ids', []);
+        $ids = array_map('intval', $ids);
 
         if(empty($ids)) {
             return __('No reviews selected', 'wp-social-reviews');
         }
 
+        // Optimize: Use whereIn to fetch all reviews in one query instead of N queries
+        $reviewsToDuplicate = Review::whereIn('id', $ids)->get();
+
         $duplicatedCount = 0;
         $createdReviews = [];
         
-        foreach ( $ids as $id) {
-            $review = Review::find($id)->toArray();
+        foreach ($reviewsToDuplicate as $review) {
+            $reviewData = $review->toArray();
+            $reviewData['review_title'] = '(Duplicate)' . $reviewData['review_title'] . ' (#' . $reviewData['id'] . ')';
+            // Remove id to allow auto-increment
+            unset($reviewData['id']);
 
-            $review['review_title'] = '(Duplicate)' . $review['review_title'] . ' (#' . $review['id'] . ')';
-
-            $createdReview = Review::create($review);
+            $createdReview = Review::create($reviewData);
             $createdReviews[] = $createdReview;
             $duplicatedCount++;
             do_action('wpsocialreviews/custom_review_created', $createdReview);
@@ -169,20 +244,23 @@ class RecommendationsController extends Controller
 
     public function delete(Request $request)
     {
-        $ids = $request->get('ids', []);
+        $ids = (array) $request->get('ids', []);
+        $ids = array_map('intval', $ids);
 
         if(empty($ids)) {
             return __('No reviews selected', 'wp-social-reviews');
         }
 
+        // Optimize: Use whereIn to delete in bulk instead of N queries
+        $reviewsToDelete = Review::whereIn('id', $ids)->get();
         $deletedCount = 0;
-        foreach ($ids as $id) {
-            $review = Review::find($id);
-            if ($review && $review->delete()) {
-                do_action('wpsocialreviews/custom_review_deleted', $review);
-                $deletedCount++;
-            }
+
+        foreach ($reviewsToDelete as $review) {
+            do_action('wpsocialreviews/custom_review_deleted', $review);
         }
+
+        // Bulk delete for better performance
+        $deletedCount = Review::whereIn('id', $ids)->delete();
 
         return sprintf(
             // translators: %d is the number of reviews that were deleted
@@ -198,22 +276,32 @@ class RecommendationsController extends Controller
 
     public function statusUpdate(Request $request)
     {
-        $ids = $request->get('ids', []);
-        $status = $request->get('status', 'enable');
-        $type = $request->get('type', 'review');
+        $ids = (array) $request->get('ids', []);
+        $ids = array_map('intval', $ids);
+        $status = sanitize_text_field(wp_unslash((string) $request->get('status', 'enable')));
+        $type = sanitize_text_field(wp_unslash((string) $request->get('type', 'review')));
 
         if (empty($ids)) {
             return __('No reviews selected', 'wp-social-reviews');
         }
 
-        foreach ($ids as $id) {
-            $review = Review::find($id);
-            $review->review_approved = $status === 'enable' ? 1 : 0;
-            $review->save();
+        // Validate status value
+        if (!in_array($status, ['enable', 'disable'])) {
+            return __('Invalid status value', 'wp-social-reviews');
+        }
+
+        // Optimize: Use bulk update instead of N queries
+        $approvedValue = $status === 'enable' ? 1 : 0;
+        Review::whereIn('id', $ids)->update(['review_approved' => $approvedValue]);
+
+        // Trigger action for each review if needed (optional, can be removed if not required)
+        $reviews = Review::whereIn('id', $ids)->get();
+        foreach ($reviews as $review) {
+            do_action('wpsocialreviews/custom_review_updated', $review);
         }
 
         // Dynamic message based on type
-        $message = $type === 'testimonial' 
+        $message = $type === 'testimonial'
             ? __('Testimonials status has been successfully updated', 'wp-social-reviews')
             : __('Reviews status has been successfully updated', 'wp-social-reviews');
 
@@ -222,8 +310,90 @@ class RecommendationsController extends Controller
         ];
     }
 
+    public function spamReviews(Request $request)
+    {
+        $ids = (array) $request->get('ids', []);
+        $ids = array_map('intval', $ids);
+        $action = sanitize_text_field(wp_unslash((string) $request->get('action', 'mark-spam')));
+
+        if (empty($ids)) {
+            return [
+                'message' => __('No reviews selected', 'wp-social-reviews')
+            ];
+        }
+
+        // Validate action value
+        if (!in_array($action, ['mark-spam', 'not-spam'])) {
+            return __('Invalid action value', 'wp-social-reviews');
+        }
+
+        if ($action === 'mark-spam') {
+            // Mark reviews as spam: set review_approved = 2, keep category unchanged
+            Review::whereIn('id', $ids)->update([
+                'review_approved' => 2
+            ]);
+
+            $message = sprintf(
+                _n(
+                    '%d review has been marked as spam',
+                    '%d reviews have been marked as spam',
+                    count($ids),
+                    'wp-social-reviews'
+                ),
+                count($ids)
+            );
+        } else {
+            // Unmark as spam: set review_approved = 0 (pending), keep category unchanged
+            Review::whereIn('id', $ids)->update([
+                'review_approved' => 0
+            ]);
+
+            $message = sprintf(
+                _n(
+                    '%d review has been unmarked as spam',
+                    '%d reviews have been unmarked as spam',
+                    count($ids),
+                    'wp-social-reviews'
+                ),
+                count($ids)
+            );
+        }
+
+        // Trigger action for each review
+        $reviews = Review::whereIn('id', $ids)->get();
+
+        foreach ($reviews as $review) {
+            do_action('wpsocialreviews/custom_review_updated', $review);
+        }
+
+        return [
+            'message' => $message
+        ];
+    }
+
+    /**
+     * Returns the source_ids (native_form_id values) of native review forms
+     * that are registered as custom sources. Delegated to the pro plugin via filter
+     * so the free plugin has no knowledge of custom-source internals.
+     */
+    private function getNativeFormCustomSourceIds(): array
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        $raw = (array) apply_filters('wpsocialreviews/native_form_custom_source_ids', []);
+
+        // Normalize: cast to int, remove zeros/duplicates, re-index.
+        $cache = array_values(array_unique(array_filter(array_map('intval', $raw))));
+
+        return $cache;
+    }
+
     public function sanitize($fields)
     {
+        // Define the sanitization rules. The dot notation is for nested keys.
         $sanitizeRules = [
             'reviewer_name' => 'sanitize_text_field',
             'reviewer_url'  => 'sanitize_url',
@@ -232,29 +402,42 @@ class RecommendationsController extends Controller
             'category'      => 'sanitize_text_field',
             'review_time'   => 'sanitize_text_field',
             'platform_name' => 'sanitize_text_field',
+            'rating'        => 'intval',
             'reviewer_img'  => 'sanitize_url',
+            'review_approved' => 'intval',
             'fields.author_company'         => 'sanitize_text_field',
             'fields.author_position'        => 'sanitize_text_field',
             'fields.author_website_logo'    => 'sanitize_url',
             'fields.author_website_url'     => 'sanitize_url'
         ];
 
-        $review = [];
-        if($fields && is_array($fields)) {
-            foreach ($fields as $dataKey => $dataItem) {
-                if(is_array($fields[$dataKey]) && count($fields[$dataKey]) > 1) {
-                    foreach ($fields[$dataKey] as $subKey => $subItem) {
-                        $key = $dataKey.'.'.$subKey;
-                        $sanitizeFunc = Arr::get($sanitizeRules, $key, 'sanitize_text_field');
-                        $review[$dataKey][$subKey] = $sanitizeFunc($subItem);
-                    }
-                } else {
-                    $sanitizeFunc = Arr::get($sanitizeRules, $dataKey, 'sanitize_text_field');
-                    $review[$dataKey] = $sanitizeFunc($dataItem);
+        $sanitizedReview = [];
+
+        if (empty($fields) || !is_array($fields)) {
+            return $sanitizedReview; // Return empty array if input is not valid
+        }
+
+        foreach ($fields as $key => $value) {
+            // If the value is an array, we need to handle its children recursively
+            if (is_array($value)) {
+                foreach ($value as $subKey => $subValue) {
+                    // Construct the dot-notation key, e.g., 'fields.author_company'
+                    $dotKey = $key . '.' . $subKey;
+
+                    // Get the specific sanitization function or use the default
+                    $sanitizeFunc = Arr::get($sanitizeRules, $dotKey, 'sanitize_text_field');
+
+                    // Apply the function and store it in the new array
+                    $sanitizedReview[$key][$subKey] = $sanitizeFunc($subValue);
                 }
+            } else {
+                // For simple, non-nested values
+                $sanitizeFunc = Arr::get($sanitizeRules, $key, 'sanitize_text_field');
+                $sanitizedReview[$key] = $sanitizeFunc($value);
             }
         }
 
-        return $review;
+        return $sanitizedReview;
     }
 }
+

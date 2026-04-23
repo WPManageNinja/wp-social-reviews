@@ -23,6 +23,9 @@ export const tableMixin = {
             total_items: 0,
             order_by: '',
             endpoint: '',
+            statusFilter: this.$route.query.status || 'all',
+            type: '',
+            sourceId: null
         }
     },
     methods: {
@@ -35,23 +38,37 @@ export const tableMixin = {
         handleSizeChange(val) {
             this.per_page = val;
             this.page_number = 1;
-            this.$router.push({ 
-                path: this.endpoint, 
-                query: { 
-                    page: 1, 
-                    per_page: val 
-                }
-            });
+
+            const query = {
+                page: 1,
+                per_page: val
+            };
+
+            // Preserve statusFilter in route if it's not 'all'
+            if (this.statusFilter && this.statusFilter !== 'all') {
+                query.status = this.statusFilter;
+            }
+
+            this.$router.push({
+                query: query
+            }).catch(() => {});
             this.getItems();
         },
         handleCurrentChange(val) {
             this.page_number = val;
+
+            const query = {
+                page: val,
+                per_page: this.per_page
+            };
+
+            // Preserve statusFilter in route if it's not 'all'
+            if (this.statusFilter && this.statusFilter !== 'all') {
+                query.status = this.statusFilter;
+            }
+
             this.$router.push({
-                path: this.endpoint, 
-                query: { 
-                    page: val, 
-                    per_page: this.per_page 
-                }
+                query: query
             }).catch(() => {});
             this.getItems();
         },
@@ -121,7 +138,8 @@ export const tableMixin = {
                 filter: this.filter_value,
                 type: this.type ? this.type :  this.endpoint.slice(0, -1), // slice for recommendations data controller
                 source_id: this.sourceId ? this.sourceId : null,
-                order_by: this.order_by
+                order_by: this.order_by,
+                status_filter: this.statusFilter || 'all'
             })
                 .then(response => {
                     if ( response ) {
@@ -377,10 +395,110 @@ export const tableMixin = {
                  this.order_by = options.order_by || '';
                  this.type = options.type || '';
                  this.sourceId = options.sourceId || null;
+                 // Only set statusFilter from options if explicitly provided
+                 // Otherwise, keep the value from URL query params (initialized in data())
+                 if (options.status_filter !== undefined) {
+                     this.statusFilter = options.status_filter;
+                 }
              }
 
             this.endpoint = endpoint;
             this.getItems();
+        },
+        changeStatusTab(tab) {
+            this.statusFilter = tab;
+            this.page_number = 1;
+
+            // Build query params
+            const query = {
+                page: 1,
+                per_page: this.per_page
+            };
+
+            // Add status to query if it's not 'all'
+            if (tab && tab !== 'all') {
+                query.status = tab;
+            }
+
+            // Update only the query params, not the path
+            this.$router.push({ query }).catch(() => {});
+            this.getItems();
+        },
+        handleSwitchChange(row, newValue) {
+            // When newValue is '1', we want to enable (approve)
+            // When newValue is '0', we want to disable (disapprove)
+            const newStatus = newValue === '1' ? 'enable' : 'disable';
+
+            // Update the row value first
+            row.review_approved = newValue;
+            this.updateItemStatus(row, newStatus);
+        },
+        /**
+         * Update spam status for a single review
+         * Uses the bulk-spam endpoint for consistency
+         * @param {Object} row - The review row object
+         * @param {Boolean} isSpam - true to mark as spam, false to mark as not spam
+         */
+        updateSpamStatus(row, isSpam) {
+            const action = isSpam ? 'mark-spam' : 'not-spam';
+            this.loading = true;
+
+            this.$put(`${this.endpoint}/spam`, {
+                ids: [row.id || row.ID],
+                action: action
+            }).then(response => {
+                if (response) {
+                    this.handleSuccess(response.message);
+                    this.getItems();
+                }
+            }).catch(errors => {
+                this.handleError(errors);
+            }).always(() => {
+                this.loading = false;
+            });
+        },
+        /**
+         * Update spam status for multiple reviews
+         * @param {Boolean} isSpam - true to mark as spam, false to mark as not spam
+         */
+        bulkUpdateSpamStatus(isSpam) {
+            if (!this.selectedItems || !this.selectedItems.length) {
+                this.$notify.warning('No items selected');
+                return;
+            }
+
+            const selectedIds = this.selectedItems.map(item => item.id || item.ID);
+            const action = isSpam ? 'mark-spam' : 'not-spam';
+            this.loading = true;
+
+            this.$put(`${this.endpoint}/spam`, {
+                ids: selectedIds,
+                action: action
+            }).then(response => {
+                if (response) {
+                    this.handleSuccess(response.message);
+                    this.getItems();
+                    this.selectedItems = [];
+                    this.bulkAction = '';
+                }
+            }).catch(errors => {
+                this.handleError(errors);
+            }).always(() => {
+                this.loading = false;
+            });
+        },
+        // Convenience methods for backward compatibility
+        markAsSpam(row) {
+            this.updateSpamStatus(row, true);
+        },
+        markAsNotSpam(row) {
+            this.updateSpamStatus(row, false);
+        },
+        bulkMarkAsSpam() {
+            this.bulkUpdateSpamStatus(true);
+        },
+        bulkMarkAsNotSpam() {
+            this.bulkUpdateSpamStatus(false);
         },
         handleTableSort(column) {
             if (column.order) {
@@ -425,6 +543,12 @@ export const tableMixin = {
                 case 'approve':
                 case 'disapprove':
                     this.bulkStatusItems();
+                    break;
+                case 'mark-spam':
+                    this.bulkMarkAsSpam();
+                    break;
+                case 'not-spam':
+                    this.bulkMarkAsNotSpam();
                     break;
                 default:
                     this.$notify.warning('Selected action is not supported yet');

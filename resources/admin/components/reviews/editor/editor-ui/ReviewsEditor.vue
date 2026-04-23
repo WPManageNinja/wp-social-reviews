@@ -63,7 +63,7 @@
         <div class="wpsr_editor_edit_item-group">
           <div class="wpsr-editor-edit-item-field" v-if="template_meta.templateType !== 'notification'">
             <transition name="fade">
-              <ImageSelect v-model="template_meta.templateType" :options="templateTypes" :headerTitle="'Layout Type'"/>
+              <ImageSelect v-model="template_meta.templateType" :options="templateTypes" :headerTitle="'Layout Type'" :loading="templateTypeLoading"/>
             </transition>
           </div>
           <div v-if="template_meta.templateType === 'badge'" class="wpsr-editor-edit-item-field">
@@ -76,7 +76,7 @@
               <ImageSelect v-if="available_grid_skins.testimonial_skins && available_grid_skins.reviews_skins"  v-model="template_meta.template" :options="template_meta.platform && template_meta.platform.includes('testimonial') ? available_grid_skins.testimonial_skins : available_grid_skins.reviews_skins"/>
             </transition>
           </div>
-          <div class="wpsr-editor-edit-item-field" v-if="template_meta.templateType !== 'slider'">
+          <div class="wpsr-editor-edit-item-field" v-if="(template_meta.templateType !== 'slider' && template_meta.templateType !== 'badge')">
             <div class="wpsr-filters-row">
               <span class="wpsr-editor-sidebar-section-title wpsr-label-small">Layout Styling</span>
             </div>
@@ -125,7 +125,7 @@
           <MinusIcon v-else/>
         </span>
       </template>
-      <notification-settings :pages="pages" :post_types="post_types" :template_meta="template_meta" @on-change="$emit('fetchReviews')"></notification-settings>
+      <notification-settings :post_types="post_types" :template_meta="template_meta" @on-change="$emit('fetchReviews')"></notification-settings>
     </el-collapse-item>
 
     <el-collapse-item name="5">
@@ -149,7 +149,7 @@
                   :raw-content="true"
                   effect="dark"
                   placement="top-start"
-                  :content="`The responsive number of reviews will only work on your site’s preview/live pages/posts.`"
+                  :content="has_pro ? $t('The responsive number of reviews will only work on your site\'s preview/live pages/posts.') : $t('Upgrade to pro to display unlimited reviews.')"
                 >
                   <el-icon ><InfoFilled /></el-icon>
                 </el-tooltip>
@@ -165,7 +165,7 @@
               <el-input-number
                 v-model="template_meta.totalReviewsNumber[device]"
                 :min="1"
-                :max="1000"
+                :max="has_pro ? 1000 : 10"
                 controls-position="right"
                 size="large"
                 @change="handleChange"
@@ -267,7 +267,7 @@
                 :rows="2"
                 type="textarea"
                 placeholder="Type something and press enter...."
-                @keyup.enter="throttledFetchReviews"
+                @keydown.enter.prevent="throttledFetchReviews"
                 v-model="template_meta.includes_inputs">
               </el-input>
             </div>
@@ -294,7 +294,7 @@
                 :rows="2"
                 type="textarea"
                 placeholder="Type something and press enter...."
-                @keyup.enter="throttledFetchReviews"
+                @keydown.enter.prevent="throttledFetchReviews"
                 v-model="template_meta.excludes_inputs">
               </el-input>
             </div>
@@ -302,14 +302,32 @@
           <div class="wpsr-filters-row">
             <span class="wpsr-editor-inside-left wpsr-element-label wpsr-input-field-label">{{$t('Filter by Business/Product')}} <ProCrownIcon v-if="!has_pro" /></span>
             <div class="wpsr-editor-inside-right">
-              <el-select v-model="template_meta.selectedBusinesses" multiple placeholder="Select business to include" size="small" class="wpsr-text-input">
+              <el-select
+                  class="wpsr-text-input"
+                  v-model="template_meta.selectedBusinesses"
+                  multiple
+                  collapse-tags
+                  collapse-tags-tooltip
+                  placeholder="Select business to include"
+                  @change="throttledFetchReviews"
+                  size="small"
+              >
                 <el-option
                   v-for="(business, key) in business_info"
                   :disabled="!has_pro"
                   :key="key"
-                  :label="(business.name ? $trimWords(business.name, 3, true) + (business.platform_name === 'airbnb' ? ' (' + key + ')' : '') : key) + ' (' + ucFirst(business.platform_name) + ')'"
+                  :label="businessLabel(business, key)"
                   :value="key"
-                />
+                >
+                  <el-tooltip
+                    :content="business.name || key"
+                    effect="dark"
+                    placement="left"
+                    :show-after="0"
+                  >
+                    <span style="display: block; overflow: hidden; text-overflow: ellipsis;">{{ businessLabel(business, key, true) }}</span>
+                  </el-tooltip>
+                </el-option>
               </el-select>
             </div>
           </div>
@@ -594,6 +612,20 @@
             </div>
           </div>
 
+          <div class="wpsr-settings-switch">
+            <span class="wpsr-demonstration wpsr-editor-inside-left wpsr-input-field-label">{{ $t('Show Review Images') }}</span>
+            <div class="wpsr-editor-inside-right">
+              <el-switch
+                  v-model="template_meta.show_review_images"
+                  active-color="#5c8df6"
+                  inactive-color="#b7b7b9"
+                  active-value='true'
+                  inactive-value='false'
+              >
+              </el-switch>
+            </div>
+          </div>
+
           <div class="wpsr-settings-rating" v-if="template_meta.isReviewerText == 'true' && template_meta.platform.includes('google')">
             <span class="wpsr-tooltip-position wpsr-editor-inside-left wpsr-input-field-label">
               <span>
@@ -679,9 +711,11 @@
             </div>
           </div>
 
-          <div class="wpsr-settings-input" v-if="(template_meta.template === 'grid3' || template_meta.template === 'grid8') && (template_meta.platform.includes('fluent_forms') || template_meta.platform.includes('custom') || template_meta.platform.includes('woocommerce'))">
-            <h3 class="wpsr-editor-inside-left wpsr-input-field-label">{{$t('Platform Label :')}}</h3>
-            <div class="wpsr-editor-inside-right"><el-input type="text" placeholder="Ex: Onsite" v-model="template_meta.platform_label" size="small"></el-input></div>
+          <div class="wpsr-filters-row" v-if="(template_meta.template === 'grid3' || template_meta.template === 'grid8') && (template_meta.platform.includes('fluent_forms') || template_meta.platform.includes('custom') || template_meta.platform.includes('woocommerce'))">
+            <span class="wpsr-editor-inside-left wpsr-input-field-label">{{$t('Platform Label')}}</span>
+            <div class="wpsr-editor-inside-right">
+              <el-input type="text" placeholder="Ex: Onsite" v-model="template_meta.platform_label" class="wpsr-text-input wpsr-editor-text-input"></el-input>
+            </div>
           </div>
       </div>
     </el-collapse-item>
@@ -744,25 +778,20 @@
               </el-select>
           </div>
         </div>
-        <div class="wpsr-switch-row">
-          <span class="wpsr-element-label wpsr-editor-inside-left wpsr-input-field-label"><span>{{ $t('Display Logo') }} </span></span>
-          <el-switch class="wpsr-editor-inside-right" :disabled="!this.has_pro" v-model="template_meta.display_header_business_logo" />
-        </div>
-        <div class="wpsr-switch-row">
-          <span class="wpsr-element-label wpsr-editor-inside-left wpsr-input-field-label"><span>{{ $t('Display Title') }} </span></span>
-          <el-switch class="wpsr-editor-inside-right" :disabled="!this.has_pro" v-model="template_meta.display_header_business_name" />
-        </div>
-        <div class="wpsr-switch-row">
-          <span class="wpsr-element-label wpsr-editor-inside-left wpsr-input-field-label"><span>{{ $t('Display Rating') }} </span></span>
-          <el-switch class="wpsr-editor-inside-right" :disabled="!this.has_pro" v-model="template_meta.display_header_rating" />
-        </div>
-        <div class="wpsr-switch-row">
-          <span class="wpsr-element-label wpsr-editor-inside-left wpsr-input-field-label"><span>{{ $t('Display Number of Reviews') }} </span></span>
-          <el-switch class="wpsr-editor-inside-right" :disabled="!this.has_pro" v-model="template_meta.display_header_reviews" />
-        </div>
-        <div class="wpsr-switch-row">
-          <span class="wpsr-element-label wpsr-editor-inside-left wpsr-input-field-label"><span>{{ $t('Display Write a Review Button') }} </span></span>
-          <el-switch class="wpsr-editor-inside-right" :disabled="!this.has_pro" v-model="template_meta.display_header_write_review" />
+        
+        <div 
+          v-for="option in header_options" 
+          :key="option.value" 
+          class="wpsr-switch-row"
+        >
+          <span class="wpsr-element-label wpsr-editor-inside-left wpsr-input-field-label">
+            <span>{{ $t(option.label) }}</span>
+          </span>
+          <el-switch 
+            class="wpsr-editor-inside-right" 
+            :disabled="option.disabled" 
+            v-model="template_meta[option.value]" 
+          />
         </div>
       </div>
 
@@ -950,7 +979,7 @@
       <template #title="{ isActive}">
         <span class="wpsr-editor-title-row">
           <SchemaSnippets class="wpsr-editor-icon" />
-          <span class="wpsr-editor-title-text wpsr-heading-text"> {{ $t('Schema Snippet') }}</span>
+          <span class="wpsr-editor-title-text wpsr-heading-text"> {{ $t('Schema.org Markup') }}</span>
         </span>
         <span class="wpsr-custom-collapse-arrow">
           <PlusIcon v-if="!isActive" />
@@ -958,7 +987,7 @@
         </span>
       </template>
       <div class="wpsr-settings-switch">
-        <span class="wpsr-demonstration wpsr-editor-inside-left">{{ $t('Enable Schema') }}</span>
+        <span class="wpsr-demonstration wpsr-editor-inside-left">{{ $t('Enable Schema.org Markup') }}</span>
         <el-switch
             v-model="template_meta.enable_schema"
             class="wpsr-editor-inside-right"
@@ -977,9 +1006,7 @@
             </svg>
           </el-icon>
         </div>
-        <p>
-          <strong>Note:</strong> You may test your schema snippet is valid or not from <a href="https://developers.google.com/search/docs/advanced/structured-data" target="_blank">here</a>
-        </p>
+        <p><strong>Note:</strong> Schema.org markup for Aggregate Rating helps search engines display overall star ratings and review counts from your review template in search results, increasing trust and click-through rates. Product with Reviews adds detailed product information along with individual reviews from your review template, enabling richer search result snippets that improve visibility and attract more visitors. You may test your schema snippet is valid or not from <a href="https://developers.google.com/search/docs/advanced/structured-data" target="_blank">here</a></p>
       </div>
       <EditorGroup
           v-if="template_meta.enable_schema === 'true'"
@@ -1013,7 +1040,7 @@ import NotificationSettings from "./NotificationSettings";
 import ImageSelect from "../../../core-ui/editor/ImageSelect";
 import EditorGroup from '../../../core-ui/editor/EditorGroup';
 import UpgradeToProButton from '../../../views/advertise/UpgradeToProButton';
-import throttle from 'lodash/throttle';
+import { throttle } from '../../../../utils';
 import PlusIcon from "../../../pieces/icons/PlusIcon";
 import MinusIcon from "../../../pieces/icons/MinusIcon";
 import PlatformIcon from  "../../../pieces/icons/PlatformIcon";
@@ -1038,7 +1065,7 @@ import {PlatformIconMixin} from "../../../../mixins/PlatformIconMixin";
 export default {
   name: "ReviewsEditor",
   mixins: [PlatformIconMixin],
-  props: ['template_meta', 'post_types', 'pages', 'country_list', 'categories', 'platforms', 'all_reviews', 'business_info', 'type', 'types', 'can_enable_ai_summary', 'image_settings', 'available_grid_skins'],
+  props: ['template_meta', 'post_types', 'country_list', 'categories', 'platforms', 'all_reviews', 'business_info', 'type', 'types', 'can_enable_ai_summary', 'image_settings', 'available_grid_skins', 'review_forms'],
   emits: ['update:template_meta', 'fetchReviews', 'saveTemplateMeta', 'toggleAISummary', 'regenerateAISummaryForReviews', 'handleDevice'],
   components: {
     ChatEditorAccordionsIconPack,
@@ -1067,6 +1094,7 @@ export default {
   },
   data() {
     return {
+      template2EligiblePlatforms: ['woocommerce', 'custom', 'fluent_forms', 'fluent-cart'],
       layout_settings: [
         {
           fieldKey: 'responsive_column_number',
@@ -1117,27 +1145,27 @@ export default {
         {
           value: 'display_header_business_logo',
           label: 'Display Logo',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         },
         {
           value: 'display_header_business_name',
           label: 'Display Title',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         },
         {
           value: 'display_header_rating',
           label: 'Display Rating',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         },
         {
           value: 'display_header_reviews',
           label: 'Display Number of Reviews',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         },
         {
           value: 'display_header_write_review',
           label: 'Display Write a Review Button',
-          disabled: this.has_pro
+          disabled: !this.has_pro
         }
       ],
       header_settings: [
@@ -1185,6 +1213,10 @@ export default {
             {
               value: 'custom_url',
               label: 'Custom URL'
+            },
+            {
+              value: 'native_form',
+              label: 'Native Review Form'
             },
             {
               value: 'form_id',
@@ -1251,6 +1283,26 @@ export default {
               }
             ]
           }
+        },
+        {
+          fieldKey: 'war_btn_source_native_form_id',
+          type: 'select',
+          title: this.$t('Select Review Form'),
+          placeholder: this.$t('Select a form'),
+          options: [],
+          condition: {
+            operator: 'multiple',
+            terms: [
+              {
+                key: 'war_btn_source',
+                selector: 'native_form'
+              },
+              {
+                key: 'add_custom_war_btn_url',
+                selector: 'true'
+              }
+            ]
+          }
         }
       ],
       pagination_settings: [
@@ -1282,16 +1334,19 @@ export default {
           }
         },
         {
-          fieldKey: 'paginate',
+          fieldKey: 'paginate_number',
           type: 'number',
-          title: this.$t('Reviews Per Page :'),
+          title: this.$t('Reviews Per Page'),
           min: 1,
-          max: 20,
           flex: true,
+          responsive: true,
+          hide_tablet: true,
           condition: {
             'key': 'pagination_type',
             'selector': 'load_more'
-          }
+          },
+          tooltip: true,
+          tooltipText: this.$t("The Reviews per Page is only visible on preview and live pages/posts, not in the WordPress Editor’s editing mode."),
         },
       ],
       /* templateTypes moved to computed property to allow dynamic filtering based on platform (e.g. hide 'badge' for testimonials) */
@@ -1502,14 +1557,14 @@ export default {
         {
           fieldKey: 'display_platform_icon',
           type: 'switch',
-          title: this.$t('Display Platform Icon :'),
+          title: this.$t('Display Platform Icon '),
           active_value: 'true',
           inactive_value: 'false',
         },
         {
           fieldKey: 'custom_title',
           type: 'text',
-          title: this.$t('Custom Title :'),
+          title: this.$t('Custom Title'),
           placeholder: this.$t('Rating')
         },
         {
@@ -1542,9 +1597,13 @@ export default {
               label: 'Custom Url',
             },
             {
+              value: 'native_form',
+              label: 'Native Review Form',
+            },
+            {
               value: 'form_shortcode_id',
               label: 'Fluent Form Shortcode ID',
-            }
+            },
           ],
         },
         {
@@ -1565,29 +1624,28 @@ export default {
           tooltip: true,
           tooltipText: this.$t("Fluent Forms will only display on your site's preview/live pages/posts <br> not while you're in editing mode in the WordPress Editor."),
           condition: {
-            operator: 'multiple',
-            terms: [
-              {
-                'key': 'war_btn_source',
-                'selector': 'form_id'
-              },
-              {
-                'key': 'add_custom_war_btn_url',
-                'selector': 'true'
-              }
-            ]
+            'key': 'display_mode',
+            'selector': 'form_shortcode_id'
+          }
+        },
+        {
+          fieldKey: 'native_form_id',
+          type: 'select',
+          title: this.$t('Select Review Form'),
+          placeholder: this.$t('Select a form'),
+          options: [],
+          condition: {
+            'key': 'display_mode',
+            'selector': 'native_form'
           }
         },
         {
           fieldKey: 'id',
-          type: 'dynamic_select',
+          type: 'async_multiple_select',
           title: this.$t('Select a redirect page'),
-          options: JSON.parse(JSON.stringify(this.pages)).splice(1),
-          placeholder: this.$t('Select a redirect page'),
-          label: 'title',
-          value: 'id',
+          searchRoute: 'pages/search',
           multiple: false,
-          event: 'on_change',
+          includeEverywhere: false,
           condition: {
             'key': 'display_mode',
             'selector': 'page'
@@ -1685,6 +1743,21 @@ export default {
       ],
       schema_settings: [
         {
+          fieldKey: 'schema_type',
+          type: 'select',
+          title: this.$t('Schema Type'),
+          options: [
+            {
+              value: 'aggregate_rating',
+              label: this.$t('Aggregate Rating')
+            },
+            {
+              value: 'product',
+              label: this.$t('Product with Reviews')
+            }
+          ]
+        },
+        {
           fieldKey: 'business_logo',
           type: 'image',
           title: this.$t('Business Logo'),
@@ -1695,15 +1768,32 @@ export default {
           title: this.$t('Business Name'),
         },
         {
+          fieldKey: 'business_description',
+          type: 'textarea',
+          title: this.$t('Business Description'),
+          condition: {
+            'key': 'schema_type',
+            'selector': 'product'
+          }
+        },
+        {
           fieldKey: 'business_type',
           type: 'text',
           title: this.$t('Business Type'),
-          note: '<strong>Note: </strong>Please provide a valid business/organization type. If you want to know more about business type please visit <a href="https://schema.org/docs/schemas.html" target="_blank">schema.org</a>'
+          note: '<strong>Note: </strong>Please provide a valid business/organization type. If you want to know more about business type please visit <a href="https://schema.org/docs/schemas.html" target="_blank">schema.org</a>',
+          condition: {
+            'key': 'schema_type',
+            'selector': 'aggregate_rating'
+          }
         },
         {
           fieldKey: 'business_telephone',
           type: 'text',
           title: this.$t('Business Phone Number'),
+          condition: {
+            'key': 'schema_type',
+            'selector': 'aggregate_rating'
+          }
         },
         {
           fieldKey: 'include_business_address',
@@ -1711,6 +1801,10 @@ export default {
           title: this.$t('Include Business Address'),
           active_value: 'true',
           inactive_value: 'false',
+          condition: {
+            'key': 'schema_type',
+            'selector': 'aggregate_rating'
+          }
         },
         {
           fieldKey: 'business_street_address',
@@ -1775,6 +1869,20 @@ export default {
           min: 0,
           flex: true,
           title: this.$t('Fallback Total Rating'),
+        },
+        {
+          fieldKey: 'include_reviews_in_schema',
+          type: 'number',
+          min: 0,
+          flex: true,
+          title: this.$t('Number of Reviews to Include'),
+          tooltip: true,
+          tooltipText: '<strong>Note: </strong>Specify how many individual reviews to include in the Product schema. Set to 0 to include only the aggregate rating. <br/>' +
+              'A limited number of reviews is recommended due to schema size and search engine limitations (ideally 1–3, maximum 5).',
+          condition: {
+            'key': 'schema_type',
+            'selector': 'product'
+          }
         }
       ],
       aiSummary: {
@@ -1797,6 +1905,7 @@ export default {
       activeDevice: 'dashicons-desktop',
       platformSelectorLoading: false,
       badgeSkinLoading: false,
+      templateTypeLoading: false,
     }
   },
 
@@ -1806,6 +1915,18 @@ export default {
   },
 
   methods: {
+    businessLabel(business, key, trim = false) {
+      let name = business.name || key;
+      if (trim) {
+        name = this.$trimWords(name, 3, true);
+      }
+      const platform = this.ucFirst(business.platform_name);
+      const needsSuffix = ['airbnb', 'google'].includes(business.platform_name);
+      if (needsSuffix && business.name) {
+        return `${name} (${key}) (${platform})`;
+      }
+      return `${name} (${platform})`;
+    },
     extendStarFilters() {
       let platforms = this.template_meta.platform;
       let star_filters = [];
@@ -1960,12 +2081,9 @@ export default {
         }
       ];
 
-      // Template 2 eligible platforms
-      const template2EligiblePlatforms = ['woocommerce', 'custom', 'fluent_forms'];
-
       // Check if all selected platforms are eligible for Template 2
       const shouldShowTemplate2 = platforms.length > 0 &&
-          platforms.every(platform => template2EligiblePlatforms.includes(platform));
+          platforms.every(platform => this.template2EligiblePlatforms.includes(platform));
 
       if (shouldShowTemplate2) {
         baseTemplates.push({
@@ -1977,6 +2095,39 @@ export default {
     }
   },
   watch: {
+    review_forms: {
+      handler(forms) {
+        const emptyOption = [{
+          value: '',
+          label: this.$t('No review forms found'),
+          disabled: true
+        }];
+        const formOptions = (!forms || !forms.length) ? emptyOption : forms.map(form => ({
+          value: String(form.id),
+          label: form.title
+        }));
+
+        // Populate header "Select Review Form" dropdown
+        const nativeFormField = this.header_settings.find(f => f.fieldKey === 'war_btn_source_native_form_id');
+        if (nativeFormField) {
+          nativeFormField.options = formOptions;
+        }
+        // Ensure stored value is a string to match option values
+        if (this.template_meta.war_btn_source_native_form_id) {
+          this.template_meta.war_btn_source_native_form_id = String(this.template_meta.war_btn_source_native_form_id);
+        }
+
+        // Populate badge "Select Review Form" dropdown
+        const badgeFormField = this.badge_settings.find(f => f.fieldKey === 'native_form_id');
+        if (badgeFormField) {
+          badgeFormField.options = formOptions;
+        }
+        if (this.template_meta.badge_settings && this.template_meta.badge_settings.native_form_id) {
+          this.template_meta.badge_settings.native_form_id = String(this.template_meta.badge_settings.native_form_id);
+        }
+      },
+      immediate: true
+    },
     template_meta: {
       handler(newVal) {
         if (newVal && !this.isUpdating) {
@@ -1991,16 +2142,24 @@ export default {
       deep: true,
       immediate: true
     },
+    'template_meta.templateType': {
+      handler(newVal, oldVal) {
+        // Set loading state when template type changes
+        if (newVal !== oldVal && oldVal !== undefined) {
+          this.templateTypeLoading = true;
+          this.$emit('fetchReviews');
+        }
+      }
+    },
     'template_meta.platform': {
       handler(newPlatforms) {
         // Check if Template2 is currently selected
         if (this.template_meta.header_template === 'template2') {
           const platforms = newPlatforms || [];
-          const template2EligiblePlatforms = ['woocommerce', 'custom', 'fluent_forms'];
 
           // Check if Template2 should no longer be available
           const shouldShowTemplate2 = platforms.length > 0 &&
-              platforms.every(platform => template2EligiblePlatforms.includes(platform));
+              platforms.every(platform => this.template2EligiblePlatforms.includes(platform));
 
           // If Template2 should not be shown, switch to Template1
           if (!shouldShowTemplate2) {
@@ -2013,10 +2172,11 @@ export default {
     all_reviews: {
       handler(newReviews, oldReviews) {
         // Stop loading when reviews data is updated after API call completes
-        if ((this.platformSelectorLoading || this.badgeSkinLoading) && newReviews && newReviews !== oldReviews) {
+        if ((this.platformSelectorLoading || this.badgeSkinLoading || this.templateTypeLoading) && newReviews && newReviews !== oldReviews) {
           this.$nextTick(() => {
             this.platformSelectorLoading = false;
             this.badgeSkinLoading = false;
+            this.templateTypeLoading = false;
           });
         }
       },

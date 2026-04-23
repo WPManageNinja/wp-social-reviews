@@ -122,9 +122,19 @@ export default {
                 if (!this.internalValue[fieldKey]) {
                     this.internalValue[fieldKey] = {};
                 }
-                return this.internalValue[fieldKey][this.device] !== undefined
-                    ? this.internalValue[fieldKey][this.device]
-                    : null;
+                const value = this.internalValue[fieldKey][this.device];
+                
+                if (value === undefined) {
+                    if (fieldKey === 'paginate_number') {
+                        const old = this.internalValue['paginate'];
+                        const fromOld = old !== undefined
+                            ? (typeof old === 'object' ? old[this.device] : old)
+                            : undefined;
+                        return fromOld !== undefined ? fromOld : 6;
+                    }
+                    return null;
+                }
+                return value;
             }
 
             // Get the value from internalValue

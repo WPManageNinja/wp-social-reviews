@@ -6,7 +6,7 @@
             </span>
             <span class="wpsr-upgrade-text">Unlock more features today.</span>
         </div>
-        <a href="https://wpsocialninja.com/?utm_source=wp_site&amp;utm_medium=plugin&amp;utm_campaign=upgrade" target="_blank" class="wpsr-upgrade-link">Upgrade Now</a>
+        <a :href="upgradeButtonUrl" target="_blank" class="wpsr-upgrade-link">{{ upgradeButtonText }}</a>
     </div>
 </template>
 <script type="text/babel">
@@ -24,9 +24,20 @@ export default {
 
     }
   },
+  computed: {
+    upgradeBtnConfig() {
+      return this.appVars?.upgrade_btn_config || {};
+    },
+    upgradeButtonText() {
+      return this.upgradeBtnConfig.text || 'Upgrade Now';
+    },
+    upgradeButtonUrl() {
+      return this.upgradeBtnConfig.pro_purchase_url || 'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade';
+    }
+  },
   methods: {
     upgradeNow() {
-      window.open('https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade', '_blank');
+      window.open(this.upgradeButtonUrl, '_blank');
     }
   }
 }

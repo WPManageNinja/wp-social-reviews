@@ -37,7 +37,7 @@
                       </p>
                   </div>
                   <div class="wpsr-twitter-user-contact" v-if="header_settings.show_location === 'true' && header.location ">
-                      <i class="el-icon-location-outline"></i> <span>{{ header.location }}</span>
+                    <el-icon><Location /></el-icon> <span>{{ header.location }}</span>
                   </div>
                   <div class="wpsr-twitter-user-statistics">
                       <div class="wpsr-twitter-user-statistics-item" v-if="header_settings.show_total_tweets === 'true'">

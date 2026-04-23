@@ -103,6 +103,83 @@
     }
   }
 }
+
+.wpsr-menu-dropdown {
+  position: relative;
+  display: inline-flex;
+  .wpsr-menu-dropdown-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .wpsr-menu-dropdown-arrow {
+    transition: transform 0.2s ease;
+  }
+  .wpsr-menu-dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 160px;
+    background-color: var(--wpsr-primary-bg, #fff);
+    border: 1px solid var(--wpsr-primary-border, #E1E4EA);
+    border-radius: var(--wpsr-radius-md, 8px);
+    box-shadow: 0 4px 16px rgba(14, 18, 27, 0.10);
+    padding: 4px;
+    z-index: 100;
+    padding-top: 8px;
+    &::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: 0;
+      right: 0;
+      height: 8px;
+    }
+  }
+  .wpsr-menu-dropdown-item {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px !important;
+    margin-right: 0 !important;
+    border-radius: var(--wpsr-radius-intermediate, 6px) !important;
+    white-space: nowrap;
+    font-size: 13px !important;
+    &:hover {
+      background-color: var(--wpsr-secondary-bg, #F5F7FA) !important;
+    }
+    &.wpsr-tab-active {
+      background-color: var(--wpsr-secondary-menu-active-bg, #EEE9FB) !important;
+      color: var(--wpsr-secondary-menu-active-text, #5525D9) !important;
+    }
+  }
+
+  .wpsr-menu-keyword {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--wpsr-primary-btn-bg, #5525D9);
+    color: var(--wpsr-primary-btn-text, #fff);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  &:hover {
+    .wpsr-menu-dropdown-content {
+      display: block;
+    }
+    .wpsr-menu-dropdown-arrow {
+      transform: rotate(180deg);
+    }
+  }
+}
+
 .wpsr-platform-tabs {
   display: flex;
   justify-content: space-between;
@@ -237,20 +314,20 @@
 .wpsr_dashboard_notice{
   margin-bottom: 20px;
   margin-top: 20px;
-  background: #fff;
+  background: var(--wpsr-primary-bg, #fff);
   padding: 10px;
   box-shadow: 0px 2px 21px 0px rgb(0 0 0 / 8%);
   padding-left: 15px;
   position: relative;
   margin-left: 20px;
   margin-right: 20px;
+  border-radius: 12px;
   .wpsr_hide_pro_upgrade_notice{
     position: absolute;
     right: 8px;
     top: 8px;
     cursor: pointer;
-    font-size: 22px;
-    color: #626463;
+    font-size: 18px;
   }
 }
 .wpsr_review_notice{
@@ -268,14 +345,17 @@
     padding: 0;
     margin-top: 0;
     margin-bottom: 5px;
+    color: var(--wpsr-heading-text, #0E121B);
   }
   p{
     padding: 0;
     margin: 0;
-    font-size: 15px;
+    font-size: 14px;
+    color: var(--wpsr-primary-text, #525866);
     a{
       text-decoration: none;
       font-weight: 400;
+      color: var(--wpsr-secondary-menu-active-text, #5525D9);
       &:focus,
       &:hover{
         outline: none;
@@ -289,34 +369,25 @@
     }
   }
   .wpsr_review_notice_actions{
-    margin-top: 5px;
+    margin-top: 10px;
     a{
       padding: 5px;
-      border: 1px solid #5525d9;
+      border: 1px solid var(--wpsr-primary-border, #E1E4EA);
       border-radius: 4px;
       display: inline-block;
       text-decoration: none;
       margin-right: 5px;
       cursor: pointer;
+      color: var(--wpsr-primary-text, #525866);
+      font-weight: 400;
       &.wpsr_review_notice_deserve_it{
         background-color: #1e1eb9;
         color: #fff;
       }
     }
     .wpsr_newsletter_subscribe{
-      border: 1px solid #5525d9;
-      border-radius: 4px;
-      display: flex;
-      background-color: #1e1eb9;
-      color: #fff;
-      height: 30px;
-      align-items: center;
+      height: 34px;
       padding: 10px 50px;
-      opacity: 0.8;
-      &:hover,
-      &:focus{
-        opacity: 0.7;
-      }
     }
   }
   .wpsr_review_notice_close_icon{
@@ -326,12 +397,9 @@
   }
 }
 .wpsr_dashboard_newsletter{
-  border-radius: 6px;
+  border-radius: 12px;
   margin-bottom: 0;
   padding: 15px 10px 20px 15px;
-  h3{
-    font-size: 18px;
-  }
   .wpsr_review_notice_actions{
     display: flex;
     align-items: center;
@@ -341,7 +409,7 @@
       flex: 1 auto;
     }
     span.label{
-      padding-bottom: 3px;
+      padding-bottom: 4px;
       display: block;
       font-size: 13px;
     }

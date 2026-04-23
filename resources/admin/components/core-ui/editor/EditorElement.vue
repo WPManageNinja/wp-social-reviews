@@ -53,7 +53,7 @@
 
         <div v-else-if="field.type !== 'image_select'" class="wpsr-editor-inside-left wpsr-input-field-label" 
             :class="[
-                    (field.type != 'textarea' && field.type != 'multiple_select') ? 'wpsr-element-center' : 'wpsr-align-top',
+                    (field.type != 'textarea' && field.type != 'multiple_select' && field.type != 'async_multiple_select') ? 'wpsr-element-center' : 'wpsr-align-top',
                     field.disabled ? 'wpsr-element-label' : ''
                 ]"
             >
@@ -138,7 +138,7 @@
       </div>
     </div> -->
 
-        <input v-if="field.type === 'classic_number'"
+        <el-input v-if="field.type === 'classic_number'"
             type="number"
             v-model="localValue"
             @input="handleInputChange"
@@ -146,8 +146,9 @@
             :max="field.max"
             :placeholder="field.placeholder ? field.placeholder : ''"
             :disabled="(field.disabled === false) ? true : false"
-            class="wpsr-classic-number wpsr-editor-inside-right"
+            class="wpsr-editor-inside-right wpsr-classic-number-filed wpsr-text-input wpsr-editor-text-input"
         >
+        </el-input>
         <!-- <el-input-number v-if="field.type  === 'number'"
             :min="field.min"
             :max="field.min"
@@ -220,7 +221,7 @@
             format="hh:mm:ss A"
             value-format="hh:mm:ss A"
             placeholder="Set your time"
-            class="wpsr-editor-inside-right">
+            class="wpsr-editor-inside-right wpsr-text-input wpsr-editor-text-input">
         </el-time-picker>
 
         <el-date-picker
@@ -230,7 +231,7 @@
             type="date"
             :disabled="field.disabled"
             placeholder="Pick a day"
-            class="wpsr-editor-inside-right">
+            class="wpsr-editor-inside-right wpsr-text-input wpsr-editor-text-input">
         </el-date-picker>
 
         <el-switch
@@ -301,6 +302,16 @@
         </el-select>
         </div>
 
+        <div class="wpsr-editor-inside-right" v-if="field.type === 'async_multiple_select'">
+            <AsyncMultipleSelect
+                v-model="localValue"
+                :searchRoute="field.searchRoute"
+                :disabled="field.disabled"
+                :multiple="field.multiple !== undefined ? field.multiple : true"
+                :includeEverywhere="field.includeEverywhere !== undefined ? field.includeEverywhere : true"
+            />
+        </div>
+
 
         <div class="wpsr-editor-inside-right" v-if="field.type === 'dynamic_select'">
         <el-select
@@ -355,7 +366,7 @@
           </el-checkbox>
           <el-tooltip style="margin-left: 10px" v-if="field.checkboxTooltip" class="item" effect="dark" placement="right-start">
             <template #content><div v-html="field.checkboxTooltipText"></div></template>
-            <i class="el-icon-info"></i>
+            <el-icon><InfoFilled /></el-icon>
           </el-tooltip>
         </div>
 
@@ -375,6 +386,7 @@
 import WpEditor from './WpEditor';
 import PhotoUploader from './PhotoUploader';
 import ImageSelect from "./ImageSelect";
+import AsyncMultipleSelect from "./AsyncMultipleSelect";
 import ResponsiveBar from './ResponsiveBar';
 import PlusIcon from '../../pieces/icons/PlusIcon';
 import MinusIcon from '../../pieces/icons/MinusIcon';
@@ -444,6 +456,7 @@ export default {
         WpEditor,
         PhotoUploader,
         ImageSelect,
+        AsyncMultipleSelect,
         ResponsiveBar,
         PlusIcon,
         MinusIcon,
@@ -464,7 +477,7 @@ export default {
                 return 'wpsr-settings-switch';
             } else if(field.type === 'wp_editor'){
                 return 'wpsr-field-flex-column wpsr-wp-editor'
-            } else if(field.type === 'multiple_select' || field.type === 'dynamic_select'){
+            } else if(field.type === 'multiple_select' || field.type === 'dynamic_select' || field.type === 'async_multiple_select'){
                 return 'wpsr-settings-select';
             } else if(field.type === 'checkbox_group' && field.display === 'grid'){
                 return 'wpsr-filters-row-grid';
@@ -486,7 +499,26 @@ export default {
         },
 
         handleInputChange(e) {
-            let val = Number(e.target.value);
+            // Handle both event object and direct value
+            let inputValue;
+            if (e && e.target && e.target.value !== undefined) {
+                // Standard event object
+                inputValue = e.target.value;
+            } else if (e !== undefined && e !== null) {
+                // Direct value passed (Element UI/Element Plus behavior)
+                inputValue = e;
+            } else {
+                // Fallback to localValue if nothing is provided
+                inputValue = this.localValue || 0;
+            }
+            
+            let val = Number(inputValue);
+            
+            // Handle NaN case
+            if (isNaN(val)) {
+                val = this.localValue || 0;
+            }
+            
             if(this.field.max && val > this.field.max) {
                 val = this.field.max;
                 this.$notify({

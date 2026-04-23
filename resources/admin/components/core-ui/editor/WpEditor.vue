@@ -53,7 +53,7 @@ export default {
     },
     toolbar: {
       type: String,
-      default: 'link,blockquote,alignleft,aligncenter,alignright,underline,strikethrough,forecolor,removeformat,codeformat,outdent,indent'
+      default: 'bold,italic,link,blockquote,alignleft,aligncenter,alignright,underline,strikethrough,forecolor,removeformat,codeformat,outdent,indent'
     }
   },
   data() {
@@ -116,6 +116,7 @@ export default {
       wp.editor.initialize(this.editor_id, {
         mediaButtons: this.media_buttons,
         quicktags: this.quick_tags,
+        wpautop: false,
         tinymce: {
           height : that.height,
           toolbar1: this.toolbar,
@@ -177,6 +178,10 @@ export default {
         const bookmark = editor.selection.getBookmark(2, true);
         content = editor.getContent();
         content = content.replace(/\r?\n/g, '');
+        // Normalize excessive consecutive <br> tags (3+ becomes 2)
+        content = content.replace(/(<br\s*\/?\s*>(\s|&nbsp;)*){3,}/gi, '<br><br>');
+        // Remove trailing <br> tags
+        content = content.replace(/(<br\s*\/?\s*>\s*)+$/gi, '');
         this.$emit('update:modelValue', content);
         // Restore selection after content update
         editor.selection.moveToBookmark(bookmark);

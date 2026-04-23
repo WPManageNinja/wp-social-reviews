@@ -20,44 +20,6 @@ class Config
         $has_pro = defined('WPSOCIALREVIEWS_PRO') && WPSOCIALREVIEWS_PRO;
 
         return array(
-            'star_rating' => array(
-                'title' => __('Star Rating', 'wp-social-reviews'),
-                'key' => 'star_rating',
-                array(
-                    'title' => __('Filled Star', 'wp-social-reviews'),
-                    'key' => 'filled_star_rating',
-                    'divider' => true,
-                    'typography' => false,
-                    'padding' => false,
-                    'border' => false,
-                    'styles' => array(
-                        array(
-                            'title' => __('Filled Star Color:', 'wp-social-reviews'),
-                            'fieldKey' => 'background_color',
-                            'type' => 'color_picker',
-                            'flex' => true,
-                            'disabled' => !$has_pro,
-                        )
-                    )
-                ),
-                array(
-                    'title' => __('Empty Star', 'wp-social-reviews'),
-                    'key' => 'empty_star_rating',
-                    'divider' => false,
-                    'typography' => false,
-                    'padding' => false,
-                    'border' => false,
-                    'styles' => array(
-                        array(
-                            'title' => __('Empty Star Color:', 'wp-social-reviews'),
-                            'fieldKey' => 'background_color',
-                            'type' => 'color_picker',
-                            'flex' => true,
-                            'disabled' => !$has_pro,
-                        )
-                    )
-                ),
-            ),
             'header' => array(
                 'title' => __('Header', 'wp-social-reviews'),
                 'key' => 'header',
@@ -141,6 +103,37 @@ class Config
                     )
                 ),
                 array(
+                    'title' => __('Button Hover Style', 'wp-social-reviews'),
+                    'key' => 'review_button_hover',
+                    'divider' => true,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Hover Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title' => __('Background Hover Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'background_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title' => __('Border Hover Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'border_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
                     'title' => __('Progress Bar', 'wp-social-reviews'),
                     'key' => 'header_progress_bar_fill',
                     'divider' => false,
@@ -204,10 +197,12 @@ class Config
                 array(
                     'title' => __('Box', 'wp-social-reviews'),
                     'key' => 'business_info_wrapper',
-                    'divider' => false,
+                    'divider' => true,
                     'typography' => false,
                     'padding' => true,
                     'border' => true,
+                    'border_radius' => true,
+                    'box_shadow' => true,
                     'styles' => array(
                         array(
                             'title' => __('Background Color:', 'wp-social-reviews'),
@@ -216,6 +211,85 @@ class Config
                             'flex' => true,
                             'disabled' => !$has_pro,
                         )
+                    )
+                ),
+                array(
+                    'title' => __('Box Hover Style', 'wp-social-reviews'),
+                    'key' => 'business_info_wrapper_hover',
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Hover Background Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'background_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title' => __('Hover Border Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'border_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+            ),
+            'star_rating' => array(
+                'title' => __('Star Rating', 'wp-social-reviews'),
+                'key' => 'star_rating',
+                array(
+                    'title' => __('Filled Star', 'wp-social-reviews'),
+                    'key' => 'filled_star_rating',
+                    'divider' => true,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Filled Star Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'background_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Empty Star', 'wp-social-reviews'),
+                    'key' => 'empty_star_rating',
+                    'divider' => true,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Empty Star Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'background_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Hover Style', 'wp-social-reviews'),
+                    'key' => 'filled_star_rating_hover',
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Filled Star Hover Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'background_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        ),
                     )
                 ),
             ),
@@ -244,13 +318,30 @@ class Config
                 ),
                 array(
                     'key' => 'reviewer_name_wrapper',
-                    'divider' => false,
+                    'divider' => true,
                     'typography' => false,
                     'padding' => false,
                     'border' => false,
                     'slider' => array(
                         'title' => __('Spacing Top', 'wp-social-reviews'),
                     ),
+                ),
+                array(
+                    'title' => __('Hover Style', 'wp-social-reviews'),
+                    'key' => 'reviewer_hover',
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Hover Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
                 ),
             ),
             'verified_badge' => array(
@@ -341,7 +432,7 @@ class Config
                 ),
                 array(
                     'key' => 'review_date',
-                    'divider' => false,
+                    'divider' => true,
                     'typography' => true,
                     'padding' => false,
                     'border' => false,
@@ -351,6 +442,23 @@ class Config
                     'styles' => array(
                         array(
                             'title' => __('Text Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Hover Style', 'wp-social-reviews'),
+                    'key' => 'review_date_hover',
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Hover Color:', 'wp-social-reviews'),
                             'fieldKey' => 'text_color',
                             'type' => 'color_picker',
                             'flex' => true,
@@ -368,7 +476,7 @@ class Config
                 ),
                 array(
                     'key' => 'review_title',
-                    'divider' => false,
+                    'divider' => true,
                     'typography' => true,
                     'padding' => false,
                     'border' => false,
@@ -378,6 +486,23 @@ class Config
                     'styles' => array(
                         array(
                             'title' => __('Text Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Hover Style', 'wp-social-reviews'),
+                    'key' => 'review_title_hover',
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Hover Color:', 'wp-social-reviews'),
                             'fieldKey' => 'text_color',
                             'type' => 'color_picker',
                             'flex' => true,
@@ -395,7 +520,7 @@ class Config
                 ),
                 array(
                     'key' => 'content',
-                    'divider' => false,
+                    'divider' => true,
                     'typography' => true,
                     'padding' => false,
                     'border' => false,
@@ -411,7 +536,24 @@ class Config
                             'disabled' => !$has_pro,
                         )
                     )
-                )
+                ),
+                array(
+                    'title' => __('Hover Style', 'wp-social-reviews'),
+                    'key' => 'content_hover',
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Hover Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
             ),
             'read_more_less' => array(
                 'title' => __('Read More/Less', 'wp-social-reviews'),
@@ -422,7 +564,7 @@ class Config
                 ),
                 array(
                     'key' => 'read_more_less',
-                    'divider' => false,
+                    'divider' => true,
                     'typography' => true,
                     'padding' => false,
                     'border' => false,
@@ -435,7 +577,24 @@ class Config
                             'disabled' => !$has_pro,
                         ),
                     )
-                )
+                ),
+                array(
+                    'title' => __('Hover Style', 'wp-social-reviews'),
+                    'key' => 'read_more_less_hover',
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Hover Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
             ),
             'platform' => array(
                 'title' => __('Platform Name', 'wp-social-reviews'),
@@ -533,6 +692,8 @@ class Config
                     'typography' => true,
                     'padding' => true,
                     'border' => true,
+                    'border_radius' => true,
+                    'box_shadow' => true,
                     'styles' => array(
                         array(
                             'title' => __('Background Color:', 'wp-social-reviews'),
@@ -623,9 +784,11 @@ class Config
                     'title' => __('Box', 'wp-social-reviews'),
                     'key' => 'notification_wrapper_box',
                     'divider' => false,
-                    'typography' => true,
+                    'typography' => false,
                     'padding' => true,
                     'border' => true,
+                    'border_radius' => true,
+                    'box_shadow' => true,
                     'styles' => array(
                         array(
                             'title' => __('Background Color:', 'wp-social-reviews'),
@@ -646,10 +809,11 @@ class Config
                 ),
                 array(
                     'key' => 'pagination',
-                    'divider' => false,
+                    'divider' => true,
                     'typography' => true,
                     'padding' => true,
                     'border' => true,
+                    'border_radius' => true,
                     'styles' => array(
                         array(
                             'title' => __('Text Color:', 'wp-social-reviews'),
@@ -667,20 +831,77 @@ class Config
                         ),
                     )
                 ),
+                array(
+                    'title' => __('Hover Style', 'wp-social-reviews'),
+                    'key' => 'pagination_hover',
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Hover Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title' => __('Background Hover Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'background_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title' => __('Border Hover Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'border_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
             ),
             'review_box' => array(
                 'title' => __('Review Box', 'wp-social-reviews'),
                 'key' => 'review_box',
                 array(
                     'key' => 'review_box',
-                    'divider' => false,
+                    'divider' => true,
                     'typography' => false,
                     'padding' => true,
                     'border' => true,
+                    'border_radius' => true,
+                    'box_shadow' => true,
                     'styles' => array(
                         array(
                             'title' => __('Background Color:', 'wp-social-reviews'),
                             'fieldKey' => 'background_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Hover Style', 'wp-social-reviews'),
+                    'key' => 'review_box_hover',
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Hover Background Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'background_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title' => __('Hover Border Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'border_color',
                             'type' => 'color_picker',
                             'flex' => true,
                             'disabled' => !$has_pro,
@@ -711,6 +932,12 @@ class Config
                     'selector' => $prefix . ' .wpsr-star-container .wpsr-star-empty, ' . $badgePrefix . ' .wpsr-star-container .wpsr-star-empty',
                     'color' => array(
                         'background_color' => Arr::get($settings, 'styles.empty_star_rating.color.background_color', '')
+                    ),
+                ),
+                'filled_star_rating_hover' => array(
+                    'selector' => $prefix . ' .wpsr-review-template:hover .wpsr-star-container .wpsr-star-filled, ' . $badgePrefix . ' .wpsr-review-template:hover .wpsr-star-container .wpsr-star-filled',
+                    'color' => array(
+                        'background_color' => Arr::get($settings, 'styles.filled_star_rating_hover.color.background_color', '')
                     ),
                 ),
                 'rating_title' => array(
@@ -822,6 +1049,14 @@ class Config
                         'text_decoration' => Arr::get($settings, 'styles.review_button.typography.text_decoration', ''),
                     ),
                 ),
+                'review_button_hover' => array(
+                    'selector' => $prefix . ' .wpsr-business-info .wpsr-business-info-right a:hover',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.review_button_hover.color.text_color', ''),
+                        'background_color' => Arr::get($settings, 'styles.review_button_hover.color.background_color', ''),
+                        'border_color' => Arr::get($settings, 'styles.review_button_hover.color.border_color', ''),
+                    ),
+                ),
                 'business_info_wrapper' => array(
                     'selector' => $prefix . ' .wpsr-fixed-height .wpsr-business-info',
                     'color' => array(
@@ -874,6 +1109,45 @@ class Config
                         'linked' => Arr::get($settings, 'styles.business_info_wrapper.border.linked', false),
                         'border_style' => Arr::get($settings, 'styles.business_info_wrapper.border.border_style', ''),
                         'border_color' => Arr::get($settings, 'styles.business_info_wrapper.border.border_color', ''),
+                    ),
+                    'border_radius' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings, 'styles.business_info_wrapper.border_radius.top.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.business_info_wrapper.border_radius.top.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.business_info_wrapper.border_radius.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings, 'styles.business_info_wrapper.border_radius.right.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.business_info_wrapper.border_radius.right.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.business_info_wrapper.border_radius.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings, 'styles.business_info_wrapper.border_radius.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.business_info_wrapper.border_radius.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.business_info_wrapper.border_radius.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings, 'styles.business_info_wrapper.border_radius.left.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.business_info_wrapper.border_radius.left.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.business_info_wrapper.border_radius.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings, 'styles.business_info_wrapper.border_radius.linked', false),
+                    ),
+                    'box_shadow' => array(
+                        'box_shadow_style' => Arr::get($settings, 'styles.business_info_wrapper.box_shadow.box_shadow_style', 'none'),
+                        'horizontal' => Arr::get($settings, 'styles.business_info_wrapper.box_shadow.horizontal', ''),
+                        'vertical' => Arr::get($settings, 'styles.business_info_wrapper.box_shadow.vertical', ''),
+                        'blur' => Arr::get($settings, 'styles.business_info_wrapper.box_shadow.blur', ''),
+                        'spread' => Arr::get($settings, 'styles.business_info_wrapper.box_shadow.spread', ''),
+                        'color' => Arr::get($settings, 'styles.business_info_wrapper.box_shadow.color', ''),
+                        'inset' => Arr::get($settings, 'styles.business_info_wrapper.box_shadow.inset', 'no'),
+                    ),
+                ),
+                'business_info_wrapper_hover' => array(
+                    'selector' => $prefix . ' .wpsr-business-info:hover',
+                    'color' => array(
+                        'background_color' => Arr::get($settings, 'styles.business_info_wrapper_hover.color.background_color', ''),
+                        'border_color' => Arr::get($settings, 'styles.business_info_wrapper_hover.color.border_color', ''),
                     ),
                 ),
                 'header_progress_bar_fill' => array(
@@ -949,6 +1223,12 @@ class Config
                         'text_decoration' => Arr::get($settings, 'styles.reviewer.typography.text_decoration', ''),
                     ),
                 ),
+                'reviewer_hover' => array(
+                    'selector' => $prefix . ' .wpsr-review-template:hover .wpsr-review-info .wpsr-reviewer-name-url .wpsr-reviewer-name',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.reviewer_hover.color.text_color', ''),
+                    ),
+                ),
                 'author_position' => array(
                     'selector' => $prefix . ' .wpsr-testimonial-template-one .wpsr-review-header .wpsr-review-info .wpsr-reviewer-position',
                     'color' => array(
@@ -1015,6 +1295,12 @@ class Config
                             'tablet' => Arr::get($settings, 'styles.review_title.slider.bottom.tablet', 0),
                             'mobile' => Arr::get($settings, 'styles.review_title.slider.bottom.mobile', 0),
                         ),
+                    ),
+                ),
+                'review_title_hover' => array(
+                    'selector' => $prefix . ' .wpsr-review-template:hover .wpsr-review-title',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.review_title_hover.color.text_color', ''),
                     ),
                 ),
                 'reviewer_name_wrapper' => array(
@@ -1094,6 +1380,12 @@ class Config
                         'text_decoration' => Arr::get($settings, 'styles.read_more_less.typography.text_decoration', ''),
                     ),
                 ),
+                'read_more_less_hover' => array(
+                    'selector' => $prefix . ' .wpsr_add_read_more .wpsr_read_more:hover, ' . $prefix . ' .wpsr_add_read_more .wpsr_read_less:hover',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.read_more_less_hover.color.text_color', ''),
+                    ),
+                ),
                 'content' => array(
                     'selector' => $prefix . ' .wpsr-review-template .wpsr-review-content p',
                     'color' => array(
@@ -1126,6 +1418,12 @@ class Config
                             'tablet' => Arr::get($settings, 'styles.content.slider.top.tablet', 0),
                             'mobile' => Arr::get($settings, 'styles.content.slider.top.mobile', 0),
                         ),
+                    ),
+                ),
+                'content_hover' => array(
+                    'selector' => $prefix . ' .wpsr-review-template .wpsr-review-content p:hover',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.content_hover.color.text_color', ''),
                     ),
                 ),
                 'review_date' => array(
@@ -1162,6 +1460,12 @@ class Config
                         ),
                     ),
 
+                ),
+                'review_date_hover' => array(
+                    'selector' => $prefix . ' .wpsr-review-template:hover .wpsr-review-date',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.review_date_hover.color.text_color', ''),
+                    ),
                 ),
                 'review_box' => array(
                     'selector' => $prefix . ' .wpsr-review-template',
@@ -1216,7 +1520,45 @@ class Config
                         'border_style' => Arr::get($settings, 'styles.review_box.border.border_style', ''),
                         'border_color' => Arr::get($settings, 'styles.review_box.border.border_color', ''),
                     ),
-
+                    'border_radius' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings, 'styles.review_box.border_radius.top.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.review_box.border_radius.top.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.review_box.border_radius.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings, 'styles.review_box.border_radius.right.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.review_box.border_radius.right.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.review_box.border_radius.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings, 'styles.review_box.border_radius.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.review_box.border_radius.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.review_box.border_radius.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings, 'styles.review_box.border_radius.left.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.review_box.border_radius.left.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.review_box.border_radius.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings, 'styles.review_box.border_radius.linked', false),
+                    ),
+                    'box_shadow' => array(
+                        'box_shadow_style' => Arr::get($settings, 'styles.review_box.box_shadow.box_shadow_style', 'none'),
+                        'horizontal' => Arr::get($settings, 'styles.review_box.box_shadow.horizontal', ''),
+                        'vertical' => Arr::get($settings, 'styles.review_box.box_shadow.vertical', ''),
+                        'blur' => Arr::get($settings, 'styles.review_box.box_shadow.blur', ''),
+                        'spread' => Arr::get($settings, 'styles.review_box.box_shadow.spread', ''),
+                        'color' => Arr::get($settings, 'styles.review_box.box_shadow.color', ''),
+                        'inset' => Arr::get($settings, 'styles.review_box.box_shadow.inset', 'no'),
+                    ),
+                ),
+                'review_box_hover' => array(
+                    'selector' => $prefix . ' .wpsr-review-template:hover',
+                    'color' => array(
+                        'background_color' => Arr::get($settings, 'styles.review_box_hover.color.background_color', ''),
+                        'border_color' => Arr::get($settings, 'styles.review_box_hover.color.border_color', ''),
+                    ),
                 ),
                 'badge_title' => array(
                     'selector' => $badgePrefix . ' .wpsr-reviews-badge-wrapper-inner .wpsr-business-info-logo span',
@@ -1352,7 +1694,38 @@ class Config
                         'border_style' => Arr::get($settings, 'styles.badge_wrapper_box.border.border_style', ''),
                         'border_color' => Arr::get($settings, 'styles.badge_wrapper_box.border.border_color', ''),
                     ),
-
+                    'border_radius' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings, 'styles.badge_wrapper_box.border_radius.top.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.badge_wrapper_box.border_radius.top.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.badge_wrapper_box.border_radius.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings, 'styles.badge_wrapper_box.border_radius.right.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.badge_wrapper_box.border_radius.right.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.badge_wrapper_box.border_radius.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings, 'styles.badge_wrapper_box.border_radius.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.badge_wrapper_box.border_radius.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.badge_wrapper_box.border_radius.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings, 'styles.badge_wrapper_box.border_radius.left.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.badge_wrapper_box.border_radius.left.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.badge_wrapper_box.border_radius.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings, 'styles.badge_wrapper_box.border_radius.linked', false),
+                    ),
+                    'box_shadow' => array(
+                        'box_shadow_style' => Arr::get($settings, 'styles.badge_wrapper_box.box_shadow.box_shadow_style', 'none'),
+                        'horizontal' => Arr::get($settings, 'styles.badge_wrapper_box.box_shadow.horizontal', ''),
+                        'vertical' => Arr::get($settings, 'styles.badge_wrapper_box.box_shadow.vertical', ''),
+                        'blur' => Arr::get($settings, 'styles.badge_wrapper_box.box_shadow.blur', ''),
+                        'spread' => Arr::get($settings, 'styles.badge_wrapper_box.box_shadow.spread', ''),
+                        'color' => Arr::get($settings, 'styles.badge_wrapper_box.box_shadow.color', ''),
+                        'inset' => Arr::get($settings, 'styles.badge_wrapper_box.box_shadow.inset', 'no'),
+                    ),
                 ),
                 'notification_close_icon' => array(
                     'selector' => $notificationPrefix . '.wpsr-reviews-notification-card-wrapper .wpsr-close svg path',
@@ -1494,7 +1867,38 @@ class Config
                         'border_style' => Arr::get($settings, 'styles.notification_wrapper_box.border.border_style', ''),
                         'border_color' => Arr::get($settings, 'styles.notification_wrapper_box.border.border_color', ''),
                     ),
-
+                    'border_radius' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_wrapper_box.border_radius.top.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_wrapper_box.border_radius.top.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_wrapper_box.border_radius.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_wrapper_box.border_radius.right.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_wrapper_box.border_radius.right.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_wrapper_box.border_radius.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_wrapper_box.border_radius.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_wrapper_box.border_radius.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_wrapper_box.border_radius.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_wrapper_box.border_radius.left.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_wrapper_box.border_radius.left.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_wrapper_box.border_radius.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings, 'styles.notification_wrapper_box.border_radius.linked', false),
+                    ),
+                    'box_shadow' => array(
+                        'box_shadow_style' => Arr::get($settings, 'styles.notification_wrapper_box.box_shadow.box_shadow_style', 'none'),
+                        'horizontal' => Arr::get($settings, 'styles.notification_wrapper_box.box_shadow.horizontal', ''),
+                        'vertical' => Arr::get($settings, 'styles.notification_wrapper_box.box_shadow.vertical', ''),
+                        'blur' => Arr::get($settings, 'styles.notification_wrapper_box.box_shadow.blur', ''),
+                        'spread' => Arr::get($settings, 'styles.notification_wrapper_box.box_shadow.spread', ''),
+                        'color' => Arr::get($settings, 'styles.notification_wrapper_box.box_shadow.color', ''),
+                        'inset' => Arr::get($settings, 'styles.notification_wrapper_box.box_shadow.inset', 'no'),
+                    ),
                 ),
                 'pagination' => array(
                     'selector' => $prefix . ' .wpsr-reviews-loadmore span',
@@ -1571,9 +1975,41 @@ class Config
                         'border_style' => Arr::get($settings, 'styles.pagination.border.border_style', ''),
                         'border_color' => Arr::get($settings, 'styles.pagination.border.border_color', ''),
                     ),
+                    'border_radius' => array(
+                        'top' => array(
+                            'desktop' => Arr::get($settings, 'styles.pagination.border_radius.top.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.pagination.border_radius.top.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.pagination.border_radius.top.mobile', ''),
+                        ),
+                        'right' => array(
+                            'desktop' => Arr::get($settings, 'styles.pagination.border_radius.right.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.pagination.border_radius.right.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.pagination.border_radius.right.mobile', ''),
+                        ),
+                        'bottom' => array(
+                            'desktop' => Arr::get($settings, 'styles.pagination.border_radius.bottom.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.pagination.border_radius.bottom.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.pagination.border_radius.bottom.mobile', ''),
+                        ),
+                        'left' => array(
+                            'desktop' => Arr::get($settings, 'styles.pagination.border_radius.left.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.pagination.border_radius.left.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.pagination.border_radius.left.mobile', ''),
+                        ),
+                        'linked' => Arr::get($settings, 'styles.pagination.border_radius.linked', false),
+                    ),
 
+                ),
+                'pagination_hover' => array(
+                    'selector' => $prefix . ' .wpsr-reviews-loadmore span:hover',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.pagination_hover.color.text_color', ''),
+                        'background_color' => Arr::get($settings, 'styles.pagination_hover.color.background_color', ''),
+                        'border_color' => Arr::get($settings, 'styles.pagination_hover.color.border_color', ''),
+                    ),
                 ),
             ),
         ];
     }
+
 }

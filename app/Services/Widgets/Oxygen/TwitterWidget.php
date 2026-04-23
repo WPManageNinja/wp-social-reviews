@@ -1,6 +1,5 @@
 <?php
 namespace WPSocialReviews\App\Services\Widgets\Oxygen;
-use WPSocialReviews\App\Hooks\Handlers\ShortcodeHandler;
 use WPSocialReviews\App\Services\Widgets\Helper;
 
 class TwitterWidget extends OxygenEl
@@ -557,7 +556,6 @@ class TwitterWidget extends OxygenEl
                 WPSOCIALREVIEWS_VERSION
             );
             wp_enqueue_script('wp-social-review');
-            add_action('wp_footer', array(new ShortcodeHandler(), 'loadLocalizeScripts'), 99);
 
             if(defined('WPSOCIALREVIEWS_PRO')){
                 wp_enqueue_style(

@@ -36,10 +36,20 @@ add_action('save_post', function ($postId, $post) use ($app) {
         return;
     }
 
+    // Ensure $post is valid
+    if (!is_a($post, 'WP_Post') || !isset($post->post_content)) {
+        return;
+    }
+
     $ctTemplateId = get_post_meta($postId, 'ct_other_template', true);
     $wooTemplateId = get_post_meta($postId, 'wpsr-settings-woo', true);
+    $ids = [];
+
     if (defined('WC_PLUGIN_FILE') && !empty($wooTemplateId) && is_array($wooTemplateId)) {
-        $ids[$wooTemplateId['selected_template']] = $wooTemplateId['selected_template'] ?? null;
+        $selectedTemplate = $wooTemplateId['selected_template'] ?? null;
+        if ($selectedTemplate) {
+            $ids[$selectedTemplate] = $selectedTemplate;
+        }
     } else {
         $ids = \WPSocialReviews\App\Services\Helper::getShortCodeIds($post->post_content);
     }
@@ -77,6 +87,11 @@ add_action('save_post', function ($postId, $post) use ($app) {
 }, 10, 2);
 
 add_action('init', function () {
+    // Ensure cron jobs are registered on plugin load (in case they were deleted)
+    // This prevents the cron job from being permanently lost if WordPress clears it
+    // Re-register cron jobs if they're missing (ActivateCronEvent checks internally)
+    (new \WPSocialReviews\App\Hooks\Handlers\ActivateCronEvent())->activate();
+
     (new \WPSocialReviews\App\Hooks\Handlers\ShortcodeHandler())->addShortcode();
     (new \WPSocialReviews\App\Hooks\Handlers\ChatHandler())->chatRegister();
     (new \WPSocialReviews\App\Hooks\Handlers\NotificationHandler())->notificationRegister();
@@ -306,4 +321,9 @@ if(defined('LSCWP_V')){
             defined( 'LITESPEED_ESI_OFF' ) || define( 'LITESPEED_ESI_OFF', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound
         }
     });
+}
+
+// require the CLI
+if (defined('WP_CLI') && WP_CLI) {
+    \WP_CLI::add_command('wpsocialninja', '\WPSocialReviews\App\Hooks\CLI\Commands');
 }

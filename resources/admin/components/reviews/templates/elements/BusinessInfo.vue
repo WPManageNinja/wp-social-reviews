@@ -49,7 +49,7 @@ export default {
         },
         shouldShowEmptyState() {
             // Show empty state when total_rating is 0 or less
-            return !this.businessInfo.total_rating || this.businessInfo.total_rating <= 0;
+            return (!this.businessInfo.total_rating || this.businessInfo.total_rating <= 0) && this.metaStyles.show_header === 'true';
         }
     },
     methods: {

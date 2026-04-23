@@ -120,6 +120,7 @@ export default {
         'booking.com': 'Booking.com',
         facebook: 'Facebook Reviews',
         woocommerce: 'WooCommerce',
+        'fluent-cart': 'FluentCart',
         trustpilot: 'Trustpilot',
         instagram: 'Instagram',
         youtube: 'YouTube',
@@ -127,6 +128,7 @@ export default {
         tiktok: 'TikTok',
         facebook_feed: 'Facebook',
         allinone: 'All-in-One Chat Widget',
+        custom_sources: 'Custom Sources',
       };
 
       return platformNames[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');

@@ -22,8 +22,13 @@ if($template_meta['templateType'] === 'slider' && defined('WPSOCIALREVIEWS_PRO')
 
 do_action('wpsocialreviews/reviews_template_wrapper_end');
 
-if (($template_meta['templateType'] !== 'slider' && $template_meta['pagination_type'] === 'load_more') && ($totalReviews > $template_meta['paginate'])) {
-    echo '<button aria-label="'.esc_attr($template_meta['load_more_button_text']).'" class="wpsr-reviews-loadmore wpsr_more" id="wpsr-reviews-load-more-btn' . esc_attr($templateId) . '" data-paginate="' . esc_attr($template_meta['paginate']) . '" data-template_id="' . esc_attr($templateId) . '" data-page="1" data-platform="reviews" data-template_type="' . esc_attr($template_meta['templateType']) . '" data-total="' . esc_attr($totalReviews) . '"><span>' . esc_html($template_meta['load_more_button_text']) .'</span></button>';
+// Get responsive paginate values
+$paginateNumber = Arr::get($template_meta, 'paginate_number', []);
+$fallbackPaginate = (int) Arr::get($template_meta, 'paginate', 6);
+$currentPaginate = wp_is_mobile() ? (int) Arr::get($paginateNumber, 'mobile', $fallbackPaginate) : (int) Arr::get($paginateNumber, 'desktop', $fallbackPaginate);
+
+if (($template_meta['templateType'] !== 'slider' && $template_meta['pagination_type'] === 'load_more') && ($totalReviews > $currentPaginate)) {
+    echo '<button aria-label="'.esc_attr($template_meta['load_more_button_text']).'" class="wpsr-reviews-loadmore wpsr_more" id="wpsr-reviews-load-more-btn' . esc_attr($templateId) . '" data-paginate="' . esc_attr($currentPaginate) . '" data-template_id="' . esc_attr($templateId) . '" data-page="1" data-platform="reviews" data-template_type="' . esc_attr($template_meta['templateType']) . '" data-total="' . esc_attr($totalReviews) . '"><span>' . esc_html($template_meta['load_more_button_text']) .'</span></button>';
 }
 
 $wpsr_display_read_all_reviews_btn = Arr::get($template_meta, 'notification_settings.display_read_all_reviews_btn');

@@ -22,7 +22,7 @@ class Config
             $message = __('Hey! We’ve got a great sale offer running. I am happy to tell you about it. Let me know if you\'ve any questions.', 'wp-social-reviews');
         }
 
-        $greeting_msg = wp_kses_post(Arr::get($settings, 'chat_settings.'.$template.'.chat_body.greeting_msg', $message));
+        $greeting_msg = Arr::get($settings, 'chat_settings.'.$template.'.chat_body.greeting_msg', $message);
 
         if('utf8' === $charset || 'latin1' === $charset || 'utf8mb3' === $charset) {
             $greeting_msg = wp_encode_emoji($greeting_msg);
@@ -40,10 +40,10 @@ class Config
                 'created_from_onboarding' => Arr::get($settings,'chat_settings.created_from_onboarding', false),
                 'layout_type' => Arr::get($settings, 'chat_settings.layout_type', 'chat_box'),
                 'chat_button'         => array(
-                    'button_text'     => sanitize_text_field(Arr::get($settings, 'chat_settings.chat_button.button_text', __('Start Chat with:', 'wp-social-reviews'))),
+                    'button_text'     => Arr::get($settings, 'chat_settings.chat_button.button_text', __('Start Chat with:', 'wp-social-reviews')),
                     'display_icon'    => Arr::get($settings, 'chat_settings.chat_button.display_icon', 'true'),
                     'prefilled_message'    => Arr::get($settings, 'chat_settings.chat_button.prefilled_message', 'false'),
-                    'prefilled_placeholder_text'    => sanitize_text_field(Arr::get($settings, 'chat_settings.chat_button.prefilled_placeholder_text', __('Type a message', 'wp-social-reviews'))),
+                    'prefilled_placeholder_text'    => Arr::get($settings, 'chat_settings.chat_button.prefilled_placeholder_text', __('Type a message', 'wp-social-reviews')),
                 ),
                 'settings' => array(
                     'chat_bubble_position'        => Arr::get($settings, 'chat_settings.settings.chat_bubble_position', 'bottom-right'),
@@ -76,10 +76,10 @@ class Config
                     'end_time'                    => Arr::get($settings, 'chat_settings.settings.end_time', "03:07:26 PM"),
                     'start_chat_time'             => Arr::get($settings, 'chat_settings.settings.start_chat_time', Arr::get($settings, 'chat_settings.settings.start_time')),
                     'end_chat_time'               => Arr::get($settings, 'chat_settings.settings.end_chat_time', Arr::get($settings, 'chat_settings.settings.end_time')),
-                    'caption_when_offline'        => sanitize_text_field(Arr::get($settings, 'chat_settings.settings.caption_when_offline', __('I will be back soon', 'wp-social-reviews')))
+                    'caption_when_offline'        => Arr::get($settings, 'chat_settings.settings.caption_when_offline', __('I will be back soon', 'wp-social-reviews'))
                 ),
                 'ff_settings'   => array(
-                    'header_title'             => sanitize_text_field(Arr::get($settings, 'chat_settings.ff_settings.header_title', __('Contact Us', 'wp-social-reviews'))),
+                    'header_title'             => Arr::get($settings, 'chat_settings.ff_settings.header_title', __('Contact Us', 'wp-social-reviews')),
                 ),
                 'styles'              => array(
                     'widget_icon_bg_color' => Arr::get($settings, 'chat_settings.styles.widget_icon_bg_color', ''),
@@ -96,65 +96,65 @@ class Config
                 'template1' => array(
                     'template'            => 'template1',
                     'chat_header'         => array(
-                        'name'    => sanitize_text_field(Arr::get($settings, 'chat_settings.template1.chat_header.name', __('Dany Williams', 'wp-social-reviews'))),
-                        'caption' => sanitize_text_field(Arr::get($settings, 'chat_settings.template1.chat_header.caption', __('Typically replies within an hour', 'wp-social-reviews'))),
+                        'name'    => Arr::get($settings, 'chat_settings.template1.chat_header.name', __('Dany Williams', 'wp-social-reviews')),
+                        'caption' => Arr::get($settings, 'chat_settings.template1.chat_header.caption', __('Typically replies within an hour', 'wp-social-reviews')),
                         'picture' => Arr::get($settings, 'chat_settings.template1.chat_header.picture', WPSOCIALREVIEWS_URL . 'assets/images/chat-imgs/user-profile.png')
                     ),
                     'chat_body'           => array(
                         'greeting_msg' => static::greetingMessage($settings, 'template1')
                     ),
                     'chat_bubble'         => array(
-                        'cb_button_text' => sanitize_text_field(Arr::get($settings, 'chat_settings.template1.chat_bubble.cb_button_text', '')),
-                        'cb_button_icon' => sanitize_text_field(Arr::get($settings, 'chat_settings.template1.chat_bubble.cb_button_icon', '')),
-                        'cb_custom_icon' => sanitize_text_field(Arr::get($settings, 'chat_settings.template1.chat_bubble.cb_custom_icon', '')),
+                        'cb_button_text' => Arr::get($settings, 'chat_settings.template1.chat_bubble.cb_button_text', ''),
+                        'cb_button_icon' => Arr::get($settings, 'chat_settings.template1.chat_bubble.cb_button_icon', ''),
+                        'cb_custom_icon' => Arr::get($settings, 'chat_settings.template1.chat_bubble.cb_custom_icon', ''),
                     ),
                 ),
                 'template2' => array(
                     'template'            => 'template2',
                     'chat_header'         => array(
-                        'name'    => sanitize_text_field(Arr::get($settings, 'chat_settings.template2.chat_header.name', __('Chris Morphe', 'wp-social-reviews'))),
-                        'caption' => sanitize_text_field(Arr::get($settings, 'chat_settings.template2.chat_header.caption', __('Typically replies within an hour', 'wp-social-reviews'))),
+                        'name'    => Arr::get($settings, 'chat_settings.template2.chat_header.name', __('Chris Morphe', 'wp-social-reviews')),
+                        'caption' => Arr::get($settings, 'chat_settings.template2.chat_header.caption', __('Typically replies within an hour', 'wp-social-reviews')),
                         'picture' => Arr::get($settings, 'chat_settings.template2.chat_header.picture', WPSOCIALREVIEWS_URL . 'assets/images/chat-imgs/user-profile2.png')
                     ),
                     'chat_body'           => array(
                         'greeting_msg' => static::greetingMessage($settings, 'template2')
                     ),
                     'chat_bubble'         => array(
-                        'cb_button_text' => sanitize_text_field(Arr::get($settings, 'chat_settings.template2.chat_bubble.cb_button_text', __('Need Help?', 'wp-social-reviews'))),
-                        'cb_button_icon' => sanitize_text_field(Arr::get($settings, 'chat_settings.template2.chat_bubble.cb_button_icon', 'icon3')),
-                        'cb_custom_icon' => sanitize_text_field(Arr::get($settings, 'chat_settings.template2.chat_bubble.cb_custom_icon', '')),
+                        'cb_button_text' => Arr::get($settings, 'chat_settings.template2.chat_bubble.cb_button_text', __('Need Help?', 'wp-social-reviews')),
+                        'cb_button_icon' => Arr::get($settings, 'chat_settings.template2.chat_bubble.cb_button_icon', 'icon3'),
+                        'cb_custom_icon' => Arr::get($settings, 'chat_settings.template2.chat_bubble.cb_custom_icon', ''),
                     ),
                 ),
                 'template3' => array(
                     'template'            => 'template3',
                     'chat_header'         => array(
-                        'name'    => sanitize_text_field(Arr::get($settings, 'chat_settings.template3.chat_header.name', __('Olivia Scott', 'wp-social-reviews'))),
-                        'caption' => sanitize_text_field(Arr::get($settings, 'chat_settings.template3.chat_header.caption', __('QA Manager', 'wp-social-reviews'))),
+                        'name'    => Arr::get($settings, 'chat_settings.template3.chat_header.name', __('Olivia Scott', 'wp-social-reviews')),
+                        'caption' => Arr::get($settings, 'chat_settings.template3.chat_header.caption', __('QA Manager', 'wp-social-reviews')),
                         'picture' => Arr::get($settings, 'chat_settings.template3.chat_header.picture', WPSOCIALREVIEWS_URL . 'assets/images/chat-imgs/user-profile3.png')
                     ),
                     'chat_body'           => array(
                         'greeting_msg' => static::greetingMessage($settings, 'template3')
                     ),
                     'chat_bubble'         => array(
-                        'cb_button_text' => sanitize_text_field(Arr::get($settings, 'chat_settings.template3.chat_bubble.cb_button_text', __('Feedback', 'wp-social-reviews'))),
+                        'cb_button_text' => Arr::get($settings, 'chat_settings.template3.chat_bubble.cb_button_text', __('Feedback', 'wp-social-reviews')),
                         'cb_button_icon' => Arr::get($settings, 'chat_settings.template3.chat_bubble.cb_button_icon', 'icon4'),
-                        'cb_custom_icon' => sanitize_text_field(Arr::get($settings, 'chat_settings.template3.chat_bubble.cb_custom_icon', '')),
+                        'cb_custom_icon' => Arr::get($settings, 'chat_settings.template3.chat_bubble.cb_custom_icon', ''),
                     ),
                 ),
                 'template4' => array(
                     'template'            => 'template4',
                     'chat_header'         => array(
-                        'name'    => sanitize_text_field(Arr::get($settings, 'chat_settings.template4.chat_header.name', __('Leo Connor', 'wp-social-reviews'))),
-                        'caption' => sanitize_text_field(Arr::get($settings, 'chat_settings.template4.chat_header.caption', __('Sales Manager', 'wp-social-reviews'))),
+                        'name'    => Arr::get($settings, 'chat_settings.template4.chat_header.name', __('Leo Connor', 'wp-social-reviews')),
+                        'caption' => Arr::get($settings, 'chat_settings.template4.chat_header.caption', __('Sales Manager', 'wp-social-reviews')),
                         'picture' => Arr::get($settings, 'chat_settings.template4.chat_header.picture', WPSOCIALREVIEWS_URL . 'assets/images/chat-imgs/user-profile4.png')
                     ),
                     'chat_body'           => array(
                         'greeting_msg' => static::greetingMessage($settings, 'template4')
                     ),
                     'chat_bubble'         => array(
-                        'cb_button_text' => sanitize_text_field(Arr::get($settings, 'chat_settings.template4.chat_bubble.cb_button_text', '')),
+                        'cb_button_text' => Arr::get($settings, 'chat_settings.template4.chat_bubble.cb_button_text', ''),
                         'cb_button_icon' => Arr::get($settings, 'chat_settings.template4.chat_bubble.cb_button_icon', 'icon2'),
-                        'cb_custom_icon' => sanitize_text_field(Arr::get($settings, 'chat_settings.template4.chat_bubble.cb_custom_icon', '')),
+                        'cb_custom_icon' => Arr::get($settings, 'chat_settings.template4.chat_bubble.cb_custom_icon', ''),
                     )
                 ),
             )

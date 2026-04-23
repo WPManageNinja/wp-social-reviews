@@ -52,7 +52,15 @@ class PlatformController extends Controller
     public function updateDashboardNotices(Request $request, DashboardNotices $notices)
     {
         $args = $request->get('args');
-        $value = Arr::get($args, 'value');
+
+        $sanitizeMap = [
+            'notice_type' => 'sanitize_text_field',
+            'value' => 'rest_sanitize_boolean',
+        ];
+
+        $args = wpsr_backend_sanitizer($args, $sanitizeMap);
+
+        $value = sanitize_text_field(Arr::get($args, 'value', ''));
         $notices->updateNotices($args);
 
         wp_send_json_success([
@@ -65,6 +73,11 @@ class PlatformController extends Controller
     public function processSubscribeQuery(Request $request, DashboardNotices $notices)
     {
         $args = $request->get('args');
+        $sanitizeMap = [
+            'email' => 'sanitize_email',
+            'name' => 'sanitize_text_field',
+        ];
+        $args = wpsr_backend_sanitizer($args, $sanitizeMap);
         $status = $notices->updateNewsletter($args);
 
         return [
@@ -131,12 +144,16 @@ class PlatformController extends Controller
             ]
         ];
 
-        // Process platform statuses more efficiently
+        // Types to process
         $types = ['feeds', 'reviews', 'chats'];
 
         foreach ($types as $type) {
             if (isset($statuses[$type]) && is_array($statuses[$type])) {
-                $platformsStatuses['platforms_statuses'][$type] = $statuses[$type];
+                foreach ($statuses[$type] as $platform => $value) {
+                    // Sanitize each value using WP REST sanitizer for booleans
+                    $clean = rest_sanitize_boolean($value);
+                    $platformsStatuses['platforms_statuses'][$type][$platform] = $clean;
+                }
             }
         }
 

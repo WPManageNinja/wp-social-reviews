@@ -174,19 +174,18 @@ class PermissionManager
 
 	public static function currentUserCan($permission)
 	{
-        $permissions = self::currentUserPermissions();
-        $acceptedPermissions = self::pluginPermissions();
-        // Check if both arrays have matching values (keys)
-        $matchingPermissions = array_intersect($permissions, $acceptedPermissions);
-
-		if (current_user_can('manage_options') || !empty($matchingPermissions)) {
+		if (current_user_can('manage_options')) {
 			return true;
 		}
 
-		if (defined('WPSOCIALREVIEWS_PRO')) {
-			return current_user_can($permission);
+		$permissions = self::currentUserPermissions();
+
+		// Full access capability grants access to all plugin features
+		if (in_array('wpsn_full_access', $permissions)) {
+			return true;
 		}
 
-        return false;
+		// Check the exact requested capability
+		return in_array($permission, $permissions);
 	}
 }

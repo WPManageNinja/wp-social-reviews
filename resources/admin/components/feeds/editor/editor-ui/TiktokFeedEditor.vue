@@ -193,7 +193,7 @@ import UpgradeToProButton from '../../../views/advertise/UpgradeToProButton';
 import EditorCollapsiblePanel from '../../../core-ui/editor/EditorCollapsiblePanel.vue';
 import InputCheckIcon from '../../../pieces/icons/InputCheckIcon.vue';
 import InputUncheckIcon from '../../../pieces/icons/InputUncheckIcon.vue';
-import debounced from "lodash/debounce";
+import { debounce } from '../../../../utils';
 import UpgradeToProBanner from '../../../views/advertise/UpgradeToProBanner.vue';
 
 export default {
@@ -375,16 +375,19 @@ export default {
                     }
                 },
                 {
-                    fieldKey: 'paginate',
+                    fieldKey: 'paginate_number',
                     type: 'number',
                     title: this.$t('Feeds Per Page'),
                     min: 1,
-                    max: 20,
                     flex: true,
+                    responsive: true,
+                    hide_tablet: true,
                     condition: {
                         'key': 'pagination_type',
                         'selector': 'load_more'
-                    }
+                    },
+                    tooltip: true,
+                    tooltipText: this.$t("The Feeds per Page is only visible on preview and live pages/posts, not in the WordPress Editor's editing mode.")
                 },
             ],
             feed_settings: {
@@ -645,7 +648,7 @@ export default {
         getAccountIcon(account){
             return account.avatar_url || ''; 
         },
-        fetch : debounced(function () {
+        fetch : debounce(function () {
             this.$emit('fetchFeed');
         }, 500),
 

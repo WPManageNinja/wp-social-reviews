@@ -114,7 +114,7 @@
                             <el-tooltip class="item" effect="dark" placement="right-start">
                               <div slot="content">This account is a <strong>private</strong> account on Instagram. It needs to be manually reconnect every 60 days. If you don't refresh your account, then the backup cache will be displayed instead. <br/> Change this account to be <a
                                   href="https://www.instagram.com/accounts/privacy_and_security/" target="_blank"><strong>public</strong></a> [Account Privacy->Private Account] to have access token that are automatically refreshed.</div>
-                              <i class="el-icon-info"></i>
+                              <el-icon><InfoFilled /></el-icon>
                             </el-tooltip>
                             <el-button size="small" @click.prevent="oAuthLogin()" type="primary">Get Refresh Token</el-button>
                           </span>

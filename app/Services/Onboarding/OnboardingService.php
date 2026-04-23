@@ -785,6 +785,7 @@ class OnboardingService
             'aliexpress' => __('AliExpress', 'wp-social-reviews'),
             'booking.com' => __('Booking.com', 'wp-social-reviews'),
             'woocommerce' => __('WooCommerce', 'wp-social-reviews'),
+            'fluent-cart' => __('FluentCart', 'wp-social-reviews'),
             'instagram' => __('Instagram', 'wp-social-reviews'),
             'facebook_feed' => __('Facebook Feed', 'wp-social-reviews'),
             'twitter' => __('X (Twitter)', 'wp-social-reviews'),

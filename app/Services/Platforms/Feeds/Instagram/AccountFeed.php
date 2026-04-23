@@ -157,6 +157,9 @@ class AccountFeed
 
         $feeds = Arr::get($resultWithoutComments, 'data', []);
 
+        // Filter out posts where is_shared_to_feed is false (trial reels not shared to feed)
+        $feeds = $this->filterFeedsBySharedStatus($feeds);
+
         // Process feeds only if not empty
         if (!empty($feeds) && is_array($feeds)) {
             // we modify username if collab feed there
@@ -178,6 +181,27 @@ class AccountFeed
         return $feeds;
     }
 
+    /**
+     * Filter out posts where is_shared_to_feed is false
+     * These are trial reels that are only visible in the Reels tab
+     *
+     * @param array $feeds Array of feed items
+     * @return array Filtered feed items
+     */
+    protected function filterFeedsBySharedStatus($feeds)
+    {
+        if (empty($feeds) || !is_array($feeds)) {
+            return $feeds;
+        }
+
+        $feeds = array_values(array_filter($feeds, function ($feedItem) {
+            // Exclude posts where is_shared_to_feed is explicitly false
+            return !isset($feedItem['is_shared_to_feed']) || $feedItem['is_shared_to_feed'] !== false;
+        }));
+
+        return $feeds;
+    }
+
     public function getApiUrl($accountDetails)
     {
         $dataProtector = new DataProtector();
@@ -185,7 +209,7 @@ class AccountFeed
         $apiUrl = '';
         if ($accountDetails['api_type'] === 'business') {
             $decrypt_access_token = $dataProtector->decrypt($accountDetails['access_token']) ? $dataProtector->decrypt($accountDetails['access_token']) : $accountDetails['access_token'];
-            $apiUrl = 'https://graph.facebook.com/' . $accountDetails['user_id'] . '/media?fields=media_url,thumbnail_url,media_product_type,caption,id,media_type,timestamp,username,comments_count,like_count,permalink,children{media_url,id,media_type,timestamp,permalink,thumbnail_url}&limit=' . $num . '&access_token=' .$decrypt_access_token. '&status_code=PUBLISHED';
+            $apiUrl = 'https://graph.facebook.com/' . $accountDetails['user_id'] . '/media?fields=media_url,thumbnail_url,media_product_type,is_shared_to_feed,caption,id,media_type,timestamp,username,comments_count,like_count,permalink,children{media_url,id,media_type,timestamp,permalink,thumbnail_url}&limit=' . $num . '&access_token=' . $decrypt_access_token . '&status_code=PUBLISHED';
         } elseif ($accountDetails['api_type'] === 'business_basic' || $accountDetails['api_type'] === 'personal') {
             $accessToken = (new RefreshToken())->getAccessToken($accountDetails);
             $accessToken = $dataProtector->decrypt($accessToken) ? $dataProtector->decrypt($accessToken) : $accessToken;
@@ -195,7 +219,7 @@ class AccountFeed
                 return $accessToken;
             }
 
-            $apiUrl      = 'https://graph.instagram.com/' . $accountDetails['user_id'] . '/media?fields=media_url,thumbnail_url,caption,id,media_type,timestamp,username,comments_count,like_count,permalink,children{media_url,id,media_type,timestamp,permalink,thumbnail_url}&limit=' . $num . '&access_token=' . $accessToken.'&status_code=PUBLISHED';
+            $apiUrl = 'https://graph.instagram.com/' . $accountDetails['user_id'] . '/media?fields=media_url,thumbnail_url,caption,id,media_type,media_product_type,is_shared_to_feed,timestamp,username,comments_count,like_count,permalink,children{media_url,id,media_type,timestamp,permalink,thumbnail_url}&limit=' . $num . '&access_token=' . $accessToken . '&status_code=PUBLISHED';
         }
 
         return $apiUrl;

@@ -1,5 +1,5 @@
 <?php
-
+defined('ABSPATH') or die;
 /**
  * Add only the plugin specific bindings here.
  * 

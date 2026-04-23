@@ -16,7 +16,7 @@ class SettingsController extends Controller
 {
     public function index(Request $request)
     {
-        $platform = $request->get('platform');
+        $platform = sanitize_text_field($request->get('platform', ''));
 
         if((!defined('WC_VERSION') && $platform === 'woocommerce') || (!defined('CUSTOM_FEED_FOR_TIKTOK') && $platform === 'tiktok')){
            return false;
@@ -27,39 +27,47 @@ class SettingsController extends Controller
 
     public function update(Request $request)
     {
-        $platform = $request->get('platform');
-        $settingsJSON = $request->get('settings');
-        $settings = json_decode($settingsJSON, true);
-        $settings = wp_unslash($settings);
+        $platform = sanitize_text_field($request->get('platform', ''));
+
+        $settings = $request->get('settings');
+        if (is_string($settings)) {
+            $settings = wp_unslash($settings);
+            $decoded = json_decode($settings, true);
+            $settings = is_array($decoded) ? $decoded : [];
+        }
+
+        $sanitizeMap = [
+            'manually_review_approved' => 'wpsr_sanitize_boolean',
+            'auto_syncing' => 'wpsr_sanitize_boolean',
+            'expiration' => 'intval',
+            'use_social_ninja_primary' => 'wpsr_sanitize_boolean',
+            'hide_reviews_count' => 'wpsr_sanitize_boolean',
+            'hide_reviews_title' => 'wpsr_sanitize_boolean',
+            'hide_product_list_rating_count' => 'wpsr_sanitize_boolean',
+            'reviews_widgets_placement' => 'sanitize_text_field',
+            'reviews_form' => 'sanitize_text_field',
+            'selected_template' => 'intval',
+            'oembed' => 'wpsr_sanitize_boolean',
+            'optimized_images' => 'wpsr_sanitize_boolean',
+            'is_enabled_platform' => 'wpsr_sanitize_boolean',
+        ];
+
+        $settings = wpsr_backend_sanitizer($settings, $sanitizeMap);
+
         do_action('wpsocialreviews/save_advance_settings_' . $platform, $settings);
     }
 
     public function delete(Request $request)
     {
-        $platform = $request->get('platform');
-        $cacheType = $request->get('cacheType');
-        $templateId = $request->get('templateId');
+        $platform = sanitize_text_field($request->get('platform', ''));
+        $cacheType = sanitize_text_field($request->get('cacheType', ''));
+        $templateId = intval($request->get('templateId'));
 
         if ($cacheType === 'template' && $templateId) {
             return (new CacheHandler($platform))->clearTemplateCache($platform, $templateId);
         }
 
         do_action('wpsocialreviews/clear_cache_' . $platform, $cacheType);
-    }
-
-    public function getFluentFormsSettings(Request $request)
-    {
-        $platform = 'fluent_forms';
-        do_action('wpsocialreviews/get_advance_settings_' . $platform);
-    }
-
-    public function saveFluentFormsSettings(Request $request)
-    {
-        $platform = 'fluent_forms';
-        $settingsJSON = $request->get('settings');
-        $settings = json_decode($settingsJSON, true);
-        $settings = wp_unslash($settings);
-        do_action('wpsocialreviews/save_advance_settings_' . $platform, $settings);
     }
 
     public function deleteTwitterCard()
@@ -115,8 +123,6 @@ class SettingsController extends Controller
         $response = apply_filters('wpsr_activate_license', false, $request);
 
         if(is_wp_error($response)) {
-
-
             return $this->sendError([
                 'message' => $response->get_error_message()
             ], 422);
@@ -144,6 +150,45 @@ class SettingsController extends Controller
     public function saveTranslations(Request $request)
     {
         $translationsSettings = $request->get('translations_settings');
+
+        if (is_string($translationsSettings)) {
+            $translationsSettings = wp_unslash($translationsSettings);
+            $decoded = json_decode($translationsSettings, true);
+            $translationsSettings = is_array($decoded) ? $decoded : [];
+        }
+
+        $sanitizeMap = [
+            'subscribers'  => 'sanitize_text_field',
+            'following'  => 'sanitize_text_field',
+            'followers'  => 'sanitize_text_field',
+            'videos'  => 'sanitize_text_field',
+            'views'  => 'sanitize_text_field',
+            'tweets'  => 'sanitize_text_field',
+            'people_like_this'  => 'sanitize_text_field',
+            'posts'  => 'sanitize_text_field',
+            'leave_a_review'  => 'sanitize_text_field',
+            'recommends'  => 'sanitize_text_field',
+            'does_not_recommend'  => 'sanitize_text_field',
+            'on'  => 'sanitize_text_field',
+            'read_all_reviews'  => 'sanitize_text_field',
+            'read_more'  => 'sanitize_text_field',
+            'read_less'  => 'sanitize_text_field',
+            'comments'  => 'sanitize_text_field',
+            'view_on_fb'  => 'sanitize_text_field',
+            'view_on_ig'  => 'sanitize_text_field',
+            'view_on_tiktok'  => 'sanitize_text_field',
+            'likes'  => 'sanitize_text_field',
+            'people_responded'  => 'sanitize_text_field',
+            'online_event'  => 'sanitize_text_field',
+            'interested'  => 'sanitize_text_field',
+            'going'  => 'sanitize_text_field',
+            'went'  => 'sanitize_text_field',
+            'ai_generated_summary'  => 'sanitize_text_field',
+        ];
+
+        $translationsSettings = wpsr_backend_sanitizer($translationsSettings, $sanitizeMap);
+
+
         $settings = get_option('wpsr_global_settings', []);
         $settings['global_settings']['translations'] = $translationsSettings;
 
@@ -174,6 +219,48 @@ class SettingsController extends Controller
     public function saveAdvanceSettings(Request $request, DataProtector $protector)
     {
         $advanceSettings = $request->get('advance_settings');
+
+        if (is_string($advanceSettings)) {
+            $advanceSettings = wp_unslash($advanceSettings);
+            $decoded = json_decode($advanceSettings, true);
+            $advanceSettings = is_array($decoded) ? $decoded : [];
+        }
+
+        $qrCodeEntryMap = [
+            'id'           => 'intval',
+            'name'         => 'sanitize_text_field',
+            'url'          => 'esc_url_raw',
+            'custom_url'   => 'esc_url_raw',
+            'qrcode_url'   => 'esc_url_raw',
+            'scan_counter' => 'intval',
+        ];
+
+        $sanitizeMap = [
+             'has_gdpr'  => 'wpsr_sanitize_boolean',
+             'optimize_image_format'  => 'sanitize_text_field',
+             'review_optimized_images'  => 'wpsr_sanitize_boolean',
+             'preserve_plugin_data'  => 'wpsr_sanitize_boolean',
+             'ai_review_summarizer_enabled'  => 'wpsr_sanitize_boolean',
+             'ai_platform'  => 'sanitize_text_field',
+             'ai_api_key'  => 'sanitize_text_field',
+             'selected_model'  => 'sanitize_text_field',
+
+             // defined nested keys for email_report
+             'email_report.status' => 'wpsr_sanitize_boolean',
+             'email_report.sending_day' => 'sanitize_text_field',
+             'email_report.recipients' => 'wpsr_sanitize_recipients',
+        ];
+
+        $advanceSettings = wpsr_backend_sanitizer($advanceSettings, $sanitizeMap);
+
+        // Handle the qr_codes array separately
+        if (!empty($advanceSettings['qr_codes']) && is_array($advanceSettings['qr_codes'])) {
+            foreach ($advanceSettings['qr_codes'] as $index => $qrCodeEntry) {
+                // Apply the simple map to each entry in the array
+                $advanceSettings['qr_codes'][$index] = wpsr_backend_sanitizer($qrCodeEntry, $qrCodeEntryMap);
+            }
+        }
+
         $settings = get_option('wpsr_global_settings', []);
 
         $oldOptimizeImageFormat = Arr::get($settings, 'global_settings.advance_settings.optimize_image_format', '');
@@ -219,7 +306,7 @@ class SettingsController extends Controller
 
     public function resetData(Request $request)
     {
-        $platform = sanitize_text_field($request->get('platform'));
+        $platform = sanitize_text_field($request->get('platform', ''));
 
         if($platform == 'reviews'){
             $platforms = apply_filters('wpsocialreviews/available_valid_reviews_platforms', []);
@@ -243,25 +330,21 @@ class SettingsController extends Controller
 
     public function deleteAllData()
     {
-        $isTableDelete = false;
-        (new UninstallHandler())->deleteAllPlatformsData($isTableDelete);
+        (new UninstallHandler())->deleteAllPlatformsData(false);
         return [
-            'message'   =>  __('Successfully deleted all datas!', 'wp-social-reviews')
+            'message'   =>  __('Successfully deleted all data!', 'wp-social-reviews')
         ];
     }
 
     public function getReviewCollectionQrCodes(Request $request){
-
         $qrCodes = (new GlobalSettings())->getGlobalSettings('advance_settings.qr_codes');
-
-
-        // qrcodes is an associative array convert it to a regular array
-        $qrCodes = array_values(array_reverse($qrCodes, true));
-        if(empty($qrCodes)){
-            return $this->sendError([
-                'message' => __('Sorry! QR codes could not be retrieved. Please try again', 'wp-social-reviews')
-            ]);
+        if(is_array($qrCodes)){
+            // qrcodes is an associative array convert it to a regular array
+            $qrCodes = array_values(array_reverse($qrCodes, true));
+        } else {
+            $qrCodes = [];
         }
+
         return [
             'message'   =>  __('QR codes retrieved successfully!', 'wp-social-reviews'),
             'data'      =>  $qrCodes
@@ -307,9 +390,9 @@ class SettingsController extends Controller
         $qrCodes = (new GlobalSettings())->getGlobalSettings('advance_settings.qr_codes');
         $id = $qrCodes ? (max(array_keys($qrCodes)) + 1) : 1;
 
-        $name = $request->get('name');
-        $collection_form = $request->get('collection_form');
-        $custom_url = $collection_form === 'custom-url' ? $request->get('custom_url') : '';
+        $name = sanitize_text_field($request->get('name'));
+        $collection_form = sanitize_text_field($request->get('collection_form'));
+        $custom_url = $collection_form === 'custom-url' ? sanitize_url($request->get('custom_url')) : '';
 
         $validation = $this->validateQrCodeData($name, $collection_form, $custom_url);
         if ($validation !== true) {
@@ -333,6 +416,7 @@ class SettingsController extends Controller
 
     public function updateReviewCollectionQrCode(Request $request, $id)
     {
+        $id = intval($id);
         $qrCodes = (new GlobalSettings())->getGlobalSettings('advance_settings.qr_codes');
 
         if (!isset($qrCodes[$id])) {
@@ -341,11 +425,11 @@ class SettingsController extends Controller
             ], 404);
         }
 
-        $name = $request->get('name');
-        $url = $request->get('url');
-        $custom_url = $url === 'custom-url' ? $request->get('custom_url') : '';
+        $name = sanitize_text_field($request->get('name'));
+        $collection_form = sanitize_text_field($request->get('collection_form'));
+        $custom_url = $collection_form === 'custom-url' ? sanitize_url($request->get('custom_url')) : '';
 
-        $validation = $this->validateQrCodeData($name, $url, $custom_url);
+        $validation = $this->validateQrCodeData($name, $collection_form, $custom_url);
         if ($validation !== true) {
             return $validation;
         }
@@ -354,7 +438,7 @@ class SettingsController extends Controller
             $existingQrCodeScans = $qrCodes[$id]['scan_counter'] ?? null;
         }
         
-        $qrCode = Helper::generateQrCodeArray($id, $name, $url, $custom_url, $existingQrCodeScans);
+        $qrCode = Helper::generateQrCodeArray($id, $name, $collection_form, $custom_url, $existingQrCodeScans);
         $qrCodes[$id] = $qrCode;
 
         if ((new GlobalSettings())->setGlobalSettingsKeyValue('advance_settings.qr_codes', $qrCodes)) {
@@ -371,6 +455,7 @@ class SettingsController extends Controller
 
     public function deleteReviewCollectionQrCode(Request $request, $id){
 
+        $id = intval($id);
         $qrCodes = (new GlobalSettings())->getGlobalSettings('advance_settings.qr_codes');
         unset($qrCodes[$id]);
 

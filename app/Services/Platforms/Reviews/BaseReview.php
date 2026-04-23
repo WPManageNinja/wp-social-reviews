@@ -3,6 +3,7 @@
 namespace WPSocialReviews\App\Services\Platforms\Reviews;
 
 use WPSocialReviews\App\Models\Review;
+use WPSocialReviews\App\Services\ReviewApprovalService;
 use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\App\Services\Platforms\Feeds\CacheHandler;
 use WPSocialReviews\Database\Migrations\ReviewsMigrator;
@@ -34,9 +35,6 @@ abstract class BaseReview
 
         add_action('wpsocialreviews/get_advance_settings_' . $this->platform, array($this, 'getAdvanceSettings'));
         add_action('wpsocialreviews/save_advance_settings_' . $this->platform, array($this, 'saveAdvanceSettings'));
-
-        add_action('wpsocialreviews/get_advance_settings_fluent_forms', array($this, 'getFluentFormsSettings'));
-        add_action('wpsocialreviews/save_advance_settings_fluent_forms', array($this, 'saveFluentFormsSettings'));
 
         // clear verification configs
         add_action('wpsocialreviews/clear_reviews_verification_configs_' . $this->platform, array($this, 'clearVerificationConfigs'));
@@ -103,7 +101,7 @@ abstract class BaseReview
             }
 
             $exist = false;
-            if(in_array($this->platform, $remoteSyncReviewerNames) || $this->platform === 'yelp' || $this->platform === 'airbnb' || $this->platform === 'google' || $this->platform === 'tripadvisor' || $this->platform === 'woocommerce' || $this->platform === 'aliexpress') {
+            if (in_array($this->platform, $remoteSyncReviewerNames) || $this->platform === 'yelp' || $this->platform === 'airbnb' || $this->platform === 'google' || $this->platform === 'tripadvisor' || $this->platform === 'woocommerce' || $this->platform === 'aliexpress') {
                 $fieldName = 'review_id';
             } else {
                 $fieldName = 'reviewer_url';
@@ -114,20 +112,20 @@ abstract class BaseReview
                 $value = Arr::get($review, 'review.user.profile_url');
             } elseif ($this->platform === 'aliexpress') {
                 $value = Arr::get($review, 'evaluationIdStr');
-            } elseif ($this->platform === 'booking.com' || $this->platform === 'woocommerce') {
-                $value = Arr::get($review, 'reviewer_name');
+            } elseif ($this->platform === 'booking.com') {
+                $value = Arr::get($review, 'source_id').'-'. Arr::get($review, 'reviewer_name');
             } elseif ($this->platform === 'tripadvisor' || $this->platform === 'airbnb' || $this->platform === 'yelp') {
                 $value = Arr::get($review, 'id');
             } elseif ($this->platform === 'google') {
                 $value = Arr::get($review, 'reviewId');
-            } elseif ($this->platform === 'woocommerce') {
-                $value = Arr::get($review, 'review_id');
             } elseif ($this->platform === 'facebook') {
                 $value = isset($review['reviewer']['id']) ? 'https://facebook.com/' . $review['reviewer']['id'] : $review['open_graph_story']['id'];
-            } elseif($this->platform === 'amazon') {
+            } elseif ($this->platform === 'amazon') {
                 $value = Arr::get($review, 'reviewer_name');
-            } elseif(in_array($this->platform, $remoteSyncConsumerDisplayNames)) {
+            } elseif (in_array($this->platform, $remoteSyncConsumerDisplayNames)) {
                 $value = Arr::get($review, 'id');
+            } elseif ($this->platform === 'woocommerce') {
+                $value = Arr::get($review, 'review_id');
             }
 
             // check if a review already exists or not
@@ -135,27 +133,22 @@ abstract class BaseReview
                 ->where($fieldName, $value)
                 ->first();
 
-            if(($this->platform === 'woocommerce') && Arr::get($review, 'review_id')) {
-                $exist = Review::where('platform_name', $this->platform)
-                    ->where('review_id', Arr::get($review, 'review_id'))
-                    ->first();
-            }
             //remove google reviews with empty review_id
             if($this->platform === 'google') {
-                $existReviews = Review::where('platform_name', $this->platform)
-                    ->where('reviewer_name', Arr::get($review, 'reviewer.displayName'))
-                    ->get();
-
-                foreach ($existReviews as $existReview) {
-                    if (empty($existReview->review_id)) {
-                        Review::where('platform_name', $this->platform)
-                            ->where('reviewer_name', Arr::get($review, 'reviewer.displayName'))
-                            ->delete();
-                    }
+                $reviewerName = Arr::get($review, 'reviewer.displayName');
+                if ($reviewerName) {
+                    Review::where('platform_name', $this->platform)
+                        ->where('reviewer_name', $reviewerName)
+                        ->where(function($query) {
+                            $query->whereNull('review_id')
+                                ->orWhere('review_id', '');
+                        })
+                        ->delete();
                 }
             }
 
             $newReview = $this->formatData($review, $index);
+            $newReview['review_approved'] = ReviewApprovalService::getReviewApprovalStatus($newReview);
 
             if($this->platform === 'aliexpress' && !$exist) {
                 Review::where('platform_name', $this->platform)
@@ -186,6 +179,12 @@ abstract class BaseReview
             }
 
             if ($exist) {
+                // Preserve existing approval status: if the review was manually disabled (review_approved == 0),
+                // don't overwrite it by re-approving during syncing.
+                if (isset($exist->review_approved)) {
+                    $newReview['review_approved'] = (int) $exist->review_approved;
+                }
+
                 Review::where('id', $exist->id)->update($newReview);
             } else {
                 Review::insert($newReview);
@@ -255,40 +254,6 @@ abstract class BaseReview
 
         wp_send_json_success([
             'settings' => $settings,
-        ], 200);
-    }
-
-    public function getFluentFormsSettings()
-    {
-        $apiSettings = get_option('wpsr_fluent_forms_global_settings');
-        $settings    = false;
-        if ($apiSettings) {
-            $settings = get_option('wpsr_fluent_forms_global_settings');
-            if (!$settings) {
-                $settings = array(
-                    'global_settings' => array(
-                        'manually_review_approved'  => 'false'
-                    )
-                );
-            }
-        }
-
-        wp_send_json_success([
-            'settings' => $settings,
-        ], 200);
-    }
-
-    public function saveFluentFormsSettings($settings = array())
-    {
-        update_option('wpsr_fluent_forms_global_settings', $settings, 'no');
-
-        $has_column = Helper::hasReviewApproved();
-        if(!$has_column) {
-            ReviewsMigrator::migrate();
-        }
-
-        wp_send_json_success([
-            'message' => __('Settings Saved Successfully', 'wp-social-reviews'),
         ], 200);
     }
 
