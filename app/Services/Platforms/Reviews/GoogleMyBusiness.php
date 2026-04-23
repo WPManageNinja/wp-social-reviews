@@ -20,8 +20,8 @@ class GoogleMyBusiness extends BaseReview
 {
     private $remoteBaseUrl = 'https://mybusiness.googleapis.com/v4/';
     private $redirect = 'https://wpsocialninja.com/gapi/';
-    private $clientId = getenv('WP_SOCIAL_REVIEWS_GOOGLE_LEGACY_CLIENT_ID') ?: '';
-    private $clientSecret = getenv('WP_SOCIAL_REVIEWS_GOOGLE_LEGACY_CLIENT_SECRET') ?: '';
+    private $clientId = '';
+    private $clientSecret = '';
     private $placeId;
     public $nextPageToken = '';
     public $locationNextPageToken = '';
@@ -124,8 +124,8 @@ class GoogleMyBusiness extends BaseReview
 
         //To support previous Google Authentication Process we must use the Previous App
         if( !isset($tokens['version']) ){
-            $clientId = '1066221839285-ckecknkno31o1ma3ti37lv4fb3vlidhi.apps.googleusercontent.com';
-            $clientSecret = 'mkhMmZ-0T2VEYuwEkfn5umqm';
+$clientId = getenv('WP_SOCIAL_REVIEWS_GOOGLE_LEGACY_CLIENT_ID') ?: '';
+$clientSecret = getenv('WP_SOCIAL_REVIEWS_GOOGLE_LEGACY_CLIENT_SECRET') ?: '';
         }
 
         $args = [
