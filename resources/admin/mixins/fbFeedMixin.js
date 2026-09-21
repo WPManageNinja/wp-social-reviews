@@ -1,3 +1,10 @@
+// PHP already applied FacebookFeedTemplateHandler::canRenderProTemplate() to the list it hands
+// the admin app, so this is a membership test, not a second copy of the gate. Rebuilding the
+// gate here is what let the editor drift from the published feed.
+export function canRenderFacebookProTemplate(template, renderableTemplates) {
+    return Array.isArray(renderableTemplates) && renderableTemplates.indexOf(template) !== -1;
+}
+
 export const fbFeedMixin = {
     data() {
         return {
@@ -124,6 +131,9 @@ export const fbFeedMixin = {
             let directory = upload_url + 'facebook_feed' +'/' +  feed.page_id + '/' + feed.id + '_' + settings.post_settings.resolution + '.'+ image_format;
             return image_settings.optimized_images === 'true' ? directory : feed.media_url;
         },
+        getItemWrapperClass(){
+            return this.isMosaicTemplate ? ['wpsr-fb-highlight-item'] : ['wpsr-mb-30', this.responsiveClasses];
+        },
         filterFeeds(){
             if(this.feedConfig.feed_settings.source_settings.feed_type === 'album_feed'){
                 if(this.feedConfig.dynamic.items !== undefined){
@@ -137,6 +147,27 @@ export const fbFeedMixin = {
     computed:{
         responsiveClasses(){
             return this.feedConfig.feed_settings.layout_type === 'carousel' && this.has_pro ? 'swiper-slide' : 'wpsr-col-'+this.feedConfig.feed_settings.responsive_column_number.desktop + ' wpsr-col-sm-'+this.feedConfig.feed_settings.responsive_column_number.tablet + ' wpsr-col-xs-'+this.feedConfig.feed_settings.responsive_column_number.mobile;
+        },
+        // Template 4 owns its mosaic grid, so it ignores layout_type entirely.
+        isMosaicTemplate(){
+            return this.feedConfig.feed_settings.template === 'template4'
+                && canRenderFacebookProTemplate('template4', this.facebook_pro_templates);
+        },
+        // Carries header.php's !$wpsr_is_mosaic term so the answer stands on its own, the way
+        // the Instagram templates already read this straight into a swiper-container class.
+        isCarouselLayout(){
+            return !this.isMosaicTemplate
+                && this.feedConfig.feed_settings.layout_type === 'carousel'
+                && this.has_pro;
+        },
+        feedContainerClasses(){
+            if (this.isMosaicTemplate) {
+                return ['wpsr-fb-highlights-grid', 'wpsr-column-gap-' + this.feedConfig.feed_settings.column_gaps];
+            }
+            if (this.isCarouselLayout) {
+                return ['swiper-wrapper'];
+            }
+            return ['wpsr-row', 'wpsr-column-gap-' + this.feedConfig.feed_settings.column_gaps];
         },
         generatePhotoAlbumFeedClass() {
             let templateMeta = this.feedConfig.feed_settings;

@@ -23,8 +23,8 @@ const request = function(method, route, data = {}) {
 
 export default {
     get(route, data = {}) {
-        data.query_timestamp = Date.now();
-        return request('GET', route, data);
+        // Clone first: the cache-busting stamp must not land on the caller's object.
+        return request('GET', route, {...data, query_timestamp: Date.now()});
     },
     post(route, data = {}) {
         return request('POST', route, data);

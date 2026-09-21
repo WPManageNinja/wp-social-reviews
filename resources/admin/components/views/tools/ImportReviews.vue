@@ -65,11 +65,14 @@
                 style="width: 100%"
                 :loading="loadingSources"
               >
+                <!-- Value must be the custom source post ID: the importer resolves the
+                     platform/source pair (fluent_forms form_id, native_form native_form_id)
+                     from it. The label shows the resolved ID, which is what the CSV carries. -->
                 <el-option
                   v-for="source in customSources"
                   :key="source.id"
                   :label="`${source.title || source.name} (ID: ${source.form_id || source.id})`"
-                  :value="source.form_id || source.id"
+                  :value="source.id"
                 >
                   <span style="float: left">{{ source.title || source.name }}</span>
                   <span style="float: right; color: #8492a6; font-size: 13px">Source ID: {{ source.form_id || source.id }}</span>
@@ -106,6 +109,11 @@
               {{ $t('Download Sample CSV') }}
             </el-button>
         </div>
+
+        <!-- Judge.me exports have no category column, so the hint would be noise there. -->
+        <p v-if="selectedImport !== 'judge-me'" class="wpsr-page-subtitle">
+          {{ $t('A review can belong to several categories. Separate them with a vertical bar in the category column — for example Home|About. Categories that do not exist yet are created on import.') }}
+        </p>
 
          <div class="wpsr-table-container">
            <el-table v-if="sampleData.length" border :data="sampleData">
@@ -172,7 +180,10 @@ export default {
         review_approved: (rowIndex) => '1',
         recommendation_type: (rowIndex) => 'positive',
         fields: (rowIndex) => '{}',
-        category: (rowIndex) => 'sample_category',
+        category: (rowIndex) => rowIndex === 0 ? 'Home|About' : 'Support',
+        // Both are stored only as full http(s) URLs, so a placeholder would be dropped.
+        video_url: (rowIndex) => rowIndex === 0 ? 'https://example.com/testimonial.mp4' : 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        video_poster: (rowIndex) => rowIndex === 0 ? 'https://example.com/testimonial-poster.jpg' : '',
         default: (rowIndex, headerIndex) => `content_${rowIndex}_${headerIndex}`
       };
 
@@ -212,8 +223,8 @@ export default {
       link.click();
     },
     updateColumns(type) {
-      const commonColumns = ['reviewer_name', 'reviewer_url', 'review_title', 'reviewer_text', 'review_time', 'rating', 'reviewer_img'];
-      const testimonialSpecificColumns = ['category', 'author_company', 'author_position', 'author_website_logo', 'author_website_url'];
+      const commonColumns = ['reviewer_name', 'reviewer_url', 'review_title', 'reviewer_text', 'review_time', 'rating', 'reviewer_img', 'category'];
+      const testimonialSpecificColumns = ['author_company', 'author_position', 'author_website_logo', 'author_website_url', 'video_url', 'video_poster'];
       const judgeMeColumns = ['title', 'body', 'rating', 'review_date', 'source', 'curated', 'reviewer_name', 'reviewer_email', 'product_id', 'product_handle', 'reply', 'reply_date', 'picture_urls', 'ip_address', 'location'];
 
       if (type === 'testimonial') {
@@ -238,7 +249,11 @@ export default {
         review_approved: '1',
         recommendation_type: 'positive',
         fields: '{}',
-        category: 'sample_category'
+        // Demonstrates the multi-category format rather than a placeholder word.
+        category: 'Home|About',
+        // Both are stored only as full http(s) URLs, so a placeholder would be dropped.
+        video_url: 'https://example.com/testimonial.mp4',
+        video_poster: 'https://example.com/testimonial-poster.jpg'
       };
 
       let row = {};
@@ -264,7 +279,7 @@ export default {
       formData.append('file', this.file);
       formData.append('action', 'wpsr_import_data');
       formData.append('type', this.selectedImport);
-      formData.append('security', window.WPSocialReviewsAdmin && window.WPSocialReviewsAdmin.wpsr_admin_nonce ? window.WPSocialReviewsAdmin.wpsr_admin_nonce : '');
+      formData.append('security', window.WPSocialReviewsAdmin && window.WPSocialReviewsAdmin.wpsr_import_export_nonce ? window.WPSocialReviewsAdmin.wpsr_import_export_nonce : '');
       
       // Add source ID if provided
       if (this.selectedSourceId) {

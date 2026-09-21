@@ -1,5 +1,5 @@
 <template>
-    <div class="wpsr_editor" v-if="template_meta" :class="{ 'wpsr-blurred': showWelcomePopup }">
+    <div class="wpsr_editor" v-if="template_meta" :class="{ 'wpsr-blurred': showWelcomePopup, 'wpsr-editor-sidebar-minimized': wpsrSidebarMinimized, 'wpsr-sidebar-resizing': wpsrSidebarResizing }">
         <editor-header
             :title="template_title"
             :platform_section="types"
@@ -8,7 +8,7 @@
             @update-settings="saveTemplateMeta"
         ></editor-header>
         <div class="wpsr_editor_wrapper" :class="'wpsr-active-'+template_meta.templateType+'-editor-wrapper'">
-            <el-container>
+            <el-container :style="{ '--wpsr-editor-sidebar-width': wpsrSidebarWidth + 'px' }">
                 <el-main v-loading="loading" class :class="[
                       has_pro && template_meta.templateType !== 'notification' ? 'wpsr-editor-view-port' : '',
                       !has_pro && 'wpsr-reviews-spacing-top'
@@ -90,7 +90,10 @@
                   </div>
                 </el-main>
 
+                <SidebarToggleButton :minimized="wpsrSidebarMinimized" @toggle="toggleEditorSidebar" />
+
                 <el-aside class="wpsr-editor-sidebar">
+                  <SidebarResizeHandle :width="wpsrSidebarWidth" :min="wpsrSidebarMinWidth" :max="wpsrSidebarMaxWidth" @resize-start="startSidebarResize" @resize-step="stepSidebarResize" />
                   <UpgradeApp />
                   <el-tabs v-model="activeTab" class="wpsr-element-tab-wrapper">
                     <el-tab-pane label="General" name="general" class="wpsr-element-tab-item">
@@ -182,13 +185,16 @@ import { markRaw } from 'vue';
 import ReviewsPlatforms from "../../views/platforms/reviews/ReviewsPlatforms.vue";
 import ReviewsConnections from "./editor-ui/ReviewsConnections.vue";
 import ProCrownIcon from "../../pieces/icons/ProCrownIcon"
+import SidebarToggleButton from '../../pieces/SidebarToggleButton';
+import SidebarResizeHandle from '../../pieces/SidebarResizeHandle';
 import UpgradeApp from "../../pieces/UpgradeApp.vue";
 import OnboardWelcomePopup from "../../pieces/OnboardWelcomePopup.vue";
 import DemoTemplateAlert from "../../pieces/DemoTemplateAlert.vue";
+import { editorSidebarMixin } from "../../../mixins/editorSidebarMixin";
 
 export default {
     name: "ReviewsView",
-    mixins: [commonMixin, reviewsMixin, jsLibraryMixin, helperStyle, AISummarizerMixin],
+    mixins: [commonMixin, reviewsMixin, jsLibraryMixin, helperStyle, AISummarizerMixin, editorSidebarMixin],
     components: {
         ReviewsConnections,
         ReviewsPlatforms,
@@ -206,7 +212,9 @@ export default {
         ProCrownIcon,
         UpgradeApp,
         OnboardWelcomePopup,
-        DemoTemplateAlert
+        DemoTemplateAlert,
+        SidebarToggleButton,
+        SidebarResizeHandle
     },
     data() {
         return {
@@ -254,6 +262,30 @@ export default {
         }
     },
     methods: {
+        getConsumedAuthConfiguration(platform, platformType) {
+          let result = null;
+
+          try {
+            result = JSON.parse(window.sessionStorage.getItem('wpsn_auth_consumed_result') || 'null');
+          } catch (error) {
+            result = null;
+          }
+
+          if (!result || result.platform !== platform) {
+            return null;
+          }
+
+          window.sessionStorage.removeItem('wpsn_auth_consumed_result');
+
+          return {
+            configuration: true,
+            platform: platform || null,
+            platform_type: platformType,
+            auth_consumed: true,
+            locations: result.locations || {},
+            load_existing: !!result.load_existing
+          };
+        },
         handleDevice (val, activeDevice) {
           this.$emit('handleDevice' , val, activeDevice);
           let template_type = this.template_meta.templateType;
@@ -280,12 +312,7 @@ export default {
               jQuery(this).closest(".wpsr-yt-popup-video-meta-description").toggleClass("wpsr_show_less_content wpsr_show_more_content");
 
               if (that.templateTypeValue == 'masonry') {
-                  setTimeout(() => {
-                      let column = jQuery('.wpsr-active-masonry-layout').data("column");
-                      jQuery('.wpsr-active-masonry-layout').masonry({
-                        itemSelector: '.wpsr-col-'+column+'',
-                      });
-                  },100)
+                  setTimeout(() => that.activeMasonry('.wpsr-active-masonry-layout', '.wpsr-all-reviews'), 100);
               }
           });
         },
@@ -425,7 +452,21 @@ export default {
 
                 });
         },
+        hasBlankCustomWriteReviewUrl() {
+            if (!this.template_meta) {
+                return false;
+            }
+
+            return this.template_meta.add_custom_war_btn_url === 'true' &&
+                this.template_meta.war_btn_source === 'custom_url' &&
+                !String(this.template_meta.war_btn_source_custom_url || '').trim();
+        },
         saveTemplateMeta() {
+            if (this.hasBlankCustomWriteReviewUrl()) {
+                this.handleError(this.$t ? this.$t('Please enter a custom URL for the Write a Review button.') : 'Please enter a custom URL for the Write a Review button.');
+                return;
+            }
+
             let template_id = this.$route.params.template_id;
             this.saving = true;
 
@@ -977,13 +1018,29 @@ export default {
         if (urlParams.has('configuration')) {
           this.activeTab = 'connection';
           const platform = urlParams.get('platform');
-          const oauthToken = urlParams.get('oauth_token');
+          const authError = urlParams.get('auth_error') === 'true';
 
-          this.hasConfigurationInformation = {
+          if (authError) {
+            this.handleError(this.$t('Authentication could not be completed. Please try reconnecting the platform.'));
+            const cleanHash = hash.split('?')[0];
+            const newUrl = window.location.origin + window.location.pathname + window.location.search + cleanHash;
+            window.history.replaceState({}, '', newUrl);
+            this.checkAndEditorWelcomePopup();
+            this.setSkins();
+            return;
+          }
+
+          const oauthToken = urlParams.get('oauth_token');
+          const authConsumed = urlParams.get('auth_consumed') === 'true';
+          const consumedConfiguration = authConsumed ? this.getConsumedAuthConfiguration(platform, 'reviews') : null;
+
+          this.hasConfigurationInformation = consumedConfiguration || {
               configuration: true,
               platform: platform || null,
               oauth_token: oauthToken || null,
-              platform_type: 'reviews'
+              platform_type: 'reviews',
+              auth_consumed: authConsumed,
+              load_existing: authConsumed
           };
         }
 

@@ -1,10 +1,15 @@
 <template>
   <div>
     <div class="wpsr-fb-feed-image wpsr-fb-feed-url-summary-card-wrapper" v-for="(attachment, key) in feed.attachments.data" :key="key">
-      <div class="wpsr-fb-feed-iframe" v-if="attachment.type === 'video_inline'">
-        <iframe type="text/html" class="wpsr-fb-feed-url-summary-card wpsr-feed-link" :src="'https://www.facebook.com/plugins/video.php?href='+attachment.url+'?autoplay=1&mute=0'" allowfullscreen="" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" title="Video">
+      <div class="wpsr-fb-feed-iframe" v-if="attachment.type === 'video_inline' && attachment.url && wpsrIsEmbeddable(feed)">
+        <iframe type="text/html" class="wpsr-fb-feed-url-summary-card wpsr-feed-link" :src="wpsrVideoEmbedUrl(attachment.url, {mute: 0})" allowfullscreen="" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" title="Video">
         </iframe>
       </div>
+      <a v-else-if="attachment.type === 'video_inline' && attachment.url" class="wpsr-fb-feed-video-not-embeddable" :href="attachment.url" target="_blank" rel="nofollow">
+        <img v-if="attachment.media && attachment.media.image && attachment.media.image.src" :src="attachment.media.image.src" :alt="attachment.title">
+        <div class="wpsr-fb-feed-video-play"><div class="wpsr-fb-feed-video-play-icon"></div></div>
+        <span class="wpsr-fb-feed-video-not-embeddable-note">{{ $t('View on Facebook') }}</span>
+      </a>
       <div class="wpsr-fb-feed-url-summary-card-title" v-if="typeof feed.message !== 'string'">{{ attachment.title }}</div>
 
       <a v-if="feed.status_type === 'shared_story'" class="wpsr-fb-feed-url-summary-card" :href="getSiteUrl(attachment, false)" target="_blank" rel="nofollow">
@@ -35,8 +40,9 @@
 
 <script>
 import { commonMixin } from '../../../../../mixins/commonMixin';
+import { fbVideoMixin } from '../../../../../mixins/fbVideoMixin';
 export default {
-  mixins: [commonMixin],
+  mixins: [commonMixin, fbVideoMixin],
   name: "url_summary_card",
   props: ['feed', 'feed_settings', 'image_settings'],
   methods: {

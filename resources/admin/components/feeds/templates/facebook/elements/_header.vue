@@ -1,6 +1,6 @@
 <template>
   <div v-if="header_settings.display_header === 'true' && Object.entries(account).length" class="wpsr-row">
-    <div class="wpsr-fb-feed-header wpsr-col-12" :class="header_settings.display_profile_photo === 'false' ? 'wpsr-fb-feed-profile-pic-hide' : ''">
+    <div class="wpsr-fb-feed-header wpsr-col-12" :class="[headerLayoutClass, header_settings.display_profile_photo === 'false' ? 'wpsr-fb-feed-profile-pic-hide' : '']">
       <div class="wpsr-fb-feed-user-profile-banner" v-if="account.cover && header_settings.display_cover_photo === 'true'">
         <img :src="get_header_cover(account)" :alt="account.name">
       </div>
@@ -59,6 +59,12 @@ export default {
     ShareButton
   },
   props: ['header_settings', 'account', 'settings'],
+  computed: {
+    headerLayoutClass() {
+      const wpsrHeaderLayout = this.header_settings && this.header_settings.header_layout === 'minimal' ? 'minimal' : 'classic';
+      return 'wpsr-fb-feed-header-layout-' + wpsrHeaderLayout;
+    }
+  },
   methods: {
       get_header_avatar(account) {
         let placeholder = this.assets_url + '/images/template/review-template/placeholder-image.png';

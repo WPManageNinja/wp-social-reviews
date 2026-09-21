@@ -40,6 +40,26 @@ export const tiktokFeedMixin = {
                 });
             });
         },
+        // The card is a div, so it only takes focus when a click actually opens something.
+        feedCardAttrs(feed) {
+            if (this.feedConfig.feed_settings.post_settings.display_mode !== 'popup') {
+                return {};
+            }
+            return {
+                tabindex: '0',
+                role: 'button',
+                'aria-label': feed && feed.text ? feed.text : this.$t('Open TikTok video')
+            };
+        },
+        wpsrActivateOnKey(event) {
+            if (event.currentTarget.getAttribute('role') !== 'button') {
+                return;
+            }
+            if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+                event.preventDefault();
+                event.currentTarget.click();
+            }
+        },
         postDisplayMode(e, feed, settings, index) {
             this.selectedFeed = [];
             this.currentIndex = index;

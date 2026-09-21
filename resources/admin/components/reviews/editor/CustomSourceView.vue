@@ -1,7 +1,18 @@
 <template>
   <GlobalMainNav />
   <div class="wpsr-page-container wpsr-all-templates-page">
-    <div v-if="hasPermission(['wpsn_manage_reviews', 'wpsn_full_access'])">
+    <div v-if="!has_pro" class="wpsr-managers-upgrade-to-pro" style="height: 100vh;">
+      <img :src="assets_url+'/images/promotion/custom-sources.png'" alt="">
+      <div class="wpsr-managers-upgrade-message">
+        <h2>{{ $t('Add Reviews from Any Platform You Want') }}</h2>
+        <p>{{ $t('Build unlimited custom review feeds with your branding & ratings. Show them exactly how you want.') }}</p>
+        <div>
+          <UpgradeToProButton placement="feature_lock_custom_source_editor"/>
+        </div>
+      </div>
+    </div>
+
+    <div v-else-if="hasPermission(['wpsn_manage_reviews', 'wpsn_full_access'])">
       <!-- Loading Skeleton -->
       <div v-if="loading" class="wpsr-page-section">
         <div class="wpsr-table-wrapper">
@@ -133,8 +144,18 @@
                     <span>{{ $t('Not Spam') }}</span>
                   </span>
                   </el-option>
+                  <el-option :label="$t('Assign Category')" value="category">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><PriceTag /></el-icon>
+                    <span>{{ $t('Assign Category') }}</span>
+                  </span>
+                  </el-option>
                 </el-select>
                 <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
+                <el-button v-if="canManageCategories" @click="show_manage_categories_modal = true">
+                  <el-icon class="wpsr-mr-5"><PriceTag /></el-icon>
+                  {{ $t('Manage Categories') }}
+                </el-button>
               </div>
               <el-input
                   class="wpsr-input-default"
@@ -197,6 +218,24 @@
               <el-table-column :label="$t('Rating')" width="80">
                 <template #default="scope">
                   <span class="wpsr-rating">{{ scope.row.rating }}</span>
+                </template>
+              </el-table-column>
+
+              <el-table-column :label="$t('Categories')" min-width="140">
+                <template #default="scope">
+                  <div v-if="scope.row.categories && scope.row.categories.length" class="wpsr-d-flex wpsr-gap-4" style="flex-wrap: wrap;">
+                    <el-tag
+                        v-for="category in scope.row.categories"
+                        :key="category.id"
+                        size="small"
+                        closable
+                        disable-transitions
+                        @close="removeCategoryFromReview(scope.row, category)"
+                    >
+                      {{ category.name }}
+                    </el-tag>
+                  </div>
+                  <span v-else>-</span>
                 </template>
               </el-table-column>
 
@@ -356,6 +395,8 @@
       <el-dialog
           class="wpsr-confirmation-modal"
           v-model="show_delete_modal"
+          :close-on-click-modal="!loading"
+          :show-close="!loading"
           width="40%"
           :before-close="handleDeleteClose">
         <div class="wpsr-delete-content">
@@ -376,8 +417,8 @@
         </div>
         <template #footer>
           <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-            <el-button class="wpsr_default_btn" @click="show_delete_modal = false">Cancel</el-button>
-            <el-button class="wpsr_primary_btn" type="danger" @click="confirmDelete()">Confirm</el-button>
+            <el-button class="wpsr_default_btn" :disabled="loading" @click="show_delete_modal = false">Cancel</el-button>
+            <el-button class="wpsr_primary_btn" type="danger" :loading="loading" @click="confirmDelete()">Confirm</el-button>
           </div>
         </template>
       </el-dialog>
@@ -386,6 +427,8 @@
       <el-dialog
           class="wpsr-confirmation-modal"
           v-model="show_status_modal"
+          :close-on-click-modal="!loading"
+          :show-close="!loading"
           width="40%">
         <div class="wpsr-delete-content">
           <h4>Are you sure, you want to {{ bulkAction }} {{ selectedItems.length }} review(s)?</h4>
@@ -399,8 +442,8 @@
         </div>
         <template #footer>
           <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-            <el-button class="wpsr_default_btn" @click="show_status_modal = false">Cancel</el-button>
-            <el-button class="wpsr_primary_btn" @click="performStatusUpdate()">Confirm</el-button>
+            <el-button class="wpsr_default_btn" :disabled="loading" @click="show_status_modal = false">Cancel</el-button>
+            <el-button class="wpsr_primary_btn" :loading="loading" @click="performStatusUpdate()">Confirm</el-button>
           </div>
         </template>
       </el-dialog>
@@ -409,6 +452,8 @@
       <el-dialog
           class="wpsr-confirmation-modal"
           v-model="show_duplicate_modal"
+          :close-on-click-modal="!loading"
+          :show-close="!loading"
           width="40%">
         <div class="wpsr-delete-content">
           <h4>Are you sure, you want to duplicate {{ selectedItems.length }} review(s)?</h4>
@@ -421,11 +466,35 @@
         </div>
         <template #footer>
           <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-            <el-button class="wpsr_default_btn" @click="show_duplicate_modal = false">Cancel</el-button>
-            <el-button class="wpsr_primary_btn" type="primary" @click="performBulkDuplicate()">Confirm</el-button>
+            <el-button class="wpsr_default_btn" :disabled="loading" @click="show_duplicate_modal = false">Cancel</el-button>
+            <el-button class="wpsr_primary_btn" type="primary" :loading="loading" @click="performBulkDuplicate()">Confirm</el-button>
           </div>
         </template>
       </el-dialog>
+
+      <!--Bulk Assign/Remove Category Modal-->
+      <BulkCategoryModal
+          v-model="show_category_modal"
+          :categories="categories"
+          :selected-count="selectedItems.length"
+          :applying="applyingBulkCategory"
+          :loading="categoriesLoading"
+          :load-error="categoriesLoadError"
+          @submit="applyBulkCategory"
+          @retry="loadCategories"
+      />
+
+      <!--Browse/Rename/Delete Categories Modal-->
+      <ManageCategoriesModal
+          v-model="show_manage_categories_modal"
+          :categories="categories"
+          :loading="categoriesLoading"
+          :loaded="categoriesLoaded"
+          :load-error="categoriesLoadError"
+          :route-prefix="categoryRoutePrefix"
+          @categories-changed="onCategoriesChanged"
+          @retry="loadCategories"
+      />
     </div>
   </div>
 
@@ -526,7 +595,7 @@
 <script>
 import GlobalMainNav from '../../global/Index.vue';
 import {
-  Upload, Download, Setting, Plus, ArrowDown, Search, MoreFilled, Delete, CircleCheck, CircleClose, DocumentCopy, Edit, WarningFilled
+  Upload, Download, Setting, Plus, ArrowDown, Search, MoreFilled, Delete, CircleCheck, CircleClose, DocumentCopy, Edit, WarningFilled, PriceTag
 } from "@element-plus/icons-vue";
 import ReviewForm from "../../views/ReviewForm.vue";
 import {tableMixin} from "../../../mixins/tableMixin";
@@ -534,17 +603,24 @@ import ReviewContentModal from "../../pieces/ReviewContentModal.vue";
 import PhotoUploader from "../../core-ui/editor/PhotoUploader.vue";
 import ReviewsEmptyStates from "../../pieces/icons/ReviewsEmptyStates.vue";
 import {PlatformIconMixin} from "../../../mixins/PlatformIconMixin";
+import {reviewCategoryMixin} from "../../../mixins/reviewCategoryMixin";
+import BulkCategoryModal from "../../pieces/BulkCategoryModal.vue";
+import ManageCategoriesModal from "../../pieces/ManageCategoriesModal.vue";
+import UpgradeToProButton from "../../views/advertise/UpgradeToProButton.vue";
 
 export default {
   name: 'CustomSourceView',
-  mixins: [tableMixin, PlatformIconMixin],
+  mixins: [tableMixin, PlatformIconMixin, reviewCategoryMixin],
   components: {
     ReviewsEmptyStates,
     PhotoUploader,
     ReviewContentModal,
     ReviewForm,
     GlobalMainNav,
-    Upload, Download, Setting, Plus, ArrowDown, Search, MoreFilled, Delete, CircleCheck, CircleClose, DocumentCopy
+    BulkCategoryModal,
+    ManageCategoriesModal,
+    UpgradeToProButton,
+    Upload, Download, Setting, Plus, ArrowDown, Search, MoreFilled, Delete, CircleCheck, CircleClose, DocumentCopy, PriceTag
   },
   data() {
     return {
@@ -598,8 +674,12 @@ export default {
   computed: {
   },
   mounted() {
-    //this.loadReviews();
+    // Custom sources are Pro-only; core/free has no endpoint to answer these.
+    if (!this.has_pro) {
+      return;
+    }
     this.loadSourceData();
+    this.loadCategories();
   },
   methods: {
     generateQRcode(){
@@ -803,6 +883,9 @@ export default {
         case 'not-spam':
           this.bulkMarkAsNotSpam();
           break;
+        case 'category':
+          this.openBulkCategoryModal();
+          break;
         default:
           this.$notify.warning('Selected action is not supported yet');
       }
@@ -858,7 +941,7 @@ export default {
       }
 
       // Build the export URL with dynamic type
-      const security = window.WPSocialReviewsAdmin && window.WPSocialReviewsAdmin.wpsr_admin_nonce ? window.WPSocialReviewsAdmin.wpsr_admin_nonce : "";
+      const security = window.WPSocialReviewsAdmin && window.WPSocialReviewsAdmin.wpsr_import_export_nonce ? window.WPSocialReviewsAdmin.wpsr_import_export_nonce : "";
       let url = `${ajaxurl}?action=wpsr_export_data&type=${this.settingsForm.source_name}&security=${encodeURIComponent(security)}`;
 
       // Add source ID filter if available

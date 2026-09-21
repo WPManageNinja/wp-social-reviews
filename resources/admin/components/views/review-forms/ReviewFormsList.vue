@@ -145,9 +145,6 @@
                     <el-dropdown-item command="duplicate">
                       <el-icon><CopyDocument /></el-icon> {{ $t('Duplicate') }}
                     </el-dropdown-item>
-                    <el-dropdown-item command="submissions">
-                      <el-icon><View /></el-icon> {{ $t('View Submissions') }}
-                    </el-dropdown-item>
                     <el-dropdown-item command="delete" class="wpsr-action-delete">
                       <el-icon><Delete /></el-icon> {{ $t('Delete') }}
                     </el-dropdown-item>

@@ -1,3 +1,5 @@
+import { wpsrUpgradeUrl } from '../utils/upgradeUrl';
+
 export default {
   computed: {
     hasActiveOffer() {
@@ -11,7 +13,7 @@ export default {
     upgradeBtnConfig() {
       return this.appVars?.upgrade_btn_config || {
         text: 'Upgrade to Pro',
-        pro_purchase_url: 'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade',
+        pro_purchase_url: wpsrUpgradeUrl('upgrade_page'),
         discount_percentage: 0,
         urgency_text: null,
         has_offer: false,
@@ -32,7 +34,7 @@ export default {
           'Regular updates',
           'Unlimited usage'
         ],
-        pro_purchase_url: 'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade',
+        pro_purchase_url: wpsrUpgradeUrl('feature_lock_general'),
         offer_active: false
       };
     },
@@ -63,10 +65,11 @@ export default {
         return basePromotion;
       }
 
-      // Merge active offer with base promotion
+      // Merge active offer with base promotion. The URL is deliberately left
+      // alone: PHP already stamped the live promo onto it as utm_id while keeping
+      // the placement intact, so an offer must not swap the whole URL out.
       return {
         ...basePromotion,
-        pro_purchase_url: this.activeOffer.pro_purchase_url || basePromotion.pro_purchase_url,
         discount_percentage: this.activeOffer.discount_percentage || 0,
         offer_active: true,
         offer_text: this.activeOffer.urgency_text || '',

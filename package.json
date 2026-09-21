@@ -8,7 +8,8 @@
     "watch": "cross-env NODE_ENV=development mix watch",
     "hot": "cross-env NODE_ENV=development mix watch --hot",
     "prod": "npm run production",
-    "production": "cross-env NODE_ENV=production mix"
+    "production": "cross-env NODE_ENV=production mix",
+    "extract-translations": "node extract-translations.js"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",

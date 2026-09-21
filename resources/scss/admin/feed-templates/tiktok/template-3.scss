@@ -1,0 +1,295 @@
+.wpsr-tiktok-feed-template3 {
+  .wpsr-tiktok-feed-reactions-icon-like {
+    background-image: url('../../../../images/tiktok-images/like-template-2.svg');
+  }
+  .wpsr-tiktok-feed-reactions-icon-comment {
+    background-image: url('../../../../images/tiktok-images/comments-template-2.svg');
+  }
+  .wpsr-tiktok-feed-reactions-icon-play {
+    background-image: url('../../../../images/tiktok-images/view-template-2.svg');
+  }
+}
+
+.wpsr-tiktok-feed-wrapper {
+  &.wpsr-tiktok-feed-template3 {
+    .wpsr-tiktok-feed-item {
+      position: relative;
+      height: 100%;
+      overflow: hidden;
+      border-radius: 16px;
+      background-color: #f2f3f5;
+      transition: 0.3s;
+
+      [data-playmode="popup"] {
+        cursor: pointer;
+      }
+    }
+
+    .wpsr-tiktok-feed-inner {
+      position: relative;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .wpsr-tiktok-feed-content-preview {
+      height: 100%;
+
+      // the card carries a tabindex in popup mode, so focus must be visible
+      &:focus-visible {
+        outline: 2px solid #72aee6;
+        outline-offset: -2px;
+      }
+    }
+
+    // Portrait media card, matches the 307 x 581 design ratio
+    .wpsr-tiktok-feed-image {
+      position: relative;
+      height: 100%;
+      min-height: 100%;
+      padding-top: 189.25%;
+      overflow: hidden;
+
+      // media wrapper in the editor preview (.wpsr-tt-post-media) and on the frontend (.wpsr-tiktok-feed-video-preview)
+      .wpsr-tt-post-media,
+      .wpsr-tiktok-feed-video-preview {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: block;
+        height: 100%;
+        // template-1.scss sets an unscoped padding-top:100% here, which adds to height:100% and mis-frames the crop
+        padding-top: 0;
+      }
+
+      img.wpsr-tt-post-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 16px;
+      }
+
+      // template-1.scss gives this 100% size plus content-box padding:15px, overflowing the tile and offsetting the play icon
+      .wpsr-tiktok-feed-content-box {
+        box-sizing: border-box;
+      }
+    }
+
+    // Default state: author strip over a white scrim pinned to the bottom
+    .wpsr-tiktok-feed-content-wrapper {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 2;
+      padding: 90px 17px 17px;
+      pointer-events: none;
+      transition: 0.3s;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.85) 45%, #ffffff 100%);
+
+      // keep the strip one line tall in narrow columns
+      .wpsr-feed-avatar-right {
+        .wpsr-tiktok-feed-author-name,
+        .wpsr-tiktok-feed-time {
+          display: block;
+          max-width: 100%;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+      }
+    }
+
+    .wpsr-tiktok-feed-content-top-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+
+      &.wpsr-tiktok-feed-author-avatar-wrapper-remove-spacing {
+        display: none;
+      }
+    }
+
+    .wpsr-tiktok-feed-author-avatar-wrapper {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+
+      .wpsr-tiktok-feed-author-name {
+        color: #161616;
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-top: 0;
+        text-decoration: none;
+      }
+
+      .wpsr-tiktok-feed-time {
+        color: #646060;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+    }
+
+    img.wpsr-tiktok-feed-author-avatar {
+      width: 39px;
+      height: 39px;
+      min-width: 39px;
+      max-height: 39px;
+      padding: 2px;
+      border: 2px solid #4c8fff;
+      border-radius: 50%;
+      background-color: #ffffff;
+      object-fit: cover;
+      box-sizing: border-box;
+    }
+
+    .wpsr-feed-avatar-right {
+      display: flex;
+      flex-direction: column;
+      margin-left: 8px;
+      min-width: 0;
+    }
+
+    .wpsr-tiktok-icon-temp-3,
+    .wpsr-tiktok-feed-overlay-icon {
+      display: block;
+      width: 24px;
+      height: 24px;
+      min-width: 24px;
+      background-image: url('../../../../images/icon/icon-tiktok-color.svg');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    // the whole card is one click target, so this stays pointer-transparent and clicks fall through to the media element
+    .wpsr-tiktok-feed-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 17px;
+      border-radius: 16px;
+      background-color: rgba(255, 255, 255, 0.8);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: 0.3s;
+    }
+
+    .wpsr-tiktok-feed-overlay-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 274px;
+      text-align: center;
+
+      .wpsr-feed-description-link {
+        width: 100%;
+        max-width: 246px;
+      }
+
+      .wpsr-feed-description-text {
+        display: inline-block;
+        color: #111113;
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 1.2;
+        text-decoration: none;
+
+        a {
+          color: #5766ee;
+        }
+      }
+
+      // Author stacks name/date above the avatar in the hover state
+      .wpsr-tiktok-feed-author-avatar-wrapper {
+        flex-direction: column-reverse;
+        gap: 8px;
+
+        .wpsr-tiktok-feed-author-name {
+          font-size: 14px;
+        }
+      }
+
+      .wpsr-feed-avatar-right {
+        align-items: center;
+        margin-left: 0;
+      }
+
+      .wpsr-tiktok-feed-statistics {
+        width: 100%;
+
+        &.wpsr-remove-white-space {
+          display: none;
+        }
+      }
+
+      .wpsr-tiktok-feed-reactions {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .wpsr-tiktok-feed-reaction-wrapeer {
+        flex-direction: inherit;
+        transition: 0.3s;
+
+        .wpsr-tiktok-feed-reactions-icon {
+          margin-top: 0;
+          background-color: transparent;
+        }
+
+        &:hover .wpsr-tiktok-feed-reaction-count {
+          color: #161616;
+        }
+      }
+
+      .wpsr-tiktok-feed-reaction-count {
+        color: #565865;
+      }
+    }
+
+    .wpsr-tiktok-feed-item:hover,
+    .wpsr-tiktok-feed-item:focus-within {
+      .wpsr-tiktok-feed-overlay {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .wpsr-tiktok-feed-content-wrapper,
+      .wpsr-tiktok-feed-content-box {
+        opacity: 0;
+        visibility: hidden;
+      }
+    }
+
+    @media only screen and (max-width: 767px) {
+      .wpsr-tiktok-feed-content-wrapper {
+        padding: 60px 12px 12px;
+      }
+
+      .wpsr-tiktok-feed-author-avatar-wrapper .wpsr-tiktok-feed-author-name {
+        font-size: 14px;
+      }
+
+      img.wpsr-tiktok-feed-author-avatar {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        max-height: 34px;
+      }
+    }
+  }
+}

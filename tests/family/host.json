@@ -1,0 +1,214 @@
+{
+  "schema": 1,
+  "host_api": 1,
+  "plugin": {
+    "id": "core",
+    "slug": "wp-social-ninja",
+    "main_file": "wp-social-reviews.php"
+  },
+  "summary_labels": [
+    "FAMILY-CORE",
+    "INTEGRATION",
+    "JS-RESULTS",
+    "PERMISSIONS",
+    "PUBLIC",
+    "PURE",
+    "SMOKE",
+    "STATIC"
+  ],
+  "suites": [
+    {
+      "id": "static",
+      "summary": "STATIC",
+      "files": [
+        "tests/infrastructure/lint.php",
+        "tests/smoke/route-coverage.php",
+        "tests/permissions/route-coverage.php",
+        "tests/round-trips/route-coverage.php",
+        "tests/validation/route-coverage.php",
+        "tests/public/handler-coverage.php",
+        "tests/security/endpoints/lint.php",
+        "tests/security/validate-registry.php",
+        "tests/security/registry-self-test.php",
+        "tests/skips/lint.php",
+        "tests/skips/proof-of-catch.php",
+        "tests/compatibility/lint.php",
+        "tests/compatibility/test-proof-of-catch.php"
+      ],
+      "commands": [
+        {
+          "label": "infrastructure contracts",
+          "command": [
+            "php",
+            "tests/infrastructure/lint.php"
+          ]
+        },
+        {
+          "label": "shell syntax",
+          "command": [
+            "bash",
+            "-n",
+            "tests/bin/run-all.sh",
+            "tests/bin/run-compatibility-matrix.sh",
+            "tests/lab/scripts/lib.sh",
+            "tests/lab/scripts/php-tests.sh",
+            "tests/lab/scripts/reset.sh",
+            "tests/lab/scripts/setup.sh"
+          ]
+        },
+        {
+          "label": "GET route inventory",
+          "command": [
+            "php",
+            "tests/smoke/route-coverage.php"
+          ]
+        },
+        {
+          "label": "mutating permission inventory",
+          "command": [
+            "php",
+            "tests/permissions/route-coverage.php"
+          ]
+        },
+        {
+          "label": "mutating round-trip inventory",
+          "command": [
+            "php",
+            "tests/round-trips/route-coverage.php"
+          ]
+        },
+        {
+          "label": "input-validation inventory",
+          "command": [
+            "php",
+            "tests/validation/route-coverage.php"
+          ]
+        },
+        {
+          "label": "public-handler inventory",
+          "command": [
+            "php",
+            "tests/public/handler-coverage.php"
+          ]
+        },
+        {
+          "label": "endpoint inventory integrity",
+          "command": [
+            "php",
+            "tests/security/endpoints/lint.php"
+          ]
+        },
+        {
+          "label": "security registry integrity",
+          "command": [
+            "php",
+            "tests/security/validate-registry.php"
+          ]
+        },
+        {
+          "label": "security registry self-test",
+          "command": [
+            "php",
+            "tests/security/registry-self-test.php"
+          ]
+        },
+        {
+          "label": "SKIP registry integrity",
+          "command": [
+            "php",
+            "tests/skips/lint.php"
+          ]
+        },
+        {
+          "label": "SKIP parser proof",
+          "command": [
+            "php",
+            "tests/skips/proof-of-catch.php"
+          ]
+        },
+        {
+          "label": "compatibility matrix integrity",
+          "command": [
+            "php",
+            "tests/compatibility/lint.php"
+          ]
+        },
+        {
+          "label": "compatibility matrix proof",
+          "command": [
+            "php",
+            "tests/compatibility/test-proof-of-catch.php"
+          ]
+        },
+        {
+          "label": "inert feed HTML source contract",
+          "command": [
+            "php",
+            "tests/lint/known-failure-inert-feed-html.php"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "family-canary",
+      "summary": "FAMILY-CORE",
+      "files": [
+        "tests/bin/run-family-canary.php"
+      ]
+    },
+    {
+      "id": "integration",
+      "summary": "INTEGRATION",
+      "files": [
+        "tests/integration/background-automation.php",
+        "tests/integration/coverage-gaps.php",
+        "tests/integration/domain-invariants.php",
+        "tests/integration/input-validation-authorization.php",
+        "tests/integration/mutating-route-round-trips.php",
+        "tests/integration/remote-media-fetch.php",
+        "tests/integration/reports-and-aggregates.php",
+        "tests/integration/review-filtering.php",
+        "tests/integration/review-status-transitions.php",
+        "tests/integration/shared-table-discriminators.php"
+      ]
+    },
+    {
+      "id": "js",
+      "summary": "JS-RESULTS",
+      "files": [
+        "tests/js/specs/admin-utils.test.js",
+        "tests/js/specs/request-layer.test.js",
+        "tests/js/specs/state-errors.test.js"
+      ]
+    },
+    {
+      "id": "permissions",
+      "summary": "PERMISSIONS",
+      "files": [
+        "tests/bin/run-permissions.php"
+      ]
+    },
+    {
+      "id": "public",
+      "summary": "PUBLIC",
+      "files": [
+        "tests/public/public-handlers.php"
+      ]
+    },
+    {
+      "id": "pure",
+      "summary": "PURE",
+      "files": [
+        "tests/pure/deterministic-helpers.php",
+        "tests/pure/remote-media-url.php"
+      ]
+    },
+    {
+      "id": "smoke",
+      "summary": "SMOKE",
+      "files": [
+        "tests/bin/run-smoke.php"
+      ]
+    }
+  ]
+}

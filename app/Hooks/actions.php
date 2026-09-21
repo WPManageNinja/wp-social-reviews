@@ -12,7 +12,7 @@ defined('ABSPATH') or die;
  */
 
 /**
- * @var $app \WPSocialReviews\Framework\Foundation\Application
+ * @var \WPSocialReviews\Framework\Foundation\Application $app
  */
 
 // Init the platform on plugin load
@@ -114,11 +114,10 @@ add_action('widgets_init', function () {
  * Gutenberg blocks register
  */
 add_action('enqueue_block_editor_assets', function () {
-    $dependencies = array('wp-blocks', 'wp-i18n', 'wp-polyfill', 'wp-element', 'wp-components' );
+    // wp-block-editor is required for useBlockProps (Block API v3 / iframe editor support).
+    $dependencies = array('wp-blocks', 'wp-i18n', 'wp-polyfill', 'wp-element', 'wp-components', 'wp-block-editor' );
 
-    if ( version_compare( get_bloginfo('version'), '5.8', '>=' ) ) {
-        $dependencies[] = 'wp-block-editor';
-    } else {
+    if ( version_compare( get_bloginfo('version'), '5.8', '<' ) ) {
         $dependencies[] = 'wp-editor';
     }
 
@@ -253,6 +252,14 @@ $app->addAction('wpsocialreviews/youtube_feed_title', 'YoutubeTemplateHandler@re
  */
 $app->addAction('wp_ajax_nopriv_wpsr_youtube_popup_feed', 'YoutubeTemplateHandler@renderPopupFeed');
 $app->addAction('wp_ajax_wpsr_youtube_popup_feed', 'YoutubeTemplateHandler@renderPopupFeed');
+
+/**
+ * Render a feed video in Fluent Player (inline & gallery play modes)
+ *
+ * @since  4.4.0
+ */
+$app->addAction('wp_ajax_nopriv_wpsr_youtube_fluent_player', 'YoutubeTemplateHandler@renderFluentPlayer');
+$app->addAction('wp_ajax_wpsr_youtube_fluent_player', 'YoutubeTemplateHandler@renderFluentPlayer');
 
 /*******
  *

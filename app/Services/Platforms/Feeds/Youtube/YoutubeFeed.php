@@ -12,6 +12,7 @@ use WPSocialReviews\App\Services\Platforms\Feeds\Config;
 use WPSocialReviews\App\Services\Platforms\Feeds\Youtube\Config as YoutubeConfig;
 use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\App\Models\Cache;
+use WPSocialReviews\App\Services\DataProtector;
 use WPSocialReviews\App\Services\Platforms\ImageOptimizationHandler;
 
 if (!defined('ABSPATH')) {
@@ -20,7 +21,16 @@ if (!defined('ABSPATH')) {
 
 class YoutubeFeed extends BaseFeed
 {
+    /**
+     * Credential keys within wpsr_youtube_verification_configs that must be
+     * encrypted at rest. Unlike the DataProtector default (access/refresh
+     * token only), YouTube also persists api_key and the legacy access_code.
+     */
+    const TOKEN_CONFIG_KEYS = ['access_token', 'refresh_token', 'api_key', 'access_code'];
+
     public $platform = 'youtube';
+    protected $authProvider = 'google';
+    protected $authFlow = 'youtube';
     protected $postId = null;
     protected $oauth;
     protected $cacheHandler;
@@ -47,7 +57,7 @@ class YoutubeFeed extends BaseFeed
     /**
      * Save YouTube config on wp options table
      *
-     * @return json
+     * @return void
      * @since 1.2.5
      */
     public function handleCredential($settings = array())
@@ -76,34 +86,8 @@ class YoutubeFeed extends BaseFeed
                 ], $code);
             }
 
-            $configs = [];
-            if ((!empty($data) && isset($data['items'][0])) && ($credentialsType === 'oauth2.0' || $credentialsType === 'manually_connect')) {
-                $configs['channel_id'] = $data['items'][0]['id'];
-                $configs['user_name']  = $data['items'][0]['snippet']['title'];
-                $configs['user_avatar'] = $data['items'][0]['snippet']['thumbnails']['high']['url'];
-            } else {
-                $configs['channel_id'] = 'UCiyeXfnGx9e06hXWf0Hz7ow';
-            }
-
-            $configs['access_token']     = Arr::get($url, 'accessToken', '');
-            $configs['refresh_token']    = Arr::get($url, 'refresh_token', '');
-            $configs['expires_in']       = Arr::get($url, 'expires_in', '');
-            $configs['version']          = 'latest';
-            $configs['api_key']          = $apiKey;
-            $configs['access_code']      = $accessCode;
-            $configs['credentials_type'] = $credentialsType;
-            $configs['created_at']       = time();
-            update_option('wpsr_youtube_verification_configs', $configs, 'no');
-            $settings = get_option('wpsr_youtube_verification_configs');
-
-            // add global youtube settings when user verified
-            $args = [
-                'global_settings' => [
-                    'expiration'    => 259200,
-                    'caching_type'     => 'background'
-                ]
-            ];
-            update_option('wpsr_youtube_global_settings', $args);
+            $configs  = $this->prepareVerificationConfigs($data, $url, $credentialsType, $apiKey, $accessCode);
+            $settings = $this->saveVerificationConfigs($configs);
 
             //$this->doCronEvent();
             wp_send_json_success([
@@ -117,6 +101,41 @@ class YoutubeFeed extends BaseFeed
         }
     }
 
+    public function persistOAuthTokenConfig($token = [], $account = [])
+    {
+        $accessToken = Arr::get($token, 'access_token', '');
+        if (!$accessToken) {
+            throw new \Exception(esc_html__('YouTube access token is missing.', 'wp-social-reviews'));
+        }
+
+        $existing = (new DataProtector())->maybe_decrypt_tokens(get_option('wpsr_youtube_verification_configs', []), self::TOKEN_CONFIG_KEYS);
+        $url = [
+            'accessToken'   => $accessToken,
+            'refresh_token' => Arr::get($token, 'refresh_token', Arr::get($existing, 'refresh_token', '')),
+            'expires_in'    => Arr::get($token, 'expires_in', Arr::get($existing, 'expires_in', '')),
+        ];
+
+        if (!Arr::get($account, 'channel_id')) {
+            $requestUrl = $this->makeConfigAPIRequestUrl('manually_connect', '', '', $accessToken);
+            $data       = $this->getAPIData($requestUrl['fetchUrl'], $requestUrl['args']);
+
+            if (is_wp_error($data)) {
+                throw new \Exception(esc_html($data->get_error_message()));
+            }
+
+            if (isset($data['error']) || empty($data['items'][0])) {
+                $message = Arr::get($data, 'error.errors.0.message', __('Sorry, Something went wrong!', 'wp-social-reviews'));
+                throw new \Exception(esc_html($message));
+            }
+        } else {
+            $data = $this->formatAccountAsApiResponse($account);
+        }
+
+        $configs = $this->prepareVerificationConfigs($data, $url, 'oauth2.0', '', '', Arr::get($token, 'created_at', time()));
+
+        return $this->saveVerificationConfigs($configs);
+    }
+
     /**
      * Make api request url base on credentials type
      *
@@ -126,7 +145,7 @@ class YoutubeFeed extends BaseFeed
      * @param string $accessToken
      *
      * @return array
-     * @throws /Exception
+     * @throws \Exception
      * @since 1.2.5
      */
     private function makeConfigAPIRequestUrl($credentialsType = '', $accessCode = '', $apiKey = '', $accessToken = '')
@@ -139,6 +158,7 @@ class YoutubeFeed extends BaseFeed
         }
         if (($credentialsType === 'oauth2.0' || $credentialsType === 'manually_connect')) {
             if ($accessCode && $credentialsType === 'oauth2.0') {
+                // Legacy access-code OAuth is kept for compatibility and will be deprecated soon.
                 $result = $this->oauth->generateAccessKey($accessCode);
                 if (is_wp_error($result)) {
                     throw new \Exception(esc_html($result->get_error_message()));
@@ -171,15 +191,97 @@ class YoutubeFeed extends BaseFeed
         return $url;
     }
 
+    private function prepareVerificationConfigs($data, $url, $credentialsType, $apiKey = '', $accessCode = '', $createdAt = null)
+    {
+        $configs = [];
+        if ((!empty($data) && isset($data['items'][0])) && ($credentialsType === 'oauth2.0' || $credentialsType === 'manually_connect')) {
+            $configs['channel_id']  = Arr::get($data, 'items.0.id', '');
+            $configs['user_name']   = Arr::get($data, 'items.0.snippet.title', '');
+            $configs['user_avatar'] = Arr::get($data, 'items.0.snippet.thumbnails.high.url', '');
+        } else {
+            $configs['channel_id'] = 'UCiyeXfnGx9e06hXWf0Hz7ow';
+        }
+
+        $configs['access_token']     = Arr::get($url, 'accessToken', '');
+        $configs['refresh_token']    = Arr::get($url, 'refresh_token', '');
+        $configs['expires_in']       = Arr::get($url, 'expires_in', '');
+        $configs['version']          = 'latest';
+        $configs['api_key']          = $apiKey;
+        $configs['access_code']      = $accessCode;
+        $configs['credentials_type'] = $credentialsType;
+        $configs['created_at']       = $createdAt ?: time();
+
+        return $configs;
+    }
+
+    private function formatAccountAsApiResponse($account)
+    {
+        return [
+            'items' => [
+                [
+                    'id'      => Arr::get($account, 'channel_id', ''),
+                    'snippet' => [
+                        'title'      => Arr::get($account, 'user_name', ''),
+                        'thumbnails' => [
+                            'high' => [
+                                'url' => Arr::get($account, 'user_avatar', '')
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    private function saveVerificationConfigs($configs)
+    {
+        update_option('wpsr_youtube_verification_configs', (new DataProtector())->maybe_encrypt_tokens($configs, self::TOKEN_CONFIG_KEYS), 'no');
+        $this->ensureDefaultGlobalSettings();
+
+        return $configs;
+    }
+
+    private function ensureDefaultGlobalSettings()
+    {
+        if (get_option('wpsr_youtube_global_settings')) {
+            return;
+        }
+
+        update_option('wpsr_youtube_global_settings', [
+            'global_settings' => [
+                'expiration'   => 259200,
+                'caching_type' => 'background'
+            ]
+        ], 'no');
+    }
+
+    protected function persistAuthResult($result)
+    {
+        if (!Arr::get($result, 'ok')) {
+            return $result;
+        }
+
+        $platform = Arr::get($result, 'platform', '');
+        if ($platform !== $this->platform) {
+            throw new \RuntimeException(esc_html__('Invalid auth platform response.', 'wp-social-reviews'));
+        }
+
+        $token = Arr::get($result, 'token', []);
+        $result['settings'] = $this->persistOAuthTokenConfig($token, Arr::get($result, 'account', []));
+        $result['platform'] = $this->platform;
+
+        return $result;
+    }
+
     /**
      * get verified youtube configs data from wp options table
      *
-     * @return json
+     * @return void
      * @since 1.2.5
      */
     public function getVerificationConfigs()
     {
-        $configs = get_option('wpsr_youtube_verification_configs');
+        $configs = (new DataProtector())->maybe_decrypt_tokens(get_option('wpsr_youtube_verification_configs'), self::TOKEN_CONFIG_KEYS);
         $configs['version'] = Arr::get($configs, 'version', '');
 
         wp_send_json_success([
@@ -191,7 +293,7 @@ class YoutubeFeed extends BaseFeed
     /**
      * delete youtube configs data from wp options table
      *
-     * @return json
+     * @return void
      * @since 1.2.5
      */
     public function clearVerificationConfigs()
@@ -301,8 +403,8 @@ class YoutubeFeed extends BaseFeed
     /**
      * Show updated data if new data fetched in editor without update in db
      *
-     * @return json
-     * @throws /Exception
+     * @return void
+     * @throws \Exception
      * @since 1.2.5
      */
     public function editEditorSettings($configs = [], $postId = null)
@@ -347,7 +449,7 @@ class YoutubeFeed extends BaseFeed
     /**
      * Update template is settings is changed in editor
      *
-     * @return json
+     * @return void
      * @since 1.2.5
      */
     public function updateEditorSettings($settings = [], $postId = null)
@@ -384,7 +486,7 @@ class YoutubeFeed extends BaseFeed
      */
     public function getApiKeyOrToken()
     {
-        $apiCredentials       = get_option('wpsr_youtube_verification_configs', true);
+        $apiCredentials       = (new DataProtector())->maybe_decrypt_tokens(get_option('wpsr_youtube_verification_configs', true), self::TOKEN_CONFIG_KEYS);
         $youtubeApiKeyOrToken = '';
         $youtubeAccessToken   = '';
         $youtubeApiKey        = '';
@@ -514,17 +616,15 @@ class YoutubeFeed extends BaseFeed
             return ['error_message' => $message];
         }
 
-        if (!is_wp_error($response)) {
-            $videoLists = json_decode(wp_remote_retrieve_body($response), true);
+        $videoLists = json_decode(wp_remote_retrieve_body($response), true);
 
-            $errors     = $this->checkYoutubeError($videoLists);
-            if (is_array($errors) && (true === $errors[0] || 1 === $errors[0])) {
-                return ['error_message' => isset($errors[1]) ? $errors[1] : __('Problem in api key or access token setting!!', 'wp-social-reviews')];
-            }
-
-            // unlisted videos remove
-            $videoLists = $this->getPublishVideos($videoLists);
+        $errors     = $this->checkYoutubeError($videoLists);
+        if (is_array($errors) && (true === $errors[0] || 1 === $errors[0])) {
+            return ['error_message' => isset($errors[1]) ? $errors[1] : __('Problem in api key or access token setting!!', 'wp-social-reviews')];
         }
+
+        // unlisted videos remove
+        $videoLists = $this->getPublishVideos($videoLists);
 
         $videoLists['nextPageToken'] = $nextPageToken;
 
@@ -535,20 +635,26 @@ class YoutubeFeed extends BaseFeed
      * Retrieve 'published' status videos from different statuses videos.
      *
      * @return array
-     * @throws /Exception
+     * @throws \Exception
      * @since 1.2.5
      */
     public function getPublishVideos($videoList)
     {
         $videos = Arr::get($videoList, 'items' , []);
-        foreach($videos as $index => $video)
+        $publicVideos = [];
+        foreach($videos as $video)
         {
-            $videoStatus = Arr::get($video['status'], 'privacyStatus', '');
-            if($videoStatus == 'unlisted')
+            // Allow only 'public' videos through. The feed is fetched with the site
+            // owner's OAuth token, so 'private' and 'unlisted' videos come back in the
+            // API response and must not be rendered on the front end.
+            $videoStatus = Arr::get($video, 'status.privacyStatus', '');
+            if($videoStatus === 'public')
             {
-                unset($videoList['items'][$index]);
+                $publicVideos[] = $video;
             }
         }
+
+        $videoList['items'] = $publicVideos;
 
         return $videoList;
     }
@@ -557,7 +663,7 @@ class YoutubeFeed extends BaseFeed
      * Youtube Feeds Without Single Video
      *
      * @return array
-     * @throws /Exception
+     * @throws \Exception
      * @since 1.2.5
      */
     public function getYoutubeFeed($channelId = '', $playlistId = '', $feedType = 'channel_feed', $eventType = '', $searchTerm = '', $total = 50, $hasCache = false)
@@ -656,7 +762,7 @@ class YoutubeFeed extends BaseFeed
      * @param array $videoIds video ids
      *
      * @return array
-     * @throws /Exception
+     * @throws \Exception
      * @since 1.2.5
      */
     public function getSingleVideoFeeds($videoIds, $feedCacheName)
@@ -666,7 +772,10 @@ class YoutubeFeed extends BaseFeed
         }
 
         $videoLists = [];
-        $parts      = 'id,snippet';
+        // Request 'status' so getPublishVideos() can drop private/unlisted videos; the
+        // single-video feed is fetched with the site owner's token and would otherwise
+        // expose non-public videos configured by id on a published template.
+        $parts      = 'id,snippet,status';
         $parts      = apply_filters('wpsocialreviews/youtube_api_parts', $parts, 'single_video');
 
 	    $videoLists = $this->cacheHandler->getFeedCache($feedCacheName);
@@ -698,11 +807,12 @@ class YoutubeFeed extends BaseFeed
     /**
      * Youtube Channel Api Url Details
      *
-     * @param string $channelId Channel ID
+     * @param string $channelIdentifier Channel ID, username or handle
      * @param integer $total total
+     * @param string $feedType feed type
      *
      * @return array
-     * @throws /Exception
+     * @throws \Exception
      * @since 1.2.5
      */
     public function getChannelApiUrlDetails($channelIdentifier, $total, $feedType = '')
@@ -764,7 +874,7 @@ class YoutubeFeed extends BaseFeed
 
         // Handle validation for YouTube handles (starting with @)
         if (strpos($identifier, '@') === 0) {
-            $handle = ltrim($identifier ?? '', '@');
+            $handle = ltrim($identifier, '@');
             // Validate: @ followed by 3–30 valid characters
             if (!preg_match('/^(?![_\-.·])[a-zA-Z0-9_\-\.·]{3,30}(?<![_\-.·])$/u', $handle)) {
                 return [
@@ -804,7 +914,7 @@ class YoutubeFeed extends BaseFeed
      * @param string $fetchUrl
      * @param array $args
      *
-     * @return json
+     * @return array|\WP_Error
      * @since 1.2.5
      */
     public function getAPIData($fetchUrl = '', $args = [])
@@ -814,9 +924,8 @@ class YoutubeFeed extends BaseFeed
         if (is_wp_error($response)) {
             return $response;
         }
-        if (!is_wp_error($response)) {
-            $response = json_decode(wp_remote_retrieve_body($response), true);
-        }
+
+        $response = json_decode(wp_remote_retrieve_body($response), true);
 
         return $response;
     }
@@ -851,17 +960,15 @@ class YoutubeFeed extends BaseFeed
                 $message = $response->get_error_message();
                 return ['error_message' => $message];
             }
-            if (!is_wp_error($response)) {
-                $channelInfo = json_decode(wp_remote_retrieve_body($response), true);
-                $errors      = $this->checkYoutubeError($channelInfo);
+            $channelInfo = json_decode(wp_remote_retrieve_body($response), true);
+            $errors      = $this->checkYoutubeError($channelInfo);
 
-                if (is_array($errors) && (true === $errors[0] || 1 === $errors[0])) {
-                    return ['error_message' => isset($errors[1]) ? $errors[1] : __('Problem in api key or access token setting!!', 'wp-social-reviews')];
-                } else {
-                    $this->cacheHandler->createCache($channelCacheName, $channelInfo);
-                    return $channelInfo;
-                }
+            if (is_array($errors) && (true === $errors[0] || 1 === $errors[0])) {
+                return ['error_message' => isset($errors[1]) ? $errors[1] : __('Problem in api key or access token setting!!', 'wp-social-reviews')];
             }
+
+            $this->cacheHandler->createCache($channelCacheName, $channelInfo);
+            return $channelInfo;
         }
     }
 
@@ -887,8 +994,8 @@ class YoutubeFeed extends BaseFeed
      *
      * @param array $feedData feed data
      *
-     * @return array
-     * @throws /Exception
+     * @return array|null [true, message] when the payload carries an API error, null otherwise
+     * @throws \Exception
      * @since 1.2.5
      */
     public function checkYoutubeError($feedData)
@@ -910,6 +1017,8 @@ class YoutubeFeed extends BaseFeed
         } catch (\Exception $e) {
             return [true, $e->getMessage()];
         }
+
+        return null;
     }
 
     /**
@@ -918,8 +1027,8 @@ class YoutubeFeed extends BaseFeed
      * @param string $youtubeUrl youtube url
      * @param string $cacheName cache name
      *
-     * @return array|string
-     * @throws /Exception
+     * @return array|string|null null when there is neither fresh data nor a cache to fall back on
+     * @throws \Exception
      * @since 1.2.5
      */
     public function checkYoutubeCache($youtubeUrl, $cacheName, $feedType = '')
@@ -950,7 +1059,6 @@ class YoutubeFeed extends BaseFeed
 	        return ['error_message' => $youtubeApiKeyOrToken['error_message']];
         }
 
-        $feedData = [];
         $response = wp_remote_get($youtubeUrl . $youtubeApiKeyOrToken);
 
         if (is_wp_error($response)) {
@@ -959,9 +1067,7 @@ class YoutubeFeed extends BaseFeed
             return ['error_message' => $message];
         }
 
-        if (!is_wp_error($response)) {
-            $feedData = json_decode(wp_remote_retrieve_body($response), true);
-        }
+        $feedData = json_decode(wp_remote_retrieve_body($response), true);
 
         if (!empty($feedData) && !empty($cacheName)) {
             $wpsr_error_check_complete = $this->checkYoutubeError($feedData);
@@ -973,6 +1079,11 @@ class YoutubeFeed extends BaseFeed
 
                 return ['error_message' => isset($wpsr_error_check_complete[1]) ? $wpsr_error_check_complete[1] : __('Problem in api key or access token setting!!', 'wp-social-reviews')];
             } elseif (!$this->cacheHandler->getFeedCache($cacheName)) {
+                if ($feedType === 'single_video') {
+                    // Fetched with the site owner's token, so private/unlisted videos come
+                    // back in the response — filter to public-only before caching or returning.
+                    $feedData = $this->getPublishVideos($feedData);
+                }
                 $this->cacheHandler->createCache($cacheName, $feedData);
                 return $feedData;
             }
@@ -980,10 +1091,12 @@ class YoutubeFeed extends BaseFeed
             if (!empty($cacheName) && empty($feedData)) {
 	            $feedCache = $this->cacheHandler->getFeedCache($cacheName);
                 if ($feedCache) {
-                    return $this->cacheHandler->getFeedCache($cacheName, true);
+                    return $feedCache;
                 }
             }
         }
+
+        return null;
     }
 
     public function updateCachedFeeds($caches)

@@ -66,7 +66,7 @@
             <template #title="{ isActive}">
                 <EditorCollapsiblePanel :isActive="isActive" iconKey="header" :isPro="!has_pro" :label="$t('Header')"/>
             </template>
-            <UpgradeToProBanner />
+            <UpgradeToProBanner placement="feature_lock_twitter_editor" />
             <div class="wpsr-settings-switch">
                 <span class="wpsr-editor-inside-left wpsr-element-center">{{ $t('Display Header') }}</span>
                 <div class="wpsr-editor-inside-right">
@@ -112,7 +112,7 @@
             <template #title="{ isActive}">
                 <EditorCollapsiblePanel :isActive="isActive" iconKey="follow_button" :isPro="!has_pro" :label="$t('Follow Button')"/>
             </template>
-            <UpgradeToProBanner />
+            <UpgradeToProBanner placement="feature_lock_twitter_editor" />
             <div class="wpsr-switch-row">
                 <span class="wpsr-element-label wpsr-editor-inside-left wpsr-element-center">
                     <span>
@@ -150,7 +150,7 @@
                                 :raw-content="true"
                                 effect="dark"
                                 placement="right-start"
-                                :content="this.$t('The Load More button will only display on your site\'s preview/live pages/posts <br> not while you\'re in editing mode in the WordPress Editor.')"
+                                :content="this.$t('The Load More button will only display on your site\'s preview/live pages/posts.') + '<br>' + this.$t('It will not display while you are in editing mode in the WordPress Editor.')"
                             >
                                 <el-icon ><InfoFilled /></el-icon>
                             </el-tooltip>
@@ -275,7 +275,7 @@ export default {
               placeholder: this.$t('Type something and press enter....'),
               disabled: !this.has_pro,
               tooltip: true,
-              tooltipText: this.$t("You can use this setting to show posts that contain certain specific words or hashtags in the caption. <br/> Separate multiple words or hashtags using commas. ex: #hashtag1,word1,word2,#hashtag2"),
+              tooltipText: this.$t('You can use this setting to show posts that contain certain specific words or hashtags in the caption.') + '<br>' + this.$t('Separate multiple words or hashtags using commas. ex: #hashtag1,word1,word2,#hashtag2'),
             },
             {
               fieldKey: 'excludes_inputs',
@@ -284,7 +284,7 @@ export default {
               placeholder: this.$t('Type something and press enter....'),
               disabled: !this.has_pro,
               tooltip: true,
-              tooltipText: this.$t('You can use this setting to hiding posts that contain certain specific words or hashtags in the caption. <br/> Separate multiple words or hashtags using commas. ex: #hashtag1,word1,#hashtag2,word2')
+              tooltipText: this.$t('You can use this setting to hide posts that contain certain specific words or hashtags in the caption.') + '<br>' + this.$t('Separate multiple words or hashtags using commas. ex: #hashtag1,word1,#hashtag2,word2')
             },
             {
               fieldKey: 'hide_posts_by_id',
@@ -294,7 +294,7 @@ export default {
               disabled: !this.has_pro,
               autosize: {minRows: 2, maxRows: 4},
               tooltip: true,
-              tooltipText: this.$t('You can find the ID of a Post by viewing the post on X (Twitter) and copy/pasting the ID number from the end of the URL </br> ex: https://twitter.com/wpsocialninja/status/1361763913801494530 [ in this URL ID is 1361763913801494530 ]')
+              tooltipText: this.$t('You can find the post ID by viewing the post on X (Twitter) and copying the ID number from the end of the URL.') + '<br>ex: https://twitter.com/wpsocialninja/status/1361763913801494530'
             }
           ],
             layout_settings: [
@@ -328,7 +328,7 @@ export default {
               options: [
                 {
                   key: 'template1',
-                  title: 'Template 1',
+                  title: this.$t('Classic Tweet'),
                   pro: false,
                   img: this.assets_url + '/images/template/twitter-template/template1.png'
                 }

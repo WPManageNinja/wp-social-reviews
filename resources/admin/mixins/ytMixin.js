@@ -5,6 +5,16 @@ export const ytMixin = {
         }
     },
     methods: {
+        // The play-mode anchors carry no href, so Enter and Space must fire them by hand.
+        wpsrActivateOnKey(event) {
+            if (event.currentTarget.hasAttribute('href')) {
+                return;
+            }
+            if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+                event.preventDefault();
+                event.currentTarget.click();
+            }
+        },
         setCurrentFeed(feed) {
             this.selectedFeed = [];
             this.selectedFeed = feed;
@@ -19,6 +29,9 @@ export const ytMixin = {
                 e.preventDefault();
                 let galleryModeSelector = jQuery('.wpsr-yt-video-player-gallery');
                 jQuery(galleryModeSelector).html('<iframe src="https://www.youtube.com/embed/' + videoId + '?autoplay=1&rel=0" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>');
+
+                jQuery('.wpsr-yt-video').removeClass('wpsr-yt-gallery-active');
+                jQuery(e.currentTarget).closest('.wpsr-yt-video').addClass('wpsr-yt-gallery-active');
 
                 jQuery('html, body').animate({
                     scrollTop: jQuery(".wpsr-yt-video-player-gallery").offset().top

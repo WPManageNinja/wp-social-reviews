@@ -108,6 +108,7 @@
                   <YoutubeConfig
                       v-if="feed.id === 'youtube' && showYoutubeFeedModal"
                       :youtubeModal="showYoutubeFeedModal"
+                      :wpsr-auth-return-url-builder="wpsrBuildAuthReturnUrl"
                       @youtube_settings="youtubeFeedModal"
                       @findEnabledPlatforms="getEnabledPlatforms"
                   />
@@ -189,6 +190,8 @@
           :activeTab="activeTab"
           :urlParams="urlParams"
           :configurationInfo="configurationInfo"
+          @auth-configuration-consumed="wpsrClearConsumedConfiguration"
+          :wpsr-auth-return-url-builder="wpsrBuildAuthReturnUrl"
           :isDarkModeActive="isDarkMode"
           :activeSearchQuery="activeSearchQuery"
           :show-custom-sources="screenOptions.reviews.custom_sources"
@@ -243,6 +246,7 @@ import SettingsLineIcon from "../pieces/icons/SettingsLineIcon.vue";
 import { Loading } from '@element-plus/icons-vue';
 import { DarkModeMixin } from '../../mixins/DarkModeMixin';
 import ChatWidgetSectionIcon from "../pieces/icons/ChatWidgetSectionIcon.vue";
+import { wpsrBuildAuthReturnUrl as buildWpsrAuthReturnUrl } from '../../utils';
 
 export default {
     name: "Platforms",
@@ -623,6 +627,213 @@ export default {
         const modalKey = feed.modalKey;
         this[modalKey] = true;
       },
+      wpsrBuildAuthReturnUrl(routeName, authPlatform = '', fallbackUrl = '') {
+        const templateId = this.$route && this.$route.params ? this.$route.params.template_id : '';
+        return buildWpsrAuthReturnUrl(routeName, authPlatform, fallbackUrl || this.admin_page_url, templateId);
+      },
+      wpsrGetAuthEditorTarget(platform, authState = {}) {
+        let returnRoute = null;
+        try {
+          returnRoute = JSON.parse(window.sessionStorage.getItem('wpsn_auth_return_route') || 'null');
+          window.sessionStorage.removeItem('wpsn_auth_return_route');
+        } catch (e) {}
+
+        if (!returnRoute || !returnRoute.name || !returnRoute.templateId) {
+          return null;
+        }
+
+        const editorRoutes = [
+          { route: 'edit-youtube-template',    platformType: 'feeds',   platforms: ['youtube']    },
+          { route: 'edit-instagram-template',  platformType: 'feeds',   platforms: ['instagram']  },
+          { route: 'edit-tiktok-template',     platformType: 'feeds',   platforms: ['tiktok']     },
+          { route: 'edit-facebook-feed-template', platformType: 'feeds', platforms: ['facebook_feed'] },
+          { route: 'edit-template',            platformType: 'reviews', platforms: ['google', 'facebook'] },
+        ];
+
+        const editorRoute = editorRoutes.find(r =>
+          r.route === returnRoute.name && (!r.platforms || r.platforms.includes(platform))
+        );
+
+        if (!editorRoute) {
+          return null;
+        }
+
+        return {
+          name: editorRoute.route,
+          params: { template_id: returnRoute.templateId },
+          query: { configuration: 'true', platform, platform_type: editorRoute.platformType, ...authState }
+        };
+      },
+      wpsrGetAuthResultMetadata(result = {}) {
+        return {
+          ok: !!result.ok,
+          platform: result.platform || '',
+          account: result.account || {},
+          locations: result.locations || {},
+          settings: result.settings || {},
+          business_info: result.business_info || {},
+          load_existing: !!result.load_existing
+        };
+      },
+      wpsrRedirectToAuthEditorTarget(result) {
+        const platform = result.platform || '';
+        const location = this.wpsrGetAuthEditorTarget(platform, { auth_consumed: 'true' });
+
+        if (!location) {
+          return false;
+        }
+
+        try {
+          window.sessionStorage.setItem('wpsn_auth_consumed_result', JSON.stringify(this.wpsrGetAuthResultMetadata(result)));
+        } catch (error) {
+          // Session storage is only an enhancement for reopening the editor connection state.
+        }
+
+        this.$router.push(location);
+        return true;
+      },
+      wpsrRedirectToAuthEditorFailure(authPlatform = '') {
+        const location = this.wpsrGetAuthEditorTarget(authPlatform, { auth_error: 'true' });
+
+        if (!location) {
+          return false;
+        }
+
+        this.$router.push(location);
+        return true;
+      },
+      wpsrHandleMissingAuthResult(response = {}, authPlatform = '') {
+        const message = response && response.data && response.data.message
+          ? response.data.message
+          : this.$t('Authentication could not be completed. Please try reconnecting the platform.');
+
+        this.handleError(message);
+        if (this.wpsrRedirectToAuthEditorFailure(authPlatform)) {
+          return;
+        }
+
+        this.$router.push('/');
+      },
+      wpsrOpenYoutubeAuthResult() {
+        this.clearSearch();
+        this.showYoutubeFeedModal = false;
+        this.$nextTick(() => {
+          this.showYoutubeFeedModal = true;
+        });
+      },
+      wpsrOpenGoogleAuthResult(result) {
+        this.clearSearch();
+        this.configurationInfo = {
+          configuration: true,
+          platform: 'google',
+          platform_type: 'reviews',
+          auth_consumed: true,
+          locations: result.locations || {},
+          load_existing: !!result.load_existing
+        };
+      },
+      wpsrOpenInstagramAuthResult(result) {
+        this.clearSearch();
+        if (result.flow === 'business') {
+          try {
+            window.sessionStorage.setItem('wpsn_auth_consumed_result', JSON.stringify({
+              ok: true,
+              platform: 'instagram',
+              flow: 'business',
+            }));
+          } catch (e) {}
+        }
+        this.instagramSettingModal = false;
+        this.$nextTick(() => {
+          this.instagramSettingModal = true;
+        });
+      },
+      wpsrOpenTiktokAuthResult() {
+        this.clearSearch();
+        this.showTiktokFeedModal = false;
+        this.$nextTick(() => {
+          this.showTiktokFeedModal = true;
+        });
+      },
+      wpsrOpenFacebookAuthResult() {
+        this.clearSearch();
+        try {
+          window.sessionStorage.setItem('wpsn_auth_consumed_result', JSON.stringify({
+            ok: true,
+            platform: 'facebook_feed',
+          }));
+        } catch (e) {}
+        this.showFacebookFeedModal = false;
+        this.$nextTick(() => {
+          this.showFacebookFeedModal = true;
+        });
+      },
+      wpsrOpenFacebookReviewAuthResult(result) {
+        this.clearSearch();
+        this.configurationInfo = {
+          configuration: true,
+          platform: 'facebook',
+          platform_type: 'reviews',
+          auth_consumed: true,
+          settings: result.settings || {},
+          business_info: result.business_info || {}
+        };
+      },
+      wpsrClearConsumedConfiguration() {
+        // Reset the one-shot auth trigger once the reviews child has applied it,
+        // so switching tabs (which destroys/re-mounts the v-if'd child) does not
+        // reopen the connection modal.
+        this.configurationInfo = {};
+      },
+      wpsrConsumeAuthResult(flowId, payload, authPlatform) {
+        const wpsrReviewAuthPlatforms = ['google', 'facebook'];
+        const wpsrConsumeEndpoint = wpsrReviewAuthPlatforms.includes(authPlatform) ? 'platforms/reviews/configs/consume' : 'platforms/feeds/configs/consume';
+        this.$post(wpsrConsumeEndpoint, {
+          platform: authPlatform,
+          flow_id: flowId,
+          payload: payload
+        }).then(response => {
+          if (!response || !response.data || !response.data.result) {
+            this.wpsrHandleMissingAuthResult(response, authPlatform);
+            return;
+          }
+
+          const result = response.data.result;
+          const platform = result.platform || '';
+
+          if (this.wpsrRedirectToAuthEditorTarget(result)) {
+            return;
+          }
+
+          if (platform === 'youtube') {
+            this.wpsrOpenYoutubeAuthResult();
+          }
+
+          if (platform === 'google') {
+            this.wpsrOpenGoogleAuthResult(result);
+          }
+
+          if (platform === 'instagram') {
+            this.wpsrOpenInstagramAuthResult(result);
+          }
+
+          if (platform === 'tiktok') {
+            this.wpsrOpenTiktokAuthResult();
+          }
+
+          if (platform === 'facebook_feed') {
+            this.wpsrOpenFacebookAuthResult();
+          }
+
+          if (platform === 'facebook') {
+            this.wpsrOpenFacebookReviewAuthResult(result);
+          }
+
+          this.getEnabledPlatforms();
+        }).catch(error => {
+          this.handleError(error);
+        });
+      },
       handlePlatformName(platform){
         return platform.replace('_', '-');
       }
@@ -631,6 +842,15 @@ export default {
     created() {
       const queryString = window.location.search;
       this.urlParams = new URLSearchParams(queryString);
+      let wpsrAuthPayload = this.urlParams.get('wpsn_auth_payload');
+      let wpsrAuthPlatform = this.urlParams.get('wpsn_auth_platform');
+
+      if (wpsrAuthPayload && wpsrAuthPlatform) {
+        window.history.replaceState({}, null, this.admin_page_url + '#/');
+        this.wpsrConsumeAuthResult(this.urlParams.get('wpsn_auth_flow'), wpsrAuthPayload, wpsrAuthPlatform);
+        return;
+      }
+
       let platform = this.urlParams.get('platform');
       let credentials_type = this.urlParams.get('credentialsType');
       let oauth_token = platform === 'google' ? this.urlParams.get('code') : this.urlParams.get('access_token');
@@ -638,7 +858,7 @@ export default {
       let screen_name = this.urlParams.get('screen_name');
       let auth_code = this.urlParams.get('auth_code');
 
-      if(this.$route.query.open_modal === 'instagram' || (auth_code && platform === 'instagram')) {
+      if(this.$route.query.open_modal === 'instagram') {
         this.instagramSettingModal = true;
       }
 
@@ -649,11 +869,7 @@ export default {
       if (oauth_token && platform) {
         this.verificationData = oauth_token;
         this.platFormName = platform;
-        if (platform === 'instagram') {
-          this.instagramSettingModal = true;
-          this.expiresIn = expires_in;
-          this.credentialsType = credentials_type;
-        } else if (platform === 'facebook_feed') {
+        if (platform === 'facebook_feed') {
           this.showFacebookFeedModal = true;
           // this.expiresIn = expires_in;
         } else if ( platform === 'tiktok'){

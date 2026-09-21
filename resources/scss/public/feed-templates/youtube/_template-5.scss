@@ -1,0 +1,174 @@
+.wpsr-yt-feed-template5{
+  // container query instead of @media, the admin preview panel is narrow regardless of the browser window's width
+  container-type: inline-size;
+
+  .wpsr-container{
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+    column-gap: 24px;
+    align-items: start;
+
+    // rows are pinned explicitly, auto-placement drops the video list below the player once pagination takes column 2's first cell
+    > .wpsr-row:has(.wpsr-yt-header){
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+    > .wpsr-row:has(.wpsr-yt-video-player-gallery){
+      grid-column: 1;
+      grid-row: 2 / span 2;
+    }
+    // pagination sits under the video list, the markup order is the reverse
+    > .wpsr-yt-prev-next{
+      grid-column: 2;
+      grid-row: 3;
+      margin: 12px 0 0;
+    }
+    > .wpsr-yt-feed-wrapper-inner{
+      grid-column: 2;
+      grid-row: 2;
+      max-height: 460px;
+      overflow-y: auto;
+      // overflow-y:auto alone computes overflow-x to auto, so a long unbroken title would add a horizontal scrollbar
+      overflow-x: hidden;
+      padding-right: 4px;
+    }
+    > .wpsr-youtube-footer{
+      grid-column: 1 / -1;
+      grid-row: 4;
+    }
+  }
+
+  // light card around the big player, matching the Figma reference
+  .wpsr-yt-video-player-gallery{
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  .wpsr-yt-feed-wrapper-inner .wpsr-yt-all-feed{
+    // the shared .wpsr-row gutters are negative side margins that overflow the scrolling sidebar, and a single-column list needs none
+    &:not(.swiper-wrapper){
+      margin-left: 0;
+      margin-right: 0;
+    }
+    &:not(.swiper-wrapper) > [class*="wpsr-col-"]{
+      max-width: 100%;
+      flex: 0 0 100%;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .wpsr-yt-video{
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      border-left: 3px solid transparent;
+      cursor: pointer;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+
+      &:hover{
+        background-color: rgba(0, 0, 0, 0.04);
+      }
+      &.wpsr-yt-gallery-active{
+        background-color: rgba(0, 0, 0, 0.04);
+        border-left-color: #e02424;
+      }
+
+      .wpsr-yt-post{
+        width: 148px;
+        max-width: 148px;
+        flex: 0 0 148px;
+        margin-right: 14px;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+        aspect-ratio: 3 / 2;
+      }
+      .wpsr-yt-video-player,
+      .wpsr-yt-video-preview{
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        padding-top: 0;
+      }
+      .wpsr-yt-video-preview img{
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        margin: 0;
+      }
+      // plain white play triangle instead of the branded YouTube icon shape
+      .wpsr-yt-video-preview svg{
+        display: none;
+      }
+      .wpsr-yt-video-preview::after{
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-38%, -50%);
+        width: 0;
+        height: 0;
+        border-top: 8px solid transparent;
+        border-bottom: 8px solid transparent;
+        border-left: 13px solid rgba(255, 255, 255, 0.92);
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+      }
+      .wpsr-yt-video-info{
+        flex: 1;
+        width: auto;
+        padding-top: 0;
+      }
+      .wpsr-yt-video-title{
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        color: #1a1a1a;
+        font-weight: 500;
+      }
+      .wpsr-yt-video-statistics{
+        margin-top: 4px;
+        font-size: 12px;
+        color: #767676;
+      }
+      .wpsr-yt-video-description,
+      .wpsr-yt-channel-title{
+        display: none;
+      }
+    }
+  }
+
+  // stacks below desktop width, the fixed 148px thumbnail needs more room than a narrow list column gives it
+  @container (max-width: 1024px) {
+    .wpsr-container{
+      grid-template-columns: 1fr;
+
+      > .wpsr-row:has(.wpsr-yt-header),
+      > .wpsr-row:has(.wpsr-yt-video-player-gallery),
+      > .wpsr-yt-prev-next,
+      > .wpsr-yt-feed-wrapper-inner,
+      > .wpsr-youtube-footer{
+        grid-column: 1;
+      }
+      // in one column the player no longer spans two rows, but the pagination still trails the list
+      > .wpsr-row:has(.wpsr-yt-video-player-gallery){
+        grid-row: 2;
+      }
+      > .wpsr-yt-feed-wrapper-inner{
+        grid-row: 3;
+        max-height: none;
+        overflow-y: visible;
+      }
+      > .wpsr-yt-prev-next{
+        grid-row: 4;
+      }
+      > .wpsr-youtube-footer{
+        grid-row: 5;
+      }
+    }
+  }
+}

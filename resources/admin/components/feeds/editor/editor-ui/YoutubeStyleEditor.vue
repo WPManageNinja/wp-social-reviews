@@ -10,7 +10,7 @@
                   <EditorCollapsiblePanel :isActive="isActive" :iconKey="options.title.toLowerCase().replace(/ /g, '_')" :label="options.title"/>
                </template>
                <div class="wpsr-styling-components-wrapper">
-                  <UpgradeToProBanner />
+                  <UpgradeToProBanner placement="feature_lock_youtube_style" />
                   <div v-for="(option, index) in options" :key="index" >
                     <h3 v-if="show_section(optionsKey, option) && option.title" class="wpsr-style-title">{{ option.title }}</h3>
                     <div v-if="option.styles && option.styles.length && hasVisibleElements(option, optionsKey)" class="wpsr-styling-components" :class="!has_pro ? 'wpsr-style-upgrade':''">
@@ -171,6 +171,7 @@ export default {
         return {};
       }
       let style_container = [
+        this.feed_config.styles.channel_logo,
         this.feed_config.styles.channel_name,
         this.feed_config.styles.channel_name_wrapper,
         this.feed_config.styles.statistics,

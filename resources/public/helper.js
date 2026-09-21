@@ -5,7 +5,7 @@
  * @param {string} text - Text to escape
  * @returns {string} Escaped text for HTML attributes
  */
-function escapeHtmlAttr(text) {
+export function escapeHtmlAttr(text) {
     if (!text) return '';
     return String(text)
         .replace(/&/g, '&amp;')
@@ -22,7 +22,7 @@ function escapeHtmlAttr(text) {
  * @param {string} text - Text to escape
  * @returns {string} Escaped text with all HTML converted to entities
  */
-function escapeHtml(text) {
+export function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
@@ -41,7 +41,9 @@ function escapeHtml(text) {
 function sanitizeHtml(html) {
     if (!html) return '';
 
-    const temp = document.createElement('div');
+    // A <template>'s content is inert, so parsing untrusted feed HTML here
+    // cannot fire <img onerror> or load resources before the walk below filters.
+    const temp = document.createElement('template');
     temp.innerHTML = html;
 
     const allowedTags = ['IMG', 'P', 'SPAN', 'BR', 'STRONG', 'EM'];
@@ -145,7 +147,7 @@ function sanitizeHtml(html) {
     }
 
     let content = '';
-    for (let child of temp.childNodes) {
+    for (let child of temp.content.childNodes) {
         content += cleanNode(child);
     }
 
@@ -737,6 +739,151 @@ export function checkBFScrollbar(){
     }
 }
 
+/**
+ * Lay out one masonry container, and keep it laid out.
+ *
+ * Per container: two templates on a page can ask for different column counts.
+ *
+ * @param {jQuery} $container element carrying wpsr-active-masonry-layout
+ */
+export function wpsrInitMasonry($container) {
+    if (typeof $container.masonry !== 'function') {
+        return;
+    }
+
+    const itemSelector = '.wpsr-col-' + $container.data('column');
+
+    $container.masonry({itemSelector: itemSelector});
+    wpsrWatchMasonryHeights($container, itemSelector);
+
+    if (typeof $container.imagesLoaded === 'function') {
+        $container.imagesLoaded(() => wpsrRelayoutMasonry($container));
+    }
+}
+
+/**
+ * @param {jQuery} $container a laid-out masonry container
+ */
+export function wpsrRelayoutMasonry($container) {
+    if ($container.length && $container.data('masonry')) {
+        $container.masonry('layout');
+    }
+}
+
+/**
+ * Re-lay out a container once one of its cards changes height.
+ *
+ * imagesLoaded only waits for <img>, so a player grows its card after layout ran.
+ *
+ * @param {jQuery} $container
+ * @param {string} itemSelector
+ */
+export function wpsrWatchMasonryHeights($container, itemSelector) {
+    if (typeof window.ResizeObserver !== 'function') {
+        jQuery(window).on('load', () => wpsrRelayoutMasonry($container));
+        return;
+    }
+
+    let observer = $container.data('wpsrMasonryObserver');
+
+    if (!observer) {
+        // One pass per frame, or a page of players resizing would queue one each.
+        let queued = false;
+
+        observer = new ResizeObserver(() => {
+            if (queued) {
+                return;
+            }
+
+            queued = true;
+            window.requestAnimationFrame(() => {
+                queued = false;
+                wpsrRelayoutMasonry($container);
+            });
+        });
+
+        $container.data('wpsrMasonryObserver', observer);
+    }
+
+    // observe() on a card already watched is a no-op, so Load More can re-call this.
+    $container.find(itemSelector).each(function () {
+        observer.observe(this);
+    });
+}
+
+// Bumped per injected player, so two Load More batches never share an element id.
+let wpsrInjectedPlayerSeq = 0;
+
+/**
+ * Wire up markup that arrived after page load.
+ *
+ * Fluent Player and the review form script both scan the DOM only once, on
+ * DOMContentLoaded, so injected markup stays inert until initialized here.
+ *
+ * @param {jQuery|Element} container
+ * @param {number|string} templateId
+ * @param {string} [slotKey] stable key for a caller that rebuilds its container
+ */
+export function wpsrInitInjectedContent(container, templateId, slotKey) {
+    let $container = jQuery(container);
+    let configEl = $container.find('.wpsr-fp-config')[0];
+    let playerData = null;
+
+    if (configEl) {
+        try {
+            playerData = JSON.parse(configEl.textContent);
+        } catch (e) {
+            playerData = null;
+        }
+    }
+
+    let slot = $container[0];
+    let slotSeq = slotKey || (slot ? slot.getAttribute('data-wpsr-player-seq') : null);
+
+    if (!slotKey && slot && !slotSeq) {
+        slotSeq = String(++wpsrInjectedPlayerSeq);
+        slot.setAttribute('data-wpsr-player-seq', slotSeq);
+    }
+
+    $container.find('.fluent-player').each(function () {
+        let oldId = this.id;
+        let newId = oldId + '-wpsr-' + templateId + '-' + (slotSeq || '0');
+
+        this.id = newId;
+
+        if (oldId) {
+            $container.find('style').each(function () {
+                this.textContent = this.textContent.split('#' + oldId).join('#' + newId);
+            });
+        }
+
+        document.dispatchEvent(new CustomEvent('InitSingleFluentPlayer', {
+            detail: playerData ? {container: this, playerData: playerData} : {container: this}
+        }));
+    });
+
+    if (typeof window.wpsrInitReviewForms === 'function') {
+        window.wpsrInitReviewForms($container[0]);
+    }
+}
+
+/**
+ * Same, for a batch where each player carries its own config script.
+ *
+ * @param {jQuery|Element} container
+ * @param {number|string} templateId
+ */
+export function wpsrInitInjectedPlayers(container, templateId) {
+    jQuery(container).find('.wpsr-testimonial-video').each(function () {
+        try {
+            wpsrInitInjectedContent(this, templateId);
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error('WP Social Ninja: could not init an injected player', e);
+        }
+    });
+}
+
 export default {
     generateURLsFromHashTag,
     animateTextTypingEffect,
@@ -751,5 +898,7 @@ export default {
     carouselOptions,
     ratingIcon,
     openPopupWindow,
-    checkBFScrollbar
+    checkBFScrollbar,
+    wpsrInitInjectedContent,
+    wpsrInitInjectedPlayers
 }

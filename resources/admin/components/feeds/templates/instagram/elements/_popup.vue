@@ -14,7 +14,7 @@
                       <div class="swiper-wrapper">
                           <div class="swiper-slide" v-for="(feed, index) in feed.children ? feed.children.data : ''" :key="index">
                               <img v-if="feed.media_type === 'IMAGE'" :src="feed.media_url ? feed.media_url : feed.default_media" alt="">
-                              <video id="wpsr-feed-popup-video" v-if="feed && feed.media_type === 'VIDEO'" playsinline="" autoplay=true preload="auto" :src="feed.media_url ? feed.media_url : feed.default_media" v-bind="!feed.media_url ? (feed.default_media.includes('video_dashinit') ? videoAttrs : ''): ''" :poster="feed.thumbnail_url">
+                              <video id="wpsr-feed-popup-video" v-if="feed && feed.media_type === 'VIDEO'" playsinline="" autoplay=true preload="auto" :src="feed.media_url ? feed.media_url : feed.default_media" v-bind="!feed.media_url ? ((feed.default_media || '').includes('video_dashinit') ? videoAttrs : ''): ''" :poster="feed.thumbnail_url">
                                   <source :src="feed.media_url ? feed.media_url : feed.default_media" type="video/mp4">
                               </video>
                           </div>
@@ -31,10 +31,10 @@
                     <div v-if="!feed.has_carousel &&feed.media_name === 'VIDEO' && feed.media_type === 'IMAGE'" class="wpsr-ig-post-type-icon" :class="'wpsr-ig-post-type-' + feed.media_name"></div>
 
                     <img v-else-if="!feed.has_carousel && (feed.media_name === 'IMAGE' || feed.media_name === 'CAROUSEL_ALBUM' )  && (feed.media_type === 'IMAGE')" :src="feed.media_url ? feed.media_url : feed.default_media" alt="">
-                    <video id="wpsr-feed-popup-video" v-if="feed && feed.media_type === 'VIDEO' && feed.media_url.includes('.mp4')" playsinline="" controls autoplay=true preload="none" :src="feed.media_url ? feed.media_url : feed.default_media" v-bind="(!feed.media_url && feed.default_media) ? (feed.default_media.includes('video_dashinit') ? videoAttrs : '') : ''" :poster="feed.thumbnail_url">
+                    <video id="wpsr-feed-popup-video" v-if="feed && feed.media_type === 'VIDEO' && (feed.media_url || '').includes('.mp4')" playsinline="" controls autoplay=true preload="none" :src="feed.media_url ? feed.media_url : feed.default_media" v-bind="(!feed.media_url && feed.default_media) ? (feed.default_media.includes('video_dashinit') ? videoAttrs : '') : ''" :poster="feed.thumbnail_url">
                         <source :src="feed.media_url ? feed.media_url : feed.default_media" type="video/mp4">
                     </video>
-                    <div class="wpsr-ig-no-video" v-if="feed && (feed.media_name === 'oembed' || feed.media_name === 'VIDEO') && !feed.media_url.includes('.mp4')">
+                    <div class="wpsr-ig-no-video" v-if="feed && (feed.media_name === 'oembed' || feed.media_name === 'VIDEO') && !(feed.media_url || '').includes('.mp4')">
                       <a :href="feed.permalink" target="_blank">
                         <img class="wpsr-ig-thumbnail" :src="feed.media_url" alt="">
                       </a>

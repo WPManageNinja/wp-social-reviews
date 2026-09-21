@@ -109,7 +109,7 @@
             </template>
 
             <div class="wpsr_editor_edit_item-group wpsr_editor_inside_gap_16">
-                <UpgradeToProBanner />
+                <UpgradeToProBanner placement="feature_lock_instagram_editor" />
                 <div class="wpsr-settings-switch">
                     <span class="wpsr-editor-inside-left wpsr-input-field-label">{{$t('Enable Shoppable Feed') }}</span>
                     <div class="wpsr-editor-inside-right">
@@ -400,7 +400,7 @@ export default {
                     placeholder: this.$t('Type something and press enter....'),
                     disabled: !this.has_pro,
                     tooltip: true,
-                    tooltipText: this.$t("You can use this setting to show posts that contain certain specific words or hashtags in the caption. <br/> Separate multiple words or hashtags using commas. ex: #hashtag1,word1,word2,#hashtag2"),
+                    tooltipText: this.$t('You can use this setting to show posts that contain certain specific words or hashtags in the caption.') + '<br>' + this.$t('Separate multiple words or hashtags using commas. ex: #hashtag1,word1,word2,#hashtag2'),
                 },
                 {
                     fieldKey: 'excludes_inputs',
@@ -409,7 +409,7 @@ export default {
                     placeholder: this.$t('Type something and press enter....'),
                     disabled: !this.has_pro,
                     tooltip: true,
-                    tooltipText: this.$t('You can use this setting to hiding posts that contain certain specific words or hashtags in the caption. <br/> Separate multiple words or hashtags using commas. ex: #hashtag1,word1,#hashtag2,word2')
+                    tooltipText: this.$t('You can use this setting to hide posts that contain certain specific words or hashtags in the caption.') + '<br>' + this.$t('Separate multiple words or hashtags using commas. ex: #hashtag1,word1,#hashtag2,word2')
                 },
                 {
                     fieldKey: 'hide_posts_by_id',
@@ -419,7 +419,7 @@ export default {
                     disabled: !this.has_pro,
                     tooltip: true,
                     autosize: {minRows: 2, maxRows: 4},
-                    tooltipText: this.$t('You can find the ID of a Post by viewing the post on Instagram and copy/pasting the ID number from the end of the URL </br> ex: https://www.instagram.com/p/CIdOs_JrF6M/ [ in this URL ID is "CIdOs_JrF6M" ]')
+                    tooltipText: this.$t('You can find the post ID by viewing the post on Instagram and copying the ID number from the end of the URL.') + '<br>ex: https://www.instagram.com/p/CIdOs_JrF6M/'
                 }
             ],
             source_settings: [
@@ -446,7 +446,7 @@ export default {
                     title: this.$t('Hashtags'),
                     placeholder: this.$t('Enter hashtags using comma separator'),
                     tooltip: true,
-                    tooltipText: this.$t('Enter any hashtag to display posts from a hashtag. <br> Separate multiple hashtag with comma ex: #wp, #wpsocialninja'),
+                    tooltipText: this.$t('Enter any hashtag to display posts from a hashtag.') + '<br>' + this.$t('Separate multiple hashtags with commas. ex: #wp, #wpsocialninja'),
                     condition: {
                         'key': 'feed_type',
                         'selector': 'hashtag_feed'
@@ -513,23 +513,41 @@ export default {
                             title: this.$t('Masonry'),
                             pro: !this.has_pro,
                             img: this.assets_url + '/images/template/global-template/masonry.png',
+                        },
+                        {
+                            key: 'highlights',
+                            title: this.$t('Highlights'),
+                            pro: !this.has_pro,
+                            img: this.assets_url + '/images/template/global-template/highlights.png',
                         }
                     ]
                 },
                 {
                     fieldKey: 'template',
-                    shouldShowSeeMoreButton: false,
                     type: 'image_select',
                     options: [
                         {
                             key: 'template1',
-                            title: 'Template 1',
+                            title: this.$t('Classic Grid'),
                             img: this.assets_url + '/images/template/instagram-template/template1.png'
                         },
                         {
                             key: 'template2',
-                            title: 'Template 2',
+                            title: this.$t('Caption Card'),
                             img: this.assets_url + '/images/template/instagram-template/template2.png'
+                        },
+                        {
+                            key: 'template3',
+                            title: this.$t('Overlay Card'),
+                            // Older Pro releases cannot render it, so keep it locked there.
+                            pro: !this.has_pro || this.instagram_pro_templates.indexOf('template3') === -1,
+                            img: this.assets_url + '/images/template/instagram-template/template3.png'
+                        },
+                        {
+                            key: 'template4',
+                            title: this.$t('Pin Card'),
+                            pro: !this.has_pro || this.instagram_pro_templates.indexOf('template4') === -1,
+                            img: this.assets_url + '/images/template/instagram-template/template4.png'
                         }
                     ]
                 },
@@ -539,22 +557,36 @@ export default {
                 {
                     title: this.$t('Layout Styling'),
                     type: 'section_title',
-                    condition: {
-                      'key': 'layout_type',
-                      'operator': '!=',
-                      'selector': 'carousel'
-                    },
+                    condition: [
+                      {
+                        'key': 'layout_type',
+                        'operator': '!=',
+                        'selector': 'carousel'
+                      },
+                      {
+                        'key': 'layout_type',
+                        'operator': '!=',
+                        'selector': 'highlights'
+                      }
+                    ],
                 },
                 {
                     fieldKey: 'responsive_column_number',
                     type: 'select',
                     title: this.$t('Number of Columns'),
                     responsive: true,
-                    condition: {
-                        'key': 'layout_type',
-                        'operator': '!=',
-                        'selector': 'carousel'
-                    },
+                    condition: [
+                        {
+                            'key': 'layout_type',
+                            'operator': '!=',
+                            'selector': 'carousel'
+                        },
+                        {
+                            'key': 'layout_type',
+                            'operator': '!=',
+                            'selector': 'highlights'
+                        }
+                    ],
                     options: [
                         {
                             value: '12',
@@ -639,7 +671,7 @@ export default {
                         }
                     ],
                     tooltip: true,
-                    tooltipText: this.$t('The Load More button will only display on your site\'s preview/live pages/posts <br> not while you\'re in editing mode in the WordPress Editor.')
+                    tooltipText: this.$t("The Load More button will only display on your site's preview/live pages/posts.") + "<br>" + this.$t("It will not display while you are in editing mode in the WordPress Editor.")
                 },
                 {
                     fieldKey: 'load_more_button_text',
@@ -859,6 +891,21 @@ export default {
                 }
             ],
             header_settings: [
+                {
+                    fieldKey: 'header_layout',
+                    type: 'select',
+                    title: this.$t('Header Layout'),
+                    options: [
+                        {
+                            value: 'classic',
+                            label: this.$t('Classic')
+                        },
+                        {
+                            value: 'minimal',
+                            label: this.$t('Minimal')
+                        }
+                    ]
+                },
                 {
                     fieldKey: 'display_avatar',
                     type: 'switch',

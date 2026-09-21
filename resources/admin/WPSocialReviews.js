@@ -399,7 +399,9 @@ export default class WPSocialReviews {
             return ' data-wpsr-' + p1 + '="' + val + '"';
         });
 
-        const temp = document.createElement('div');
+        // A <template>'s content is inert, so the parse below cannot load
+        // resources or fire handlers regardless of what the regexes above missed.
+        const temp = document.createElement('template');
         temp.innerHTML = html;
 
         const allowedTags = ['IMG', 'P', 'SPAN', 'BR', 'STRONG', 'EM'];
@@ -495,7 +497,7 @@ export default class WPSocialReviews {
         }
 
         let content = '';
-        for (let child of temp.childNodes) {
+        for (let child of temp.content.childNodes) {
             content += cleanNode(child);
         }
 

@@ -1,5 +1,17 @@
 <template>
-  <div class="wpsr_editor" v-if="feedConfig">
+  <div v-if="!has_pro" class="wpsr-page-container wpsr-all-templates-page">
+    <div class="wpsr-managers-upgrade-to-pro" style="height: 100vh;">
+      <div class="wpsr-managers-upgrade-message">
+        <h2>{{ $t('Blend Every Social Feed into One Wall') }}</h2>
+        <p>{{ $t('Show Instagram, Facebook, YouTube, X (Twitter) and TikTok posts together in a single feed.') }}</p>
+        <div>
+          <UpgradeToProButton placement="feature_lock_social_wall_editor"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wpsr_editor" v-else-if="feedConfig" :class="{ 'wpsr-editor-sidebar-minimized': wpsrSidebarMinimized, 'wpsr-sidebar-resizing': wpsrSidebarResizing }">
     <editor-header
         :title="template_title"
         platform_section="social_wall"
@@ -9,7 +21,7 @@
         @update-settings="updatedSocialWallSettings"
     ></editor-header>
     <div class="wpsr_editor_wrapper">
-      <el-container>
+      <el-container :style="{ '--wpsr-editor-sidebar-width': wpsrSidebarWidth + 'px' }">
         <div v-if="feedConfig.feed_settings">
           <div v-html="css"></div>
         </div>
@@ -43,7 +55,9 @@
             </div>
         </el-main>
 
+        <SidebarToggleButton :minimized="wpsrSidebarMinimized" @toggle="toggleEditorSidebar" />
         <el-aside class="wpsr-editor-sidebar">
+          <SidebarResizeHandle :width="wpsrSidebarWidth" :min="wpsrSidebarMinWidth" :max="wpsrSidebarMaxWidth" @resize-start="startSidebarResize" @resize-step="stepSidebarResize" />
           <el-tabs v-model="activeTab" class="wpsr-element-tab-wrapper">
             <el-tab-pane label="General" name="general" class="wpsr-element-tab-item">
               <el-collapse accordion v-model="activeAccordion">
@@ -174,10 +188,13 @@ import UpgradeToProButton from '../../views/advertise/UpgradeToProButton';
 import SocialWallChannelModal from '../../pieces/SocialWallChannelModal';
 import SocialWallChannelButton from '../../pieces/SocialWallChannelButton';
 import SocialWallChannelList from '../../pieces/SocialWallChannelList';
+import { editorSidebarMixin } from "../../../mixins/editorSidebarMixin";
+import SidebarToggleButton from '../../pieces/SidebarToggleButton';
+import SidebarResizeHandle from '../../pieces/SidebarResizeHandle';
 
 export default {
   name: "SocialWallView",
-  mixins: [templateMixin, tableMixin, commonMixin, jsLibraryMixin, helperStyle],
+  mixins: [templateMixin, tableMixin, commonMixin, jsLibraryMixin, helperStyle, editorSidebarMixin],
   components: {
     FeedEditorGroup,
     EditorHeader,
@@ -186,7 +203,9 @@ export default {
     UpgradeToProButton,
     SocialWallChannelModal,
     SocialWallChannelButton,
-    SocialWallChannelList
+    SocialWallChannelList,
+    SidebarToggleButton,
+    SidebarResizeHandle
   },
   data() {
     return {
@@ -540,6 +559,10 @@ export default {
     },
   },
   mounted() {
+    // Social Wall is Pro-only; core/free has no social-wall meta route to call.
+    if (!this.has_pro) {
+      return;
+    }
     this.getSocialWallSettings();
       // Dynamically set templates based on platforms
       this.platforms.forEach((platform, index) => {

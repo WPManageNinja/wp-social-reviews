@@ -32,6 +32,7 @@
         <youtube-config
             v-if="youtubeSettingModal"
             :youtubeModal="youtubeSettingModal"
+            :wpsr-auth-return-url-builder="wpsrBuildAuthReturnUrl"
             @youtube_settings="youtubeSettingModal = $event"
             @findEnabledPlatforms="handleFindEnabledPlatforms"
         >
@@ -40,7 +41,7 @@
 </template>
 
 <script type="text/babel">
-import { debounce } from '../../../../utils';
+import { debounce, wpsrBuildAuthReturnUrl as buildWpsrAuthReturnUrl } from '../../../../utils';
 import FeedEditorGroup from './../../../core-ui/editor/EditorGroup';
 import UpgradeToProButton from '../../../views/advertise/UpgradeToProButton';
 import Youtube from '../../../views/platforms/feeds/Youtube.vue';
@@ -78,14 +79,22 @@ export default {
         return {
             youtubeSettingModal: false,
             localFeedConfig: null,
-            isUpdating: false
+            isUpdating: false,
+            wpsrIsConnected: false
         }
     },
 
     computed: {
         isPlatformConnected() {
-            // Check if YouTube is connected based on connected_ids or other connection indicators
-            return this.connected_ids && this.connected_ids.length > 0;
+            if (this.wpsrIsConnected) {
+                return true;
+            }
+
+            if (Array.isArray(this.connected_ids)) {
+                return this.connected_ids.length > 0;
+            }
+
+            return this.connected_ids && Object.keys(this.connected_ids).length > 0;
         },
         connectionCardStyle() {
             return {
@@ -137,6 +146,8 @@ export default {
                 window.history.replaceState({}, '', url.toString());
             }
         }
+
+        this.wpsrGetVerificationConfigs();
     },
 
     methods: {
@@ -155,8 +166,23 @@ export default {
         }, 500),
 
         handleFindEnabledPlatforms() {
-            // Handle the findEnabledPlatforms event from YoutubeConfig
-            // This can be used to refresh connection status or update UI
+            this.wpsrGetVerificationConfigs();
+        },
+
+        wpsrBuildAuthReturnUrl(routeName, authPlatform = '', fallbackUrl = '') {
+            const templateId = this.$route && this.$route.params ? this.$route.params.template_id : '';
+            return buildWpsrAuthReturnUrl(routeName, authPlatform, fallbackUrl || this.appVars.admin_page_url, templateId);
+        },
+
+        wpsrGetVerificationConfigs() {
+            this.$get('platforms/feeds/configs', {
+                platform: 'youtube'
+            }).then(response => {
+                const wpsrSettings = response && response.data ? response.data.settings : {};
+                this.wpsrIsConnected = !!(wpsrSettings && (wpsrSettings.access_token || wpsrSettings.api_key));
+            }).catch(error => {
+                this.handleError(error);
+            });
         },
     },
 }

@@ -61,7 +61,7 @@
               <div class="wpsr-ml-20">
                   <p class="wpsr-pt-10 wpsr-mb-0">
                     <strong>{{ $t('Note: ') }}</strong>
-                    <span v-html="$t('To configure <strong>GDPR Compliance</strong> and <strong>Image Format</strong> settings, go to ')"></span>
+                    <span v-html="$t('To configure %1$s and %2$s settings, go to ', '<strong>GDPR Compliance</strong>', '<strong>Image Format</strong>')"></span>
                     <router-link to="/settings/advance-settings" class="wpsr-gdpr-link">{{ $t('Advanced Settings') }}</router-link>
                   </p>
               </div>
@@ -233,7 +233,9 @@
           </div>
         </div>
 
-        <NativeFormCaptchaSettings v-if="has_pro && canManageCaptchaSettings" />
+        <NativeFormCaptchaSettings v-if="has_pro && canManageReviewsPlatformsSettings" />
+
+        <FluentCrmReviewTagSettings v-if="has_pro && canManageReviewsPlatformsSettings" />
 
         <div
           class="wpsr-settings-container" 
@@ -374,6 +376,7 @@
 <script>
 import RemoveConfirm from "../../../core-ui/editor/RemoveConfirm";
 import NativeFormCaptchaSettings from "./NativeFormCaptchaSettings.vue";
+import FluentCrmReviewTagSettings from "./FluentCrmReviewTagSettings.vue";
 import { InfoFilled } from "@element-plus/icons-vue";
 import { settingsMixin } from "../../../../mixins/settingsMixin";
 
@@ -383,6 +386,7 @@ export default {
   components: {
     RemoveConfirm,
     NativeFormCaptchaSettings,
+    FluentCrmReviewTagSettings,
     InfoFilled,
   },
   data() {
@@ -428,7 +432,7 @@ export default {
     };
   },
   computed: {
-    canManageCaptchaSettings() {
+    canManageReviewsPlatformsSettings() {
       return this.hasPermission(['wpsn_reviews_platforms_settings', 'wpsn_full_access']);
     }
   },

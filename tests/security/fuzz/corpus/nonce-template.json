@@ -1,0 +1,44 @@
+[
+  {
+    "id": "load-more-wrong-nonce",
+    "method": "POST",
+    "params": {"action": "wpsr_get_more_feeds", "security": "wrong-token", "template_id": "../../1", "platform": "reviews", "page": "999999999999999999"},
+    "expect": {"status": 403, "json_message": "Invalid nonce."}
+  },
+  {
+    "id": "youtube-popup-wrong-nonce",
+    "method": "POST",
+    "params": {"action": "wpsr_youtube_popup_feed", "security": "wrong-token", "templateId": "-1", "feedId": "../../fixture"},
+    "expect": {"status": 403, "json_message": "Security validation failed."}
+  },
+  {
+    "id": "youtube-player-wrong-nonce",
+    "method": "POST",
+    "params": {"action": "wpsr_youtube_fluent_player", "security": "wrong-token", "templateId": "-1", "videoId": "../fixture.mp4", "duration": "999999999999999999"},
+    "expect": {"status": 403, "json_message": "Security validation failed."}
+  },
+  {
+    "id": "feed-image-wrong-nonce",
+    "method": "POST",
+    "params": {"action": "wpsr_resize_images", "nonce": "wrong-token", "id": "../../1", "platform": "../youtube", "feed_type": "image/svg+xml"},
+    "expect": {"status": 423, "json_message": "Security validation failed. Please try again"}
+  },
+  {
+    "id": "review-image-wrong-nonce",
+    "method": "POST",
+    "params": {"action": "wpsr_review_resize_images", "nonce": "wrong-token", "id": "../../1", "platforms": ["../../private.php", "image/svg+xml"], "resize_data": ["../escape.webp", "fixture"]},
+    "expect": {"status": 423, "json_message": "Security validation failed. Please try again"}
+  },
+  {
+    "id": "load-more-valid-nonce-invalid-template",
+    "method": "POST",
+    "params": {"action": "wpsr_get_more_feeds", "security": "{{nonce}}", "template_id": "0", "platform": "reviews", "page": "-1"},
+    "expect": {"status": 403, "json_message": "Invalid template."}
+  },
+  {
+    "id": "player-valid-nonce-draft-template",
+    "method": "POST",
+    "params": {"action": "wpsr_youtube_fluent_player", "security": "{{nonce}}", "templateId": "{{draft_id}}", "videoId": "fixture", "duration": "-1"},
+    "expect": {"status": 403, "json_message": "Invalid template."}
+  }
+]

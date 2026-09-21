@@ -103,7 +103,7 @@
                 <div class="wpsr-ml-20">
                     <p class="wpsr-pt-10 wpsr-mb-0">
                       <strong>{{ $t('Note: ') }}</strong>
-                      <span v-html="$t('To configure <strong>GDPR Compliance</strong> and <strong>Image Format</strong> settings, go to ')"></span>
+                      <span v-html="$t('To configure %1$s and %2$s settings, go to ', '<strong>GDPR Compliance</strong>', '<strong>Image Format</strong>')"></span>
                       <router-link to="/settings/advance-settings" class="wpsr-gdpr-link">{{ $t('Advanced Settings') }}</router-link>
                     </p>
                 </div>

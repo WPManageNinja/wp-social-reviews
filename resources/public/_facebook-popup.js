@@ -1,4 +1,4 @@
-import {checkBFScrollbar, formatText} from './helper';
+import {checkBFScrollbar, formatText, escapeHtml, escapeHtmlAttr} from './helper';
 
 let $ = jQuery;
 let templateId = null;
@@ -25,6 +25,53 @@ function getWpsrImageFormat() {
         : '';
 
     return ['jpg', 'webp'].includes(imageFormat) ? imageFormat : 'jpg';
+}
+
+// The href must be encoded, otherwise a permalink carrying its own query
+// string (/watch/?v=123) is truncated by the plugin endpoint.
+function wpsrVideoEmbedUrl(videoUrl, autoplay = 1) {
+    if (!videoUrl) {
+        return '';
+    }
+
+    return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(videoUrl)}&autoplay=${autoplay}`;
+}
+
+// Only facebook knows what it will frame, so trust the graph field and treat a
+// missing one (the /posts edge omits it) as embeddable.
+function wpsrIsEmbeddable(feed) {
+    return !feed || feed.embeddable !== false;
+}
+
+// Playable mp4 a timeline video ships with, mirroring the editor preview.
+// Strictly the media source, never a permalink, so it is safe in a <video>.
+function wpsrTimelineVideoSource(feed) {
+    let attachment = feed && feed.attachments && feed.attachments.data ? feed.attachments.data[0] : null;
+
+    if (!attachment || !attachment.media) {
+        return '';
+    }
+
+    return attachment.media.source
+        || (attachment.media.video && attachment.media.video.source)
+        || '';
+}
+
+function wpsrVideoThumbnail(feed) {
+    if (!feed) {
+        return '';
+    }
+
+    if (feed.media_url) {
+        return feed.media_url;
+    }
+
+    if (feed.format && feed.format.length) {
+        let format = feed.format[1] || feed.format[0];
+        return format && format.picture ? format.picture : '';
+    }
+
+    return '';
 }
 
 export default {
@@ -74,15 +121,19 @@ export default {
             `${this.renderVideo()}` : ``
          }
          ${additionalSettings.feed_type !== 'video_feed' && (currentFeed.attachments || currentFeed.images || currentFeed.cover || currentFeed.photos) ?
-            `<div class="wpsr-feed-popup-media ${optimizedImages ? 'wpsr-optimize-media ' : ''} ${!optimizedImages && (feed_type === 'video') ? 'wpsr-gdpr-off' : ''}">
+            `<div class="wpsr-feed-popup-media ${optimizedImages ? 'wpsr-optimize-media ' : ''} ${!optimizedImages && (feed_type === 'video') && !wpsrTimelineVideoSource(currentFeed) ? 'wpsr-gdpr-off' : ''}">
               ${video_attachment_url && (currentFeed.status_type === 'added_video' || feed_type === 'video') ?
                 `<div class="wpsr-feed-popup-photo-media">
-                    ${optimizedImages ? 
-                        `<a href="${cta_url}" target="_blank"><img src="${currentFeed.media_url}" alt="${currentFeed.description ? currentFeed.description : ''}"><div class="wpsr-fb-feed-video-play">
+                    ${optimizedImages ?
+                        `<a href="${escapeHtmlAttr(cta_url)}" target="_blank"><img src="${escapeHtmlAttr(currentFeed.media_url)}" alt="${escapeHtmlAttr(currentFeed.description ? currentFeed.description : '')}"><div class="wpsr-fb-feed-video-play">
                         <div class="wpsr-fb-feed-video-play-icon"></div></div></a>` :
+                        wpsrTimelineVideoSource(currentFeed) ?
+                        this.renderTimelineVideo(wpsrTimelineVideoSource(currentFeed)) :
+                        !wpsrIsEmbeddable(currentFeed) ?
+                        this.renderNonEmbeddableVideo(video_attachment_url) :
                         `<div class="wpsr-feed-popup-loader wpsr-popup-loading">
                       <div class="wpsr-spinner-animation"></div>
-                    </div><iframe id="wpsr-feed-popup-video-iframe" src="https://www.facebook.com/plugins/video.php?href=${video_attachment_url}?autoplay=1" allowtransparency="true" allowfullscreen="true" frameborder="0" scrolling="no" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"></iframe>`
+                    </div><iframe id="wpsr-feed-popup-video-iframe" src="${escapeHtmlAttr(wpsrVideoEmbedUrl(video_attachment_url))}" allowtransparency="true" allowfullscreen="true" frameborder="0" scrolling="no" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"></iframe>`
                     }
                 </div>` : ``
                 }
@@ -159,10 +210,10 @@ export default {
                             <div class="wpsr-feed-popup-comment-inner wpsr-feed-popup-comment-list">
                                 <div class="wpsr-feed-popup-comment-text wpsr-feed-popup-comment-item">
                                     ${currentPopupSettings.display_comments_user_picture === 'true' && !optimizedImages && currentFeed.comments.data[key].from.picture ?
-                                        `<img class="wpsr-feed-popup-comment-user-avatar" src="${currentFeed.comments.data[key].from.picture.data.url}" alt="${currentFeed.comments.data[key].from.name}">` : `` 
+                                        `<img class="wpsr-feed-popup-comment-user-avatar" src="${escapeHtmlAttr(currentFeed.comments.data[key].from.picture.data.url)}" alt="${escapeHtmlAttr(currentFeed.comments.data[key].from.name)}">` : ``
                                     }
                                     <div class="wpsr-feed-popup-comment-group">
-                                        <span>${currentFeed.comments.data[key].from.name}</span>
+                                        <span>${escapeHtml(currentFeed.comments.data[key].from.name)}</span>
                                         <p>${formatText(currentFeed.comments.data[key].message)}</p>
                                     </div>
                                 </div>
@@ -175,9 +226,9 @@ export default {
           
            ${additionalSettings.feed_type !== 'video_feed' && currentPopupSettings.display_cta_btn === 'true' ? 
             `<div class="wpsr-feed-popup-view-post-cta">
-                <a href="${albumCta ? albumCta : cta_url}" target="_self">
+                <a href="${escapeHtmlAttr(albumCta ? albumCta : cta_url)}" target="_self">
                   <span class="wpsr-icon icon-facebook-square"></span>
-                  <span>${window.wpsr_ajax_params.view_on_fb}</span>
+                  <span>${escapeHtml(window.wpsr_ajax_params.view_on_fb)}</span>
                 </a>
             </div>` : ``
            }
@@ -195,12 +246,14 @@ export default {
         if(additionalSettings.feed_type === 'video_feed' || additionalSettings.feed_type === 'video_playlist_feed') {
             return `<div class="wpsr-fb-feed-popup-video-player wpsr-feed-popup-media ${optimizedImages ? 'wpsr-optimize-media' : ''}">
                 <div>
-              
-                ${optimizedImages ? 
-                    `<a class="wpsr-optimize-image-wrapper" href="https://www.facebook.com/${currentFeed.permalink_url}?autoplay=1" target="_blank"><img src="${currentFeed.media_url}" alt="${currentFeed.description ? currentFeed.description : ''}" class="${optimizedImages ? 'wpsr-video-optimized-img' : ''}"><div class="wpsr-fb-feed-video-play"><div class="wpsr-fb-feed-video-play-icon"></div></div></a>` :
+
+                ${optimizedImages ?
+                    `<a class="wpsr-optimize-image-wrapper" href="${escapeHtmlAttr(`https://www.facebook.com/${currentFeed.permalink_url}?autoplay=1`)}" target="_blank"><img src="${escapeHtmlAttr(currentFeed.media_url)}" alt="${escapeHtmlAttr(currentFeed.description ? currentFeed.description : '')}" class="${optimizedImages ? 'wpsr-video-optimized-img' : ''}"><div class="wpsr-fb-feed-video-play"><div class="wpsr-fb-feed-video-play-icon"></div></div></a>` :
+                    !wpsrIsEmbeddable(currentFeed) ?
+                    this.renderNonEmbeddableVideo(`https://www.facebook.com${currentFeed.permalink_url}`) :
                     `<div class="wpsr-feed-popup-loader wpsr-popup-loading">
                     <div class="wpsr-spinner-animation"></div>
-                </div><iframe id="wpsr-feed-popup-video-iframe" src="https://www.facebook.com/plugins/video.php?href=https://www.facebook.com${currentFeed.permalink_url}?autoplay=1" allowfullscreen="true" frameborder="0" scrolling="no" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture">
+                </div><iframe id="wpsr-feed-popup-video-iframe" src="${escapeHtmlAttr(wpsrVideoEmbedUrl(`https://www.facebook.com${currentFeed.permalink_url}`))}" allowfullscreen="true" frameborder="0" scrolling="no" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture">
                     </iframe>`
                 }
             </div>
@@ -208,6 +261,50 @@ export default {
         }
 
         return '';
+    },
+
+    // Facebook restricts framing per video, so play its own mp4 where one exists.
+    renderTimelineVideo(videoUrl) {
+        let poster = wpsrVideoThumbnail(currentFeed);
+        let attachment = currentFeed.attachments && currentFeed.attachments.data ? currentFeed.attachments.data[0] : null;
+        // Animated images are gifs in disguise: silent, and expected to loop.
+        let gifAttrs = attachment && attachment.type === 'animated_image_video' ? ' loop muted' : '';
+
+        // src sits on the element, not a <source> child, so a failed load fires
+        // error here rather than only on the child and reaches the fallback.
+        return `<video id="wpsr-feed-popup-video" class="wpsr-feed-popup-video-player" controls autoplay playsinline preload="metadata" src="${escapeHtmlAttr(videoUrl)}" type="video/mp4"${gifAttrs}${poster ? ` poster="${escapeHtmlAttr(poster)}"` : ''}></video>`
+    },
+
+    // A signed cdn source can expire before the feed cache refreshes, so hand
+    // the slot back to facebook instead of leaving dead controls behind.
+    replaceFailedVideo($video) {
+        let attachment = currentFeed.attachments && currentFeed.attachments.data ? currentFeed.attachments.data[0] : null;
+        let watchUrl = attachment && attachment.url ? attachment.url
+            : currentFeed.permalink_url ? currentFeed.permalink_url : '';
+
+        if (!watchUrl) {
+            return;
+        }
+
+        if (!wpsrIsEmbeddable(currentFeed)) {
+            $video.replaceWith(this.renderNonEmbeddableVideo(watchUrl));
+            return;
+        }
+
+        // The iframe is absolutely positioned, so restore the aspect-ratio box
+        // that the <video> branch deliberately leaves off.
+        $video.closest('.wpsr-feed-popup-media').addClass('wpsr-gdpr-off');
+        $video.replaceWith(`<iframe id="wpsr-feed-popup-video-iframe" src="${escapeHtmlAttr(wpsrVideoEmbedUrl(watchUrl))}" allowtransparency="true" allowfullscreen="true" frameborder="0" scrolling="no" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"></iframe>`);
+    },
+
+    renderNonEmbeddableVideo(watchUrl) {
+        let thumbnail = wpsrVideoThumbnail(currentFeed);
+
+        return `<a class="wpsr-fb-feed-video-not-embeddable" href="${escapeHtmlAttr(watchUrl)}" target="_blank" rel="nofollow">
+            ${thumbnail ? `<img src="${escapeHtmlAttr(thumbnail)}" alt="${escapeHtmlAttr(currentFeed.description ? currentFeed.description : '')}">` : ''}
+            <div class="wpsr-fb-feed-video-play"><div class="wpsr-fb-feed-video-play-icon"></div></div>
+            <span class="wpsr-fb-feed-video-not-embeddable-note">${escapeHtml(window.wpsr_ajax_params.view_on_fb)}</span>
+        </a>`
     },
 
     renderAvatar() {
@@ -424,6 +521,7 @@ export default {
 
             let video = jQuery("#wpsr-feed-popup-video");
             if(video.length) {
+                video.on('error', () => this.replaceFailedVideo(video));
                 video[0].play();
             }
         }

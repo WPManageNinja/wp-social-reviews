@@ -47,6 +47,10 @@
               @expandContent="expandContent"
           />
         </div>
+        <ReviewVideo
+            :showReviewVideo="template_meta.show_review_video"
+            :reviewFields="review.fields"
+        />
         <div class="wpsr-review-header">
           <div class="wpsr-review-info">
             <ReviewerName
@@ -89,6 +93,7 @@ import AuthorWebsiteLogo from './../elements/AuthorWebsiteLogo';
 import ReviewRating from './../elements/ReviewerRating';
 import ReviewerText from './../elements/ReviewerText';
 import ReviewTitle from "../elements/ReviewTitle";
+import ReviewVideo from "../elements/ReviewVideo";
 import {reviewsMixin} from "../../../../mixins/reviewsMixin";
 
 export default {
@@ -102,7 +107,8 @@ export default {
     AuthorPosition,
     AuthorWebsiteLogo,
     ReviewRating,
-    ReviewTitle
+    ReviewTitle,
+    ReviewVideo
   },
   methods: {
     expandContent(val) {

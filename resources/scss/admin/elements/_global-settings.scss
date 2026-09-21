@@ -447,6 +447,7 @@
 
 
 // License Settings
+.wpsr-license-body,
 .wpsr-license-valid,
 .wpsr-license-unregistered {
   padding: 25px;
@@ -488,6 +489,347 @@
   text-underline-position: from-font;
   -webkit-text-decoration-skip-ink: none;
   text-decoration-skip-ink: none;
+}
+
+// License card: status pill, plan/expiry rows and the account links under it.
+// --wpsr-error-bg / --wpsr-warning-bg are the solid accent fills used for badges
+// and icons; a full-bleed alert needs the soft tints instead.
+.wpsr-license-alert {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  border-radius: var(--wpsr-radius-md, 8px);
+  border: 1px solid var(--wpsr-primary-border, #E1E4EA);
+  border-left-width: 3px;
+  background: var(--wpsr-secondary-bg, #F5F7FA);
+  text-align: left;
+
+  strong {
+    display: block;
+    color: var(--wpsr-heading-text, #0E121B);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: var(--wpsr-primary-text, #525866);
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  &.is-warning {
+    border-color: var(--wpsr-icon-info-warning-color, #FF8447);
+    background: var(--wpsr-warning-secondary-bg, #FFF1EB);
+  }
+
+  &.is-danger {
+    border-color: var(--wpsr-error-bg, #FB3748);
+    background: var(--wpsr-alert-bg, #FFEBEC);
+  }
+}
+
+.wpsr-license-alert-body {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.wpsr-license-alert-btn {
+  flex: none;
+  padding: 7px 14px;
+  border-radius: var(--wpsr-radius-md, 8px);
+  background: var(--wpsr-primary-btn-bg, #5525D9);
+  color: var(--wpsr-primary-btn-text, #FFFFFF);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  text-decoration: none;
+
+  &:hover,
+  &:focus {
+    background: var(--wpsr-primary-btn-bg-hover, #3C1A9A);
+    color: var(--wpsr-primary-btn-text, #FFFFFF);
+  }
+}
+
+.wpsr-license-card {
+  border: 1px solid var(--wpsr-primary-border, #E1E4EA);
+  border-radius: var(--wpsr-radius-md, 8px);
+  background: var(--wpsr-primary-bg, #FFFFFF);
+  text-align: left;
+  overflow: hidden;
+}
+
+.wpsr-license-card-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 16px;
+  border-bottom: 1px solid var(--wpsr-primary-border, #E1E4EA);
+
+  h3 {
+    margin: 0;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: var(--wpsr-primary-text, #525866);
+    font-size: 13px;
+    line-height: 18px;
+  }
+}
+
+.wpsr-license-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--wpsr-primary-border, #E1E4EA);
+  color: var(--wpsr-primary-text, #525866);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+
+  &.is-success {
+    border-color: #A6E3C0;
+    background: #ECFDF3;
+    color: #05603A;
+  }
+
+  &.is-warning {
+    border-color: transparent;
+    background: var(--wpsr-warning-bg, #FFC0C5);
+    color: var(--wpsr-warning-text, #681219);
+  }
+
+  &.is-danger {
+    border-color: transparent;
+    background: var(--wpsr-error-bg, #FB3748);
+    color: var(--wpsr-error-text, #FFFFFF);
+  }
+
+  // Row badges sit beside body text, where a solid chip shouts. Fixed hexes so
+  // the tint cannot flip to a dark fill under the fixed text in dark mode.
+  &.is-soft.is-warning {
+    border-color: #F5C888;
+    background: #FFF1EB;
+    color: #93500B;
+  }
+
+  &.is-soft.is-danger {
+    border-color: #F1A8A8;
+    background: #FFEBEC;
+    color: #9B1C1C;
+  }
+}
+
+.wpsr-license-meta {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 0;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--wpsr-primary-border, #E1E4EA);
+  }
+}
+
+.wpsr-license-meta-label {
+  color: var(--wpsr-primary-text, #525866);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.wpsr-license-meta-value {
+  color: var(--wpsr-heading-text, #0E121B);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  text-align: right;
+  word-break: break-word;
+
+  small {
+    display: block;
+    margin-top: 2px;
+    color: var(--wpsr-primary-text, #525866);
+    font-size: 12px;
+    font-weight: 400;
+  }
+}
+
+.wpsr-license-card-footer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+}
+
+.wpsr-license-checked {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--wpsr-primary-text, #525866);
+  font-size: 12px;
+  line-height: 18px;
+
+  a {
+    color: var(--wpsr-primary-color, #5525D9);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.wpsr-license-card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.wpsr-license-form {
+  margin-top: 20px;
+  text-align: left;
+
+  p {
+    color: var(--wpsr-primary-text, #525866);
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  // A license key is 32 characters; a field the width of the viewport reads as
+  // a layout bug and makes the verify button a long mouse trip away.
+  .wpsr-license-form-field {
+    max-width: 460px;
+  }
+}
+
+// .wpsr-license-body h3 would otherwise win on specificity and flatten this to
+// the card's title size; the empty-state heading is the primary one on the screen.
+.wpsr-license-form .wpsr-license-form-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.wpsr-license-form-head {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.wpsr-license-form-cancel {
+  flex: none;
+  color: var(--wpsr-primary-text, #525866);
+  font-size: 13px;
+  line-height: 18px;
+  text-decoration: none;
+
+  &:hover,
+  &:focus {
+    color: var(--wpsr-primary-color, #5525D9);
+    text-decoration: underline;
+  }
+}
+
+.wpsr-license-form-help {
+  margin: 6px 0 12px;
+}
+
+// Swapping the key is a secondary action sitting under an active license card,
+// so it gets a tinted panel rather than a heading that competes with the card.
+.wpsr-license-form.is-swap {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--wpsr-primary-border, #E1E4EA);
+  border-radius: var(--wpsr-radius-md, 8px);
+  background: var(--wpsr-secondary-bg, #F5F7FA);
+
+  .wpsr-license-form-title {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+  }
+
+  .wpsr-license-form-help {
+    margin-top: 4px;
+  }
+
+  // The panel tint and the disabled-button fill are the same grey, which makes
+  // the button dissolve and the input group look truncated.
+  .el-input__wrapper,
+  .el-input-group__append .wpsr_primary_btn:disabled {
+    background: var(--wpsr-primary-bg, #FFFFFF);
+  }
+}
+
+// The first-run state is the only thing on the screen, so it gets the same card
+// treatment as the license it is about to become - and, unlike the card/swap
+// states, it reads better centered since there is nothing to align against.
+.wpsr-license-form:not(.is-swap) {
+  margin-top: 0;
+  padding: 20px;
+  background: var(--wpsr-primary-bg, #FFFFFF);
+  text-align: center;
+
+  .wpsr-license-form-head {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .wpsr-license-form-field {
+    margin: 0 auto;
+  }
+}
+
+.wpsr-license-switch {
+  margin-top: 16px;
+  color: var(--wpsr-primary-text, #525866);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.wpsr-license-warning {
+  margin-top: 16px;
+  text-align: left;
+
+  p {
+    margin: 0 0 4px;
+    color: #9B1C1C;
+    font-size: 13px;
+    line-height: 18px;
+  }
+}
+
+// This text sits on the plain card surface, so it needs a red that carries on a
+// dark background rather than the light-mode ink.
+body.wpsr-dark-mode .wpsr-license-warning p {
+  color: #FF8A8F;
+}
+
+// Errors from the first-run activation form should read centered like the
+// rest of that box, not left-aligned like the card/swap-form errors.
+.wpsr-license-form:not(.is-swap) ~ .wpsr-license-warning {
+  text-align: center;
 }
 
 // Feed Settings 

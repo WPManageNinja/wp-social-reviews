@@ -1,5 +1,5 @@
 <template>
-    <div class="wpsr-yt-header" :class="layout_type !== 'carousel' ? 'wpsr-gap-'+columnGaps : ''" v-if="settings.display_header === 'true' && Object.entries(header).length">
+    <div class="wpsr-yt-header" :class="[headerLayoutClass, layout_type !== 'carousel' ? 'wpsr-gap-'+columnGaps : '']" v-if="settings.display_header === 'true' && Object.entries(header).length">
       <div v-if="settings && settings.display_banner === 'true'" class="wpsr-yt-header-banner">
             <img v-if="settings.custom_banner" class="wpsr-yt-header-banner-desktop" :src="settings.custom_banner" />
             <img v-else-if="get_header_cover(header)" class="wpsr-yt-header-banner-desktop" :src="get_header_cover(header)" />
@@ -39,6 +39,12 @@ import {ytMixin} from "../../../../../mixins/ytMixin";
         name: 'youtube_header',
         props:['header', 'layout_type', 'settings', 'columnGaps','subscribe_button_settings'],
         mixins: [ytMixin],
+        computed: {
+          headerLayoutClass() {
+            const wpsrHeaderLayout = this.settings && this.settings.header_layout === 'minimal' ? 'minimal' : 'classic';
+            return 'wpsr-yt-header-layout-' + wpsrHeaderLayout;
+          }
+        },
         methods: {
           get_header_cover(account){
             let placeholder = this.assets_url + '/images/template/review-template/placeholder-image.png';

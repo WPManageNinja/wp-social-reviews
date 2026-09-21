@@ -43,9 +43,9 @@ class DataProtector {
      *
      * @since 3.9.1
      */
-    public function __construct() {
-        $this->key  = $this->get_default_key();
-        $this->salt = $this->get_default_salt();
+    public function __construct($key = '', $salt = '') {
+        $this->key  = $key ?: $this->get_default_key();
+        $this->salt = $salt ?: $this->get_default_salt();
     }
 
     /**
@@ -103,7 +103,15 @@ class DataProtector {
 
         $method = 'aes-256-ctr';
         $ivlen  = openssl_cipher_iv_length( $method );
-        $iv     = substr( $raw_value, 0, $ivlen );
+
+        // encrypt() emits base64( iv . ciphertext ), so anything this short was never
+        // our payload. maybe_encrypt() probes plaintext through here, and a short
+        // slice would reach openssl_decrypt() as an undersized IV and warn.
+        if ( false === $raw_value || strlen( $raw_value ) <= $ivlen ) {
+            return false;
+        }
+
+        $iv = substr( $raw_value, 0, $ivlen );
 
         $raw_value = substr( $raw_value, $ivlen );
 
@@ -141,6 +149,48 @@ class DataProtector {
         }
 
         return $decrypted;
+    }
+
+    /**
+     * Encrypts the given token keys within a config array, leaving empty values untouched.
+     *
+     * @param array $config Token config (returned unchanged if not an array).
+     * @param array $keys   Keys to encrypt.
+     * @return array
+     */
+    public function maybe_encrypt_tokens( $config, $keys = array( 'access_token', 'refresh_token' ) ) {
+        if ( ! is_array( $config ) ) {
+            return $config;
+        }
+
+        foreach ( $keys as $key ) {
+            if ( ! empty( $config[ $key ] ) ) {
+                $config[ $key ] = $this->maybe_encrypt( $config[ $key ] );
+            }
+        }
+
+        return $config;
+    }
+
+    /**
+     * Decrypts the given token keys within a config array, leaving empty values untouched.
+     *
+     * @param array $config Token config (returned unchanged if not an array).
+     * @param array $keys   Keys to decrypt.
+     * @return array
+     */
+    public function maybe_decrypt_tokens( $config, $keys = array( 'access_token', 'refresh_token' ) ) {
+        if ( ! is_array( $config ) ) {
+            return $config;
+        }
+
+        foreach ( $keys as $key ) {
+            if ( ! empty( $config[ $key ] ) ) {
+                $config[ $key ] = $this->maybe_decrypt( $config[ $key ] );
+            }
+        }
+
+        return $config;
     }
 
 

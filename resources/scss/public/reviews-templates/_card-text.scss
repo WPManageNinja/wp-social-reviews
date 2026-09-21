@@ -1,0 +1,12 @@
+// Shared by the public templates and the admin preview, which render the same
+// class names. An unbroken run of characters folds instead of pushing out of the
+// card, and a centered flex child sizes to the card rather than to its own text.
+.wpsr-review-template {
+  overflow-wrap: break-word;
+  word-break: break-word;
+
+  .wpsr-review-title,
+  .wpsr-review-content {
+    max-width: 100%;
+  }
+}

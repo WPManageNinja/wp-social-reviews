@@ -18,14 +18,16 @@
         <div class="wpsr-yt-video-statistic-item" v-if="settings.display_comments_counter === 'true'">{{shortNumberFormat(feed.statistics.commentCount)}} {{ $t('Comments')}}</div>
 
         <div class="wpsr-yt-video-statistic-item"  v-if="feed_info.feed_type === 'live_streams_feed' && feed_info.event_type === 'live' ">
-            <a v-if="feed_info.event_type === 'live'" class="wpsr-yt-video-playmode wpsr-yt-live-now-btn" @click="$emit('youtube-video-playmode', $event, feed, configs.feed_settings.video_settings.play_mode, index)">{{ 'LIVE NOW' }}</a>
+            <a v-if="feed_info.event_type === 'live'" class="wpsr-yt-video-playmode wpsr-yt-live-now-btn" tabindex="0" role="button" @keydown="wpsrActivateOnKey" @click="$emit('youtube-video-playmode', $event, feed, configs.feed_settings.video_settings.play_mode, index)">{{ 'LIVE NOW' }}</a>
         </div>
     </div>
 </template>
 
 <script type="text/babel">
+import {ytMixin} from "../../../../../mixins/ytMixin";
 export default {
     name: 'youtube_video_statistics',
+    mixins: [ytMixin],
     props: ['configs','feed','settings','source_settings','index','feed_info'],
 }
 </script>

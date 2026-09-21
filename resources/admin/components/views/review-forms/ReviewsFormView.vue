@@ -6,7 +6,7 @@
         <h2>{{ $t('Collect Reviews Directly on Your Website') }}</h2>
         <p>{{ $t('Create review forms, collect submissions, and moderate reviews — all from your site.') }}</p>
         <div>
-          <UpgradeToProButton/>
+          <UpgradeToProButton placement="feature_lock_review_forms"/>
         </div>
       </div>
     </div>

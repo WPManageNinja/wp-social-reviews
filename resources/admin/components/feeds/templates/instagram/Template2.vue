@@ -1,6 +1,6 @@
 <template>
     <div>
-      <div v-if="configs && configs.dynamic.error_message.length">
+      <div v-if="configs.dynamic && configs.dynamic.error_message && configs.dynamic.error_message.length">
         <ErrorCard :error_message="configs.dynamic.error_message"/>
       </div>
         <div class="wpsr-ig-feed-wrapper wpsr-instagram-slider-activate wpsr-instagram-masonry-activate wpsr-ig-feed-template2" :class="'wpsr-column-gap-'+configs.feed_settings.column_gaps+' wpsr-ig-feed-template-'+$route.params.template_id">
@@ -17,22 +17,17 @@
                     :class="configs.feed_settings.layout_type === 'carousel' && has_pro ? 'wpsr-ig-feed-wrapper-inner' : ''"
                     v-if="configs.dynamic && configs.dynamic.items"
                 >
-                  <div :class="[configs.feed_settings.layout_type === 'carousel' && has_pro ? 'swiper-container' : '']">
-                      <div class="wpsr-ig-all-feed" :class="[configs.feed_settings.layout_type === 'carousel' && has_pro ? 'swiper-wrapper' : 'wpsr-row', configs.feed_settings.layout_type !== 'carousel' ? 'wpsr-column-gap-'+configs.feed_settings.column_gaps : '']">
+                  <div :class="[isCarouselLayout ? 'swiper-container' : '']">
+                      <div :class="feedContainerClasses">
                           <div
-                              class="wpsr-mb-30"
-                              :class="responsiveClasses"
+                              :class="getItemWrapperClass()"
                               v-for="(feed, index) in configs.dynamic.items"
                               :key="index"
                           >
-                            <div v-if="feed && (feed.media_url || feed.default_media)" class="wpsr-ig-post" :class="['wpsr-image-ratio-'+configs.feed_settings.post_settings.aspect_ratio]" @click="setCurrentFeed(feed,index, configs.feed_settings, image_settings)" :data-post_id="feed.id" :data-user_name="feed.username" :data-image_size="configs.feed_settings.post_settings.resolution" :data-index="index">
+                            <div v-if="feed && (feed.media_url || feed.default_media || feed.thumbnail_url)" class="wpsr-ig-post" :class="['wpsr-image-ratio-'+configs.feed_settings.post_settings.aspect_ratio]" @click="setCurrentFeed(feed,index, configs.feed_settings, image_settings)" :data-post_id="feed.id" :data-user_name="feed.username" :data-image_size="configs.feed_settings.post_settings.resolution" :data-index="index">
                                   <div class="wpsr-ig-post-media-wrapper">
-                                      <a class="wpsr-ig-playmode" :href="
-                                        ((configs.feed_settings.shoppable_settings.enable_shoppable === 'true' && feed.shoppable_options && feed.shoppable_options.from === 'template_settings') ||
-                                        (configs.feed_settings.shoppable_settings.include_shoppable_by_hashtags === 'true' && feed.shoppable_options && feed.shoppable_options.from === 'include_shoppable_by_hashtags')) &&
-                                        feed.shoppable_options && feed.shoppable_options.show_shoppable ?
-                                        feed.shoppable_options.url_settings.url : feed.permalink"
-                                         :target="feed.shoppable_options && feed.shoppable_options.url_settings.open_in_new_tab ? '_blank' : ''"
+                                      <a class="wpsr-ig-playmode" :href="getFeedHref(feed)" :tabindex="getFeedTabindex(feed)" :role="getFeedRole(feed)" @keydown="activateFeedOnKey"
+                                         :target="getFeedTarget(feed)"
                                          @click="postDisplayMode($event, feed, configs.feed_settings)"
                                       >
                                           <div class="wpsr-shoppable-icon_wrap" v-if="has_pro && configs.feed_settings.shoppable_settings.enable_shoppable === 'true'">
@@ -87,8 +82,8 @@
             <Popup
               v-if="configs.feed_settings.post_settings.display_mode === 'popup'"
               :feed="selectedFeed"
-              :user_avatar="configs.dynamic && configs.dynamic.header && configs.dynamic.header.avatar ? configs.dynamic.header.avatar.local_avatar : configs.dynamic.header.user_avatar"
-              :feedLength="configs.dynamic.length"
+              :user_avatar="popupUserAvatar"
+              :feedLength="popupFeedLength"
               :currentIndex="currentIndex"
               :settings="configs.feed_settings"
               :connected_ids="configs.connected_ids"
@@ -130,7 +125,7 @@ export default {
     'configs.feed_settings.post_settings.display_mode': {
       handler: function (newVal, oldVal) {
         if (newVal !== oldVal){
-          this.selectedFeed = [];
+          this.resetSelectedFeed();
         }
       },
       deep: true

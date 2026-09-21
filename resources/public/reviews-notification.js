@@ -12,9 +12,41 @@ let hover_able = 0;
 let launched = 0;
 export default {
     init: function () {
+        this.setPlatformIconDimensions();
         this.activateNotification();
         this.showPopupModal();
         this.hidePopupModal();
+
+        // Published for the sort toolbar's separate bundle, like window.wpsrFeedApi.
+        window.wpsrNotificationApi = {
+            resyncFeed: (templateId) => this.resyncFeed(templateId)
+        };
+    },
+
+    /**
+     * Re-point the floating card's data-index cycle at the feed the toolbar just replaced.
+     */
+    resyncFeed(templateId) {
+        let $wrapper = $('#wpsr-notification-card-' + templateId);
+
+        if (!$wrapper.length) {
+            return;
+        }
+
+        // Count what the cycle looks up, not the cards, so this survives markup changes.
+        let total = $('#wpsr-reviews-grid-' + templateId).find('[data-index]').length;
+
+        // Both attr and data: jQuery caches the first read, so setting one leaves the other stale.
+        $wrapper.attr('data-total', total).data('total', total);
+
+        // Back to the start of the new list.
+        count = 0;
+    },
+    setPlatformIconDimensions() {
+        $('.wpsr-reviews-notification-card-wrapper .wpsr-review-platform img').attr({
+            width: 20,
+            height: 20,
+        });
     },
     showPopupModal() {
         let notificationCard = $(".wpsr-reviews-notification-card");
@@ -37,16 +69,20 @@ export default {
 
                         let index = $notificationWrapper.attr('data-index');
                         let element = $("#wpsr-reviews-grid-" + template).find('[data-index="' + index + '"]');
-                        element.addClass('wpsr-highlight');
 
-                        document.querySelector('.wpsr-highlight').scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'center',
-                        });
+                        // The card may be gone: a rating filter can shorten the list this index counts against.
+                        if (element.length) {
+                            element.addClass('wpsr-highlight');
 
-                        setTimeout(function () {
-                            element.removeClass('wpsr-highlight');
-                        }, 2000);
+                            element[0].scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center',
+                            });
+
+                            setTimeout(function () {
+                                element.removeClass('wpsr-highlight');
+                            }, 2000);
+                        }
                         if (intervalHandle) {
                             clearInterval(intervalHandle);
                             intervalHandle = null;
@@ -152,6 +188,12 @@ export default {
 
     findElement(template_id, index) {
         let element = $('#wpsr-reviews-grid-' + template_id).find('[data-index="' + index + '"]');
+
+        // No card at that position: report it instead of returning a blank card.
+        if (!element.length) {
+            return { 'missing': true, 'review_platform': '' };
+        }
+
         let review_platform = element.data('review_platform') || '';
         // If this is an AI platform, return the platform info so we can skip it
         if (review_platform === 'ai') {
@@ -193,7 +235,11 @@ export default {
 
         let rating_icon_html = window.wpsrHelper.ratingIcon(data.review_rating);
         element.find('.wpsr-reviewer-image img').attr('src', data.reviewer_image);
-        element.find('.wpsr-review-platform img').attr('src', platform_icon);
+        element.find('.wpsr-review-platform img').attr({
+            src: platform_icon,
+            width: 20,
+            height: 20,
+        });
         element.find('.wpsr-reviewer-image img').attr('alt', data.reviewer_name);
         element.find('.reviewer-name').text(data.reviewer_name);
         element.find('.review-rating').text(parseFloat(data.review_rating));
@@ -224,7 +270,12 @@ export default {
     activateLoop(element, template_id, display_date, display_tp_brand, display_platform_icon, total_reviews, start_loop) {
         let that = this;
 
-        if( total_reviews === count ) {
+        // Re-read: resyncFeed() rewrites this on a filter, and the recursion would carry the old count.
+        let current_total = parseInt(element.attr('data-total'), 10);
+        current_total = isNaN(current_total) ? total_reviews : current_total;
+
+        // >=, not ===: a shrink can leave count past the new end, which an equality test would never catch.
+        if (count >= current_total) {
             count = 0
         }
 
@@ -237,9 +288,9 @@ export default {
         start_loop = false;
 
         intervalHandle = setTimeout(function() {
-            that.changeNotification(element, template_id, display_date, display_tp_brand, display_platform_icon, total_reviews, count);
+            that.changeNotification(element, template_id, display_date, display_tp_brand, display_platform_icon, current_total, count);
             count++;
-            that.activateLoop(element, template_id, display_date, display_tp_brand, display_platform_icon, total_reviews, start_loop);
+            that.activateLoop(element, template_id, display_date, display_tp_brand, display_platform_icon, current_total, start_loop);
         }, delay);
     },
 
@@ -247,6 +298,12 @@ export default {
     changeNotification(element, template_id, display_date, display_tp_brand, display_platform_icon, total_reviews, index) {
         //show notification for 10 seconds
         let data = this.findElement(template_id, index);
+
+        // Nothing here — sit this tick out; activateLoop() still advances the counter.
+        if (data.missing) {
+            return;
+        }
+
         // Skip AI platforms
         if (data.review_platform === 'ai') {
             // Move to the next review
@@ -273,6 +330,11 @@ export default {
         let that = this;
 
         let data = that.findElement(template_id, index);
+
+        if (data.missing) {
+            return;
+        }
+
         let platform  = data.review_platform;
         // Skip AI platforms
         if (platform ==='ai') {
@@ -313,8 +375,12 @@ export default {
             iconEl.removeClass(class1);
             iconEl.addClass(class2);
         }
-        iconEl.attr('src', platform_icon);
-        iconEl.attr('alt', platform_name);
+        iconEl.attr({
+            src: platform_icon,
+            alt: platform_name,
+            width: 20,
+            height: 20,
+        });
         if(spanEl.hasClass(class1)) {
             spanEl.removeClass(class1);
             spanEl.addClass(class2);

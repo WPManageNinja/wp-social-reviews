@@ -56,7 +56,8 @@ class FeedFilters
     /**
      * filterFeedResponse filter the feed response
      *
-     * @param array $filterSettings filter settings
+     * @param string $platform platform slug
+     * @param array $feed_settings feed settings holding the filters
      * @param array $response response
      *
      * @return array
@@ -79,10 +80,14 @@ class FeedFilters
                 $globalSettings = $imageHandlerObj->getGlobalSettings();
                 if(Arr::get($globalSettings, 'optimized_images') === 'true') {
                     $resizedImages = $imageHandlerObj->getResizeNeededImageLists($feeds,  $feed_settings);
-                    $account_to_show = Arr::get($feed_settings, 'header_settings.account_to_show');
-                    $header['account_id'] = $account_to_show;
-                    $header['avatar'] = $imageHandlerObj->formattedData($header,'avatars');
-                    $header['covers']  = $imageHandlerObj->formattedData($header,'covers');
+                    // Some feed types (e.g. youtube single video) return an empty string
+                    // as header, so only decorate it when there is an actual header array.
+                    if (is_array($header) && !empty($header)) {
+                        $account_to_show = Arr::get($feed_settings, 'header_settings.account_to_show');
+                        $header['account_id'] = $account_to_show;
+                        $header['avatar'] = $imageHandlerObj->formattedData($header, 'avatars');
+                        $header['covers'] = $imageHandlerObj->formattedData($header, 'covers');
+                    }
                 }
             }
 
@@ -312,7 +317,7 @@ class FeedFilters
                 }
 
                 if ($this->platform === 'tiktok') {
-                    $text_description = Arr::get($feed, 'description', '');
+                    $text_description = Arr::get($feed, 'text', '');
                     $feed_id          = Arr::get($feed, 'id', '');
                     $text_title       = Arr::get($feed, 'title', '');
                 }
@@ -483,7 +488,7 @@ class FeedFilters
                             $filterResponse[] = $feed;
                         } elseif (isset($feed['media_type']) && ($feed['media_type'] === "IMAGE" || $feed['media_type'] === 'CAROUSEL_ALBUM') && $feed['media_name'] !== "VIDEO" && $post_type === 'images') {
                             $filterResponse[] = $feed;
-                        } elseif (isset($feed['media_type']) && ($feed['media_type'] === "VIDEO" || $feed['media_name'] === "VIDEO") && $post_type === 'videos' && $media_url) {
+                        } elseif (isset($feed['media_type']) && ($feed['media_type'] === "VIDEO" || $feed['media_name'] === "VIDEO") && $post_type === 'videos' && Arr::get($feed, 'media_url')) {
                             $filterResponse[] = $feed;
                         }
                         $totalPostsIterator++;

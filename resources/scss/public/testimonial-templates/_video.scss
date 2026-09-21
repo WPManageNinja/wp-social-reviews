@@ -1,0 +1,72 @@
+// Testimonial video block, shared by the public templates and the admin preview.
+// Nothing here sizes a Fluent Player iframe — it sizes itself, and forcing
+// width/height on it gives working sound over a black picture.
+.wpsr-testimonial-video {
+  margin: 15px 0;
+  // Template 2 centres a column flex, which shrinks a child to its content width.
+  width: 100%;
+
+  .wpsr-testimonial-video-player {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    background: #000;
+    object-fit: cover;
+  }
+
+  .wpsr-testimonial-video-embed {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    border-radius: 8px;
+    overflow: hidden;
+
+    iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+  }
+
+  .wpsr-testimonial-video-link {
+    display: inline-block;
+    text-decoration: underline;
+  }
+
+  // Admin preview only: the editor cannot run the [fluentplayer] shortcode.
+  .wpsr-testimonial-video-placeholder {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    background: #1a1a1a;
+    overflow: hidden;
+
+    .wpsr-testimonial-video-play {
+      position: relative;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 12px 0 12px 20px;
+      border-color: transparent transparent transparent #fff;
+    }
+
+    .wpsr-testimonial-video-note {
+      position: absolute;
+      bottom: 8px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: #fff;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+  }
+}

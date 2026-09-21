@@ -75,6 +75,16 @@
 				height: 20px;
 				width: auto;
 			}
+			.wpsr-business-info-platform-icon{
+				width: 75px;
+				height: 25px;
+				object-fit: contain;
+			}
+			.wpsr-business-info-platform-icon-small{
+				width: 20px;
+				height: 20px;
+				object-fit: contain;
+			}
 			span{
 				padding-left: 10px;
 				font-size: 16px;
@@ -94,6 +104,11 @@
 				&:last-child{
 					margin-right: 0;
 				}
+			}
+			.wpsr-business-info-platform-icon-small{
+				width: 20px;
+				height: 20px;
+				object-fit: contain;
 			}
 		}
 	}

@@ -1,6 +1,7 @@
 import { __ } from '@wordpress/i18n';
 import { registerBlockType } from '@wordpress/blocks';
 import { SelectControl } from '@wordpress/components';
+import { useBlockProps } from '@wordpress/block-editor';
 import { createElement } from '@wordpress/element';
 
 const socialNinjaLogo = createElement('svg',
@@ -19,6 +20,7 @@ const socialNinjaLogo = createElement('svg',
 );
 
 registerBlockType("social-ninja/guten-block", {
+  apiVersion: 3,
   title: __("Social Ninja Templates"),
   icon: socialNinjaLogo,
   category: "formatting",
@@ -39,6 +41,7 @@ registerBlockType("social-ninja/guten-block", {
   },
   edit({ attributes, setAttributes }) {
     const config = window.wpsr_block_vars;
+    const blockProps = useBlockProps({ className: 'wpsr-guten-wrapper' });
     const changeSelect = function(templateId) {
       var platformName = config.templates.filter(function(item) {
         return parseInt(item.id) === parseInt(templateId);
@@ -49,7 +52,7 @@ registerBlockType("social-ninja/guten-block", {
 
     return createElement(
       'div',
-      { className: 'wpsr-guten-wrapper' },
+      blockProps,
       createElement(
         'div',
         { className: 'wpsr-logo' },

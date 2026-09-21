@@ -6,19 +6,38 @@ use WPSocialReviews\Framework\Support\Arr;
 class UninstallHandler
 {
     public $isTableDelete = true;
+
+    /**
+     * Uninstall entry point. Removes all plugin data unless the user opted to keep it.
+     *
+     * The "preserve plugin data" guard lives here rather than in deleteAllPlatformsData()
+     * because that method serves two callers with opposite intent: this one, where the
+     * user's stored preference must win, and SettingsController::deleteAllData(), where
+     * the user has explicitly clicked "Delete All Data" and the preference must be
+     * ignored. Guarding the shared method would turn that button into a silent no-op,
+     * since preserve_plugin_data defaults to 'true'.
+     *
+     * The preference is read straight from the wpsr_global_settings option rather than
+     * through the GlobalSettings service, to keep the uninstall path free of service
+     * instantiation. Defaults to preserving, so an unreadable or missing option can
+     * never cause data loss.
+     *
+     * @return void
+     */
     public function handle()
     {
+        $settings = get_option('wpsr_global_settings', []);
+        $advanceSettings = Arr::get($settings, 'global_settings.advance_settings', []);
+        if (Arr::get($advanceSettings, 'preserve_plugin_data', 'true') === 'true') {
+            return;
+        }
+
         $this->deleteAllPlatformsData($this->isTableDelete);
     }
 
     public function deleteAllPlatformsData($isDeleteTable)
     {
         if (!current_user_can('manage_options')) {
-            return;
-        }
-
-        $advanceSettings = get_option('advance_settings');
-        if (Arr::get($advanceSettings, 'preserve_plugin_data') === 'true') {
             return;
         }
 
@@ -54,6 +73,13 @@ class UninstallHandler
             'wpsr_available_valid_platforms',
             'wpsr_onboarding_sessions',
             'wpsr_global_shoppable_settings',
+            'wpsr_review_form_captcha_settings',
+            'wpsr_fluentcrm_integration_settings',
+            // Must go with the tables: left behind, a reinstall would skip the
+            // legacy category backfill entirely. See ReviewCategoriesMigrator.
+            'wpsr_review_categories_backfilled',
+            'wpsr_review_categories_backfill_cursor',
+            'wpsr_review_categories_orphan_sweep_pending',
         ];
 
         foreach ($optionsToDelete as $option) {
@@ -61,7 +87,14 @@ class UninstallHandler
         }
 
         global $wpdb;
-        $tablesToDelete = ['wpsr_caches', 'wpsr_reviews', 'wpsr_optimize_images'];
+        // Pivot before the table it points at.
+        $tablesToDelete = [
+            'wpsr_caches',
+            'wpsr_review_category_relationships',
+            'wpsr_review_categories',
+            'wpsr_reviews',
+            'wpsr_optimize_images'
+        ];
 
         // Remove all reviews and caches
         foreach ($tablesToDelete as $table) {

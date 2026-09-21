@@ -1,0 +1,20 @@
+[
+  {
+    "id": "feed-image-empty-owned-template",
+    "method": "POST",
+    "params": {"action": "wpsr_resize_images", "nonce": "{{nonce}}", "id": "{{youtube_id}}", "platform": "youtube", "feed_type": "{{long_text}}"},
+    "expect": {"status": 200}
+  },
+  {
+    "id": "review-image-empty-array-boundary",
+    "method": "POST",
+    "params": {"action": "wpsr_review_resize_images", "nonce": "{{nonce}}", "id": "{{review_id}}", "platforms": [], "resize_data": []},
+    "expect": {"status": 200}
+  },
+  {
+    "id": "review-image-benign-array-boundary",
+    "method": "POST",
+    "params": {"action": "wpsr_review_resize_images", "nonce": "{{nonce}}", "id": "{{review_id}}", "platforms": ["google", "../../fixture", "image/svg+xml", "custom"], "resize_data": ["-1", "0", "999999999999999999", "../fixture.webp", "{{long_text}}"]},
+    "expect": {"status": 200}
+  }
+]

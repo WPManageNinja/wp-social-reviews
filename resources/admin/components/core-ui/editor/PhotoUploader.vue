@@ -10,6 +10,15 @@
       <button class="wpsr-photo-upload-btn" type="button" @click="initUploader" :disabled="disabled">
         {{$t('Upload')}}
       </button>
+      <button
+          v-if="enable_clear_name === 'yes' && modelValue"
+          class="wpsr-photo-clear-btn"
+          type="button"
+          @click="clearImage"
+          :disabled="disabled"
+      >
+        {{$t('Remove')}}
+      </button>
     </div>
   </div>
 </template>
@@ -31,9 +40,10 @@ export default {
       type: String,
       default: 'small'
     },
+    // Opt-in: the template editor's image fields have their own way to clear one.
     enable_clear: {
       type: String,
-      default: 'yes'
+      default: 'no'
     },
     disabled: {
       type: Boolean,

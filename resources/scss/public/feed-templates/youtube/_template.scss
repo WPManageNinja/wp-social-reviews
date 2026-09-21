@@ -1,10 +1,6 @@
  @import './header';
  @import './popup';
- //@import './subscribe_button';
- @import '../../elements/load-more';
- @import '../../elements/pagination';
  @import './livesteam';
- @import "../../elements/youtube-widget";
 .wpsr-yt-feed-wrapper{
   &[class*=wpsr-yt-feed-template]{
     margin-bottom: 30px;
@@ -12,6 +8,24 @@
 }
 .wpsr-yt-video{
   margin-bottom: 30px;
+
+  // the card clips its children, so ring the card when a control inside takes focus
+  &:focus-within {
+    outline: 2px solid #72aee6;
+    outline-offset: -2px;
+  }
+
+  // where :has() is available, keep the ring off mouse clicks
+  @supports selector(:has(*)) {
+    &:focus-within {
+      outline: none;
+    }
+    &:has(:focus-visible) {
+      outline: 2px solid #72aee6;
+      outline-offset: -2px;
+    }
+  }
+
   /* fix third party plugin conflict */
   .fluid-width-video-wrapper {
     position: initial !important;
@@ -32,15 +46,22 @@
     width: 100%;
     overflow: hidden;
     padding-top: 56.25%; /* 16:9 Aspect Ratio */
-    object,
-    embed,
-    iframe{
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: none;
+    // Not for Fluent Player, which sizes its own iframe.
+    &:not(.wpsr-fluent-player-slot){
+      object,
+      embed,
+      iframe{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+    }
+    // Fluent Player sizes itself; drop the 16:9 padding box.
+    &.wpsr-fluent-player-slot{
+      padding-top: 0;
     }
   }
 
@@ -133,7 +154,7 @@
       padding: 0;
       margin-top: 8px;
       margin-bottom: 0;
-      word-break: break-all;
+      word-break: break-word;
     }
     .wpsr-yt-channel-title{
       text-decoration: none;
@@ -208,13 +229,18 @@
    width: 100%;
    overflow: hidden;
    padding-top: 56.25%; /* 16:9 Aspect Ratio */
-   iframe{
+   // Not for Fluent Player, which sizes its own iframe.
+   &:not(.wpsr-fluent-player-slot) iframe{
      position: absolute;
      top: 0;
      left: 0;
      width: 100%;
      height: 100%;
      border: none;
+   }
+   // Fluent Player sizes itself; drop the 16:9 padding box.
+   &.wpsr-fluent-player-slot{
+     padding-top: 0;
    }
  }
  // remove extra space for rll youtube player plugin

@@ -1,10 +1,8 @@
-import { appendReadMoreButton, carouselOptions, openPopupWindow, animateTextTypingEffect, processAISummaryList } from './helper.js';
+import { appendReadMoreButton, carouselOptions, openPopupWindow, animateTextTypingEffect, processAISummaryList, wpsrInitInjectedPlayers, wpsrInitMasonry, wpsrWatchMasonryHeights } from './helper.js';
 import TwitterCard from './twitter-card.js';
 
 jQuery(document).ready(function ($) {
     const FeedPaginator = {
-        fetchingId: '',
-
         init() {
             let that = this;
 
@@ -55,15 +53,59 @@ jQuery(document).ready(function ($) {
             });
         },
 
-        maybeMasonryFeed($btn, $feedsWrap, data) {
-            const templateType = $btn.data('template_type');
+        /**
+         * Per-feed request state (lock, sequence token, requested vs applied order/rating/search), kept on the
+         * feed's own element so two feeds on one page never block each other.
+         */
+        feedState($holder) {
+            if (!$holder || !$holder.length) {
+                return null;
+            }
 
+            let state = $holder.data('wpsrFeedState');
+
+            if (!state) {
+                const $toolbar = $holder.find('.wpsr-reviews-sort-toolbar').first();
+                const rating = parseInt($toolbar.data('rating'), 10);
+
+                const order = $toolbar.length ? String($toolbar.data('order') || '') : '';
+                const exactRating = isNaN(rating) ? -1 : rating;
+
+                state = {
+                    seq: 0,
+                    inflight: false,
+                    xhr: null,
+                    order: order,
+                    rating: exactRating,
+                    // Not read from the toolbar: the server never renders an applied search, so '' is correct.
+                    search: '',
+                    // The server rendered the page with these, so they are applied.
+                    appliedOrder: order,
+                    appliedRating: exactRating,
+                    appliedSearch: '',
+                    // What an open toolbar request is fetching; a load-more leaves it null, never changing it.
+                    pendingKey: null,
+                    // The one query that failed, so retrying exactly it gets past the toolbar's no-op guard.
+                    failedKey: null
+                };
+
+                $holder.data('wpsrFeedState', state);
+            }
+
+            return state;
+        },
+
+        // templateType is passed in, not read from the load-more button, which a feed may not have.
+        maybeMasonryFeed(templateType, $feedsWrap) {
             const column = $feedsWrap.data("column");
 
             if (templateType === 'masonry') {
                 const $feedsElement = $feedsWrap.find('.wpsr_feeds');
                 if ($feedsElement.length) {
-                    $feedsElement.masonry('reloadItems');
+                    // Only when an instance exists; a feed that rendered empty has none yet.
+                    if ($feedsElement.data('masonry')) {
+                        $feedsElement.masonry('reloadItems');
+                    }
                     if (typeof $feedsElement.imagesLoaded === 'function') {
                         $feedsElement.imagesLoaded(function () {
                             if (typeof $feedsElement.masonry === 'function') {
@@ -79,8 +121,56 @@ jQuery(document).ready(function ($) {
                             });
                         }
                     }
+
+                    // The appended cards are new to the observer set up at page load.
+                    wpsrWatchMasonryHeights($feedsElement, '.wpsr-col-' + column);
                 }
             }
+        },
+
+        // The Swiper instance for one feed, or null. Swiper 8 hangs itself off its container element.
+        sliderInstance($feedsWrap) {
+            const container = $feedsWrap.find('.swiper-container').first()[0];
+
+            return (container && container.swiper) ? container.swiper : null;
+        },
+
+        // tabindex is an attribute, not a delegated handler, so it must be re-applied after every slide swap.
+        applySlideTabindex($feedsWrap) {
+            const settings = $feedsWrap.data('slider_settings');
+
+            if (settings && settings.autoplay === 'true') {
+                $feedsWrap.find('.swiper-container .swiper-slide').attr('tabindex', '0');
+            }
+        },
+
+        // Stop or start autoplay around a re-fetch. Test params.autoplay.enabled: params.autoplay is truthy on every slider.
+        setSliderAutoplay($feedsWrap, running) {
+            const swiper = this.sliderInstance($feedsWrap);
+
+            if (!swiper || !swiper.autoplay || !swiper.params.autoplay
+                || !swiper.params.autoplay.enabled) {
+                return;
+            }
+
+            if (running) {
+                swiper.autoplay.start();
+            } else {
+                swiper.autoplay.stop();
+            }
+        },
+
+        // Re-measure a slider after its slides were replaced, and rewind: the old offset may not exist now.
+        relayoutSlider($feedsWrap) {
+            const swiper = this.sliderInstance($feedsWrap);
+
+            if (!swiper) {
+                return;
+            }
+
+            swiper.update();
+            swiper.slideTo(0, 0);
+            this.applySlideTabindex($feedsWrap);
         },
         activeMasonryLayout(masonrySelector){
             if(masonrySelector.length){
@@ -110,46 +200,93 @@ jQuery(document).ready(function ($) {
                 });
             }
         },
+        /**
+         * Append the next page of feed items
+         *
+         * parseHTML, not $(): a plain-message response would be read as a selector.
+         */
         fetchData($btn) {
             let templateId = $btn.data("template_id"),
                 total = parseInt($btn.data("total")),
                 prev_page = parseInt($btn.data("page")),
                 platform = $btn.data("platform"),
                 feed_id = $btn.data("feed_id"),
-                feed_type = $btn.data("feed_type");
+                feed_type = $btn.data("feed_type"),
+                // Product scope, or the server falls back to every product in the store.
+                wpsrProductId = $btn.data("product_id");
             
             // Use backend-resolved paginate (wp_is_mobile), same as total_posts_number
             let paginate = parseInt($btn.data("paginate"));
 
-            if (prev_page * paginate >= total) {
+            // A searched total is only what has been seen, so the server's answer decides there instead.
+            if ($btn.data('has_more') !== true && prev_page * paginate >= total) {
                 $btn.hide();
                 return false;
             }
 
-            if (templateId == this.fetchingId) {
+            // Per-feed lock, so two feeds from the same template no longer block each other.
+            const $stateWrap = $btn.closest('.wpsr-feed-wrap');
+            const state = this.feedState($stateWrap.length ? $stateWrap : $btn);
+
+            if (state.inflight) {
                 return false;
             }
 
-            this.fetchingId = templateId;
+            state.inflight = true;
+
+            // Captured, not bumped: a load-more continues the query already on screen.
+            const seq = state.seq;
             let page = prev_page + 1;
 
             $btn.prop('disabled', true).addClass('wpsr-spinner-loading');
             $btn.closest('.wpsr-feed-wrap').find('.wpsr_feeds').addClass('wpsr-loading-feeds');
 
-            jQuery.get(wpsr_ajax_params.ajax_url, {
+            const params = {
                 action: 'wpsr_get_more_feeds',
                 page: page,
                 template_id: templateId,
                 platform: platform,
                 feed_type: feed_type,
                 feed_id: feed_id,
-            }).then(response => {
+                product_id: wpsrProductId || 0,
+                security: wpsr_ajax_params.wpsr_nonce
+            };
+
+            // Carry the live query: the rendered attributes lag a sort, and a feed can search with no dropdown.
+            if (platform === 'reviews' && (state.order || state.search)) {
+                if (state.order && state.order !== 'random') {
+                    params.order = state.order;
+                }
+
+                params.rating = state.rating;
+                params.search = state.search;
+                // Lets the server skip the COUNT; honoured on page > 1 only.
+                params.total_reviews = total;
+            }
+
+            const wpsrXhr = jQuery.get(wpsr_ajax_params.ajax_url, params);
+
+            // Published so a sort started mid-flight can abort this page.
+            state.xhr = wpsrXhr;
+
+            wpsrXhr.then(response => {
+                    if (seq !== state.seq) {
+                        return;
+                    }
+
                     let $feedsWrap = $btn.closest('.wpsr-feed-wrap');
                     if (response.content.trim()) {
+                        let $appended = $($.parseHTML(response.content, document, true));
                         if(feed_type === 'album_feed') {
-                            $feedsWrap.find(`#wpsr-album-feed-${feed_id}`).append(response.content);
+                            $feedsWrap.find(`#wpsr-album-feed-${feed_id}`).append($appended);
                         } else {
-                            $feedsWrap.find('.wpsr_feeds').append(response.content);
+                            $feedsWrap.find('.wpsr_feeds').append($appended);
+                        }
+
+                        try {
+                            wpsrInitInjectedPlayers($appended, templateId);
+                        } catch (e) {
+                            console.error('wpsr: could not init injected players', e);
                         }
                     } else {
                         $btn.hide();
@@ -157,24 +294,38 @@ jQuery(document).ready(function ($) {
 
                     if (platform == 'instagram' || platform == 'twitter' || platform == 'facebook_feed' || platform == 'tiktok' || platform == 'reviews') {
                         $feedsWrap = $btn.closest('.wpsr-feed-wrap')
-                        this.maybeMasonryFeed($btn, $feedsWrap, response.content);
+                        this.maybeMasonryFeed($btn.data('template_type'), $feedsWrap);
                     }
 
-                    if (page * paginate >= total) {
+                    // A searched feed has no real total to count against; the server answers directly instead.
+                    const wpsrHasMore = (typeof response.has_more === 'boolean') ? response.has_more : null;
+
+                    if (wpsrHasMore === false || (wpsrHasMore === null && page * paginate >= total)) {
                         $btn.hide();
                     }
 
-                    $btn.data('page', page);
+                    $btn.data('page', page).data('has_more', wpsrHasMore);
 
                     appendReadMoreButton(wpsr_ajax_params.read_more, wpsr_ajax_params.read_less);
                 })
                 .catch(errors => {
+                    // A superseded request is not an error; the token identifies aborts exactly, unlike jqXHR.status.
+                    if (seq !== state.seq) {
+                        return;
+                    }
+
                     console.error(errors);
                 })
                 .always(() => {
+                    // A superseded page must not release the lock the newer request holds.
+                    if (seq !== state.seq) {
+                        return;
+                    }
+
+                    state.inflight = false;
+                    state.xhr = null;
                     $btn.removeClass('wpsr-spinner-loading').prop('disabled', false);
                     $btn.closest('.wpsr-feed-wrap').find('.wpsr_feeds').removeClass('wpsr-loading-feeds');
-                    this.fetchingId = '';
                 });
         },
 
@@ -213,7 +364,7 @@ jQuery(document).ready(function ($) {
                         let container = $(id).find('.swiper-container');
 
                         // Set tabindex="0" for all slides initially
-                        container.find('.swiper-slide').attr('tabindex', '0');
+                        FeedPaginator.applySlideTabindex($this);
 
 
                         // Pause autoplay when the container gains focus
@@ -226,19 +377,20 @@ jQuery(document).ready(function ($) {
                             swiper.autoplay.start();
                         });
 
+                        // Delegated from the container, which the toolbar never replaces, unlike the slides.
                         // Pause autoplay when a slide gains focus
-                        container.find('.swiper-slide *').on('focusin', function (e) {
+                        container.on('focusin', '.swiper-slide *', function (e) {
                             swiper.autoplay.stop();
                         });
 
                         //
                         // // Resume autoplay when a slide loses focus
-                        // container.find('.swiper-slide').on('focusout blur', function () {
+                        // container.on('focusout blur', '.swiper-slide', function () {
                         //     swiper.autoplay.start();
                         // });
 
                         // Handle keyboard navigation for slides
-                        container.find('.swiper-slide').on('keydown', function (e) {
+                        container.on('keydown', '.swiper-slide', function (e) {
                             if (e.key === 'ArrowLeft') {
                                 swiper.slidePrev();
                             } else if (e.key === 'ArrowRight') {
@@ -250,27 +402,9 @@ jQuery(document).ready(function ($) {
             }
 
             //activate reviews masonry layout
-            const reviewsMasonry = $('.wpsr-active-masonry-layout');
-
-            if(reviewsMasonry.length) {
-                const reviewsColumn = reviewsMasonry.data("column");
-                const $masonryElement = reviewsMasonry.first(); // Get first element to avoid empty collection issues
-                if ($masonryElement.length && typeof $masonryElement.imagesLoaded === 'function') {
-                    $masonryElement.imagesLoaded(function () {
-                        if (typeof reviewsMasonry.masonry === 'function') {
-                            reviewsMasonry.masonry({
-                                itemSelector: '.wpsr-col-' + reviewsColumn + '',
-                            });
-                        }
-                    });
-                } else {
-                    if (typeof reviewsMasonry.masonry === 'function') {
-                        reviewsMasonry.masonry({
-                            itemSelector: '.wpsr-col-' + reviewsColumn + '',
-                        });
-                    }
-                }
-            }
+            $('.wpsr-active-masonry-layout').each((index, element) => {
+                wpsrInitMasonry($(element));
+            });
 
             //activate masonry layout
             let masonrySelector = $('.wpsr-twitter-masonry, .wpsr-instagram-masonry-activate, .wpsr-facebook-feed-masonry-activate, .wpsr-tiktok-feed-masonry-activate');
@@ -333,6 +467,15 @@ jQuery(document).ready(function ($) {
             });
 
         }
+    };
+
+    // Published for the sort toolbar's separate bundle, which cannot import from this file. Swiper stays on this side.
+    window.wpsrFeedApi = {
+        feedState: ($holder) => FeedPaginator.feedState($holder),
+        relayoutMasonry: (templateType, $wrap) => FeedPaginator.maybeMasonryFeed(templateType, $wrap),
+        relayoutSlider: ($wrap) => FeedPaginator.relayoutSlider($wrap),
+        setSliderAutoplay: ($wrap, running) => FeedPaginator.setSliderAutoplay($wrap, running),
+        appendReadMoreButton: appendReadMoreButton
     };
 
     FeedPaginator.init();
@@ -406,7 +549,8 @@ jQuery(document).ready(function ($) {
             'action': 'wpsr_get_more_feeds',
             'page': pageNum,
             'template_id': templateId,
-            platform: 'youtube'
+            platform: 'youtube',
+            security: wpsr_ajax_params.wpsr_nonce
         };
 
         $.get(wpsr_ajax_params.ajax_url, data)
@@ -563,30 +707,73 @@ jQuery(document).ready(function ($) {
         });
     }
 
+    // Anchors with no href carry tabindex instead, so Enter/Space must act like a click.
+    // YouTube's 'youtube' play mode adds an href on first click; from then on the browser handles it.
+    $(document).on('keydown', '.wpsr-ig-playmode[tabindex], .wpsr-yt-video-playmode[tabindex]', function (e) {
+        if (this.hasAttribute('href')) {
+            return;
+        }
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+            e.preventDefault();
+            $(this).trigger('click');
+        }
+    });
+
+    // Media events do not bubble, so these listen on the capture phase.
+    document.addEventListener('play', function (e) {
+        let video = e.target;
+        if (!video.classList || !video.classList.contains('wpsr-ig-post-video')) {
+            return;
+        }
+        document.querySelectorAll('.wpsr-ig-post-video').forEach(function (other) {
+            if (other !== video) {
+                other.pause();
+            }
+        });
+        let post = video.closest('.wpsr-ig-post');
+        if (post) {
+            post.classList.add('wpsr-ig-post-playing');
+        }
+    }, true);
+
+    ['pause', 'ended'].forEach(function (eventName) {
+        document.addEventListener(eventName, function (e) {
+            let video = e.target;
+            if (!video.classList || !video.classList.contains('wpsr-ig-post-video')) {
+                return;
+            }
+            let post = video.closest('.wpsr-ig-post');
+            if (post) {
+                post.classList.remove('wpsr-ig-post-playing');
+            }
+        }, true);
+    });
+
     $(document).on('click', '.wpsr-ig-playmode', function (e) {
         let playMode = $(this).data('playmode');
         let feedId = $(this).data('index');
 
-        if (playMode === 'inline') {
-            e.preventDefault(); // prevent default if it’s a link/button
-            let $clickedPost = $('#wpsr-video-play-' + feedId).closest('.wpsr-ig-post');
-            let clickedVideo = $clickedPost.find('video').get(0);
+        if (playMode !== 'inline') {
+            return;
+        }
 
-            // Pause all other videos
-            $('.wpsr-ig-post-video').each(function () {
-                let videoEl = $(this).get(0);
-                let $parentPost = $(this).closest('.wpsr-ig-post');
-                if ($parentPost[0] !== $clickedPost[0] && videoEl) {
-                    videoEl.pause();
-                }
+        let clickedVideo = $('#wpsr-video-play-' + feedId).closest('.wpsr-ig-post').find('video').get(0);
+        if (!clickedVideo) {
+            return;
+        }
+        
+        if (e.target === clickedVideo) {
+            return;
+        }
+
+        e.preventDefault(); // prevent default if it’s a link/button
+
+        if (clickedVideo.paused) {
+            // Some browsers require the play() to be called after a user interaction
+            clickedVideo.play().catch((err) => {
             });
-
-            // Play clicked video
-            if (clickedVideo) {
-                // Some browsers require the play() to be called after a user interaction
-                clickedVideo.play().catch((err) => {
-                });
-            }
+        } else {
+            clickedVideo.pause();
         }
     });
 });

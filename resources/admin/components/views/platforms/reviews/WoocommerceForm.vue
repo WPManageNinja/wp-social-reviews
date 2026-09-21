@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="hasProducts">
+    <div v-if="hasWooCommerce">
       <el-button
           v-if="Object.keys(reviewsinfo).length"
           style="width: 100%"
@@ -15,35 +15,42 @@
       </el-button>
 
       <div class="wpsr-accounts-connect-wrapper wpsr-mt-20" v-if="(addNewBusiness || Object.keys(reviewsinfo).length === 0)">
-        <div class="wpsr-connection-modal-input-wrapper">
-          <div class="wpsr-connection-modal-input-heading-wrapper">
-            <h4 class="wpsr-connection-modal-input-heading">
-              {{$t('Select a product to fetch reviews')}}
-            </h4>
+        <div v-if="hasProducts">
+          <div class="wpsr-connection-modal-input-wrapper">
+            <div class="wpsr-connection-modal-input-heading-wrapper">
+              <h4 class="wpsr-connection-modal-input-heading">
+                {{$t('Select a product to fetch reviews')}}
+              </h4>
+            </div>
+            <AsyncMultipleSelect
+                v-model="selectedProductId"
+                searchRoute="pages/search"
+                :multiple="false"
+                :includeEverywhere="false"
+                :extraParams="{ post_type: 'product' }"
+                :searchPlaceholder="$t('Type to search products...')"
+                class="wpsr-text-input wpsr-select-input-field"
+                style="width: 100%;"
+                @update:modelValue="onProductChange"
+            />
           </div>
-          <AsyncMultipleSelect
-              v-model="selectedProductId"
-              searchRoute="pages/search"
-              :multiple="false"
-              :includeEverywhere="false"
-              :extraParams="{ post_type: 'product' }"
-              class="wpsr-text-input wpsr-select-input-field"
-              style="width: 100%;"
-              @update:modelValue="onProductChange"
+          <SaveAndResetButton
+              :platFormName="platFormName"
+              :verifyPlatform="verifyPlatform"
+              :reviewsinfo="reviewsinfo"
+              :isDisable="!selectedProductId"
+              @save-reviews="saveReviews"
           />
         </div>
-        <SaveAndResetButton
-            :platFormName="platFormName"
-            :verifyPlatform="verifyPlatform"
-            :reviewsinfo="reviewsinfo"
-            :isDisable="!selectedProductId"
-            @save-reviews="saveReviews"
-        />
+        <div v-else class="wpsr-alert wpsr-alert-info wpsr-d-flex">
+          <el-icon size="18" color="var(--wpsr-svg-secondary-color)"><InfoFilled /></el-icon>
+          <p><strong>{{ $t('WooCommerce') }}</strong> {{ $t("is active, but you don't have any published products yet. Add a product in WooCommerce, then come back here to connect it.") }}</p>
+        </div>
       </div>
     </div>
     <div v-else class="wpsr-alert wpsr-alert-info wpsr-d-flex wpsr-mt-20">
       <el-icon size="18" color="var(--wpsr-svg-secondary-color)"><InfoFilled /></el-icon>
-      <p>Please ensure that you have the <strong>WooCommerce</strong> plugin installed, and check if your WooCommerce products are listed in your dashboard.</p>
+      <p>{{ $t('Please ensure that the') }} <strong>{{ $t('WooCommerce') }}</strong> {{ $t('plugin is installed and activated to connect product reviews.') }}</p>
     </div>
   </div>
 </template>
@@ -74,6 +81,10 @@ export default {
       default: () => ({})
     },
     hasProducts: {
+      type: Boolean,
+      default: false
+    },
+    hasWooCommerce: {
       type: Boolean,
       default: false
     },

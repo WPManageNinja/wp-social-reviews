@@ -12,9 +12,10 @@
 
           <div class="wpsr-business-info-right">
             <a
+                v-if="shouldShowWriteReviewButton"
                 class="wpsr-write-review"
                 :target="customButtonTarget"
-                :href="metaStyles.war_btn_source_custom_url"
+                :href="customButtonUrl"
             >
               {{ metaStyles.custom_write_review_text }}
             </a>
@@ -40,6 +41,13 @@ export default {
      customButtonTarget() {
        return this.metaStyles.war_btn_source === 'custom_url' &&
        this.metaStyles.war_btn_open_in_new_window === 'true' ? '_blank' : '_self';
+     },
+     customButtonUrl() {
+       return String(this.metaStyles.war_btn_source_custom_url || '').trim();
+     },
+     shouldShowWriteReviewButton() {
+       return this.metaStyles.war_btn_source !== 'custom_url' ||
+           this.customButtonUrl.length > 0;
      },
    }
 }

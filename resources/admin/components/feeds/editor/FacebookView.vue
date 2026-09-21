@@ -1,5 +1,5 @@
 <template>
-  <div class="wpsr_editor" v-if="feedConfig" :class="{ 'wpsr-blurred': showWelcomePopup }">
+  <div class="wpsr_editor" v-if="feedConfig" :class="{ 'wpsr-blurred': showWelcomePopup, 'wpsr-editor-sidebar-minimized': wpsrSidebarMinimized, 'wpsr-sidebar-resizing': wpsrSidebarResizing }">
 
     <editor-header
         :title="template_title"
@@ -9,7 +9,7 @@
         @update-settings="updateEditorSettings(platform_section)"
     ></editor-header>
     <div class="wpsr_editor_wrapper">
-      <el-container>
+      <el-container :style="{ '--wpsr-editor-sidebar-width': wpsrSidebarWidth + 'px' }">
         <div v-if="feedConfig.feed_settings">
           <div v-html="css"></div>
         </div>
@@ -34,7 +34,9 @@
           </div>
         </el-main>
 
+        <SidebarToggleButton :minimized="wpsrSidebarMinimized" @toggle="toggleEditorSidebar" />
         <el-aside class="wpsr-editor-sidebar">
+          <SidebarResizeHandle :width="wpsrSidebarWidth" :min="wpsrSidebarMinWidth" :max="wpsrSidebarMaxWidth" @resize-start="startSidebarResize" @resize-step="stepSidebarResize" />
           <UpgradeApp v-if="!has_pro" />
           <el-tabs v-model="activeTab" class="wpsr-element-tab-wrapper">
             <el-tab-pane label="General" name="general" class="wpsr-element-tab-item">
@@ -92,6 +94,9 @@ import FacebookFeedEditor from './editor-ui/FacebookFeedEditor';
 import EditorHeader from "../../pieces/EditorHeader";
 import Template1 from './../templates/facebook/Template1';
 import Template2 from "../templates/facebook/Template2";
+import Template3 from "../templates/facebook/Template3";
+import Template4 from "../templates/facebook/Template4";
+import {canRenderFacebookProTemplate} from "../../../mixins/fbFeedMixin";
 import {templateMixin} from "../../../mixins/templateMixin";
 import {commonMixin} from "../../../mixins/commonMixin";
 import {jsLibraryMixin} from "../../../mixins/jsLibraryMixin";
@@ -107,15 +112,20 @@ import OnboardWelcomePopup from "../../pieces/OnboardWelcomePopup.vue";
 import FacebookFeedConnection from './editor-ui/FacebookFeedConnection';
 import DemoTemplateAlert from "../../pieces/DemoTemplateAlert.vue";
 import ProCrownIcon from '../../pieces/icons/ProCrownIcon';
+import SidebarToggleButton from '../../pieces/SidebarToggleButton';
+import SidebarResizeHandle from '../../pieces/SidebarResizeHandle';
+import { editorSidebarMixin } from "../../../mixins/editorSidebarMixin";
 
 export default {
   name: "FacebookView",
-  mixins: [templateMixin, commonMixin, jsLibraryMixin, helperStyle],
+  mixins: [templateMixin, commonMixin, jsLibraryMixin, helperStyle, editorSidebarMixin],
   components: {
     DemoTemplateAlert,
     OnboardWelcomePopup,
     Template1,
     Template2,
+    Template3,
+    Template4,
     FacebookFeedEditor,
     EditorHeader,
     FacebookStyleEditor,
@@ -126,7 +136,9 @@ export default {
     FeedSteps,
     FacebookFeedConnection,
     UpgradeApp,
-    ProCrownIcon
+    ProCrownIcon,
+    SidebarToggleButton,
+    SidebarResizeHandle
   },
   data() {
     return {
@@ -138,6 +150,8 @@ export default {
       templates : {
         'template1' : markRaw(Template1),
         'template2' : markRaw(Template2),
+        'template3' : markRaw(Template3),
+        'template4' : markRaw(Template4),
       },
       layoutType: '',
       counter: 0,
@@ -181,8 +195,25 @@ export default {
     fetchVideos(val) {
       this.editEditorSettings(this.platform_section);
     },
+    // An older Pro renders template1 publicly, so the preview must show template1 too.
+    resolveTemplateComponent(name) {
+      if (name === 'template4' && !canRenderFacebookProTemplate('template4', this.facebook_pro_templates)) {
+        return this.templates['template1'];
+      }
+      return this.templates[name];
+    },
     handleLayout() {
       let that = this;
+      // Template 4 renders its own CSS mosaic, so a layout_type left over from another template
+      // must not run masonry or swiper over it. Same test as $wpsr_is_mosaic in header.php:
+      // when the installed Pro cannot render template4 the preview falls back to template1,
+      // which PHP does still apply the saved layout to.
+      if (this.feedConfig
+          && this.feedConfig.feed_settings.template === 'template4'
+          && canRenderFacebookProTemplate('template4', this.facebook_pro_templates)) {
+        return;
+      }
+
       if(this.layoutType === 'carousel') {
         this.loading = true;
         setTimeout(function() {
@@ -332,7 +363,7 @@ export default {
         let template = val
         this.feedConfig.feed_settings.template = template;
         this.component = '';
-        this.component = this.templates[val];
+        this.component = this.resolveTemplateComponent(val);
         this.handleLayout();
       },
       deep:true,

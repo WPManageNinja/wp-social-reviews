@@ -33,7 +33,7 @@
               <div v-else-if="menu.routes && menu.routes.length === 1" :class="['wpsr-single-menu-item', { 'wpsr-single-menu-item-active': $route && $route.name === menu.routes[0].route }]">
                 <router-link active-class="wpsr-tab-active" exact :class="['wpsr-single-tab']" :to="{ name: menu.routes[0].route }">
                   <component :is="getMenuIcon(key)" :width="16" :height="16" class="menu-icon" />
-                  <span class="wpsr-menu-title wpsr-label-small">{{ menu.title }} </span>
+                  <span class="wpsr-menu-title wpsr-label-small">{{ menu.displayTitle }} </span>
                   <ProCrownIcon v-if="!has_pro && (key === 'get_reviews_via_qr_code' || key === 'shoppable_by_hashtags')" :width="16" :height="16" class="pro-crown-icon" />
                 </router-link>
               </div>
@@ -198,10 +198,28 @@ export default {
   },
 
   computed: {
+    // Each menu and sub-route declares the capabilities that may reach it. Drop
+    // whatever the current user cannot open, and drop a group left with no routes.
     filteredMenus() {
-      return Object.entries(this.sidebarMenus).filter(([key, menu]) => {
-        return menu;
-      });
+      return Object.entries(this.sidebarMenus).reduce((menus, [key, menu]) => {
+        if (!menu || !this.hasPermission(menu.permission)) {
+          return menus;
+        }
+
+        const all = menu.routes || [];
+        const routes = all.filter(route => this.hasPermission(route.permission));
+
+        if (!routes.length) {
+          return menus;
+        }
+
+        // A group name only reads right while it covers several routes. Once
+        // permissions leave one, name it after the route the link opens.
+        const collapsed = all.length > 1 && routes.length === 1;
+
+        menus.push([key, {...menu, routes, displayTitle: collapsed ? routes[0].title : menu.title}]);
+        return menus;
+      }, []);
     }
   },
 
@@ -258,12 +276,12 @@ export default {
       });
     },
     onCollapseItem() {
-      if(this.sidebarMenus[this.activeNames] &&
-         this.sidebarMenus[this.activeNames].routes &&
-         this.sidebarMenus[this.activeNames].routes.length > 1 &&
-         this.sidebarMenus[this.activeNames].routes[0] &&
-         this.$route.name !== this.sidebarMenus[this.activeNames].routes[0].route) {
-        this.$router.push({'name' : this.sidebarMenus[this.activeNames].routes[0].route});
+      // Open the group's first reachable route, never one the sidebar hid.
+      const entry = this.filteredMenus.find(([key]) => key === this.activeNames);
+      const routes = entry ? entry[1].routes : [];
+
+      if(routes.length > 1 && routes[0] && this.$route.name !== routes[0].route) {
+        this.$router.push({'name' : routes[0].route});
       }
     }
   },

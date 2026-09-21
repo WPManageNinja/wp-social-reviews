@@ -1,0 +1,729 @@
+{
+  "schema": 1,
+  "comment": "Phase 22\u201327 security regression registry. Family/add-on/compatibility targets remain outside PR #324.",
+  "targets": [
+    {
+      "id": "get-route-inventory",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "rest-api"
+      ],
+      "categories": [
+        "inventory-drift"
+      ],
+      "runner": "php",
+      "path": "tests/smoke/route-coverage.php",
+      "count_pattern": "~route-coverage: discovered ([0-9]+) core GET routes~",
+      "count_group": 1,
+      "claim": "Discovers every core GET declaration and fails missing or stale smoke-manifest representation. This is inventory drift coverage, not a broad authorization claim."
+    },
+    {
+      "id": "input-validation-authorization-behavioral",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "input-validation",
+        "rest-api"
+      ],
+      "categories": [
+        "authorization",
+        "input-validation",
+        "output-escaping"
+      ],
+      "runner": "wp-cli",
+      "path": "tests/integration/input-validation-authorization.php",
+      "suite": "integration",
+      "filter": "input-validation-authorization",
+      "count_pattern": "~INTEGRATION: ([0-9]+)/[0-9]+ passed, [0-9]+ failed, [0-9]+ skipped~",
+      "count_group": 1,
+      "claim": "Focused behavior checks query allowlists, LIKE escaping, typed and nested sanitization, persisted/rendered escaping, limited-capability route scope, and cross-object authorization."
+    },
+    {
+      "id": "input-validation-inventory",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "input-validation",
+        "rest-api"
+      ],
+      "categories": [
+        "inventory-drift"
+      ],
+      "runner": "php",
+      "path": "tests/validation/route-coverage.php",
+      "count_pattern": "~validation-route-coverage: discovered ([0-9]+) core REST routes~",
+      "count_group": 1,
+      "claim": "Classifies every REST declaration and non-REST input family, validates runtime references, and fails missing material validation families or zero discovery."
+    },
+    {
+      "id": "mutation-audit",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "mutation",
+        "security-tooling"
+      ],
+      "categories": [
+        "mutation-coverage"
+      ],
+      "runner": "mutation-audit",
+      "path": "tests/mutation/manifest.php",
+      "count_pattern": "~MUTATION: total=([0-9]+) killed=~",
+      "count_group": 1,
+      "claim": "Runs deterministic high-risk PHP mutants with narrow owners, full-gate survivor correction, and exact production/status restoration guards."
+    },
+    {
+      "id": "mutation-harness-self-test",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "mutation",
+        "security-tooling"
+      ],
+      "categories": [
+        "tooling-self-test"
+      ],
+      "runner": "mutation-self-test",
+      "path": "tests/mutation/self-test.php",
+      "count_pattern": "~MUTATION-SELF-TEST (?:killable|equivalent|zero mutants|dirty drift):~",
+      "count_mode": "matches",
+      "claim": "Proves killable, equivalent, zero-selection, and dirty-restoration mutation-harness paths against a disposable temporary Git repository."
+    },
+    {
+      "id": "mutating-route-policy-inventory",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "rest-api"
+      ],
+      "categories": [
+        "authorization",
+        "inventory-drift"
+      ],
+      "runner": "php",
+      "path": "tests/permissions/route-coverage.php",
+      "count_pattern": "~permission-route-coverage: discovered ([0-9]+) core mutating routes~",
+      "count_group": 1,
+      "claim": "Discovers every mutating route, requires a nonempty mounted policy, and binds each declaration to one exact permission-manifest policy."
+    },
+    {
+      "id": "permission-denial-behavioral",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "rest-api"
+      ],
+      "categories": [
+        "authorization"
+      ],
+      "runner": "wp-cli",
+      "path": "tests/bin/run-permissions.php",
+      "suite": "permissions",
+      "count_pattern": "~PERMISSIONS: ([0-9]+)/[0-9]+ passed, [0-9]+ failed, [0-9]+ skipped~",
+      "count_group": 1,
+      "claim": "Dispatches every mutating route as anonymous and read-only identities, requiring exact 401/403 denials before controller execution and unchanged database state."
+    },
+    {
+      "id": "public-handlers-behavioral",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "ajax",
+        "public-handlers",
+        "rest-api",
+        "shortcodes",
+        "template-redirect"
+      ],
+      "categories": [
+        "authorization",
+        "csrf",
+        "input-validation",
+        "output-escaping",
+        "rate-limiting"
+      ],
+      "runner": "wp-cli",
+      "path": "tests/public/public-handlers.php",
+      "suite": "public",
+      "filter": "public-handlers",
+      "count_pattern": "~PUBLIC: ([0-9]+)/[0-9]+ passed, [0-9]+ failed, [0-9]+ skipped~",
+      "count_group": 1,
+      "claim": "Anonymous behavior checks nonce rejection, object visibility, input bounds, request budgets, scoped public output escaping, REST denial, shortcode reads, and redirect publish scope."
+    },
+    {
+      "id": "public-surface-inventory",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "ajax",
+        "public-handlers",
+        "rest-api",
+        "shortcodes",
+        "template-redirect"
+      ],
+      "categories": [
+        "attack-surface",
+        "authorization",
+        "inventory-drift"
+      ],
+      "runner": "php",
+      "path": "tests/public/handler-coverage.php",
+      "count_pattern": "~public-handler-coverage: core nopriv=([0-9]+)~",
+      "count_group": 1,
+      "claim": "Censuses nopriv AJAX, shortcodes, template redirects, public REST, and rewrite/query-var surfaces while requiring all current REST declarations to retain policies."
+    },
+    {
+      "id": "raw-sql-prefix",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "database"
+      ],
+      "categories": [
+        "table-prefix-safety"
+      ],
+      "runner": "php",
+      "path": "tests/lint/raw-sql-prefix.php",
+      "args": [
+        "app",
+        "boot",
+        "database"
+      ],
+      "count_pattern": "~raw-sql-prefix: scanned ([0-9]+) PHP files~",
+      "count_group": 1,
+      "claim": "Scans raw SQL calls for unprefixed wpsr table-qualified identifiers that bypass WPFluent grammar under non-default WordPress prefixes."
+    },
+    {
+      "id": "raw-sql-prefix-self-test",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "database",
+        "security-tooling"
+      ],
+      "categories": [
+        "tooling-self-test"
+      ],
+      "runner": "raw-sql-fixture",
+      "path": "tests/lint/fixtures/bad-raw-prefix.php",
+      "count_pattern": "~FAIL \u2014 ([0-9]+) violation\\(s\\):~",
+      "count_group": 1,
+      "claim": "Runs current raw-SQL detector against intentional violations and passes only when detector exits one with a nonzero exact violation summary."
+    },
+    {
+      "id": "security-registry-self-test",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "security-registry"
+      ],
+      "categories": [
+        "tooling-self-test"
+      ],
+      "runner": "php",
+      "path": "tests/security/registry-self-test.php",
+      "count_pattern": "~SECURITY-REGISTRY-SELF-TEST pass=([0-9]+) fail=0~",
+      "count_group": 1,
+      "claim": "Proves registry orphan, phantom, duplicate, plugin, tag, selector, selectable-Pro, empty-intersection, zero-count, and no-selector contracts green-to-red."
+    },
+    {
+      "id": "source-contract-fixture-harness",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "security-tooling",
+        "source-contracts"
+      ],
+      "categories": [
+        "source-contract-proof",
+        "tooling-self-test"
+      ],
+      "runner": "php",
+      "path": "tests/bin/run-source-contract-fixtures.php",
+      "count_pattern": "~SOURCE-CONTRACT-FIXTURES detectors=[1-9][0-9]* cases=([1-9][0-9]*) mutations=[1-9][0-9]* self-tests=[1-9][0-9]* failures=0~",
+      "count_group": 1,
+      "claim": "Runs every registered source-contract detector against fixed and reverted fixture copies, rejects incomplete/no-op/green-mutant/residue cases, and guards exact production status and hashes."
+    },
+    {
+      "id": "ajax-guard-order",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "ajax",
+        "image-optimization",
+        "public-handlers"
+      ],
+      "categories": [
+        "authorization",
+        "csrf"
+      ],
+      "runner": "php",
+      "path": "tests/lint/detect_ajax_guard_order.php",
+      "count_pattern": "~SOURCE-CONTRACT id=ajax-guard-order checked=([0-9]+) failures=0~",
+      "count_group": 1,
+      "claim": "Pins five nopriv render/image methods so nonce verification precedes public object authorization and any metadata, provider, or write dispatch."
+    },
+    {
+      "id": "category-destructive-policy",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "rest-api",
+        "review-categories"
+      ],
+      "categories": [
+        "authorization",
+        "destructive-action"
+      ],
+      "runner": "php",
+      "path": "tests/lint/detect_category_destructive_policy.php",
+      "count_pattern": "~SOURCE-CONTRACT id=category-destructive-policy checked=([0-9]+) failures=0~",
+      "count_group": 1,
+      "claim": "Structurally loads routes and requires category rename/delete under the dual-capability CategoryManagementPolicy for both review screens."
+    },
+    {
+      "id": "facebook-paging-host",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "facebook-feeds"
+      ],
+      "categories": [
+        "ssrf",
+        "url-validation"
+      ],
+      "runner": "php",
+      "path": "tests/lint/detect_facebook_paging_host.php",
+      "count_pattern": "~SOURCE-CONTRACT id=facebook-paging-host checked=([0-9]+) failures=0~",
+      "count_group": 1,
+      "claim": "Pins Facebook managed-page pagination so a response-controlled next URL is followed only when its parsed host is graph.facebook.com."
+    },
+    {
+      "id": "meta-write-ownership",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "chat-widgets",
+        "rest-api",
+        "review-templates"
+      ],
+      "categories": [
+        "authorization",
+        "object-ownership"
+      ],
+      "runner": "php",
+      "path": "tests/lint/detect_meta_write_ownership.php",
+      "count_pattern": "~SOURCE-CONTRACT id=meta-write-ownership checked=([0-9]+) failures=0~",
+      "count_group": 1,
+      "claim": "Pins review-template and chat-widget post-type ownership checks before editor write sinks, including independent raw UPDATE discriminators."
+    },
+    {
+      "id": "no-shipped-oauth-secrets",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "oauth",
+        "remote-auth"
+      ],
+      "categories": [
+        "secrets-management"
+      ],
+      "runner": "php",
+      "path": "tests/lint/detect_no_shipped_oauth_secrets.php",
+      "count_pattern": "~SOURCE-CONTRACT id=no-shipped-oauth-secrets checked=([0-9]+) failures=0~",
+      "count_group": 1,
+      "claim": "Pins removal of shipped Google OAuth client credentials and requires YouTube/reviews refresh methods to delegate to RemoteAuth bridge."
+    },
+    {
+      "id": "public-template-visibility",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "public-handlers",
+        "shortcodes",
+        "youtube"
+      ],
+      "categories": [
+        "authorization",
+        "object-visibility"
+      ],
+      "runner": "php",
+      "path": "tests/lint/detect_public_template_visibility.php",
+      "count_pattern": "~SOURCE-CONTRACT id=public-template-visibility checked=([0-9]+) failures=0~",
+      "count_group": 1,
+      "claim": "Pins strict template type, publish/password, and edit-capability visibility policy before shortcode, load-more, and YouTube dispatch."
+    },
+    {
+      "id": "remote-auth-hmac",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "oauth",
+        "remote-auth"
+      ],
+      "categories": [
+        "request-signing"
+      ],
+      "runner": "php",
+      "path": "tests/lint/detect_remote_auth_hmac.php",
+      "count_pattern": "~SOURCE-CONTRACT id=remote-auth-hmac checked=([0-9]+) failures=0~",
+      "count_group": 1,
+      "claim": "Pins allowlisted refresh flow and HMAC over timestamp plus exact canonical body bytes before bridge transport, rejecting missing identity first."
+    },
+    {
+      "id": "remote-auth-return-host",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "oauth",
+        "remote-auth"
+      ],
+      "categories": [
+        "open-redirect",
+        "url-validation"
+      ],
+      "runner": "php",
+      "path": "tests/lint/detect_remote_auth_return_host.php",
+      "count_pattern": "~SOURCE-CONTRACT id=remote-auth-return-host checked=([0-9]+) failures=0~",
+      "count_group": 1,
+      "claim": "Pins parsed same-host OAuth return URL validation before transient state creation and bridge redirect query construction."
+    },
+    {
+      "id": "remote-auth-secret-storage",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "oauth",
+        "remote-auth"
+      ],
+      "categories": [
+        "encryption-at-rest",
+        "option-autoload",
+        "secrets-management"
+      ],
+      "runner": "php",
+      "path": "tests/lint/detect_remote_auth_secret_storage.php",
+      "count_pattern": "~SOURCE-CONTRACT id=remote-auth-secret-storage checked=([0-9]+) failures=0~",
+      "count_group": 1,
+      "claim": "Pins bridge site-secret protection, non-autoloaded option storage, and removal before platform-specific persistence callbacks."
+    },
+    {
+      "id": "twitter-card-dom-sinks",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "twitter-cards"
+      ],
+      "categories": [
+        "output-escaping",
+        "url-validation",
+        "xss"
+      ],
+      "runner": "php",
+      "path": "tests/lint/detect_twitter_card_dom_sinks.php",
+      "count_pattern": "~SOURCE-CONTRACT id=twitter-card-dom-sinks checked=([0-9]+) failures=0~",
+      "count_group": 1,
+      "claim": "Pins scraped Twitter metadata to DOM text/attribute sinks with HTTP(S)-only URLs and rejects concatenated card HTML sinks."
+    },
+    {
+      "id": "security-lab-config-doctor",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "security-lab",
+        "security-tooling"
+      ],
+      "categories": [
+        "environment-safety"
+      ],
+      "runner": "security-doctor",
+      "path": "tests/security/lab/doctor.php",
+      "count_pattern": "~SECURITY-DOCTOR checks=([1-9][0-9]*) failures=0 mode=config~",
+      "count_group": 1,
+      "claim": "Validates compose-only lab isolation: unpublished database, loopback web, dual read-only core and Pro mounts, linked selectable Pro classification, disposable DB/prefix, health checks, scanner namespace/targets, reset, and target refusal."
+    },
+    {
+      "id": "security-lab-doctor-self-test",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "security-lab",
+        "security-tooling"
+      ],
+      "categories": [
+        "environment-safety",
+        "tooling-self-test"
+      ],
+      "runner": "security-self-test",
+      "path": "tests/security/lab/self-test.php",
+      "count_pattern": "~SECURITY-DOCTOR-SELF-TEST pass=([1-9][0-9]*) fail=0 mutations=12~",
+      "count_group": 1,
+      "claim": "Uses derived compose models to prove network, port, mount, disposable database, target, pinned-image, health, host-tool, and offline-Semgrep regressions turn red."
+    },
+    {
+      "id": "zap-passive-baseline",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "dast",
+        "security-lab"
+      ],
+      "categories": [
+        "dast",
+        "passive-scan"
+      ],
+      "runner": "dast-zap",
+      "path": "tests/bin/run-zap-baseline.sh",
+      "count_pattern": "~ZAP-BASELINE scanned=([1-9][0-9]*) findings=[0-9]+ artifacts=[1-9][0-9]* scanner-exit=0 policy-exit=0 failures=0~",
+      "count_group": 1,
+      "claim": "Runs pinned ZAP passive baseline only against the scanner container shared loopback WordPress target, records reports/version/config, and gates findings through exact WordPress baseline policy."
+    },
+    {
+      "id": "nuclei-safe-http-baseline",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "dast",
+        "security-lab"
+      ],
+      "categories": [
+        "dast",
+        "passive-scan"
+      ],
+      "runner": "dast-nuclei",
+      "path": "tests/bin/run-nuclei-baseline.sh",
+      "count_pattern": "~NUCLEI-BASELINE scanned=([1-9][0-9]*) findings=[1-9][0-9]* artifacts=[1-9][0-9]* scanner-exit=0 policy-exit=0 failures=0~",
+      "count_group": 1,
+      "claim": "Runs pinned nuclei with committed safe HTTP templates, no updates/OAST/fuzz/headless/code, fixed loopback target, exact allowlist, high/critical failure, and version/config artifacts."
+    },
+    {
+      "id": "dast-policy-self-test",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "dast",
+        "security-tooling"
+      ],
+      "categories": [
+        "dast",
+        "tooling-self-test"
+      ],
+      "runner": "php",
+      "path": "tests/security/dast/self-test.php",
+      "count_pattern": "~DAST-POLICY-SELF-TEST pass=([1-9][0-9]*) fail=0~",
+      "count_group": 1,
+      "claim": "Proves exact allowlisted low findings pass while unexplained high/critical, off-target ZAP output, and zero nuclei result layers fail closed using derived result fixtures only."
+    },
+    {
+      "id": "public-input-fuzz-policy-self-test",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "ajax",
+        "public-handlers",
+        "robustness",
+        "security-tooling"
+      ],
+      "categories": [
+        "input-robustness",
+        "tooling-self-test"
+      ],
+      "runner": "fuzz-self-test",
+      "path": "tests/bin/run-fuzz.sh",
+      "count_pattern": "~FUZZ-POLICY-SELF-TEST proofs=([1-9][0-9]*) families=[1-9][0-9]* seeds=[1-9][0-9]* failures=0~",
+      "count_group": 1,
+      "claim": "Proves committed public-input corpus discovery is nonzero, raw-body absence is explicit, and an intentionally wrong expected HTTP status turns response policy red."
+    },
+    {
+      "id": "public-input-robustness",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "ajax",
+        "public-handlers",
+        "robustness",
+        "security-lab"
+      ],
+      "categories": [
+        "input-robustness"
+      ],
+      "runner": "fuzz",
+      "path": "tests/bin/run-fuzz.sh",
+      "count_pattern": "~PUBLIC-INPUT-FUZZ families=[1-9][0-9]* seeds=[1-9][0-9]* cases=([1-9][0-9]*) passed=[1-9][0-9]* failures=0~",
+      "count_group": 1,
+      "claim": "Dispatches committed malformed and boundary seeds only to fixed loopback core public handlers, enforcing status, fatal, size, time, full database/upload fingerprints, and zero WordPress HTTP/mail."
+    },
+    {
+      "id": "release-secrets-self-test",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "release-artifacts",
+        "secrets-management",
+        "security-tooling"
+      ],
+      "categories": [
+        "credential-leak-prevention",
+        "tooling-self-test"
+      ],
+      "runner": "release-secrets-self-test",
+      "path": "tests/bin/run-release-secrets.sh",
+      "count_pattern": "~RELEASE-SECRETS-SELF-TEST proofs=([1-9][0-9]*) seeded-findings=[1-9][0-9]* allowlisted=1 failures=0~",
+      "count_group": 1,
+      "claim": "Builds synthetic temporary ZIPs proving dummy private-key, token, assignment, empty-archive, and exact reason/path/fingerprint allowlist policy paths turn red or green as specified."
+    },
+    {
+      "id": "release-credential-leak-audit",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "release-artifacts",
+        "secrets-management"
+      ],
+      "categories": [
+        "credential-leak-prevention"
+      ],
+      "runner": "release-secrets",
+      "path": "tests/bin/run-release-secrets.sh",
+      "count_pattern": "~RELEASE-SECRETS-AUDIT archives=1 files=([1-9][0-9]*) text=[1-9][0-9]* findings=[0-9]+ allowlisted=[0-9]+ blocked=0 artifacts=[1-9][0-9]* failures=0~",
+      "count_group": 1,
+      "claim": "Packages the exact core build manifest into a temporary deterministic ZIP and blocks private-key markers, credential assignments, and high-confidence tokens unless exact fingerprint policy explains them."
+    },
+    {
+      "id": "semgrep-fixture-self-test",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "sast",
+        "security-tooling",
+        "static-analysis"
+      ],
+      "categories": [
+        "source-contract-proof",
+        "tooling-self-test"
+      ],
+      "runner": "semgrep-fixtures",
+      "path": "tests/bin/run-semgrep.sh",
+      "count_pattern": "~SEMGREP-FIXTURES rules=([1-9][0-9]*) files=[1-9][0-9]* findings=[1-9][0-9]* failures=0~",
+      "count_group": 1,
+      "claim": "Runs every project-local Semgrep rule against one synthetic positive and negative fixture, requiring one hit per rule, clean negatives, and an intentionally removed-result verifier failure."
+    },
+    {
+      "id": "semgrep-security-audit",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "javascript",
+        "php",
+        "sast",
+        "static-analysis"
+      ],
+      "categories": [
+        "input-validation",
+        "output-escaping",
+        "sast"
+      ],
+      "runner": "semgrep-security",
+      "path": "tests/bin/run-semgrep.sh",
+      "count_pattern": "~SEMGREP-SECURITY rules=([1-9][0-9]*) scanned=[1-9][0-9]* findings=[1-9][0-9]* artifacts=[1-9][0-9]* scanner-exit=0 policy-exit=0 failures=0~",
+      "count_group": 1,
+      "claim": "Runs pinned offline Docker Semgrep taint and guard rules over real PHP and JavaScript request-to-database, HTML/DOM, redirect, file, and state-change contracts with exact triage policy."
+    },
+    {
+      "id": "semgrep-quality-audit",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "javascript",
+        "php",
+        "sast",
+        "static-analysis"
+      ],
+      "categories": [
+        "sast",
+        "security-quality"
+      ],
+      "runner": "semgrep-quality",
+      "path": "tests/bin/run-semgrep.sh",
+      "count_pattern": "~SEMGREP-QUALITY rules=([1-9][0-9]*) scanned=[1-9][0-9]* findings=[1-9][0-9]* artifacts=[1-9][0-9]* scanner-exit=0 policy-exit=0 failures=0~",
+      "count_group": 1,
+      "claim": "Runs pinned project-quality contracts for missing public dispatch guards, inert DOM parsing, and JSON unslash/decode order while requiring every live finding to match parked FIX-PLAN fingerprints."
+    },
+    {
+      "id": "endpoint-inventory-drift",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "ajax",
+        "endpoint-inventory",
+        "public-listeners",
+        "rest-api",
+        "shortcodes"
+      ],
+      "categories": [
+        "attack-surface",
+        "inventory-drift"
+      ],
+      "runner": "php",
+      "path": "tests/security/endpoints/lint.php",
+      "count_pattern": "~ENDPOINT-INVENTORY rows=([1-9][0-9]*) discovered=[1-9][0-9]* surfaces=4 plugins=2 failures=0~",
+      "count_group": 1,
+      "claim": "Independently discovers core and Pro REST, AJAX, shortcode, and public-listener registrations; requires exact authoritative inventory equality, complete auth/scope/side-effect metadata, callback existence, and consistency with prior manifests."
+    },
+    {
+      "id": "endpoint-inventory-proof",
+      "plugins": [
+        "core"
+      ],
+      "modules": [
+        "endpoint-inventory",
+        "security-tooling"
+      ],
+      "categories": [
+        "inventory-drift",
+        "tooling-self-test"
+      ],
+      "runner": "php",
+      "path": "tests/security/endpoints/proof-of-catch.php",
+      "count_pattern": "~ENDPOINT-INVENTORY-PROOF cases=([1-9][0-9]*) red=[1-9][0-9]* restored=[1-9][0-9]* failures=0~",
+      "count_group": 1,
+      "claim": "Uses only derived temporary source and inventory copies to prove undisclosed declarations, removed/stale/duplicate rows, missing auth metadata, and parser ambiguity turn authoritative endpoint lint red before restored green."
+    }
+  ]
+}

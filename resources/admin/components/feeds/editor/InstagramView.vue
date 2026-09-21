@@ -1,5 +1,5 @@
 <template>
-    <div class="wpsr_editor" v-if="feedConfig" :class="{ 'wpsr-blurred': showWelcomePopup }">
+    <div class="wpsr_editor" v-if="feedConfig" :class="{ 'wpsr-blurred': showWelcomePopup, 'wpsr-editor-sidebar-minimized': wpsrSidebarMinimized, 'wpsr-sidebar-resizing': wpsrSidebarResizing }">
         <editor-header
             :title="template_title"
             :platform_section="platform_section"
@@ -8,7 +8,7 @@
             @update-settings="updateEditorSettings(platform_section)"
         ></editor-header>
         <div class="wpsr_editor_wrapper">
-            <el-container>
+            <el-container :style="{ '--wpsr-editor-sidebar-width': wpsrSidebarWidth + 'px' }">
                 <div v-if="feedConfig.feed_settings">
                   <div v-html="css"></div>
                 </div>
@@ -53,7 +53,9 @@
                       />
                     </el-dialog>
                 </el-main>
+                <SidebarToggleButton :minimized="wpsrSidebarMinimized" @toggle="toggleEditorSidebar" />
                 <el-aside class="wpsr-editor-sidebar">
+                  <SidebarResizeHandle :width="wpsrSidebarWidth" :min="wpsrSidebarMinWidth" :max="wpsrSidebarMaxWidth" @resize-start="startSidebarResize" @resize-step="stepSidebarResize" />
                   <UpgradeApp v-if="!has_pro" />
                   <el-tabs v-model="activeTab" class="wpsr-element-tab-wrapper">
                     <el-tab-pane label="General" name="general" class="wpsr-element-tab-item">
@@ -117,6 +119,8 @@ import InstagramFeedEditor from './editor-ui/InstagramFeedEditor';
 import InstagramFeedConnection from './editor-ui/InstagramFeedConnection';
 import Template1 from './../templates/instagram/Template1';
 import Template2 from './../templates/instagram/Template2';
+import Template3 from './../templates/instagram/Template3';
+import Template4 from './../templates/instagram/Template4';
 import {templateMixin} from "../../../mixins/templateMixin";
 import {commonMixin} from "../../../mixins/commonMixin";
 import {jsLibraryMixin} from "../../../mixins/jsLibraryMixin";
@@ -132,6 +136,9 @@ import { markRaw } from 'vue';
 import OnboardWelcomePopup from "../../pieces/OnboardWelcomePopup.vue";
 import DemoTemplateAlert from "../../pieces/DemoTemplateAlert.vue";
 import ProCrownIcon from '../../pieces/icons/ProCrownIcon';
+import SidebarToggleButton from '../../pieces/SidebarToggleButton';
+import SidebarResizeHandle from '../../pieces/SidebarResizeHandle';
+import { editorSidebarMixin } from "../../../mixins/editorSidebarMixin";
 
 let fields = {
   'source_type': 'custom_url',
@@ -146,7 +153,7 @@ let fields = {
 
 export default {
     name: "InstagramView",
-    mixins: [templateMixin, commonMixin, jsLibraryMixin, helperStyle],
+    mixins: [templateMixin, commonMixin, jsLibraryMixin, helperStyle, editorSidebarMixin],
     components: {
       DemoTemplateAlert,
       InstagramStyleEditor,
@@ -154,6 +161,8 @@ export default {
       EditorHeader,
       Template1,
       Template2,
+      Template3,
+      Template4,
       InstagramFeedEditor,
       ResponsiveBar,
       EditorViewInfoBar,
@@ -161,7 +170,9 @@ export default {
       UpgradeToProButton,
       OnboardWelcomePopup,
       UpgradeApp,
-      ProCrownIcon
+      ProCrownIcon,
+      SidebarToggleButton,
+      SidebarResizeHandle
     },
 
     data() {
@@ -176,6 +187,8 @@ export default {
             templates : {
                 'template1' : markRaw(Template1),
                 'template2' : markRaw(Template2),
+                'template3' : markRaw(Template3),
+                'template4' : markRaw(Template4),
             },
             videos: false,
             layoutType: '',
@@ -236,10 +249,15 @@ export default {
         this.updateEditorSettings('instagram');
       },
 
-      handleCloseShoppable() {
+      // el-dialog defers the close until done() runs, so without it the dialog's own state and
+      // v-model drift apart and it stops reopening.
+      handleCloseShoppable(done) {
         this.shoppable_fields = {...fields};
         this.show_shoppable_popup = false;
         this.selectedFeed = null;
+        if (typeof done === 'function') {
+          done();
+        }
       },
 
       //add feed to shoppable
@@ -287,7 +305,8 @@ export default {
           }, 500);
         }
 
-        if (this.layoutType === 'grid') {
+        // Highlights needs the same teardown as grid, or Swiper/Masonry inline styles survive.
+        if (this.layoutType === 'grid' || this.layoutType === 'highlights') {
           this.loading = true;
           setTimeout(function() {
             that.destroy();
@@ -389,9 +408,11 @@ export default {
         }
         
         if(configuration && platform === 'instagram'){
+            this.$router.replace({ name: this.$route.name, params: this.$route.params });
+
             // Switch to connection tab and open modal
             this.activeTab = 'connection';
-            
+
             // Use nextTick to ensure the connection component is rendered
             this.$nextTick(() => {
                 // Find the InstagramFeedConnection component and trigger modal

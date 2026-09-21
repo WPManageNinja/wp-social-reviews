@@ -550,6 +550,51 @@ export default {
                 'key': 'prefilled_message',
                 'selector': 'true'
               }
+            },
+            {
+              fieldKey: 'message_context',
+              type: 'select',
+              title: this.$t('WhatsApp Message Context'),
+              disabled: !this.has_pro,
+              options: [
+                {
+                  value: 'none',
+                  label: this.$t('None')
+                },
+                {
+                  value: 'page',
+                  label: this.$t('Page title and link')
+                },
+                {
+                  value: 'woocommerce_product',
+                  label: this.$t('WooCommerce product details')
+                },
+                {
+                  value: 'fluentcart_product',
+                  label: this.$t('FluentCart product details')
+                },
+                {
+                  value: 'custom',
+                  label: this.$t('Custom format')
+                }
+              ]
+            },
+            {
+              fieldKey: 'custom_message_format',
+              type: 'textarea',
+              title: this.$t('Custom Format'),
+              disabled: !this.has_pro,
+              tooltip: true,
+              tooltipText: this.$t('Available placeholders: {page_title}, {page_url}, {product_title}, {product_price}, {product_sku}, {product_stock}, {product_url}'),
+              placeholder: "{product_title}\n{product_price}\n{product_sku}\n{product_stock}\n{product_url}",
+              autosize: {
+                minRows: 4,
+                maxRows: 8
+              },
+              condition: {
+                'key': 'message_context',
+                'selector': 'custom'
+              }
             }
         );
       },

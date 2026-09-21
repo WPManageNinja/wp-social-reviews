@@ -87,6 +87,7 @@ import offerMixin from '../../../mixins/offerMixin';
 import ProCrownIcon from '../../pieces/icons/ProCrownIcon.vue';
 import { Check } from '@element-plus/icons-vue';
 import ReviewsPlatformNotice from "../../pieces/ReviewsPlatformNotice.vue";
+import { wpsrUpgradeUrl } from '../../../utils/upgradeUrl';
 
 export default {
   name: 'UpgradeToProModal',
@@ -214,22 +215,47 @@ export default {
     },
 
     upgradeNow() {
-      const url = this.getBuyUrl();
-
-      // Track the click
-      if (this.hasActiveOffer) {
-        this.trackOfferClick(this.activeOffer.id, `upgrade_modal_${this.platform || 'default'}`);
-      }
-
-      window.open(url, '_blank');
+      // A live offer needs no separate click tracking: the URL already carries it
+      // as utm_id, alongside the placement in utm_content.
+      window.open(this.getBuyUrl(), '_blank');
     },
 
+    /**
+     * Resolve the upgrade URL, most specific placement first.
+     *
+     * Every URL here is built in PHP and already carries a utm_content naming the
+     * exact locked feature, so the order below decides how precisely the click is
+     * attributed. It is written out rather than routed through
+     * getPlatformSpecificConfig(), which silently falls back to the generic
+     * "general.default" bucket and would otherwise shadow the more specific
+     * platform promotion.
+     */
     getBuyUrl() {
-      // Priority: promotion URL > offer URL > config URL > default
-      return this.effectivePromotionInfo?.pro_purchase_url ||
-          this.getPlatformSpecificConfig('pro_purchase_url') ||
-             this.upgradeBtnConfig.pro_purchase_url ||
-             'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade';
+      // 1. The exact platform + feature the user just hit, e.g. instagram/shoppable.
+      if (this.platform && this.feature_type) {
+        const featureUrl = this.specificFeatureConfig?.[this.platform]?.[this.feature_type]?.pro_purchase_url;
+        if (featureUrl) {
+          return featureUrl;
+        }
+      }
+
+      // 2. A locked reviews platform, e.g. yelp.
+      if (this.platform) {
+        const platformPromotion = this.getPromotionForPlatform(this.platform);
+        if (platformPromotion?.pro_purchase_url) {
+          return platformPromotion.pro_purchase_url;
+        }
+      }
+
+      // 3. A caller-supplied promotion.
+      if (this.promotionInfo?.pro_purchase_url) {
+        return this.promotionInfo.pro_purchase_url;
+      }
+
+      // 4. Unnamed lock: still attributable, just less precisely.
+      return this.specificFeatureConfig?.pro_purchase_url ||
+             this.upgradeBtnConfig?.pro_purchase_url ||
+             wpsrUpgradeUrl('upgrade_page');
     }
   }
 }

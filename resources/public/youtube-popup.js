@@ -1,6 +1,73 @@
+import { wpsrInitInjectedContent } from './helper.js';
+
 let $ = jQuery;
 
 let videoId = null;
+
+function wpsrYtIframe(ytVideoId, iframeClass) {
+    return '<iframe class="' + iframeClass + '" src="https://www.youtube.com/embed/' + ytVideoId + '?autoplay=1&rel=0" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>';
+}
+
+// Latest request token + in-flight xhr per feed. Only one video plays per feed at a
+// time, so a newer selection must supersede any request still in flight — even one
+// targeting a different (now-cleared) inline slot — or its late callback would refill
+// that slot and start a hidden autoplaying player.
+const wpsrPlayerRequests = {};
+
+/**
+ * Fill a player slot with the clicked video.
+ *
+ * Only PHP can run the shortcode, so Fluent Player markup comes from the server.
+ *
+ * @param {jQuery} slot
+ * @param {number|string} templateId
+ * @param {string} ytVideoId
+ * @param {string} iframeClass
+ * @param {boolean} useFluentPlayer
+ * @param {number|string} duration video length in seconds, for "layers at end"
+ */
+function wpsrPlayVideo(slot, templateId, ytVideoId, iframeClass, useFluentPlayer, duration) {
+    let feed = wpsrPlayerRequests[templateId] || (wpsrPlayerRequests[templateId] = {token: 0, xhr: null});
+
+    // This selection supersedes any earlier one for the feed: bump the token so older
+    // callbacks bail, and abort the request they came from where one is still pending.
+    let requestToken = ++feed.token;
+    if (feed.xhr) {
+        feed.xhr.abort();
+        feed.xhr = null;
+    }
+
+    if (!useFluentPlayer) {
+        slot.html(wpsrYtIframe(ytVideoId, iframeClass));
+        return;
+    }
+
+    feed.xhr = $.post(wpsr_popup_params.ajax_url, {
+        action: 'wpsr_youtube_fluent_player',
+        videoId: ytVideoId,
+        templateId: templateId,
+        // Read off the clicked thumbnail so the server skips a per-click feed lookup.
+        duration: duration || 0,
+        security: wpsr_popup_params.wpsr_nonce
+    }).done(function (response) {
+        // A newer selection already replaced this one; its slot may be cleared.
+        if (requestToken !== feed.token) {
+            return;
+        }
+        feed.xhr = null;
+        slot.addClass('wpsr-fluent-player-slot').html(response.data.html);
+        wpsrInitInjectedContent(slot, templateId, 'yt');
+    }).fail(function (jqXHR, textStatus) {
+        // Ignore our own abort and any request a newer selection superseded.
+        if (textStatus === 'abort' || requestToken !== feed.token) {
+            return;
+        }
+        feed.xhr = null;
+        // Fluent Player became unavailable after this page was rendered.
+        slot.removeClass('wpsr-fluent-player-slot').html(wpsrYtIframe(ytVideoId, iframeClass));
+    });
+}
+
 export default {
     init: function (e, $this){
         this.checkFeedType(e, $this);
@@ -10,17 +77,22 @@ export default {
         let templateId = $(identifier).data('template_id');
         let feedId = $(identifier).data('index');
         let ytVideoId = $(identifier).data('videoid');
+        let duration = $(identifier).data('duration');
         videoId = ytVideoId;
         let parent = $('#wpsr-yt-feed-'+templateId);
+        let useFluentPlayer = parent.data('fluent_player') === true;
 
         if (playMode === 'popup') {
             this.openPopUpBox(e,identifier);
         } else if( playMode === 'gallery' ){
             e.preventDefault();
             let galleryModeSelector = parent.find('.wpsr-yt-video-player-gallery');
-            $(galleryModeSelector).html('<iframe src="https://www.youtube.com/embed/' + ytVideoId + '?autoplay=1&rel=0" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>');
+            wpsrPlayVideo(galleryModeSelector, templateId, ytVideoId, '', useFluentPlayer, duration);
+            // Templates 4 & 5 highlight the thumbnail whose video is in the gallery slot.
+            parent.find('.wpsr-yt-video').removeClass('wpsr-yt-gallery-active');
+            $(identifier).closest('.wpsr-yt-video').addClass('wpsr-yt-gallery-active');
             $('html, body').animate({
-                scrollTop: parent.find(".wpsr-yt-video-player-gallery").offset().top
+                scrollTop: galleryModeSelector.offset().top
             }, 500);
         } else if (playMode === 'youtube') {
             let watchUrl = 'https://www.youtube.com/watch?v=' + ytVideoId + '';
@@ -29,19 +101,29 @@ export default {
         } else {
             e.preventDefault();
             let inlineModeSelector = parent.find('#wpsr-video-play-' + feedId);
-            jQuery(inlineModeSelector).parents().find(".wpsr-yt-video").find(".wpsr-yt-inline-video-iframe").replaceWith("");
-            jQuery(inlineModeSelector).html('<iframe class="wpsr-yt-inline-video-iframe" src="https://www.youtube.com/embed/' + ytVideoId + '?autoplay=1&rel=0" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>');
-            jQuery(inlineModeSelector).parents().find(".wpsr-yt-video").removeClass('active');
-            jQuery(inlineModeSelector).parents(".wpsr-yt-video").addClass('active');
+            // Only one inline video plays at a time.
+            parent.find('.wpsr-yt-video-player').not(inlineModeSelector).empty().removeClass('wpsr-fluent-player-slot');
+            parent.find('.wpsr-yt-video').removeClass('active');
+            inlineModeSelector.parents('.wpsr-yt-video').addClass('active');
+            wpsrPlayVideo(inlineModeSelector, templateId, ytVideoId, 'wpsr-yt-inline-video-iframe', useFluentPlayer, duration);
         }
     },
+    /**
+     * Open the popup for one video
+     *
+     * The overlay is rebuilt on each open, so a stable slot key tears the last down.
+     *
+     * @param {Event} e
+     * @param {Element} identifier clicked thumbnail
+     */
     openPopUpBox(e, identifier) {
         let templateId = $(identifier).data('template_id');
         let feedId     = $(identifier).data('videoid');
         let data = {
             'action': 'wpsr_youtube_popup_feed',
             'feedId': feedId,
-            'templateId': templateId
+            'templateId': templateId,
+            'security': wpsr_popup_params.wpsr_nonce
         };
         $.ajax({
             url: wpsr_popup_params.ajax_url,
@@ -53,6 +135,8 @@ export default {
             success: function (data) {
 
                 $('body').append(data);
+
+                wpsrInitInjectedContent($("body > .wpsr-yt-popup-overlay").last(), templateId, 'popup');
 
                 if( $(".wpsr-yt-popup-video-meta-description").length !== 0 ) {
                     let ytContent = $(".wpsr-yt-popup-video-meta-description").html();

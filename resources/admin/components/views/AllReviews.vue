@@ -96,6 +96,12 @@
                     <span>{{ $t('Duplicate') }}</span>
                   </span>
                 </el-option>
+                <el-option :label="$t('Assign Category')" value="category">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><PriceTag /></el-icon>
+                    <span>{{ $t('Assign Category') }}</span>
+                  </span>
+                </el-option>
                 <el-option :label="$t('Delete')" value="delete">
                   <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
                     <el-icon><Delete /></el-icon>
@@ -104,6 +110,10 @@
                 </el-option>
               </el-select>
               <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
+              <el-button v-if="canManageCategories" @click="show_manage_categories_modal = true">
+                <el-icon class="wpsr-mr-5"><PriceTag /></el-icon>
+                {{ $t('Manage Categories') }}
+              </el-button>
             </div>
             <div class="wpsr-controls-filter">
               <el-select class="wpsr-select-field-primary" v-model="filter_value" :placeholder="$t('Select Platform')" size="small" clearable v-if="Object.entries(validPlatforms).length" @change="getItems" style="width: 220px;">
@@ -134,12 +144,13 @@
 
         <div v-if="bulkAction === 'delete'" class="wpsr-alert wpsr-alert-info wpsr-d-flex wpsr-flex-align-center wpsr-mt-15">
           <el-icon size="18" color="var(--wpsr-svg-secondary-color)"><InfoFilled /></el-icon>
-          <p>You can delete reviews from WooCommerce, Fluent Forms, and Custom Sources only. Reviews from other connected platforms are auto-synced, so deleting them will cause them to reappear. If you don’t want to show those reviews, simply disable them instead of deleting.</p>
+          <p>You can delete reviews from WooCommerce, Fluent Forms, Native Form, Fluent Cart, and Custom Sources only. Reviews from other connected platforms are auto-synced, so deleting them will cause them to reappear. If you don’t want to show those reviews, simply disable them instead of deleting.</p>
         </div>
         
       </div>
       <div class="wpsr-table-wrapper" v-loading.fullscreen.lock="duplicatingItem" element-loading-text="Please wait...">
         <el-table
+            ref="reviewsTable"
             class="wpsr-templates-table"
             :data="items"
             @selection-change="handleSelectionChange"
@@ -192,6 +203,24 @@
           <el-table-column :label="$t('Rating')" width="80">
             <template #default="scope">
              <span class="wpsr-rating">{{ scope.row.rating }}</span>
+            </template>
+          </el-table-column>
+
+          <el-table-column :label="$t('Categories')" min-width="140">
+            <template #default="scope">
+              <div v-if="scope.row.categories && scope.row.categories.length" class="wpsr-d-flex wpsr-gap-4" style="flex-wrap: wrap;">
+                <el-tag
+                    v-for="category in scope.row.categories"
+                    :key="category.id"
+                    size="small"
+                    closable
+                    disable-transitions
+                    @close="removeCategoryFromReview(scope.row, category)"
+                >
+                  {{ category.name }}
+                </el-tag>
+              </div>
+              <span v-else>-</span>
             </template>
           </el-table-column>
 
@@ -250,7 +279,7 @@
                       <el-icon><CircleCheck /></el-icon> {{ $t('Not Spam') }}
                     </el-dropdown-item>
 
-                    <div v-if="(appVars.platforms_cards && appVars.platforms_cards.every(card => card.platform !== scope.row.platform_name)) || (scope.row.platform_name === 'woocommerce' || scope.row.platform_name === 'custom')">
+                    <div v-if="(appVars.platforms_cards && appVars.platforms_cards.every(card => card.platform !== scope.row.platform_name)) || (scope.row.platform_name === 'fluent-cart' || scope.row.platform_name === 'woocommerce' || scope.row.platform_name === 'custom')">
                       <el-dropdown-item command="edit">
                         <el-icon><Edit /></el-icon> Edit
                       </el-dropdown-item>
@@ -367,6 +396,8 @@
     <el-dialog
         class="wpsr-confirmation-modal"
         v-model="show_delete_modal"
+        :close-on-click-modal="!loading"
+        :show-close="!loading"
         width="40%">
       <div class="wpsr-delete-content">
         <h4 v-if="isBulkDelete">Are you sure, you want to delete {{ selectedItems.length }} review(s)?</h4>
@@ -385,8 +416,8 @@
       </div>
       <template #footer>
         <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-          <el-button class="wpsr_default_btn" @click="show_delete_modal = false">Cancel</el-button>
-          <el-button class="wpsr_primary_btn" type="danger" @click="deleteItems()">Confirm</el-button>
+          <el-button class="wpsr_default_btn" :disabled="loading" @click="show_delete_modal = false">Cancel</el-button>
+          <el-button class="wpsr_primary_btn" type="danger" :loading="loading" @click="deleteItems()">Confirm</el-button>
         </div>
       </template>
     </el-dialog>
@@ -395,6 +426,8 @@
     <el-dialog
         class="wpsr-confirmation-modal"
         v-model="show_duplicate_modal"
+        :close-on-click-modal="!loading"
+        :show-close="!loading"
         width="40%">
       <div class="wpsr-delete-content">
         <h4>Are you sure, you want to duplicate {{ selectedItems.length }} review(s)?</h4>
@@ -407,8 +440,8 @@
       </div>
       <template #footer>
         <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-          <el-button class="wpsr_default_btn" @click="show_duplicate_modal = false">Cancel</el-button>
-          <el-button class="wpsr_primary_btn" type="primary" @click="performDuplicate()">Confirm</el-button>
+          <el-button class="wpsr_default_btn" :disabled="loading" @click="show_duplicate_modal = false">Cancel</el-button>
+          <el-button class="wpsr_primary_btn" type="primary" :loading="loading" @click="performDuplicate()">Confirm</el-button>
         </div>
       </template>
     </el-dialog>
@@ -417,6 +450,8 @@
     <el-dialog
         class="wpsr-confirmation-modal"
         v-model="show_status_modal"
+        :close-on-click-modal="!loading"
+        :show-close="!loading"
         width="40%">
       <div class="wpsr-delete-content">
         <h4>Are you sure, you want to {{ bulkAction }} {{ selectedItems.length }} review(s)?</h4>
@@ -430,11 +465,35 @@
       </div>
       <template #footer>
         <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-          <el-button class="wpsr_default_btn" @click="show_status_modal = false">Cancel</el-button>
-          <el-button class="wpsr_primary_btn" @click="performStatusUpdate()">Confirm</el-button>
+          <el-button class="wpsr_default_btn" :disabled="loading" @click="show_status_modal = false">Cancel</el-button>
+          <el-button class="wpsr_primary_btn" :loading="loading" @click="performStatusUpdate()">Confirm</el-button>
         </div>
       </template>
     </el-dialog>
+
+    <!--Bulk Assign/Remove Category Modal-->
+    <BulkCategoryModal
+        v-model="show_category_modal"
+        :categories="categories"
+        :selected-count="selectedItems.length"
+        :applying="applyingBulkCategory"
+        :loading="categoriesLoading"
+        :load-error="categoriesLoadError"
+        @submit="applyBulkCategory"
+        @retry="loadCategories"
+    />
+
+    <!--Browse/Rename/Delete Categories Modal-->
+    <ManageCategoriesModal
+        v-model="show_manage_categories_modal"
+        :categories="categories"
+        :loading="categoriesLoading"
+        :loaded="categoriesLoaded"
+        :load-error="categoriesLoadError"
+        :route-prefix="categoryRoutePrefix"
+        @categories-changed="onCategoriesChanged"
+        @retry="loadCategories"
+    />
   </div>
   <PermissionsNotification v-if="!hasPermission(['wpsn_manage_reviews', 'wpsn_full_access'])" />
   </div>
@@ -444,15 +503,19 @@
 import ReviewForm from './ReviewForm.vue';
 import {tableMixin} from "../../mixins/tableMixin";
 import PermissionsNotification from "./advertise/PermissionsNotification.vue";
-import { Search, Edit, Delete, DocumentCopy, MoreFilled, WarningFilled, InfoFilled, CircleCheck, CircleClose } from '@element-plus/icons-vue';
+import { Search, Edit, Delete, DocumentCopy, MoreFilled, WarningFilled, InfoFilled, CircleCheck, CircleClose, PriceTag } from '@element-plus/icons-vue';
 import ReviewsEmptyStates from "../pieces/icons/ReviewsEmptyStates.vue";
 import ReviewContentModal from "../pieces/ReviewContentModal.vue";
 import UpgradeToProModal from './advertise/UpgradeToProModal.vue';
 import ProCrownIcon from "../pieces/icons/ProCrownIcon.vue";
+import BulkCategoryModal from "../pieces/BulkCategoryModal.vue";
+import ManageCategoriesModal from "../pieces/ManageCategoriesModal.vue";
 import { PlatformIconMixin } from '../../mixins/PlatformIconMixin';
+import { reviewCategoryMixin } from '../../mixins/reviewCategoryMixin';
+import { wpsrCanBulkDeleteReview, wpsrFilterBulkDeleteReviews } from '../../utils/reviewBulkSelection';
 export default {
   name: 'AllReviews',
-  mixins: [tableMixin, PlatformIconMixin],
+  mixins: [tableMixin, PlatformIconMixin, reviewCategoryMixin],
   data() {
     return {
       actionType: 'review',
@@ -475,6 +538,7 @@ export default {
       selectedItems: [],
       bulkAction: '',
       isBulkDelete: false,
+      hasPlatformReviewsSelected: false,
       show_duplicate_modal: false,
       isBulkDuplicate: false,
       show_status_modal: false,
@@ -483,6 +547,9 @@ export default {
   },
   components: {
     ProCrownIcon,
+    PriceTag,
+    BulkCategoryModal,
+    ManageCategoriesModal,
     ReviewContentModal,
     ReviewsEmptyStates,
     PermissionsNotification,
@@ -497,34 +564,38 @@ export default {
     UpgradeToProModal
   },
   methods: {
-    handleSelectionChange(selection) {
-      // Check if any platform reviews are selected
-      const platformReviews = selection.filter(item => 
-        item.platform_name !== 'custom' && 
-        item.platform_name !== 'fluent_forms' && 
-        item.platform_name !== 'woocommerce'
-      );
-      
-      if (platformReviews.length > 0) {
-        // Show warning and auto-deselect platform reviews
-        this.hasPlatformReviewsSelected = true;
-        
-        // Filter out platform reviews, keep only custom reviews
-        this.selectedItems = selection.filter(item => 
-          item.platform_name === 'custom' || 
-          item.platform_name === 'fluent_forms' || 
-          item.platform_name === 'woocommerce'
-        );
-        
-        // Update the table selection to reflect the filtered items
-        this.$nextTick(() => {
-          this.$refs.reviewsTable?.clearSelection();
-          this.$refs.reviewsTable?.toggleRowSelection(this.selectedItems, true);
+    syncReviewTableSelection(wpsrSelectedItems) {
+      this.$nextTick(() => {
+        const wpsrReviewsTable = this.$refs.reviewsTable;
+
+        if (!wpsrReviewsTable) {
+          return;
+        }
+
+        wpsrReviewsTable.clearSelection();
+        wpsrSelectedItems.forEach(wpsrItem => {
+          wpsrReviewsTable.toggleRowSelection(wpsrItem, true);
         });
-      } else {
-        this.hasPlatformReviewsSelected = false;
-        this.selectedItems = selection;
+      });
+    },
+    filterBulkDeleteSelection(wpsrSelection) {
+      const wpsrSelectedItems = Array.isArray(wpsrSelection) ? wpsrSelection : [];
+      const wpsrDeleteItems = wpsrFilterBulkDeleteReviews(wpsrSelectedItems);
+      this.hasPlatformReviewsSelected = wpsrDeleteItems.length !== wpsrSelectedItems.length;
+      this.selectedItems = wpsrDeleteItems;
+
+      if (this.hasPlatformReviewsSelected) {
+        this.syncReviewTableSelection(wpsrDeleteItems);
       }
+    },
+    handleSelectionChange(selection) {
+      if (this.bulkAction === 'delete') {
+        this.filterBulkDeleteSelection(selection);
+        return;
+      }
+
+      this.hasPlatformReviewsSelected = false;
+      this.selectedItems = selection;
     },
     handleRowAction(command, row) {
       switch(command) {
@@ -592,11 +663,7 @@ export default {
     },
     isRowSelectable(row) {
       if (this.bulkAction === 'delete') {
-        return row.platform_name === 'custom' ||
-               row.platform_name === 'fluent_forms' ||
-               row.platform_name === 'testimonial' ||
-               row.platform_name === 'woocommerce' ||
-               row.platform_name === 'native_form';
+        return wpsrCanBulkDeleteReview(row);
       }
       return true;
     },
@@ -611,25 +678,18 @@ export default {
         return;
       }
 
-      // Custom logic for AllReviews: Filter out platform reviews for delete action
+      // Custom logic for AllReviews: filter out platform reviews for delete action.
       if (this.bulkAction === 'delete') {
-        const platformReviews = this.selectedItems.filter(item => 
-          item.platform_name !== 'custom' && 
-          item.platform_name !== 'fluent_forms' && 
-          item.platform_name !== 'woocommerce'
-        );
+        const wpsrDeleteItems = wpsrFilterBulkDeleteReviews(this.selectedItems);
 
-        if (platformReviews.length > 0) {
-          this.selectedItems = this.selectedItems.filter(item => 
-            item.platform_name === 'custom' || 
-            item.platform_name === 'fluent_forms' || 
-            item.platform_name !== 'woocommerce'
-          );
-          
-          this.$nextTick(() => {
-            this.$refs.reviewsTable?.clearSelection();
-            this.$refs.reviewsTable?.toggleRowSelection(this.selectedItems, true);
-          });
+        if (wpsrDeleteItems.length !== this.selectedItems.length) {
+          this.selectedItems = wpsrDeleteItems;
+          this.syncReviewTableSelection(wpsrDeleteItems);
+        }
+
+        if (!this.selectedItems.length) {
+          this.$notify.warning('Please select reviews from Custom Sources, Fluent Forms, or WooCommerce to delete');
+          return;
         }
       }
 
@@ -651,39 +711,27 @@ export default {
         case 'not-spam':
           this.bulkMarkAsNotSpam();
           break;
+        case 'category':
+          this.openBulkCategoryModal();
+          break;
         default:
           this.$notify.warning('Selected action is not supported yet');
       }
-    }
+    },
   },
   watch: {
     bulkAction(newAction) {
       if (newAction === 'delete') {
-        this.$nextTick(() => {
-          const platformReviews = this.selectedItems.filter(item => 
-            item.platform_name !== 'custom' && 
-            item.platform_name !== 'fluent_forms' && 
-            item.platform_name !== 'testimonial'
-          );
-          
-          if (platformReviews.length > 0) {
-            this.selectedItems = this.selectedItems.filter(item => 
-              item.platform_name === 'custom' || 
-              item.platform_name === 'fluent_forms' || 
-              item.platform_name === 'testimonial'
-            );
-            
-            this.$nextTick(() => {
-              this.$refs.reviewsTable?.clearSelection();
-              this.$refs.reviewsTable?.toggleRowSelection(this.selectedItems, true);
-            });
-          }
-        });
+        this.filterBulkDeleteSelection(this.selectedItems);
+        return;
       }
+
+      this.hasPlatformReviewsSelected = false;
     }
   },
   mounted() {
     this.getAll('reviews', { order_by: 'review_time'});
+    this.loadCategories();
     let platforms = window.WPSocialReviewsAdmin.platforms_cards;
     this.platform = platforms.find(p => p.platform === 'custom');
   }

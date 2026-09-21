@@ -12,16 +12,20 @@
 <script type="text/babel">
 import ProCrownIcon from '../../pieces/icons/ProCrownIcon';
 import PartyIcon from '../../pieces/icons/PartyIcon';
+import { wpsrUpgradeUrl } from '../../../utils/upgradeUrl';
+
 export default {
-  name: 'UpgradeToProButton',
+  name: 'UpgradeToProBanner',
   components: {
     ProCrownIcon,
     PartyIcon
   },
-  props: ['classes'],
-  data(){
-    return{
-
+  props: {
+    // Rendered inside several different editor panels, so the caller names the
+    // locked feature it is promoting.
+    placement: {
+      type: String,
+      default: 'upgrade_page'
     }
   },
   computed: {
@@ -32,7 +36,7 @@ export default {
       return this.upgradeBtnConfig.text || 'Upgrade Now';
     },
     upgradeButtonUrl() {
-      return this.upgradeBtnConfig.pro_purchase_url || 'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade';
+      return wpsrUpgradeUrl(this.placement);
     }
   },
   methods: {

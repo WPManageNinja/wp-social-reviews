@@ -97,7 +97,36 @@
           gap: 8px;
           margin-bottom: 8px;
           font-size: 14px;
-          
+
+          &.wpsr-clickable-rating-bar {
+            cursor: pointer;
+            border-radius: 4px;
+            padding: 2px 4px;
+            margin-left: -4px;
+            margin-right: -4px;
+            transition: opacity 0.2s ease;
+
+            &:hover,
+            &:active {
+              opacity: 0.6;
+            }
+
+            &:focus-visible {
+              outline: 2px solid #4284f3;
+              outline-offset: 2px;
+            }
+          }
+
+          &.wpsr-disabled-rating-bar {
+            cursor: not-allowed;
+            opacity: 0.8;
+            pointer-events: none;
+          }
+
+          &.wpsr-active-progressbar-filter {
+            opacity: 0.6;
+          }
+
           .wpsr-reviews-header-template-2-star-label {
             width: 120px;
             text-align: right;

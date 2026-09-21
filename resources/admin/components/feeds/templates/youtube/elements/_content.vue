@@ -1,6 +1,6 @@
 <template>
     <div>
-        <p class="wpsr-yt-video-description" v-if="display_description === 'true' ">
+        <p class="wpsr-yt-video-description" v-if="display_description === 'true' && feed.snippet.description">
             {{ $excerpt( feed.snippet.description ) }}
         </p>
     </div>

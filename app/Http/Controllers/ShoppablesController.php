@@ -2,7 +2,7 @@
 
 namespace WPSocialReviews\App\Http\Controllers;
 
-use WPSocialReviews\Framework\Request\Request;
+use WPSocialReviews\Framework\Http\Request\Request;
 use WPSocialReviews\App\Services\Helper as GlobalHelper;
 use WPSocialReviews\Framework\Support\Arr;
 
@@ -58,11 +58,8 @@ class ShoppablesController extends Controller
     {
         $settingsPayload = $request->get('settings');
 
-        // if payload is JSON string -> unslash and decode
         if (is_string($settingsPayload)) {
-            $settingsPayload = wp_unslash($settingsPayload);
-            $decoded = json_decode($settingsPayload, true);
-            $settingsPayload = is_array($decoded) ? $decoded : [];
+            $settingsPayload = $this->decodeJsonParam($settingsPayload) ?: [];
         }
 
         $validate_rules = ['hashtags' => 'required'];
@@ -90,10 +87,13 @@ class ShoppablesController extends Controller
         $settingsPayload = $request->get('settings');
 
         if (is_string($settingsPayload)) {
-            $settingsPayload = wp_unslash($settingsPayload);
-            $decoded = json_decode($settingsPayload, true);
-            $settingsPayload = is_array($decoded) ? $decoded : [];
+            $settingsPayload = $this->decodeJsonParam($settingsPayload) ?: [];
         }
+
+        // The surviving entries are a client-supplied replacement for the whole option,
+        // so they need the same sanitizer update() applies. No required-field rules:
+        // this endpoint removes entries and must not start rejecting stored shapes.
+        $settingsPayload = $this->recursive_sanitize($settingsPayload);
 
         update_option('wpsr_global_shoppable_settings', $settingsPayload);
         return [
@@ -104,7 +104,7 @@ class ShoppablesController extends Controller
     public function storeTemplateSettings(Request $request, $postId)
     {
         $postId = intval($postId);
-        $platform = sanitize_text_field($request->get('platform', ''));
+        $platform = sanitize_key($request->get('platform', ''));
 
         $json_data = $request->get('shoppable_fields');
         $raw_data  = json_decode($json_data, true);

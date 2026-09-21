@@ -146,7 +146,7 @@
             <template #title="{ isActive}">
                 <EditorCollapsiblePanel :isActive="isActive" iconKey="follow_button" :label="$t('Follow Button')"/>
             </template>
-            <UpgradeToProBanner />
+            <UpgradeToProBanner placement="feature_lock_tiktok_editor" />
             <FeedEditorGroup v-if="feed_config"
                 :fieldsMaps="follow_button_settings"
                 :modelValue="feed_config.follow_button_settings"
@@ -274,7 +274,7 @@ export default {
                     placeholder: this.$t('Type something and press enter....'),
                     disabled: !this.has_pro,
                     tooltip: true,
-                    tooltipText: this.$t("You can use this setting to show posts that contain certain specific words or hashtags in the caption. <br/> Separate multiple words or hashtags using commas. ex: #hashtag1,word1,word2,#hashtag2"),
+                    tooltipText: this.$t('You can use this setting to show posts that contain certain specific words or hashtags in the caption.') + '<br>' + this.$t('Separate multiple words or hashtags using commas. ex: #hashtag1,word1,word2,#hashtag2') + '<br>' + this.$t('TikTok returns only the first 150 characters of a caption, so words or hashtags beyond that point cannot be matched.'),
                 },
                 {
                     fieldKey: 'excludes_inputs',
@@ -283,7 +283,7 @@ export default {
                     placeholder: this.$t('Type something and press enter....'),
                     disabled: !this.has_pro,
                     tooltip: true,
-                    tooltipText: this.$t('You can use this setting to hiding posts that contain certain specific words or hashtags in the caption. <br/> Separate multiple words or hashtags using commas. ex: #hashtag1,word1,#hashtag2,word2')
+                    tooltipText: this.$t('You can use this setting to hide posts that contain certain specific words or hashtags in the caption.') + '<br>' + this.$t('Separate multiple words or hashtags using commas. ex: #hashtag1,word1,#hashtag2,word2') + '<br>' + this.$t('TikTok returns only the first 150 characters of a caption, so words or hashtags beyond that point cannot be matched.')
                 },
                 {
                     fieldKey: 'hide_posts_by_id',
@@ -293,7 +293,7 @@ export default {
                     disabled: !this.has_pro,
                     autosize: {minRows: 2, maxRows: 4},
                     tooltip: true,
-                    tooltipText: this.$t('You can find the ID of a Post by viewing the post on TikTok and copy/pasting the ID number from the end of the URL </br> ex: https://www.tiktok.com/@exampleuser/video/7293160505676533024 [ in this URL ID is "7293160505676533024" ]')
+                    tooltipText: this.$t('You can find the post ID by viewing the post on TikTok and copying the ID number from the end of the URL.') + '<br>ex: https://www.tiktok.com/@exampleuser/video/7293160505676533024'
                 }
             ],
             source_settings: [
@@ -328,7 +328,7 @@ export default {
               //   title: this.$t('Video ID '),
               //   placeholder: this.$t('Enter your video id using comma separator'),
               //   tooltip: true,
-              //   tooltipText: this.$t('Enter any video ID to display specific TikTok videos. Separate multiple video ID\'s with comma. <br> You can find the ID of your TikTok video from the URL. <br> ex: "https://www.tiktok.com/@yourusername/video/7231522355498044673" copy the ID after "video/" and <br> the ID will look like "7231522355498044673"'),
+              //   tooltipText: this.$t('Enter any video ID to display specific TikTok videos. Separate multiple video IDs with commas.') + '<br>' + this.$t('You can find the ID of your TikTok video from the URL.') + '<br>ex: https://www.tiktok.com/@yourusername/video/7231522355498044673 — copy the ID after "video/"',
               //   condition: {
               //     'key': 'feed_type',
               //     'selector': 'single_video_feed'
@@ -362,7 +362,7 @@ export default {
                         }
                     ],
                     tooltip: true,
-                    tooltipText: this.$t('The Load More button will only display on your site\'s preview/live pages/posts <br> not while you\'re in editing mode in the WordPress Editor.')
+                    tooltipText: this.$t("The Load More button will only display on your site's preview/live pages/posts.") + "<br>" + this.$t("It will not display while you are in editing mode in the WordPress Editor.")
                 },
                 {
                     fieldKey: 'load_more_button_text',
@@ -395,6 +395,21 @@ export default {
                 pro: []
             },
             header_settings: [
+                {
+                    fieldKey: 'header_layout',
+                    type: 'select',
+                    title: this.$t('Header Layout'),
+                    options: [
+                        {
+                            value: 'classic',
+                            label: this.$t('Classic')
+                        },
+                        {
+                            value: 'minimal',
+                            label: this.$t('Minimal')
+                        }
+                    ]
+                },
                 {
                     fieldKey: 'display_profile_photo',
                     type: 'switch',
@@ -856,7 +871,14 @@ export default {
                         'operator': '!=',
                         'selector': 'album_feed'
                     },
-                    options: [
+                    // template4 (Spotlight Hero) only supports Grid, masonry/slider can't render the hero
+                    options: this.feed_config.template === 'template4' ? [
+                        {
+                            key: 'grid',
+                            title: this.$t('Grid'),
+                            img: this.assets_url + '/images/template/global-template/grid.png',
+                        },
+                    ] : [
                         {
                             key: 'grid',
                             title: this.$t('Grid'),
@@ -882,13 +904,25 @@ export default {
                     options: [
                         {
                             key: 'template1',
-                            title: 'Template 1',
+                            title: this.$t('Classic Tile'),
                             img: this.assets_url + '/images/template/tiktok-template/template1.png'
                         },
                         {
                             key: 'template2',
-                            title: 'Template 2',
+                            title: this.$t('Caption Card'),
                             img: this.assets_url + '/images/template/tiktok-template/template1.png',
+                            pro: !this.has_pro,
+                        },
+                        {
+                            key: 'template3',
+                            title: this.$t('Overlay Card'),
+                            img: this.assets_url + '/images/template/tiktok-template/template3.png',
+                            pro: !this.has_pro,
+                        },
+                        {
+                            key: 'template4',
+                            title: this.$t('Spotlight Hero'),
+                            img: this.assets_url + '/images/template/tiktok-template/template4.png',
                             pro: !this.has_pro,
                         },
                     ]
@@ -907,11 +941,19 @@ export default {
                     type: 'select',
                     title: this.$t('Number of Columns'),
                     responsive: true,
-                    condition: {
-                        'key': 'layout_type',
-                        'operator': 'Arr',
-                        'selector': ['grid', 'masonry']
-                    },
+                    // template4 (Spotlight Hero) drives its own responsive grid
+                    condition: [
+                        {
+                            'key': 'layout_type',
+                            'operator': 'Arr',
+                            'selector': ['grid', 'masonry']
+                        },
+                        {
+                            'key': 'template',
+                            'operator': '!=',
+                            'selector': 'template4'
+                        }
+                    ],
                     options: [
                         {
                             value: '12',

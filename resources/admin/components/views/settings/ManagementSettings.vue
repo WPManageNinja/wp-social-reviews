@@ -215,7 +215,7 @@
         <div class="wpsr-managers-upgrade-message">
           <h2>WPSN Managers - Roles and Permissions</h2>
           <p class="wpsr-mb-10">Amplify your WP Social Ninja experience by effortlessly adding new users to your plugin dashboard. For example, User X accesses only the reviews section, and User Y seamlessly manages the testimonial module.</p>
-          <UpgradeToProButton/>
+          <UpgradeToProButton placement="feature_lock_managers"/>
         </div>
       </div>
     </div>

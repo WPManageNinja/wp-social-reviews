@@ -14,11 +14,22 @@ if(empty($wpsr_channels)) {
 $wpsr_template = Arr::get($settings, 'template', '');
 $wpsr_image_url = chatHelper::getImageUrl($settings);
 $wpsr_prefilled_platforms = chatHelper::getPrefilledPlatform();
+$wpsr_message_context_data = chatHelper::getMessageContextData($settings);
+$wpsr_message_context = Arr::get($wpsr_message_context_data, 'context');
+$wpsr_message_context_format = Arr::get($wpsr_message_context_data, 'format');
+$wpsr_page_message_format = Arr::get($wpsr_message_context_data, 'page_format');
+$wpsr_product_context_info = Arr::get($wpsr_message_context_data, 'product_json');
+$wpsr_has_message_context = $wpsr_message_context !== 'none';
 ?>
 <?php foreach ($wpsr_channels as $wpsr_key => $wpsr_channel) {
-    $wpsr_is_url = chatHelper::isUrl($wpsr_channel['credential']);
-    
-    $wpsr_credential = $wpsr_is_url ? $wpsr_channel['credential'] : $wpsr_channel['webUrl'] . $wpsr_channel['credential'];
+    $wpsr_channel_name = Arr::get($wpsr_channel, 'name', '');
+    if ($wpsr_channel_name === 'fluent_forms') {
+        $wpsr_credential = chatHelper::getFluentFormsShortcode(Arr::get($wpsr_channel, 'credential', ''));
+    } else {
+        $wpsr_is_url = chatHelper::isUrl($wpsr_channel['credential']);
+        $wpsr_credential = $wpsr_is_url ? $wpsr_channel['credential'] : $wpsr_channel['webUrl'] . $wpsr_channel['credential'];
+        $wpsr_credential = chatHelper::sanitizeChannelUrl($wpsr_credential, $wpsr_channel_name);
+    }
     $wpsr_image_url = count($settings['channels']) > 1 ? WPSOCIALREVIEWS_URL . 'assets/images/svg/' . $wpsr_channel['name'] . '.svg' : $wpsr_image_url;
     $wpsr_is_prefilled_supported = in_array($wpsr_channel['name'], $wpsr_prefilled_platforms);
     $wpsr_has_prefilled = ($wpsr_is_prefilled_supported && isset($settings['chat_button']['prefilled_message']) && $settings['chat_button']['prefilled_message'] === 'true') ? true : false;
@@ -36,10 +47,10 @@ $wpsr_prefilled_platforms = chatHelper::getPrefilledPlatform();
         <?php } ?>
 
         <?php
-            if(strpos($wpsr_credential, 'fluentform_modal')){
+            if(chatHelper::isFluentFormsModalShortcode($wpsr_credential)){
                 echo do_shortcode($wpsr_credential);
             }
-            if(!strpos($wpsr_credential, 'fluentform_modal')){
+            if(!chatHelper::isFluentFormsModalShortcode($wpsr_credential)){
                 if(strpos($wpsr_credential, 'mailto') !== false || strpos($wpsr_credential, 'tel') !== false || strpos($wpsr_credential, '?users=') !== false){
                     $wpsr_credential = chatHelper::encodeCredentials($wpsr_credential);
                 }
@@ -53,6 +64,13 @@ $wpsr_prefilled_platforms = chatHelper::getPrefilledPlatform();
            data-form-id="<?php echo esc_attr($wpsr_credential); ?>"
            data-number="<?php echo esc_attr($wpsr_channel['credential']); ?>"
            data-prefilled="<?php echo esc_attr($wpsr_has_prefilled); ?>"
+           data-message-context="<?php echo esc_attr($wpsr_message_context); ?>"
+           <?php if ($wpsr_has_message_context) { ?>
+           data-message-context-format="<?php echo esc_attr($wpsr_message_context_format); ?>"
+           data-page-message-format="<?php echo esc_attr($wpsr_page_message_format); ?>"
+           data-product-context-info="<?php echo esc_attr($wpsr_product_context_info); ?>"
+           data-woocommerce-product-info="<?php echo esc_attr($wpsr_product_context_info); ?>"
+           <?php } ?>
            data-all-ff-ids="<?php echo esc_attr(implode(',', array_column($wpsr_channels, 'credential'))); ?>"
            style="background-color:<?php echo esc_attr(Arr::get($settings, 'styles.channel_icon_bg_color', '')); ?>"
            class="wpsr-channel-btn <?php echo esc_attr($wpsr_channel['name']); ?> <?php echo esc_attr($wpsr_channel['name'].$wpsr_key); ?>"

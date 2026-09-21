@@ -5,7 +5,7 @@ namespace WPSocialReviews\App\Services\Platforms\Feeds;
 use WPSocialReviews\App\Models\Cache;
 use WPSocialReviews\App\Services\Platforms\PlatformManager;
 use WPSocialReviews\Framework\Support\Arr;
-use WPSocialReviews\Framework\Database\Orm\DateTime;
+use WPSocialReviews\Framework\Support\DateTime;
 use WPSocialReviews\App\Services\Helper;
 
 class CacheHandler
@@ -33,7 +33,7 @@ class CacheHandler
 	 * @param string $transientName transient name
 	 * @param string|array $data           data
 	 *
-	 * @throws /Exception
+	 * @throws \Exception
 	 * @since  1.2.5
 	 */
 	public function createCache($transientName, $data)
@@ -76,7 +76,7 @@ class CacheHandler
 
 	/**
 	 * Clear Cache
-	 * @throws /Exception
+	 * @throws \Exception
 	 * @since  1.1.0
 	 */
 	public function clearCache()
@@ -156,13 +156,13 @@ class CacheHandler
             $templateConfig = json_decode($encodedMeta, true);
 
             if (!$templateConfig) {
-                throw new \Exception(__('Template configuration not found.', 'wp-social-reviews'));
+                throw new \Exception(esc_html__('Template configuration not found.', 'wp-social-reviews'));
             }
 
             $accountIds = (new PlatformManager())->getAccountIdsFromTemplate($platform, $templateConfig, $templateId);
 
             if (empty($accountIds)) {
-                throw new \Exception(__('No connected accounts found for this template.', 'wp-social-reviews'));
+                throw new \Exception(esc_html__('No connected accounts found for this template.', 'wp-social-reviews'));
             }
 
             // Clear cache for each account

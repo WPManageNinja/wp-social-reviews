@@ -1,5 +1,7 @@
 @import './header.scss';
 @import './common.scss';
+// After ./common.scss so the minimal layout's button rules win over the classic ones.
+@import './header-layout-minimal.scss';
 @import './popup.scss';
 
 .wpsr-fb-feed-reactions-icon-like {

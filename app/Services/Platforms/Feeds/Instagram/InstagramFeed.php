@@ -23,6 +23,7 @@ if (!defined('ABSPATH')) {
 class InstagramFeed extends BaseFeed
 {
     public $platform = 'instagram';
+    protected $authProvider = 'instagram';
 
     protected $cacheHandler;
 
@@ -47,6 +48,115 @@ class InstagramFeed extends BaseFeed
         add_action('wpsr_instagram_send_email_report', array($this, 'maybeSendFeedIssueEmail'));
     }
 
+    protected function persistAuthResult($result)
+    {
+        if (!Arr::get($result, 'ok')) {
+            return $result;
+        }
+
+        $platform = Arr::get($result, 'platform', '');
+        if ($platform !== $this->platform) {
+            throw new \RuntimeException(esc_html__('Invalid auth platform response.', 'wp-social-reviews'));
+        }
+
+        $flow        = Arr::get($result, 'flow', 'business_basic');
+        $flowAliases = ['advanced' => 'business', 'basic' => 'business_basic'];
+        $flow        = isset($flowAliases[$flow]) ? $flowAliases[$flow] : $flow;
+
+        $token       = Arr::get($result, 'token', []);
+        $accessToken = Arr::get($token, 'access_token', '');
+
+        if (!$accessToken) {
+            throw new \RuntimeException(esc_html__('Instagram access token is missing.', 'wp-social-reviews'));
+        }
+
+        if ($flow === 'business') {
+            return $this->persistBusinessAuth($result, $accessToken);
+        }
+
+        return $this->persistBusinessBasicAuth($result, $accessToken, $token);
+    }
+
+    private function persistBusinessBasicAuth($result, $accessToken, $token)
+    {
+        $args = [
+            'api_type'         => 'business_basic',
+            'credentials_type' => 'business_basic',
+            'access_token'     => $accessToken,
+            'expires_in'       => Arr::get($token, 'expires_in', ''),
+            'selectedAccounts' => [],
+        ];
+
+        $apiUrl   = $this->getHeaderApiUrl($args, 'verification_header');
+        $response = (new Common())->makeRequest($apiUrl);
+
+        if (is_wp_error($response) || (new Common())->instagramError($response)) {
+            throw new \RuntimeException(esc_html($this->getErrorMessage($response)));
+        }
+
+        if (!isset($response['username']) || !isset($response['user_id'])) {
+            throw new \RuntimeException(esc_html__('Could not retrieve Instagram account details.', 'wp-social-reviews'));
+        }
+
+        $accountArgs = $this->setBusinessBasicAccount($response, $args);
+        $this->updateVerificationConfigs($accountArgs);
+        $this->setGlobalSettings();
+
+        foreach ($accountArgs as $account) {
+            $userId = Arr::get($account, 'user_id');
+            if ($userId) {
+                $this->clearFeedCache($userId);
+            }
+        }
+
+        $result['platform'] = $this->platform;
+        $result['flow']     = 'business_basic';
+        $result['account']  = [
+            'user_id'  => Arr::get($response, 'user_id', ''),
+            'username' => Arr::get($response, 'username', ''),
+            'api_type' => 'business_basic',
+        ];
+
+        return $result;
+    }
+
+    private function persistBusinessAuth($result, $accessToken)
+    {
+        $fbUrl    = 'https://graph.facebook.com/me/accounts?fields=instagram_business_account,access_token&limit=500&access_token=' . $accessToken;
+        $response = (new Common())->makeRequest($fbUrl);
+
+        if (is_wp_error($response)) {
+            throw new \RuntimeException(esc_html($response->get_error_message()));
+        }
+
+        $businessAccounts = $this->setAuthorizedBusinessAccount($response);
+
+        $result['platform']          = $this->platform;
+        $result['flow']              = 'business';
+        $result['business_accounts'] = $businessAccounts;
+
+        return $result;
+    }
+
+    protected function formatAuthResultForResponse($result)
+    {
+        if (Arr::get($result, 'flow') === 'business') {
+            return [
+                'ok'               => true,
+                'platform'         => $this->platform,
+                'flow'             => 'business',
+                'business_accounts' => Arr::get($result, 'business_accounts', []),
+            ];
+        }
+
+        return [
+            'ok'      => true,
+            'platform' => $this->platform,
+            'flow'    => Arr::get($result, 'flow', 'business_basic'),
+            'account' => Arr::get($result, 'account', []),
+        ];
+    }
+
     public function pushValidPlatform($platforms)
     {
         $isActive = get_option('wpsr_'.$this->platform.'_verification_configs');
@@ -60,7 +170,7 @@ class InstagramFeed extends BaseFeed
     /**
      * Manual access token handler
      *
-     * @return json
+     * @return void
      * @since 1.3.0
      */
     public function handleCredential($args = [])
@@ -94,6 +204,9 @@ class InstagramFeed extends BaseFeed
 
             if (!is_wp_error($response) && !(new Common())->instagramError($response) && sizeof($args['selectedAccounts']) === 0 && $args['api_type'] === 'business' && $args['credentials_type'] !== 'manually'){
                 $this->setAuthorizedBusinessAccount($response);
+                wp_send_json_success([
+                    'message' => __('You are successfully verified.', 'wp-social-reviews')
+                ], 200);
             }
 
             if ($args['api_type'] === 'business_basic' && !is_wp_error($response) && !(new Common())->instagramError($response) && isset($response['username']) && isset($response['user_id'])) {
@@ -183,6 +296,8 @@ class InstagramFeed extends BaseFeed
             }
             return $apiUrl;
         }
+
+        return '';
     }
 
     public function setAuthorizedBusinessAccount($response = [])
@@ -215,9 +330,8 @@ class InstagramFeed extends BaseFeed
         }
 
         update_option('wpsr_instagram_authorized_business_accounts_list', $business_accounts);
-        wp_send_json_success([
-            'message'  => __('You are successfully verified.', 'wp-social-reviews')
-        ], 200);
+
+        return $business_accounts;
     }
 
     public function setBusinessBasicAccount($response = [], $args = [])
@@ -282,7 +396,7 @@ class InstagramFeed extends BaseFeed
     /**
      * Instagram Api Error Message
      *
-     * @param array $response
+     * @param array|\WP_Error $response
      *
      * @return string
      * @since 1.3.0
@@ -308,7 +422,7 @@ class InstagramFeed extends BaseFeed
 
     /**
      * Get All Verified Accounts
-     * @return json
+     * @return void
      * @since 1.3.0
      */
     public function getVerificationConfigs()
@@ -340,9 +454,9 @@ class InstagramFeed extends BaseFeed
     /**
      * Update Verification Configs
      *
-     * @param array $args
+     * @param array $accountArgs
      *
-     * @return array
+     * @return void
      * @since 1.3.0
      */
     public function updateVerificationConfigs($accountArgs)
@@ -387,7 +501,7 @@ class InstagramFeed extends BaseFeed
 
     /**
      * Disconnect Verification Configs
-     * @return json
+     * @return void
      * @since 1.3.0
      */
     public function clearVerificationConfigs($userId)
@@ -499,7 +613,7 @@ class InstagramFeed extends BaseFeed
     /**
      * Get Feed Settings
      *
-     * @return json
+     * @return void
      * @since 1.3.0
      */
     public function getEditorSettings($args = [])
@@ -542,8 +656,8 @@ class InstagramFeed extends BaseFeed
     /**
      * Show updated data if new data fetched in editor without update in db
      *
-     * @return json
-     * @throws /Exception
+     * @return void
+     * @throws \Exception
      * @since 1.3.0
      */
     public function editEditorSettings($settings = array(), $postId = null)
@@ -568,7 +682,7 @@ class InstagramFeed extends BaseFeed
     /**
      * Update template is settings is changed in editor
      *
-     * @return json
+     * @return void
      * @since 1.3.0
      */
     public function updateEditorSettings($settings = array(), $postId = null)
@@ -615,13 +729,14 @@ class InstagramFeed extends BaseFeed
         $hash_tags = explode(',', $hash_tags);
         $hash_tag_text = '';
 
-        if( !empty($hash_tags) ) {
-            foreach ($hash_tags as $hash_tag) {
-                if($hash_tag[0] !== '#') {
-                    $hash_tag = '#'.$hash_tag;
-                }
-                $hash_tag_text .= $hash_tag.',';
+        foreach ($hash_tags as $hash_tag) {
+            if($hash_tag === '') {
+                continue;
             }
+            if($hash_tag[0] !== '#') {
+                $hash_tag = '#'.$hash_tag;
+            }
+            $hash_tag_text .= $hash_tag.',';
         }
 
         $hash_tags = rtrim($hash_tag_text, ',');
@@ -673,7 +788,7 @@ class InstagramFeed extends BaseFeed
                 $hashtagType = isset($apiSettings['hashtag_type']) ? $apiSettings['hashtag_type'] : 'recent_media ';
                 $hashtags    = isset($apiSettings['hash_tags']) ? $apiSettings['hash_tags'] : '';
 
-                if ($hashtags && !empty($hashtags)) {
+                if (!empty($hashtags)) {
                     if (defined('WPSOCIALREVIEWS_PRO') && class_exists('\WPSocialReviewsPro\App\Services\Platforms\Feeds\Instagram\HashtagFeed')) {
                         $response = (new \WPSocialReviewsPro\App\Services\Platforms\Feeds\Instagram\HashtagFeed())->getMultipleHashtagResponse($accountIds, $hashtags, $hashtagType);
                     } else {
@@ -693,6 +808,8 @@ class InstagramFeed extends BaseFeed
                 'items'         => Arr::get($response, 'feeds', []),
             ];
         }
+
+        return [];
     }
 
     public function getHeaderDetails($accountIds, $feed_settings)

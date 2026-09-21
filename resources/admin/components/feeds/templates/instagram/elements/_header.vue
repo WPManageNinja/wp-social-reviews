@@ -1,5 +1,5 @@
 <template>
-    <div :class="settings.layout_type !== 'carousel' ? 'wpsr-gap-'+settings.column_gaps : ''" class="wpsr-ig-header" v-if="settings.header_settings.display_header==='true' && header.username">
+    <div :class="[headerLayoutClass, settings.layout_type !== 'carousel' ? 'wpsr-gap-'+settings.column_gaps : '']" class="wpsr-ig-header" v-if="settings.header_settings.display_header==='true' && header.username">
       <div class="wpsr-ig-header-inner" v-if="header">
             <div class="wpsr-ig-header-logo" v-if="settings.header_settings.display_avatar === 'true'" :data-account_id="header.account_id">
                 <a target="_blank" :href="'https://www.instagram.com/'+header.username">
@@ -34,6 +34,12 @@
 <script type="text/babel">
 export default {
     props:['connected_ids','header','settings','account_to_show','user_avatar'],
+    computed: {
+      headerLayoutClass() {
+        const wpsrHeaderLayout = this.settings && this.settings.header_settings && this.settings.header_settings.header_layout === 'minimal' ? 'minimal' : 'classic';
+        return 'wpsr-ig-header-layout-' + wpsrHeaderLayout;
+      }
+    },
     methods: {
       get_header_avatar(settings, header) {
         let placeholder = this.assets_url + '/images/template/review-template/placeholder-image.png';

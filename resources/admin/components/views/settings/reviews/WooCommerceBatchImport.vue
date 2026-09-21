@@ -51,7 +51,9 @@
         <div class="wpsr-import-status-text">
           <h3>Sync Complete</h3>
           <span>Last sync on {{importProgress.updated_at}}</span>
-          <p>Successfully synchronized {{numberWithCommas(importProgress.total)}} reviews</p>
+          <p>
+            Synchronized {{numberWithCommas(importProgress.total_success_count || 0)}} new reviews<span v-if="importProgress.total_skipped_count"> ({{numberWithCommas(importProgress.total_skipped_count)}} already up to date)</span>
+          </p>
         </div>
       </div>
     </div>

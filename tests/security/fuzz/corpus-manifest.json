@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "target": "http://127.0.0.1:8892/wp-admin/admin-ajax.php",
+  "limits": {
+    "response_bytes": 131072,
+    "case_seconds": 3.0,
+    "request_bytes": 32768
+  },
+  "corpora": {
+    "nonce-template": "tests/security/fuzz/corpus/nonce-template.json",
+    "pagination-cursor": "tests/security/fuzz/corpus/pagination-cursor.json",
+    "search-order-rating": "tests/security/fuzz/corpus/search-order-rating.json",
+    "feed-selectors": "tests/security/fuzz/corpus/feed-selectors.json",
+    "player-body": "tests/security/fuzz/corpus/player-body.json",
+    "image-arrays": "tests/security/fuzz/corpus/image-arrays.json"
+  },
+  "not_applicable": {
+    "raw_php_input_webhooks": "Core has no inbound php://input listener or webhook. No raw-body seam is added for a nonexistent family.",
+    "multipart_uploads": "Core public handlers register no $_FILES upload path; multipart validation remains Pro-owned and Pro stays inactive.",
+    "public_url_redirect": "Core public input handlers accept no visitor-controlled redirect URL.",
+    "serialized_json_settings_request": "Core public handlers read stored template metadata but accept no serialized/JSON settings request body.",
+    "facebook_album_material_input": "Core delegates album input to an absent Pro listener without a guard. Finding `public-facebook-album-guard` remains parked; Phase 26 does not activate Pro or claim material parser coverage.",
+    "visitor_sort_parser": "Core-free readReviewSortParams returns canonical defaults before reading order/rating/search. Seeds retain ignored-field robustness coverage but do not claim Pro parser validation."
+  }
+}

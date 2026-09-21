@@ -1,5 +1,11 @@
 <template>
   <div>
+    <AuthRedirectOverlay
+        :visible="googleAuthLoading"
+        :title="`${$t('Redirecting to')} ${authServiceHost}`"
+        :subtitle="$t('You will be redirected to our authentication portal. This may take up to 5 seconds.')"
+    />
+
     <el-button
         style="width: 100%"
         v-if="Object.keys(locationList).length"
@@ -16,70 +22,51 @@
       <div class="wpsr-accounts-connect-wrapper">
         <div class="wpsr-connection-modal-input-wrapper">
           <div class="wpsr-connection-button-info-wrapper">
-            <h3>Get Your Google Access Code</h3>
-            <p>Simply click the button below to instantly receive your Google access code—it only takes one click.</p>
+            <h3>{{ $t('Display Your Google Reviews') }}</h3>
+            <p>{{ $t('Connect your Google account to show reviews from the locations you manage.') }}</p>
           </div>
           <div class="wpsr-connection-modal-input-heading-wrapper">
             <el-button
                 class="wpsr-mb-20"
                 type='primary'
                 size="default"
+                :loading="googleAuthLoading"
+                :disabled="googleAuthLoading"
                 @click="loginWithGoogle"
             >
-              {{ $t('Sign in And Get Google Access Code')}}
+              {{ $t('Connect Google Business Profile')}}
             </el-button>
-            <h4 class="wpsr-connection-modal-input-heading">
-              {{ $t('Access Code') }}
-            </h4>
+            <p class="wpsr-connect-redirect-note">{{ $t('You will be redirected to WP Social Ninja, then to Google to approve access.') }}</p>
           </div>
-          <InputPassword
-              :value="apiKeyValue"
-              v-model="apiKeyValue"
-              placeholder="Enter your access code"
-          />
-          <el-button
-              size="small"
-              type="success"
-              class="wpsr_primary_btn wpsr-mt-20"
-              :disabled="!apiKeyValue"
-              @click="verifyNow"
-          >
-            {{ $t('Verify Code')}}
-          </el-button>
         </div>
       </div>
     </div>
   </div>
 </template>
 <script type="text/babel">
-import InputPassword from '../../../core-ui/editor/InputPassword';
+import AuthRedirectOverlay from '../../../core-ui/AuthRedirectOverlay';
 export default {
   name: 'GoogleLoginForm',
-  components: {InputPassword},
-  props: ['value', 'locationList'],
-  emits: ['input', 'verify-now', 'login-with-google', 'update:modelValue'],
+  components: {AuthRedirectOverlay},
+  props: ['locationList', 'googleAuthLoading', 'authServiceUrl'],
+  emits: ['login-with-google'],
   data(){
     return{
       reConnect: false,
-      apiKeyValue: this.modelValue || '',
     }
   },
-  watch: {
-    value(newVal) {
-      this.apiKeyValue = newVal;
+  computed: {
+    authServiceHost() {
+      try { return new URL(this.authServiceUrl).hostname; } catch (e) { return this.authServiceUrl; }
     },
-    apiKeyValue(newVal) {
-      
-      this.$emit('update:modelValue', newVal);
-      
-    }
   },
   methods:{
     loginWithGoogle(){
+      if (this.googleAuthLoading) {
+        return;
+      }
+
       this.$emit('login-with-google');
-    },
-    verifyNow(){
-      this.$emit('verify-now');
     },
     reConnectBusiness(){
       this.reConnect = !this.reConnect;

@@ -26,6 +26,8 @@
         :activeFilterData="currentFilter"
         @rating-filter="handleRatingFilter"
     />
+    <!-- Just before the feed container, the same place the frontend header view prints the real one. -->
+    <VisitorToolbarPreview v-if="showVisitorToolbarPreview" :template_meta="template_meta" />
     <div :class="[template_meta.templateType === 'slider' && has_pro ? 'wpsr-reviews-slider-wrapper-inner' : '']">
       <div class="wpsr-active-masonry-layout wpsr-reviews-slider" :data-column="template_meta?.responsive_column_number?.desktop || 1" :class="template_meta.templateType === 'slider' && has_pro ? 'swiper-container' : (template_meta.show_header === 'true' && !template_meta.platform.includes('testimonial') ? 'wpsr-row' : '')" :style="'height:' +template_meta.template_height">
           <component
@@ -85,6 +87,8 @@ import BusinessInfo from './elements/BusinessInfo';
 import SwiperNavs from "../../core-ui/editor/SwiperNavs";
 import {reviewsMixin} from '../../../mixins/reviewsMixin';
 import ReviewBody from './elements/ReviewBody.vue';
+import VisitorToolbarPreview from './VisitorToolbarPreview.vue';
+import { wpsrToolbarActive } from '../../../utils/visitorToolbar';
 import { markRaw } from 'vue';
 
 export default {
@@ -132,6 +136,11 @@ export default {
              this.template_meta.templateType !== 'slider' &&
              this.reviews && this.reviews.length > 0;
       return shouldShow;
+    },
+    // Exactly when the real bar would render on the frontend, so the preview never promises a control the
+    // visitor will not get.
+    showVisitorToolbarPreview() {
+      return wpsrToolbarActive(this.template_meta, this.has_pro);
     }
   },
   components: {
@@ -151,7 +160,8 @@ export default {
     SwiperNavs,
     ErrorCard,
     ReviewBody,
-    InfoCard
+    InfoCard,
+    VisitorToolbarPreview
   },
   methods: {
     expandContent(val) {

@@ -1,0 +1,652 @@
+$wpsr-fb-overlay-inset: 16px;
+$wpsr-fb-overlay-avatar: 38px;
+
+@mixin wpsr-fb-overlay-scrollbar($thumb) {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: $thumb transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $thumb;
+    border-radius: 2px;
+  }
+}
+
+// The glyph is a brand-blue square with the "f" punched out of it, which reads on the white
+// cards it was drawn for but shows the photo through the letter here. So a white plate goes
+// behind it, cut to the square exactly - the punched-out letter is all that picks it up.
+@mixin wpsr-fb-overlay-brand-icon {
+  color: #0866ff;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.55));
+  // The plate is a neutral object next to the glyph, so RTL would otherwise reorder the two.
+  direction: ltr;
+  unicode-bidi: isolate;
+
+  // The square measures 438/512em, inset 37/512em, corner 82/512em. It sits on the baseline
+  // by way of the bottom margin, which is where an empty inline-block takes its baseline.
+  &::before {
+    content: "";
+    display: inline-block;
+    width: 0.8555em;
+    height: 0.8555em;
+    margin-left: 0.0723em;
+    margin-bottom: 0.0723em;
+    border-radius: 0.1602em;
+    background: #fff;
+  }
+
+  // The glyph, back over the plate. icons.scss only fonts :before, so name the font here.
+  &::after {
+    content: "\72";
+    font-family: "wp-social-reviews";
+    font-style: normal;
+    font-weight: normal;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin-left: -0.9278em;
+  }
+}
+
+// The author bar in a small cell. Both breakpoints shrink the same five things and differ
+// only in the numbers, so each caller passes those and adds what is particular to its width.
+@mixin wpsr-fb-overlay-compact-bar($inset, $bar-gap, $user-gap, $avatar, $name, $time) {
+  .wpsr-fb-overlay-bottom {
+    left: $inset;
+    right: $inset;
+    bottom: $inset;
+    gap: $bar-gap;
+  }
+
+  .wpsr-fb-overlay-user {
+    gap: $user-gap;
+  }
+
+  .wpsr-fb-overlay-avatar {
+    width: $avatar;
+    height: $avatar;
+    min-width: $avatar;
+  }
+
+  .wpsr-fb-overlay-username {
+    font-size: $name;
+  }
+
+  .wpsr-fb-feed-time {
+    font-size: $time;
+  }
+}
+
+// A card that is not the 2x2 one gets a fraction of the width, so its text scales down.
+// Shared because the big card is 10n+1/10n+8 on desktop but 5n+1 in the tablet grid.
+@mixin wpsr-fb-overlay-small-card {
+  .wpsr-fb-overlay-text-body .wpsr-fb-feed-content {
+    font-size: 13px;
+  }
+  .wpsr-fb-overlay-username {
+    font-size: 14px;
+  }
+  .wpsr-fb-overlay-text {
+    padding: 16px;
+  }
+}
+
+.wpsr-fb-feed-template4 {
+  .wpsr-fb-overlay-card {
+    border-radius: 14px;
+
+    // template-1.scss styles .wpsr-fb-feed-item .wpsr-fb-feed-inner unscoped, so undo it here.
+    .wpsr-fb-feed-inner {
+      position: relative;
+      aspect-ratio: 1;
+      padding: 0;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 12px rgba(16, 24, 40, 0.05);
+      background: #fff;
+      display: block;
+    }
+  }
+
+  .wpsr-fb-overlay-card {
+    .wpsr-fb-feed-inner > .wpsr-fb-feed-playmode {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .wpsr-fb-feed-inner .wpsr-fb-feed-image:not(.wpsr-fb-feed-url-summary-card-wrapper) {
+      height: 100%;
+      a,
+      a > div:not(.wpsr-fb-feed-video-play),
+      > div:not(.wpsr-fb-feed-video-play) {
+        height: 100%;
+      }
+
+      img {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        object-fit: cover;
+        border-radius: 0;
+      }
+
+      .wpsr-fb-feed-image-album {
+        display: none;
+      }
+    }
+
+    .wpsr-fb-feed-inner > .wpsr-fb-feed-playmode > div {
+      height: 100%;
+    }
+
+    .wpsr-fb-feed-inner .wpsr-fb-feed-video-preview {
+      height: 100%;
+      padding-top: 0;
+    }
+
+    .wpsr-fb-post-img {
+      transition: transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    // :focus-within keeps it reachable by keyboard, the way the hover panel already is.
+    &:hover,
+    &:focus-within {
+      .wpsr-fb-post-img {
+        transform: scale(1.04);
+      }
+
+      // Centred on negative margins, not a translate, so scale alone leaves it in place.
+      .wpsr-fb-feed-video-play {
+        transform: scale(1.06);
+      }
+    }
+  }
+
+  .wpsr-fb-overlay-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: linear-gradient(
+      to top,
+      rgba(8, 10, 14, 0.9) 0%,
+      rgba(8, 10, 14, 0.82) 10%,
+      rgba(8, 10, 14, 0.6) 20%,
+      rgba(8, 10, 14, 0.32) 29%,
+      rgba(8, 10, 14, 0.1) 36%,
+      rgba(8, 10, 14, 0) 42%
+    );
+  }
+
+  .wpsr-fb-overlay-card:hover,
+  .wpsr-fb-overlay-card:focus-within {
+    .wpsr-fb-overlay-hover {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wpsr-fb-overlay-hover {
+      transform: none;
+      transition-duration: 0.01ms;
+    }
+
+    .wpsr-fb-overlay-card {
+      .wpsr-fb-post-img,
+      .wpsr-fb-feed-video-play {
+        transition: none;
+      }
+
+      &:hover,
+      &:focus-within {
+        .wpsr-fb-post-img,
+        .wpsr-fb-feed-video-play {
+          transform: none;
+        }
+      }
+    }
+  }
+
+  .wpsr-fb-overlay-card:hover:not(:focus-within) .wpsr-fb-overlay-bottom {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .wpsr-fb-overlay-bottom:focus-within {
+    z-index: 5;
+  }
+
+  .wpsr-fb-overlay-card [tabindex]:focus-visible {
+    outline: 2px solid #1877f2;
+    outline-offset: -2px;
+    border-radius: 14px;
+  }
+
+  // Holds only the wash: the .wpsr-fb-overlay-text inside lays the card out.
+  .wpsr-fb-overlay-hover {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+    // Same ink as the scrim it deepens, so the two read as one surface.
+    background-color: rgba(8, 10, 14, 0.82);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    // The card is a link; the overlay must not eat the click.
+    pointer-events: none;
+
+    // Without the blur the wash is all there is, and a sharp photo reads straight through
+    // it, so it has to be near-opaque instead.
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      background-color: rgba(8, 10, 14, 0.93);
+    }
+
+    // With no pointer events a scrollbar here could not be used, so a long message clips.
+    .wpsr-fb-overlay-text-body {
+      overflow: hidden;
+    }
+  }
+
+  // Author bar over the media
+
+  .wpsr-fb-overlay-bottom {
+    position: absolute;
+    left: $wpsr-fb-overlay-inset;
+    right: $wpsr-fb-overlay-inset;
+    bottom: $wpsr-fb-overlay-inset;
+    z-index: 3;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .wpsr-fb-overlay-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .wpsr-fb-overlay-avatar-wrapper {
+    line-height: 0;
+    flex: none;
+
+    a {
+      display: block;
+      line-height: 0;
+    }
+  }
+
+  .wpsr-fb-overlay-avatar {
+    width: $wpsr-fb-overlay-avatar;
+    height: $wpsr-fb-overlay-avatar;
+    min-width: $wpsr-fb-overlay-avatar;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #1877f2;
+    box-sizing: border-box;
+  }
+
+  .wpsr-fb-overlay-user-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .wpsr-fb-overlay-username {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #161616;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    span {
+      color: inherit;
+    }
+  }
+
+  // Nested, not top level: template1 emits .wpsr-fb-feed-time too, and it is the fallback
+  // that renders under this wrapper class when Pro cannot draw template4.
+  .wpsr-fb-overlay-user-details .wpsr-fb-feed-time,
+  .wpsr-fb-overlay-text-author .wpsr-fb-feed-time {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #646060;
+    // "3 weeks ago" breaks onto one word per line once the cell gets narrow.
+    white-space: nowrap;
+  }
+
+  .wpsr-fb-overlay-platform-icon {
+    line-height: 0;
+    flex: none;
+
+    // Same glyph and size as template 3's .wpsr-fb-card-platform-icon, on Meta's current blue.
+    .icon-facebook-square {
+      font-size: 24px;
+      color: #0866ff;
+    }
+  }
+
+  // The bar on the scrim and the hover panel are the same dark surface, so they carry the
+  // same furniture. Their ink is grouped the same way, below the light defaults it overrides.
+  .wpsr-fb-overlay-bottom,
+  .wpsr-fb-overlay-hover {
+    // The brand-blue ring reads as a dark blob against the scrim; white rings it instead.
+    .wpsr-fb-overlay-avatar {
+      border-color: rgba(255, 255, 255, 0.35);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .wpsr-fb-overlay-platform-icon .icon-facebook-square {
+      @include wpsr-fb-overlay-brand-icon;
+    }
+  }
+
+  // Video posts keep their title, so it sits just above the author bar.
+  // Scoped like the media rules above: template1 emits this class too.
+  .wpsr-fb-overlay-card .wpsr-fb-feed-video-info {
+    position: absolute;
+    left: $wpsr-fb-overlay-inset;
+    right: $wpsr-fb-overlay-inset;
+    bottom: $wpsr-fb-overlay-inset + $wpsr-fb-overlay-avatar + 8px;
+    z-index: 3;
+    max-height: 40px;
+    overflow: hidden;
+
+    h3 {
+      margin: 0;
+
+      a {
+        font-size: 13px;
+        line-height: 1.3;
+        // On the scrim, same as the author bar under it.
+        color: #fff;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+        text-decoration: none;
+      }
+    }
+  }
+
+  // Text card - what a post with no media gets
+
+  .wpsr-fb-overlay-text {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    // No background of its own, so the Item Box background control still shows through.
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+
+  .wpsr-fb-overlay-text-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 14px;
+    width: 100%;
+    max-height: 100%;
+    min-height: 0;
+
+    // Everything but the message keeps its size, so the message is what gives way.
+    > *:not(.wpsr-fb-overlay-text-body) {
+      flex: none;
+    }
+  }
+
+  .wpsr-fb-overlay-text-body {
+    @include wpsr-fb-overlay-scrollbar(rgba(22, 22, 22, 0.35));
+    // A long message scrolls in the space left over instead of pushing the author out.
+    flex: 0 1 auto;
+    min-height: 0;
+    width: 100%;
+
+    .wpsr-fb-feed-content {
+      font-size: 18px;
+      line-height: 1.4;
+      color: #111113;
+      opacity: 1;
+      margin: 0;
+      word-break: break-word;
+    }
+
+    .wpsr-fb-feed-url-summary-card-wrapper {
+      margin-top: 12px;
+      text-align: left;
+    }
+  }
+
+  .wpsr-fb-overlay-text-author {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+
+    .wpsr-fb-overlay-username {
+      font-size: 14px;
+    }
+  }
+
+  :where(.wpsr-fb-overlay-bottom, .wpsr-fb-overlay-hover) .wpsr-fb-overlay-username {
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  }
+
+  :where(.wpsr-fb-overlay-bottom) .wpsr-fb-overlay-user-details .wpsr-fb-feed-time,
+  :where(.wpsr-fb-overlay-hover) .wpsr-fb-overlay-text-author .wpsr-fb-feed-time {
+    color: #e3e6ea;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  }
+
+  :where(.wpsr-fb-overlay-hover) .wpsr-fb-overlay-text-body .wpsr-fb-feed-content {
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  }
+
+  // The mosaic belongs to this template, so it is not offered as a layout elsewhere.
+  .wpsr-fb-highlights-grid {
+    display: grid;
+    // The public wpsr-column-gap-* rules hang negative side margins off the element itself,
+    // which only wpsr-row wants. Without this the mosaic overhangs its container.
+    margin-left: 0;
+    margin-right: 0;
+    grid-template-columns: repeat(4, 1fr);
+    // dense is required: it is what lets card 7 drop under 6 and 9/10 backfill the last column.
+    grid-auto-flow: row dense;
+    // The Default option: no wpsr-column-gap-* class overrides it.
+    gap: 15px;
+    margin-bottom: 20px;
+
+    // 10-post cycle over 4 rows: 1 is the big card on the left, 8 the big card in the middle.
+    // Four columns need the room: below this a cell is narrower than a two-column phone cell.
+    @media screen and (min-width: 1200px) {
+      .wpsr-fb-highlight-item:nth-child(10n + 1) {
+        grid-column: 1 / span 2;
+        grid-row: span 2;
+      }
+
+      .wpsr-fb-highlight-item:nth-child(10n + 7) {
+        grid-column: 1;
+      }
+
+      // Card 7 is only held back for the big card 8 beside it. Only when 7 is the very last
+      // item is there no card 8; releasing it any earlier strands card 8 on its own row.
+      .wpsr-fb-highlight-item:nth-child(10n + 7):nth-last-child(1) {
+        grid-column: auto;
+      }
+
+      .wpsr-fb-highlight-item:nth-child(10n + 8) {
+        grid-column: 2 / span 2;
+        grid-row: span 2;
+      }
+    }
+
+    // Tablets: a quarter of the width leaves the author bar less room than a phone cell gets,
+    // so the mosaic drops to three columns. No fixed column, so dense backfills every hole.
+    @media screen and (min-width: 768px) and (max-width: 1199px) {
+      grid-template-columns: repeat(3, 1fr);
+
+      .wpsr-fb-highlight-item:nth-child(5n + 1) {
+        grid-column: span 2;
+        grid-row: span 2;
+      }
+    }
+
+    @media screen and (max-width: 767px) {
+      grid-template-columns: repeat(2, 1fr);
+
+      .wpsr-fb-highlight-item:nth-child(5n + 1) {
+        grid-column: span 2;
+      }
+    }
+
+    // With no gap the cards butt together, so any rounding leaves notches between them.
+    &.wpsr-column-gap-no_gap {
+      gap: 0;
+
+      .wpsr-fb-feed-item,
+      .wpsr-fb-feed-inner {
+        border-radius: 0;
+      }
+    }
+    &.wpsr-column-gap-narrow {
+      gap: 5px;
+    }
+    &.wpsr-column-gap-small {
+      gap: 10px;
+    }
+    &.wpsr-column-gap-wide {
+      gap: 20px;
+    }
+    &.wpsr-column-gap-wider {
+      gap: 25px;
+    }
+  }
+
+  // The square ratio moves up to the grid cell. Rows are auto-sized, so without a ratio here
+  // the height: 100% chain below resolves against nothing and every row collapses.
+  // A 2x2 cell is two columns plus the gap wide, which is exactly two rows plus the gap tall.
+  .wpsr-fb-highlight-item {
+    min-width: 0;
+    aspect-ratio: 1;
+    display: flex;
+
+    .wpsr-fb-feed-item {
+      width: 100%;
+      margin-bottom: 0;
+    }
+
+    .wpsr-fb-overlay-card,
+    .wpsr-fb-feed-inner {
+      height: 100%;
+      aspect-ratio: auto;
+    }
+  }
+
+  @media screen and (min-width: 1200px) {
+    .wpsr-fb-highlights-grid .wpsr-fb-highlight-item:not(:nth-child(10n + 1)):not(:nth-child(10n + 8)) {
+      @include wpsr-fb-overlay-small-card;
+    }
+  }
+
+  @media screen and (min-width: 768px) and (max-width: 1199px) {
+    .wpsr-fb-highlights-grid .wpsr-fb-highlight-item:not(:nth-child(5n + 1)) {
+      @include wpsr-fb-overlay-small-card;
+
+      // A third of a tablet is ~175px at the narrow end. The author bar keeps all three
+      // parts, but only at sizes that still leave the name room to read.
+      @include wpsr-fb-overlay-compact-bar(
+        $inset: 12px,
+        $bar-gap: 6px,
+        $user-gap: 6px,
+        $avatar: 28px,
+        $name: 13px,
+        $time: 11px
+      );
+
+      .wpsr-fb-overlay-platform-icon .icon-facebook-square {
+        font-size: 18px;
+      }
+    }
+  }
+
+}
+
+@media screen and (max-width: 767px) {
+  .wpsr-fb-feed-template4 {
+    .wpsr-fb-overlay-avatar {
+      width: 30px;
+      height: 30px;
+      min-width: 30px;
+    }
+    .wpsr-fb-overlay-username {
+      font-size: 14px;
+    }
+    .wpsr-fb-overlay-text-body .wpsr-fb-feed-content {
+      font-size: 14px;
+    }
+
+    // A small cell is half a phone wide, so the author bar has to give up its furniture
+    // or the name truncates to one letter and the date stacks a word per line.
+    .wpsr-fb-highlight-item:not(:nth-child(5n + 1)) {
+      @include wpsr-fb-overlay-compact-bar(
+        $inset: 8px,
+        $bar-gap: 4px,
+        $user-gap: 5px,
+        $avatar: 22px,
+        $name: 11px,
+        $time: 9px
+      );
+
+      // The ring is 2px at full size, which is a tenth of the avatar once it is this small.
+      .wpsr-fb-overlay-avatar {
+        border-width: 1.5px;
+      }
+
+      // A cell is ~115px here, and the icon plus its gap costs the name a fifth of that.
+      // The text card below already drops the same icon at this size for the same reason.
+      .wpsr-fb-overlay-bottom .wpsr-fb-overlay-platform-icon {
+        display: none;
+      }
+
+      .wpsr-fb-overlay-text {
+        padding: 12px;
+      }
+
+      .wpsr-fb-overlay-text-inner {
+        gap: 8px;
+      }
+
+      // A cell is ~115px here. The icon and avatar would leave the message no height at all,
+      // and the message is the whole point of the card.
+      .wpsr-fb-overlay-text-inner > .wpsr-fb-overlay-platform-icon,
+      .wpsr-fb-overlay-text-author .wpsr-fb-overlay-avatar-wrapper {
+        display: none;
+      }
+
+      .wpsr-fb-overlay-text-body .wpsr-fb-feed-content {
+        font-size: 11px;
+      }
+    }
+  }
+}

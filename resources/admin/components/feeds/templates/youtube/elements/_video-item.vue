@@ -1,7 +1,8 @@
 <template>
   <div>
     <div class="wpsr-yt-video"
-         @click="$emit('open-popup')"
+         ref="videoEl"
+         @click="handleRowClick"
     >
       <PreviewImage
           :feed="feed"
@@ -59,6 +60,21 @@ export default {
     Statistics,
     Title,
     Content
+  },
+  mounted() {
+    // marks the first item as the default "now playing" row; ytMixin toggles the class imperatively, so keep this a DOM write too
+    if (this.index === 0 && this.configs.feed_settings.video_settings.play_mode === 'gallery') {
+      this.$refs.videoEl.classList.add('wpsr-yt-gallery-active');
+    }
+  },
+  methods: {
+    handleRowClick(e) {
+      this.$emit('open-popup');
+      // template5's whole row looks clickable, but only the thumbnail/title are wired, so forward the rest here
+      if (this.configs.feed_settings.video_settings.play_mode === 'gallery' && !e.target.closest('.wpsr-yt-video-playmode')) {
+        this.youtubeVideoPlayMode(e, this.feed, 'gallery', this.index);
+      }
+    }
   }
 }
 </script>

@@ -1,5 +1,5 @@
 <template>
-    <div class="wpsr_editor" v-if="feedConfig" :class="{ 'wpsr-blurred': showWelcomePopup }">
+    <div class="wpsr_editor" v-if="feedConfig" :class="{ 'wpsr-blurred': showWelcomePopup, 'wpsr-editor-sidebar-minimized': wpsrSidebarMinimized, 'wpsr-sidebar-resizing': wpsrSidebarResizing }">
       <editor-header
           :title="template_title"
           :platform_section="platform_section"
@@ -8,7 +8,7 @@
           @update-settings="updateEditorSettings(platform_section)"
       ></editor-header>
         <div class="wpsr_editor_wrapper">
-            <el-container>
+            <el-container :style="{ '--wpsr-editor-sidebar-width': wpsrSidebarWidth + 'px' }">
                 <div v-if="feedConfig.feed_settings">
                   <div v-html="css"></div>
                 </div>
@@ -32,7 +32,9 @@
                         />
                     </div>
                 </el-main>
+                <SidebarToggleButton :minimized="wpsrSidebarMinimized" @toggle="toggleEditorSidebar" />
                 <el-aside class="wpsr-editor-sidebar">
+                  <SidebarResizeHandle :width="wpsrSidebarWidth" :min="wpsrSidebarMinWidth" :max="wpsrSidebarMaxWidth" @resize-start="startSidebarResize" @resize-step="stepSidebarResize" />
                   <UpgradeApp v-if="!has_pro" />
                   <el-tabs v-model="activeTab" class="wpsr-element-tab-wrapper">
                     <el-tab-pane label="General" name="general" class="wpsr-element-tab-item">
@@ -88,6 +90,8 @@ import YoutubeStyleEditor from './editor-ui/YoutubeStyleEditor';
 import Template1 from './../templates/youtube/Template1';
 import Template2 from './../templates/youtube/Template2';
 import Template3 from './../templates/youtube/Template3';
+import Template4 from './../templates/youtube/Template4';
+import Template5 from './../templates/youtube/Template5';
 import {templateMixin} from "../../../mixins/templateMixin";
 import {commonMixin} from "../../../mixins/commonMixin";
 import {jsLibraryMixin} from "../../../mixins/jsLibraryMixin";
@@ -101,16 +105,21 @@ import OnboardWelcomePopup from "../../pieces/OnboardWelcomePopup.vue";
 import YoutubeFeedConnection from './editor-ui/YoutubeFeedConnection';
 import DemoTemplateAlert from '../../pieces/DemoTemplateAlert.vue';
 import ProCrownIcon from '../../pieces/icons/ProCrownIcon';
+import SidebarToggleButton from '../../pieces/SidebarToggleButton';
+import SidebarResizeHandle from '../../pieces/SidebarResizeHandle';
+import { editorSidebarMixin } from "../../../mixins/editorSidebarMixin";
 
 export default {
     name: "YoutubeView",
-    mixins: [templateMixin, commonMixin, jsLibraryMixin, helperStyle],
+    mixins: [templateMixin, commonMixin, jsLibraryMixin, helperStyle, editorSidebarMixin],
     components: {
         OnboardWelcomePopup,
         EditorHeader,
         Template1,
         Template2,
         Template3,
+        Template4,
+        Template5,
         YoutubeFeedEditor,
         YoutubeStyleEditor,
         ResponsiveBar,
@@ -119,7 +128,9 @@ export default {
         YoutubeFeedConnection,
         DemoTemplateAlert,
         UpgradeApp,
-        ProCrownIcon
+        ProCrownIcon,
+        SidebarToggleButton,
+        SidebarResizeHandle
     },
     data() {
         return {
@@ -132,6 +143,8 @@ export default {
                 'template1': markRaw(Template1),
                 'template2': markRaw(Template2),
                 'template3': markRaw(Template3),
+                'template4': markRaw(Template4),
+                'template5': markRaw(Template5),
             },
             videos: false,
             counter: 0,
@@ -247,17 +260,42 @@ export default {
             deep:true
         },
         'feedConfig.feed_settings.template': {
-            handler(val) {
+            handler(val, oldVal) {
                 let template = !this.has_pro ? 'template1' : val;
-                this.feedConfig.feed_settings.template = template;
-                this.component = '';
-                this.component = this.templates[template];
-                this.handleLayout();
+                if (template !== val) {
+                    this.feedConfig.feed_settings.template = template;
+                }
+
+                // updateFeedConfig replaces feed_settings wholesale on every field edit, re-running this
+                // watcher with an unchanged template, so remount the preview only on a real switch
+                if (val !== oldVal) {
+                    this.component = '';
+                    this.component = this.templates[template];
+                    this.handleLayout();
+                }
             },
-            deep:true,
         },
     },
     mounted() {
+        const wpsrHash = window.location.hash || '';
+        const wpsrQueryString = wpsrHash.split('?')[1] || '';
+        const wpsrUrlParams = new URLSearchParams(wpsrQueryString);
+
+        if (wpsrUrlParams.has('configuration')) {
+            this.activeTab = 'connection';
+
+            if (wpsrUrlParams.get('auth_error') === 'true') {
+                this.handleError(this.$t('Authentication could not be completed. Please try reconnecting the platform.'));
+                const wpsrCleanHash = wpsrHash.split('?')[0];
+                const wpsrNewUrl = window.location.origin + window.location.pathname + window.location.search + wpsrCleanHash;
+                window.history.replaceState({}, '', wpsrNewUrl);
+            }
+        }
+
+        if (wpsrUrlParams.get('auth_consumed') === 'true' && wpsrUrlParams.get('auth_error') !== 'true') {
+            window.sessionStorage.removeItem('wpsn_auth_consumed_result');
+        }
+
         this.getFeedSettings('youtube');
         this.setupEventListeners();
         

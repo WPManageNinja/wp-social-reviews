@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<ruleset name="WP Social Ninja Standard">
+    <description>WordPress Coding Standards for WP Social Ninja plugin.</description>
+
+    <arg name="extensions" value="php"/>
+
+    <file>app</file>
+
+    <!-- Third-party libs, page builders, and CLI commands are excluded -->
+    <exclude-pattern>app/Services/Libs/*</exclude-pattern>
+    <exclude-pattern>app/Services/Widgets/*</exclude-pattern>
+    <exclude-pattern>app/Hooks/CLI/*</exclude-pattern>
+    <!-- PHP view templates use injected variables and non-class output patterns -->
+    <exclude-pattern>app/Views/*</exclude-pattern>
+
+    <rule ref="WordPress">
+        <!-- PSR-4 class filenames (PascalCase) are used throughout -->
+        <exclude name="WordPress.Files.FileName"/>
+
+        <!-- Whitespace rules that conflict with our formatting conventions -->
+        <exclude name="WordPress.WhiteSpace.OperatorSpacing"/>
+        <exclude name="WordPress.WhiteSpace.CastStructureSpacing"/>
+        <exclude name="WordPress.WhiteSpace.ControlStructureSpacing"/>
+        <exclude name="WordPress.Arrays.ArrayDeclarationSpacing"/>
+        <exclude name="WordPress.Arrays.ArrayKeySpacingRestrictions"/>
+        <exclude name="WordPress.Arrays.MultipleStatementAlignment"/>
+        <exclude name="WordPress.WP.EnqueuedResourceParameters"/>
+
+        <!-- PSR-style camelCase method and variable names are used project-wide -->
+        <exclude name="WordPress.NamingConventions.ValidFunctionName"/>
+        <exclude name="WordPress.NamingConventions.ValidVariableName"/>
+
+        <!-- PEAR / Squiz formatting rules that conflict with project style -->
+        <exclude name="PEAR.Functions.FunctionCallSignature"/>
+        <exclude name="Squiz.Commenting"/>
+        <exclude name="Squiz.PHP.DisallowMultipleAssignments"/>
+        <exclude name="Squiz.Functions.FunctionDeclarationArgumentSpacing"/>
+
+        <!-- Generic rules that conflict with project style -->
+        <exclude name="Generic.Classes.OpeningBraceSameLine"/>
+        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
+        <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+        <exclude name="Generic.Formatting.MultipleStatementAlignment"/>
+        <exclude name="Generic.WhiteSpace.ArbitraryParenthesesSpacing"/>
+        <exclude name="Generic.Functions.OpeningFunctionBraceKernighanRitchie"/>
+
+        <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+        <exclude name="NormalizedArrays.Arrays.ArrayBraceSpacing"/>
+    </rule>
+
+    <!-- 4-space indentation, no tabs -->
+    <rule ref="Generic.WhiteSpace.ScopeIndent">
+        <properties>
+            <property name="indent" value="4"/>
+            <property name="tabIndent" value="false"/>
+        </properties>
+    </rule>
+    <rule ref="Generic.WhiteSpace.DisallowTabIndent"/>
+
+    <!-- Empty catch blocks are intentional in several service classes -->
+    <rule ref="Generic.CodeAnalysis.EmptyStatement.DetectedCATCH">
+        <severity>0</severity>
+    </rule>
+</ruleset>

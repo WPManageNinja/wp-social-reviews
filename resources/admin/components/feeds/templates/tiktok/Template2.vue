@@ -43,7 +43,7 @@
                 <!--                                <div v-if="feedConfig.feed_settings.source_settings.feed_type === 'user_feed' || feedConfig.feed_settings.source_settings.feed_type === 'specific_videos'" class="wpsr-tiktok-feed-inner">-->
                 <div class="wpsr-tiktok-feed-inner">
 
-                  <div class="wpsr-tiktok-feed-content-preview wpsr-tt-post" @click="postDisplayMode($event, feed, feedConfig.feed_settings, key)" :data-post_id="feed.id" :data-user_name="feed.user.name" :data-image_size="feedConfig.feed_settings.post_settings.resolution">
+                  <div class="wpsr-tiktok-feed-content-preview wpsr-tt-post" v-bind="feedCardAttrs(feed)" @keydown="wpsrActivateOnKey" @click="postDisplayMode($event, feed, feedConfig.feed_settings, key)" :data-post_id="feed.id" :data-user_name="feed.user.name" :data-image_size="feedConfig.feed_settings.post_settings.resolution">
                     <div class="wpsr-tiktok-feed-image">
                       <Photo
                           :feed="feed"
@@ -70,7 +70,7 @@
                           :feed="feed"
                           :feed_settings="feedConfig.feed_settings.post_settings"
                       />
-                     <a v-if="feedConfig.feed_settings.post_settings.display_platform_icon === 'true'" class="wpsr-tiktok-icon-temp-2" target="_blank" :href="'https://www.tiktok.com/@' + feed.user.name + '/video/' + feed.id"></a>
+                     <a v-if="feedConfig.feed_settings.post_settings.display_platform_icon === 'true'" class="wpsr-tiktok-icon-temp-2" target="_blank" :href="'https://www.tiktok.com/@' + feed.user.name + '/video/' + feed.id" :aria-label="$t('View video on TikTok')"></a>
                     </div>
                     <Statistics
                         v-if="has_pro"

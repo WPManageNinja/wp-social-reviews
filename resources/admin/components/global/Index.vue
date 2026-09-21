@@ -52,7 +52,7 @@
             </template>
 
             <!-- Upgrade to Pro Button in Main Menu -->
-            <UpgradeToProButton v-if="!has_pro" :btn_label="$t('Upgrade Now')" class="wpsr-main-menu-upgrade-btn" />
+            <UpgradeToProButton v-if="!has_pro" :btn_label="$t('Upgrade Now')" placement="top_bar" class="wpsr-main-menu-upgrade-btn" />
             </div>
 
             <div class="wpsr-nav-right">
@@ -79,11 +79,12 @@
         </div>
 
         <DashboardNotices
-            v-if="displayNotice || displayOptInNotice || displayProUpdateNotice || displayNewsletter"
+            v-if="displayNotice || displayOptInNotice || displayProUpdateNotice || displayNewsletter || (customNotices && customNotices.length)"
             :displayNotice="displayNotice"
             :displayOptInNotice="displayOptInNotice"
             :displayProUpdateNotice="displayProUpdateNotice"
             :displayNewsletter="displayNewsletter"
+            :customNotices="customNotices"
             :userData="userData"
         />
 
@@ -127,6 +128,7 @@ import { applyFilters } from '@wordpress/hooks';
                 displayOptInNotice: false,
                 displayProUpdateNotice: false,
                 displayNewsletter: false,
+                customNotices: [],
                 userData: {...userDataFields},
             }
         },
@@ -223,6 +225,7 @@ import { applyFilters } from '@wordpress/hooks';
                       this.displayProUpdateNotice = response.data.displayProUpdateNotice !== undefined ? response.data.displayProUpdateNotice : false;
                       this.displayOptInNotice = response.data.displayOptInNotice;
                       this.displayNewsletter = response.data.displayNewsletter;
+                      this.customNotices = response.data.customNotices !== undefined ? response.data.customNotices : [];
                       this.userData = response.data.userData;
                     }
                   }).catch(errors => {

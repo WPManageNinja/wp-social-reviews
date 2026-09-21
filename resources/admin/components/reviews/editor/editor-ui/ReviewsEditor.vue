@@ -63,7 +63,7 @@
         <div class="wpsr_editor_edit_item-group">
           <div class="wpsr-editor-edit-item-field" v-if="template_meta.templateType !== 'notification'">
             <transition name="fade">
-              <ImageSelect v-model="template_meta.templateType" :options="templateTypes" :headerTitle="'Layout Type'" :loading="templateTypeLoading"/>
+              <ImageSelect v-model="template_meta.templateType" :options="templateTypes" :headerTitle="$t('Layout Type')" :loading="templateTypeLoading"/>
             </transition>
           </div>
           <div v-if="template_meta.templateType === 'badge'" class="wpsr-editor-edit-item-field">
@@ -193,6 +193,32 @@
               <el-select v-model="template_meta.order" @change="throttledFetchReviews" placeholder="Select" size="small" class="wpsr-text-input">
                 <el-option v-for="item in orders" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
+            </div>
+          </div>
+          <div class="wpsr-filters-row" v-if="showVisitorSortingToggle">
+            <span class="wpsr-editor-inside-left wpsr-element-label wpsr-input-field-label">
+              <span class="wpsr-tooltip-position">
+                {{ $t('Let Visitors Search, Sort & Filter') }} <ProCrownIcon v-if="!has_pro" />
+                <el-tooltip
+                  :raw-content="true"
+                  effect="dark"
+                  placement="top-start"
+                  :content="$t('Adds a search box and sort and rating dropdowns above the reviews, so visitors can filter the feed themselves.')
+                    + '<br>' + $t('Search covers the review text and title, plus the reviewer name only when Name Format shows full names. Your Minimum Rating still applies.')"
+                >
+                  <el-icon><InfoFilled /></el-icon>
+                </el-tooltip>
+              </span>
+            </span>
+            <div class="wpsr-editor-inside-right">
+              <el-switch
+                v-model="template_meta.enable_visitor_sorting"
+                active-color="#4f8cff"
+                inactive-color="#e0e0e0"
+                active-value="true"
+                inactive-value="false"
+                :disabled="!has_pro"
+              />
             </div>
           </div>
           <div class="wpsr-filters-row">
@@ -491,6 +517,69 @@
           </div>
 
           <div class="wpsr-settings-switch" v-if="template_meta.platform.includes('testimonial')">
+            <span class="wpsr-demonstration wpsr-editor-inside-left wpsr-input-field-label">{{ $t(`Display Video`) }}</span>
+            <div class="wpsr-editor-inside-right">
+              <el-switch
+                v-model="template_meta.show_review_video"
+                active-color="#5c8df6"
+                inactive-color="#b7b7b9"
+                active-value='true'
+                inactive-value='false'
+              >
+              </el-switch>
+            </div>
+          </div>
+
+          <div class="wpsr-settings-switch" v-if="showFluentPlayerSettings">
+            <span class="wpsr-demonstration wpsr-editor-inside-left wpsr-input-field-label">
+              {{ $t(`Play with Fluent Player`) }}
+              <el-tooltip
+                :raw-content="true"
+                effect="dark"
+                placement="top-start"
+                :content="$t('Play testimonial videos in Fluent Player instead of the browser player for an uploaded file, or the provider embed for a YouTube or Vimeo link. This preview never shows Fluent Player.')"
+              >
+                <el-icon><InfoFilled /></el-icon>
+              </el-tooltip>
+            </span>
+            <div class="wpsr-editor-inside-right">
+              <el-switch
+                v-model="template_meta.use_fluent_player"
+                active-color="#5c8df6"
+                inactive-color="#b7b7b9"
+                active-value='true'
+                inactive-value='false'
+              >
+              </el-switch>
+            </div>
+          </div>
+
+          <div class="wpsr-filters-row" v-if="showFluentPlayerSettings && template_meta.use_fluent_player === 'true'">
+            <span class="wpsr-editor-inside-left wpsr-element-label wpsr-element-center wpsr-input-field-label">
+              {{ $t(`Player Design`) }}
+              <el-tooltip
+                :raw-content="true"
+                effect="dark"
+                placement="top-start"
+                :content="$t('Reuse the design and the layers (call to action, email capture) of one of your Fluent Player videos for these testimonials.')"
+              >
+                <el-icon><InfoFilled /></el-icon>
+              </el-tooltip>
+            </span>
+            <div class="wpsr-editor-inside-right">
+              <el-select v-model="template_meta.fluent_player_media" placeholder="Select an option" size="small" class="wpsr-text-input">
+                <el-option
+                    v-for="item in fluentPlayerMediaOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                >
+                </el-option>
+              </el-select>
+            </div>
+          </div>
+
+          <div class="wpsr-settings-switch" v-if="template_meta.platform.includes('testimonial')">
             <span class="wpsr-demonstration wpsr-editor-inside-left wpsr-input-field-label">{{ $t(`Display Author Position`) }}</span>
             <div class="wpsr-editor-inside-right">
               <el-switch
@@ -612,7 +701,7 @@
             </div>
           </div>
 
-          <div class="wpsr-settings-switch">
+          <div class="wpsr-settings-switch" v-if="supportsReviewImages">
             <span class="wpsr-demonstration wpsr-editor-inside-left wpsr-input-field-label">{{ $t('Show Review Images') }}</span>
             <div class="wpsr-editor-inside-right">
               <el-switch
@@ -733,7 +822,7 @@
           <MinusIcon v-else/>
         </span>
       </template>
-      <UpgradeToProBanner v-if="!has_pro" />
+      <UpgradeToProBanner placement="feature_lock_reviews_editor" v-if="!has_pro" />
       <div class="wpsr-switch-row" v-if="template_meta.show_header">
         <span class="wpsr-element-label wpsr-demonstration wpsr-editor-inside-left wpsr-input-field-label">
           <span>
@@ -1040,7 +1129,7 @@ import NotificationSettings from "./NotificationSettings";
 import ImageSelect from "../../../core-ui/editor/ImageSelect";
 import EditorGroup from '../../../core-ui/editor/EditorGroup';
 import UpgradeToProButton from '../../../views/advertise/UpgradeToProButton';
-import { throttle } from '../../../../utils';
+import { throttle, wpsrFetchFluentPlayerMedia } from '../../../../utils';
 import PlusIcon from "../../../pieces/icons/PlusIcon";
 import MinusIcon from "../../../pieces/icons/MinusIcon";
 import PlatformIcon from  "../../../pieces/icons/PlatformIcon";
@@ -1061,6 +1150,7 @@ import ProCrownIcon from "../../../pieces/icons/ProCrownIcon.vue";
 import UpgradeToProBanner from "../../../views/advertise/UpgradeToProBanner.vue";
 import ChatEditorAccordionsIconPack from "../../../pieces/icons/ChatEditorAccordionsIconPack.vue";
 import {PlatformIconMixin} from "../../../../mixins/PlatformIconMixin";
+import {wpsrToolbarSupported} from "../../../../utils/visitorToolbar";
 
 export default {
   name: "ReviewsEditor",
@@ -1095,6 +1185,8 @@ export default {
   data() {
     return {
       template2EligiblePlatforms: ['woocommerce', 'custom', 'fluent_forms', 'fluent-cart'],
+      // Only these platforms can store uploaded review images.
+      reviewImagePlatforms: ['native_form', 'woocommerce', 'fluent-cart', 'fluent_forms', 'testimonial'],
       layout_settings: [
         {
           fieldKey: 'responsive_column_number',
@@ -1205,6 +1297,8 @@ export default {
           type: 'select',
           disabled: !this.has_pro,
           title: this.$t('Button Source Type'),
+          tooltip: true,
+          tooltipText: this.$t('Need photo uploads? Native Review Form already supports these — no extra plugin needed.') + "<br>" + this.$t("Only use Fluent Form Shortcode ID if you're already using Fluent Forms elsewhere on your site."),
           condition: {
             key: 'add_custom_war_btn_url',
             selector: 'true'
@@ -1269,7 +1363,7 @@ export default {
           title: this.$t('Form Shortcode ID'),
           placeholder: this.$t('Ex: 1'),
           tooltip: true,
-          tooltipText: this.$t("Fluent Forms will only display on your site's preview/live pages/posts <br> not while you're in editing mode in the WordPress Editor."),
+          tooltipText: this.$t("Fluent Forms will only display on your site's preview/live pages/posts.") + "<br>" + this.$t("It will not display while you are in editing mode in the WordPress Editor."),
           condition: {
             operator: 'multiple',
             terms: [
@@ -1321,7 +1415,7 @@ export default {
             }
           ],
           tooltip: true,
-          tooltipText: this.$t("The Load More button will only display on your site's preview/live pages/posts <br> not while you're in editing mode in the WordPress Editor.")
+          tooltipText: this.$t("The Load More button will only display on your site's preview/live pages/posts.") + "<br>" + this.$t("It will not display while you are in editing mode in the WordPress Editor.")
         },
         {
           fieldKey: 'load_more_button_text',
@@ -1622,7 +1716,7 @@ export default {
           title: this.$t('Fluent Form Shortcode ID'),
           placeholder: this.$t('Ex: 1'),
           tooltip: true,
-          tooltipText: this.$t("Fluent Forms will only display on your site's preview/live pages/posts <br> not while you're in editing mode in the WordPress Editor."),
+          tooltipText: this.$t("Fluent Forms will only display on your site's preview/live pages/posts.") + "<br>" + this.$t("It will not display while you are in editing mode in the WordPress Editor."),
           condition: {
             'key': 'display_mode',
             'selector': 'form_shortcode_id'
@@ -1906,6 +2000,8 @@ export default {
       platformSelectorLoading: false,
       badgeSkinLoading: false,
       templateTypeLoading: false,
+      // Filled from Fluent Player's media list, see fetchFluentPlayerMedia().
+      fluentPlayerMedias: [],
     }
   },
 
@@ -1914,7 +2010,19 @@ export default {
     this.throttledFetchReviews = throttle(this.fetchReviews, 500);
   },
 
+  mounted() {
+    if (this.appVars && this.appVars.has_fluent_player) {
+      this.fetchFluentPlayerMedia();
+    }
+  },
+
   methods: {
+    /** Only loads: the saved id is seeded by fluentPlayerMediaOptions(). */
+    fetchFluentPlayerMedia() {
+      wpsrFetchFluentPlayerMedia(this.appVars).then((medias) => {
+        this.fluentPlayerMedias = medias;
+      });
+    },
     businessLabel(business, key, trim = false) {
       let name = business.name || key;
       if (trim) {
@@ -2033,8 +2141,36 @@ export default {
     },
   },
   computed: {
+    supportsReviewImages() {
+      const platforms = this.template_meta && this.template_meta.platform;
+      if (!platforms || !platforms.length) {
+        return false;
+      }
+      return platforms.some(platform => this.reviewImagePlatforms.includes(platform));
+    },
     aiSummaryToggleDisabled() {
       return !this.has_pro || !this.can_enable_ai_summary;
+    },
+    // Shared with the preview via utils/visitorToolbar, so the switch and the bar cannot drift apart.
+    showVisitorSortingToggle() {
+      return wpsrToolbarSupported(this.template_meta);
+    },
+    /** Fluent Player only has something to play once a testimonial video can show. */
+    showFluentPlayerSettings() {
+      return !!(this.appVars && this.appVars.has_fluent_player)
+        && !!(this.template_meta.platform && this.template_meta.platform.includes('testimonial'))
+        && this.template_meta.show_review_video === 'true';
+    },
+    /** Keeps the saved design listed while it loads, or once unpublished, so the select is never empty. */
+    fluentPlayerMediaOptions() {
+      const options = [{value: 0, label: this.$t('Default player design')}, ...this.fluentPlayerMedias];
+      const savedId = parseInt(this.template_meta.fluent_player_media, 10) || 0;
+
+      if (savedId && !options.some((option) => option.value === savedId)) {
+        options.push({value: savedId, label: '#' + savedId});
+      }
+
+      return options;
     },
     templateTypes() {
       const types = [

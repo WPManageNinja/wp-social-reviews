@@ -1,0 +1,46 @@
+.wpsr-ig-header.wpsr-ig-header-layout-minimal{
+  .wpsr-ig-header-inner{
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0;
+    background-color: transparent;
+    justify-content: center;
+    gap: 14px;
+
+    .wpsr-ig-header-logo{
+      margin-right: 0;
+      a img{
+        padding: 3px;
+        border: 3px solid #0095F6;
+        box-sizing: border-box;
+        object-fit: cover;
+      }
+    }
+
+    .wpsr-ig-header-info{
+      flex-grow: 0;
+    }
+  }
+}
+
+.wpsr-ig-header-layout-minimal .wpsr-ig-follow-btn{
+  margin-left: 18px;
+  a{
+    border-radius: 8px;
+  }
+}
+
+.is-mobile-active{
+  .wpsr-ig-header.wpsr-ig-header-layout-minimal .wpsr-ig-header-inner{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0;
+  }
+  .wpsr-ig-header-layout-minimal .wpsr-ig-follow-btn{
+    margin-left: 0;
+    margin-top: 0;
+  }
+}

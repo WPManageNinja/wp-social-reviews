@@ -1,5 +1,5 @@
 <template>
-    <div class="wpsr_editor" v-if="feedConfig" :class="{ 'wpsr-blurred': showWelcomePopup }">
+    <div class="wpsr_editor" v-if="feedConfig" :class="{ 'wpsr-blurred': showWelcomePopup, 'wpsr-editor-sidebar-minimized': wpsrSidebarMinimized, 'wpsr-sidebar-resizing': wpsrSidebarResizing }">
         <editor-header
             :title="template_title"
             :platform_section="platform_section"
@@ -9,7 +9,7 @@
         ></editor-header>
 
         <div class="wpsr_editor_wrapper">
-            <el-container>
+            <el-container :style="{ '--wpsr-editor-sidebar-width': wpsrSidebarWidth + 'px' }">
               <div v-if="has_pro">
                 <div v-html="css"></div>
               </div>
@@ -31,7 +31,9 @@
                         />
                     </div>
                 </el-main>
+                <SidebarToggleButton :minimized="wpsrSidebarMinimized" @toggle="toggleEditorSidebar" />
                 <el-aside class="wpsr-editor-sidebar">
+                  <SidebarResizeHandle :width="wpsrSidebarWidth" :min="wpsrSidebarMinWidth" :max="wpsrSidebarMaxWidth" @resize-start="startSidebarResize" @resize-step="stepSidebarResize" />
                   <UpgradeApp v-if="!has_pro" />
                   <el-tabs v-model="activeTab" class="wpsr-element-tab-wrapper">
                     <el-tab-pane label="General" name="general" class="wpsr-element-tab-item">
@@ -100,10 +102,13 @@ import OnboardWelcomePopup from "../../pieces/OnboardWelcomePopup.vue";
 import TwitterFeedConnection from './editor-ui/TwitterFeedConnection';
 import DemoTemplateAlert from "../../pieces/DemoTemplateAlert.vue";
 import ProCrownIcon from '../../pieces/icons/ProCrownIcon';
+import SidebarToggleButton from '../../pieces/SidebarToggleButton';
+import SidebarResizeHandle from '../../pieces/SidebarResizeHandle';
+import { editorSidebarMixin } from "../../../mixins/editorSidebarMixin";
 
 export default {
     name: "TwitterView",
-    mixins: [helperStyle, templateMixin, commonMixin, jsLibraryMixin],
+    mixins: [helperStyle, templateMixin, commonMixin, jsLibraryMixin, editorSidebarMixin],
     components: {
       DemoTemplateAlert,
         OnboardWelcomePopup,
@@ -117,7 +122,9 @@ export default {
         UpgradeToProButton,
         TwitterFeedConnection,
         UpgradeApp,
-        ProCrownIcon
+        ProCrownIcon,
+        SidebarToggleButton,
+        SidebarResizeHandle
     },
     data() {
         return {

@@ -20,11 +20,13 @@
 @import "elements/screen-option-drawer";
 @import "elements/dark-mode";
 @import "elements/photo-upload";
+@import "elements/video-upload";
 
 @import "template-editor/edit-view";
 @import "template-editor/docs";
 @import "template-editor/full_screen";
 
+@import "components/auth-redirect";
 @import "components/image-selection";
 @import "components/add-new-review";
 @import "components/styles-section";
@@ -36,7 +38,11 @@
 @import "elements/native-components";
 
 @import "reviews-templates/popup";
+@import "../public/reviews-templates/visitor-toolbar";
+@import "reviews-templates/visitor-toolbar-preview";
 @import "reviews-templates/template";
+// Same partial as the public build; the preview renders the same class names.
+@import "../public/reviews-templates/card-text";
 @import "reviews-templates/template-1";
 @import "reviews-templates/template-2";
 @import "reviews-templates/template-3";
@@ -55,6 +61,9 @@
 
 @import "testimonial-templates/template-1";
 @import "testimonial-templates/template-2";
+// Same partial as the public build. The preview renders the same class names, so
+// a copy here would be two files to keep in step.
+@import "../public/testimonial-templates/video";
 
 @import "chat-templates/template-1";
 @import "chat-templates/template-2";
@@ -67,12 +76,19 @@
 @import "feed-templates/youtube/template";
 @import "feed-templates/youtube/template-2";
 @import "feed-templates/youtube/template-3";
+@import "feed-templates/youtube/template-4";
+@import "feed-templates/youtube/template-5";
 
 @import "feed-templates/instagram/template";
+@import "feed-templates/instagram/card-shared";
 @import "feed-templates/instagram/template-2";
+@import "feed-templates/instagram/template-3";
+@import "feed-templates/instagram/template-4";
 
 
 @import "feed-templates/facebook/template-1";
+@import "feed-templates/facebook/template-3";
+@import "feed-templates/facebook/template-4";
 @import "feed-templates/facebook/photo-feed";
 @import "feed-templates/facebook/video-feed";
 @import "feed-templates/facebook/event-feed";
@@ -83,4 +99,6 @@
 @import "feed-templates/tiktok/admin";
 @import "feed-templates/tiktok/template-1";
 @import "feed-templates/tiktok/template-2";
+@import "feed-templates/tiktok/template-3";
+@import "feed-templates/tiktok/template-4";
 @import "feed-templates/tiktok/responsive";

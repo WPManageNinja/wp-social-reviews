@@ -34,6 +34,12 @@
                     {{ $t('Add Your API Key Here') }}
                   </h4>
                   <p class="wpsr-connection-modal-input-description"> If you need help with getting your Tripadvisor API Key, <a :href="apiUrl" target="_blank">Click here</a></p>
+                  <p class="wpsr-connection-modal-input-description">
+                    Tripadvisor's free plan sends the <strong>3 most recent reviews</strong> each sync.
+                    Your collection builds up over time — every scheduled sync adds any new ones and
+                    keeps everything already saved. Tripadvisor also allows 1,000 items in total
+                    before they start charging.
+                  </p>
                 </div>
                 <span v-if="message" :class="messageType">{{ message }}</span>
                 <InputPassword
@@ -48,7 +54,14 @@
                     {{ $t('Add Your Place ID Here') }}
                   </h4>
                   <p class="wpsr-connection-modal-input-description">
-                    <a target="_blank" :href="sourceUrl">Click here</a> to get your {{ ucFirst(platFormName) }} {{ sourceText }} ID.
+                    Copy the number after <strong>-d</strong> in your
+                    <a target="_blank" :href="sourceUrl">Tripadvisor</a> page URL —
+                    in <em>…-g60724-<strong>d8725965</strong>-…</em> it's <strong>8725965</strong>
+                    (<strong>-g</strong> is the city).
+                  </p>
+                  <p class="wpsr-connection-modal-input-description">
+                    Works for hotels, restaurants and attractions. Tripadvisor doesn't share
+                    reviews for tours or vacation rentals, so those can't be connected.
                   </p>
                 </div>
                 <span v-if="source_message" :class="source_messageType">{{ source_message }}</span>
@@ -65,17 +78,11 @@
               </div>
             </div>
           </el-tab-pane>
-          <el-tab-pane name="business_url">
-            <template #label>
-              <span class="wpsr-connections-tabs-label">
-                <i class="wpsr-icon"><GlobalLineIcon/></i>
-                <div class="wpsr-connections-tabs-label-group">
-                  <span>Business URL( Deprecated Soon)</span>
-                  <p>Connect via URL</p>
-                </div>
-              </span>
-            </template>
-          </el-tab-pane>
+          <!--
+            Business URL tab removed: Tripadvisor serves a DataDome challenge (403)
+            to server-side requests on every page type, so the scrape path cannot
+            read anything. Reconnecting it needs that to change, not a selector fix.
+          -->
         </el-tabs>
       </div>
 

@@ -7,10 +7,25 @@ use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\App\Services\DataProtector;
 use WPSocialReviews\App\Services\GlobalSettings;
 use WPSocialReviews\App\Services\Platforms\PlatformManager;
+use WPSocialReviews\App\Services\Platforms\RemoteAuth;
 
 abstract class BaseFeed
 {
     public $platform;
+    protected $authProvider = '';
+    protected $authFlow = '';
+
+    /** @var CacheHandler|null Set by each platform feed in its own constructor. */
+    protected $cacheHandler;
+
+    /**
+     * Refresh the given expired caches. Each platform builds its own API calls.
+     *
+     * @param array $caches
+     * @return void
+     */
+    abstract public function updateCachedFeeds($caches);
+
     public function __construct($platform)
     {
         $this->platform = $platform;
@@ -25,13 +40,21 @@ abstract class BaseFeed
         add_action('wpsocialreviews/get_verification_configs_' . $this->platform, array($this, 'getVerificationConfigs'));
         add_action('wpsocialreviews/clear_verification_configs_' . $this->platform, array($this, 'clearVerificationConfigs'));
 
+
+        if ($this->authProvider) {
+            add_action('wpsocialreviews/prepare_feed_auth_' . $this->platform, array($this, 'prepareAuth'));
+            add_action('wpsocialreviews/consume_feed_auth_' . $this->platform, array($this, 'consumeAuth'));
+        }
+
+
+
         //handle editor meta
         add_action('wpsocialreviews/get_editor_settings_' . $this->platform, array($this, 'getEditorSettings'));
         add_action('wpsocialreviews/edit_editor_settings_' . $this->platform, array($this, 'editEditorSettings'), 10, 2);
         add_action('wpsocialreviews/update_editor_settings_' . $this->platform, array($this, 'updateEditorSettings'), 10, 2);
 
         //handle advance settings
-        add_action('wpsocialreviews/save_advance_settings_' . $this->platform, array($this, 'saveAdvanceSettings'), 10, 2);
+        add_action('wpsocialreviews/save_advance_settings_' . $this->platform, array($this, 'saveAdvanceSettings'));
         add_action('wpsocialreviews/get_advance_settings_' . $this->platform, array($this, 'getAdvanceSettings'));
         add_action('wpsocialreviews/clear_cache_' . $this->platform, array($this, 'clearCache'));
 
@@ -39,10 +62,49 @@ abstract class BaseFeed
         add_action('wpsr_' . $this->platform . '_feed_update', array($this, 'doCronEvent'));
     }
 
+    public function prepareAuth($settings = [])
+    {
+        if (!$this->authProvider) {
+            wp_send_json_error([
+                'message' => __('Authentication is not supported for this platform.', 'wp-social-reviews')
+            ], 423);
+        }
+        RemoteAuth::prepareAuth($this->platform, $this->authProvider, $this->authFlow, $settings);
+    }
+
+    public function consumeAuth($settings = [])
+    {
+        if (!$this->authProvider) {
+            wp_send_json_error([
+                'message' => __('Authentication is not supported for this platform.', 'wp-social-reviews')
+            ], 423);
+        }
+        RemoteAuth::consumeAuth(
+            $this->platform,
+            $settings,
+            function ($result) { return $this->persistAuthResult($result); },
+            function ($result) { return $this->formatAuthResultForResponse($result); }
+        );
+    }
+
+    protected function persistAuthResult($result)
+    {
+        throw new \RuntimeException(esc_html__('Authentication is not supported for this platform.', 'wp-social-reviews'));
+    }
+
+    protected function formatAuthResultForResponse($result)
+    {
+        return [
+            'ok'       => (bool) Arr::get($result, 'ok'),
+            'platform' => $this->platform,
+            'account'  => Arr::get($result, 'account', []),
+        ];
+    }
+
     /**
      * Get Advance Settings
      *
-     * @return json
+     * @return void
      * @since 1.2.5
      */
     public function getAdvanceSettings()

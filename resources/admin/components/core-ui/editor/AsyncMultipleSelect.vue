@@ -2,7 +2,7 @@
     <el-select
         ref="selectRef"
         v-model="localValue"
-        placeholder="Type to search pages..."
+        :placeholder="searchPlaceholder"
         size="large"
         :disabled="disabled"
         :multiple="multiple"
@@ -53,6 +53,10 @@ export default {
         extraParams: {
             type: Object,
             default: () => ({})
+        },
+        searchPlaceholder: {
+            type: String,
+            default: 'Type to search pages...'
         }
     },
 

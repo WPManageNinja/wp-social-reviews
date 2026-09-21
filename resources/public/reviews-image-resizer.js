@@ -21,6 +21,11 @@ jQuery(document).ready(function($) {
         if (match) {
              post_id = match[1];
         }
+        // The pro drawer prints .wpsr-reviews-wrapper with no id class.
+        if (!post_id) {
+            return;
+        }
+
         let upload_url = window.wpsr_ajax_params.upload_url;
         let element = document.querySelector(`.wpsr-reviews-${post_id}`);
         let dataPlatforms = element.getAttribute('data-platforms');

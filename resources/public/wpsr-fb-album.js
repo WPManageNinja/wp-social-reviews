@@ -38,6 +38,7 @@ jQuery(document).ready(function ($) {
                     action: 'wpsr_facebook_album_photo',
                     template_id: templateId,
                     feed_id: feedId,
+                    security: wpsr_ajax_params.wpsr_nonce,
                 }).then(response => {
                     if (response) {
                         let activeAlbums = $(`#wpsr-album-feed-${feedId}`);

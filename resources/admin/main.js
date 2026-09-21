@@ -7,6 +7,7 @@ import moment from 'moment';
 import 'moment-duration-format';
 import WPSocialReviews from './WPSocialReviews';
 import WpsrSkeleton from './components/global/skeleton.vue';
+import { wpsrUpgradeUrl } from './utils/upgradeUrl';
 
 const wpSocialReviews = new WPSocialReviews();
 
@@ -40,6 +41,8 @@ app.config.globalProperties.$put = wpSocialReviews.$put;
 app.config.globalProperties.$patch = wpSocialReviews.$patch;
 app.config.globalProperties.appVars = window.WPSocialReviewsAdmin;
 app.config.globalProperties.has_pro = !!window.WPSocialReviewsAdmin.has_pro;
+app.config.globalProperties.facebook_pro_templates = window.WPSocialReviewsAdmin.facebook_pro_templates || [];
+app.config.globalProperties.instagram_pro_templates = window.WPSocialReviewsAdmin.instagram_pro_templates || [];
 app.config.globalProperties.is_custom_feed_for_tiktok_activated = !!window.WPSocialReviewsAdmin.has_custom_feed_for_tiktok;
 app.config.globalProperties.is_custom_feed_for_tiktok_installed = !!window.WPSocialReviewsAdmin.is_custom_feed_for_tiktok_activated;
 app.config.globalProperties.assets_url = window.WPSocialReviewsAdmin.assets_url;
@@ -50,7 +53,7 @@ app.config.globalProperties.hasPermission = wpSocialReviews.hasPermission;
 app.mixin({
     data() {
         return {
-            pro_purchase_url: 'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade',
+            pro_purchase_url: wpsrUpgradeUrl('upgrade_page'),
         }
     },
     computed: {

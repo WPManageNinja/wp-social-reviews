@@ -42,9 +42,11 @@
 
 <script type="text/babel">
     import Channels from './_channels';
+    import { wpsrChatMessageContextMixin } from './chatMessageContextMixin';
     export default {
         name: 'wpsr_chat_button',
         props: ['templateConfigs', 'configs', 'image_url', 'resetBubbleIcon', 'isChannelShow', 'selectedChannelInfo'],
+        mixins: [wpsrChatMessageContextMixin],
         components: {
           Channels
         },
@@ -86,6 +88,7 @@
               let configs = this.configs;
               let is_url = this.isUrl(channel.credential);
               let credential = (is_url || channel.name === 'microsoft-teams') ? channel.credential : channel.webUrl+channel.credential.replace("+", "");
+              credential = this.wpsrAppendContextToChatUrl(credential, channel);
               if(configs.settings.popup_target === 'true') {
                 let params = `scrollbars=no,resizable=no,status=no,location=no,toolbar=no,menubar=no,width=800,height=500,left=100,top=100`;
                 open(credential, '', params);
@@ -103,7 +106,7 @@
               return;
             }
             this.selectedChannel = this.configs.channels.length > 1 ? (this.selectedChannelInfo ? this.selectedChannelInfo : this.selectedChannel) : channel;
-            const message = encodeURIComponent(this.preFilledMessage);
+            const message = encodeURIComponent(this.wpsrGetMessageWithContext(this.preFilledMessage, this.selectedChannel));
             if(this.selectedChannel.name === 'whatsapp') {
               const whatsappUrl = `https://wa.me/${this.selectedChannel.credential}?text=${message}`;
               window.open(whatsappUrl, '_blank');
@@ -113,7 +116,7 @@
             } 
 
 
-          }
+          },
         }
     }
 </script>

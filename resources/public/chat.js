@@ -5,12 +5,148 @@ jQuery(document).ready(function($) {
     let popup_target = $('.wpsr-fm-chat-wrapper').data('popup-target');
     let selectedChannelName = '';
     let selectedChannelNumber = '';
+    let selectedChannelMessageContext = '';
+    let selectedChannelMessageContextFormat = '';
+    let selectedChannelPageMessageFormat = '';
+    let selectedChannelProductInfo = null;
     let prefilledPlatformName = ['whatsapp', 'sms'];
+    let wpsrChannelProtocols = {
+        'microsoft-teams': ['https:', 'msteams:'],
+        phone: ['tel:'],
+        sms: ['sms:'],
+        email: ['mailto:'],
+        wechat: ['weixin:'],
+        viber: ['viber:'],
+        fluent_forms: []
+    };
+
+    function wpsrIsSafeChatUrl(url, channel) {
+        if (!url) {
+            return false;
+        }
+
+        try {
+            let wpsrParsedUrl = new URL(url, window.location.href);
+            let wpsrAllowedProtocols = wpsrChannelProtocols[channel] || ['http:', 'https:'];
+
+            return wpsrAllowedProtocols.includes(wpsrParsedUrl.protocol);
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function wpsrParseProductInfo(value) {
+        if (!value) {
+            return null;
+        }
+
+        if (typeof value === 'object') {
+            return value;
+        }
+
+        try {
+            return JSON.parse(value);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function wpsrGetElementMessageContext($element) {
+        let messageContext = $element.attr('data-message-context');
+
+        if (messageContext === 'none') {
+            return '';
+        }
+
+        return messageContext || '';
+    }
+
+    function wpsrGetElementProductInfo($element) {
+        return $element.attr('data-product-context-info') || $element.attr('data-woocommerce-product-info');
+    }
+
+    function wpsrBuildFormattedContextMessage(format, productInfo) {
+        productInfo = wpsrParseProductInfo(productInfo);
+
+        let replacements = {
+            '{page_title}': document.title,
+            '{page_url}': window.location.href,
+            '{page_link}': window.location.href,
+            '{product_title}': productInfo ? productInfo.title || '' : '',
+            '{product_price}': productInfo ? productInfo.price || '' : '',
+            '{product_sku}': productInfo ? productInfo.sku || '' : '',
+            '{product_stock}': productInfo ? productInfo.stock || '' : '',
+            '{product_url}': productInfo ? productInfo.url || '' : '',
+            '{product_link}': productInfo ? productInfo.url || '' : '',
+            '{woocommerce_product_title}': productInfo ? productInfo.title || '' : '',
+            '{woocommerce_product_price}': productInfo ? productInfo.price || '' : '',
+            '{woocommerce_product_sku}': productInfo ? productInfo.sku || '' : '',
+            '{woocommerce_product_stock}': productInfo ? productInfo.stock || '' : '',
+            '{woocommerce_product_url}': productInfo ? productInfo.url || '' : '',
+            '{woocommerce_product_link}': productInfo ? productInfo.url || '' : '',
+            '{fluentcart_product_title}': productInfo ? productInfo.title || '' : '',
+            '{fluentcart_product_price}': productInfo ? productInfo.price || '' : '',
+            '{fluentcart_product_sku}': productInfo ? productInfo.sku || '' : '',
+            '{fluentcart_product_stock}': productInfo ? productInfo.stock || '' : '',
+            '{fluentcart_product_url}': productInfo ? productInfo.url || '' : '',
+            '{fluentcart_product_link}': productInfo ? productInfo.url || '' : ''
+        };
+
+        let contextMessage = format || '';
+
+        Object.keys(replacements).forEach(function(placeholder) {
+            contextMessage = contextMessage.split(placeholder).join(replacements[placeholder]);
+        });
+
+        return contextMessage.trim();
+    }
+
+    function wpsrBuildContextMessage(messageContext, productInfo, contextFormat, pageFormat) {
+        productInfo = wpsrParseProductInfo(productInfo);
+
+        if ((messageContext === 'woocommerce_product' || messageContext === 'fluentcart_product') && !productInfo) {
+            return wpsrBuildFormattedContextMessage(pageFormat, null);
+        }
+
+        return wpsrBuildFormattedContextMessage(contextFormat || pageFormat, productInfo);
+    }
+
+    function wpsrAppendContextToMessage(message, messageContext, productInfo, contextFormat, pageFormat) {
+        let contextMessage = wpsrBuildContextMessage(messageContext, productInfo, contextFormat, pageFormat);
+
+        if (!contextMessage) {
+            return message;
+        }
+
+        return message ? message + '\n\n' + contextMessage : contextMessage;
+    }
+
+    function wpsrAppendContextToChatUrl(url, channel, messageContext, productInfo, contextFormat, pageFormat) {
+        if (channel !== 'whatsapp' || !messageContext) {
+            return url;
+        }
+
+        try {
+            let wpsrParsedUrl = new URL(url, window.location.href);
+            let wpsrMessage = wpsrParsedUrl.searchParams.get('text') || '';
+            wpsrParsedUrl.searchParams.set('text', wpsrAppendContextToMessage(wpsrMessage, messageContext, productInfo, contextFormat, pageFormat));
+
+            return wpsrParsedUrl.toString();
+        } catch (error) {
+            return url;
+        }
+    }
+
     //open popup window
     $('.wpsr-channels, .wpsr-channels-icons').children('.wpsr-channel-item').each(function (index){
         let $this = $(this);
         let channel = $this.find('.wpsr-channel-btn').data('channel');
         let isPrefilled = $this.find('.wpsr-channel-btn').data('prefilled');
+        let $channelButton = $this.find('.wpsr-channel-btn');
+        let messageContext = wpsrGetElementMessageContext($channelButton);
+        let contextFormat = $channelButton.attr('data-message-context-format');
+        let pageFormat = $channelButton.attr('data-page-message-format');
+        let productInfo = wpsrGetElementProductInfo($channelButton);
         // stop redirect for fluent forms
 
         if(channel === 'fluent_forms' || (prefilledPlatformName.includes(channel)  && isPrefilled)){
@@ -18,6 +154,10 @@ jQuery(document).ready(function($) {
             return;
         }
         let url =  $this.find('.wpsr-channel-btn.'+channel+index).data("chat-url");
+        if (!wpsrIsSafeChatUrl(url, channel)) {
+            return;
+        }
+        url = wpsrAppendContextToChatUrl(url, channel, messageContext, productInfo, contextFormat, pageFormat);
         $this.find('.wpsr-channel-btn.'+channel+index).attr('href', url);
         $('.wpsr-channel-item.'+channel+index).on('click', function(event) {
             event.preventDefault();
@@ -39,6 +179,11 @@ jQuery(document).ready(function($) {
             return;
         }
         let url =  $this.find('.wpsr-fm-btn.'+channel).data("chat-url");
+        if (!wpsrIsSafeChatUrl(url, channel)) {
+            return;
+        }
+        let $chatButton = $this.find('.wpsr-fm-btn.'+channel);
+        url = wpsrAppendContextToChatUrl(url, channel, wpsrGetElementMessageContext($chatButton), wpsrGetElementProductInfo($chatButton), $chatButton.attr('data-message-context-format'), $chatButton.attr('data-page-message-format'));
         $this.find('.wpsr-fm-btn.'+channel).attr('href', url);
         $('.wpsr-fm-btn-icon .'+channel).on('click', function(event) {
             event.preventDefault();
@@ -77,12 +222,7 @@ jQuery(document).ready(function($) {
         const formWrapper = document.querySelector('.wpsr-fluentform-wrapper');
 
         if (chatBox && formWrapper) {
-          const chatBoxStyle = window.getComputedStyle(chatBox);
-          if (chatBoxStyle.display !== 'none' ) {
-            formWrapper.style.display = 'hidden';
-          } else {
-            formWrapper.style.display = '';
-          }
+          formWrapper.style.display = '';
         }
     }
 
@@ -136,6 +276,47 @@ jQuery(document).ready(function($) {
         toggleVisibility();
     }
 
+    $('.wpsr-channels, .wpsr-channels-icons').on('click.wpsrChannelPrefilled', '.wpsr-channel-btn', function(e) {
+        const wpsrIconLayout = document.querySelector('.wpsr-chat-icons-layout');
+        if (!wpsrIconLayout) {
+            return;
+        }
+
+        e.preventDefault();
+        const dataChannel = $(this).data('channel');
+        const dataNumber = $(this).data('number');
+        const dataPrefilled = $(this).data('prefilled');
+        const wpsrChatContainer = document.querySelector('.wpsr_icon_chat_container');
+        selectedChannelName = dataChannel;
+        selectedChannelNumber = dataNumber;
+        selectedChannelMessageContext = wpsrGetElementMessageContext($(this));
+        selectedChannelMessageContextFormat = $(this).attr('data-message-context-format') || '';
+        selectedChannelPageMessageFormat = $(this).attr('data-page-message-format') || '';
+        selectedChannelProductInfo = wpsrParseProductInfo(wpsrGetElementProductInfo($(this)));
+        if(wpsrChatContainer){
+            $('.wpsr-channels').css({'display': 'none'});
+            $('.wpsr-fm-multiple-btn').css({'display': 'none'});
+            if(prefilledPlatformName.includes(dataChannel)){
+                if (dataPrefilled !== 1) {
+                    jQuery('.wpsr-fm-chat-box').removeClass('wpsr-fm-chat-box-display');
+                    jQuery('.wpsr-channels-icons').removeClass('wpsr-fm-chat-box-display');
+                    jQuery('.wpsr-channels-icons').css({'visibility': 'hidden'});
+
+                    jQuery('.wpsr-fm-chat-bubble').removeClass('active');
+                    jQuery('.wpsr-chat-icons-closee').hide();
+                    jQuery('.wpsr-fm-bubble-btn img').show();
+                } else {
+                    wpsrChatContainer.style.display = 'block';
+                }
+            } else if(dataChannel === 'fluent_forms') {
+
+            } else {
+                jQuery('.wpsr-channels, .wpsr-channels-icons').removeClass('wpsr-fm-chat-box-display');
+                jQuery('.wpsr-channels, .wpsr-channels-icons').css({'display': 'none'});
+            }
+        }
+    });
+
     $('.wpsr-fm-bubble-btn,.wpsn_chat_opener').on('click',function(e) {
         e.preventDefault();
         const whatsappContainer = document.querySelector('.wpsr-prefilled-input-container');
@@ -152,6 +333,10 @@ jQuery(document).ready(function($) {
             if (clickedBtn.hasClass(platformName)) {
                 selectedChannelName = platformName;
                 selectedChannelNumber = clickedBtn.data('phone-number');
+                selectedChannelMessageContext = wpsrGetElementMessageContext(clickedBtn);
+                selectedChannelMessageContextFormat = clickedBtn.attr('data-message-context-format') || '';
+                selectedChannelPageMessageFormat = clickedBtn.attr('data-page-message-format') || '';
+                selectedChannelProductInfo = wpsrParseProductInfo(wpsrGetElementProductInfo(clickedBtn));
                 matched = true;
                 break;
             }
@@ -199,7 +384,7 @@ jQuery(document).ready(function($) {
 
         } else {
             if(wpsrChannels){
-                wpsrChannels.style.display = 'visible';
+                wpsrChannels.style.display = '';
             }
         }
 
@@ -232,40 +417,10 @@ jQuery(document).ready(function($) {
         }
 
         if(wpsrIconLayout){
-            const wpsrChatContainer = document.querySelector('.iconChatContainer');
+            const wpsrChatContainer = document.querySelector('.wpsr_icon_chat_container');
             if(wpsrChatContainer){
                 wpsrChatContainer.style.display = 'none';
             }
-            $('.wpsr-channels, .wpsr-channels-icons').on('click', '.wpsr-channel-btn', function(e) {
-                e.preventDefault();
-                const dataChannel = $(this).data('channel');
-                const dataNumber = $(this).data('number');
-                const dataPrefilled = $(this).data('prefilled');
-                selectedChannelName = dataChannel;
-                selectedChannelNumber = dataNumber;
-                if(wpsrChatContainer){
-                    $('.wpsr-channels').css({'display': 'none'});
-                    $('.wpsr-fm-multiple-btn').css({'display': 'none'});
-                    if(prefilledPlatformName.includes(dataChannel)){
-                        if (dataPrefilled !== 1) {
-                            jQuery('.wpsr-fm-chat-box').removeClass('wpsr-fm-chat-box-display');
-                            jQuery('.wpsr-channels-icons').removeClass('wpsr-fm-chat-box-display');
-                            jQuery('.wpsr-channels-icons').css({'visibility': 'hidden'});
-
-                            jQuery('.wpsr-fm-chat-bubble').removeClass('active');
-                            jQuery('.wpsr-chat-icons-closee').hide();
-                            jQuery('.wpsr-fm-bubble-btn img').show();
-                        } else {
-                            wpsrChatContainer.style.display = 'block';
-                        }
-                    } else if(dataChannel === 'fluent_forms') {
-
-                    } else {
-                        jQuery('.wpsr-channels, .wpsr-channels-icons').removeClass('wpsr-fm-chat-box-display');
-                        jQuery('.wpsr-channels, .wpsr-channels-icons').css({'display': 'none'});
-                    }
-                }
-            });
         }
     });
 
@@ -301,10 +456,19 @@ jQuery(document).ready(function($) {
             alert('The phone number is missing. Please check and try again.');
             return;
         }
+        let activeChannelName = $(this).closest('.wpsr-prefilled-input-container').data('channel-name') || selectedChannelName;
+        let $prefilledContainer = $(this).closest('.wpsr-prefilled-input-container');
+        let messageContext = wpsrGetElementMessageContext($prefilledContainer) || selectedChannelMessageContext;
+        let contextFormat = $prefilledContainer.attr('data-message-context-format') || selectedChannelMessageContextFormat;
+        let pageFormat = $prefilledContainer.attr('data-page-message-format') || selectedChannelPageMessageFormat;
+        let productInfo = wpsrParseProductInfo(wpsrGetElementProductInfo($prefilledContainer)) || selectedChannelProductInfo;
+        if (activeChannelName === 'whatsapp' && messageContext) {
+            message = wpsrAppendContextToMessage(message, messageContext, productInfo, contextFormat, pageFormat);
+        }
         let appUrl = '';
-        if( selectedChannelName === 'whatsapp') {
+        if( activeChannelName === 'whatsapp') {
             appUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-        } else if( selectedChannelName === 'sms') {
+        } else if( activeChannelName === 'sms') {
             appUrl = `sms:${phoneNumber}?body=${encodeURIComponent(message)}`;
         }
         window.open(appUrl, '_blank');
@@ -320,7 +484,7 @@ jQuery(document).ready(function($) {
             $('.wpsr-has-fluent-form .wpsr-fm-chat-box .wpsr-fm-chat-room .wpsr-fm-btn-icon a').css({'display': 'none'});
         }
 
-        const wpsrChatContainer = document.querySelector('.iconChatContainer');
+        const wpsrChatContainer = document.querySelector('.wpsr_icon_chat_container');
         if(wpsrChatContainer){
             wpsrChatContainer.style.display = 'none';
         }
@@ -360,7 +524,7 @@ jQuery(document).ready(function($) {
         $('.wpsr-fm-chat-wrapper .wpsr-fm-chat-box').removeClass('wpsr-fm-chat-box-display');
         $('.wpsr-fm-chat-wrapper').removeClass('wpsr-fm-chat-box-active');
 
-        const wpsrChatContainer = document.querySelector('.iconChatContainer');
+        const wpsrChatContainer = document.querySelector('.wpsr_icon_chat_container');
         if(wpsrChatContainer){
             $('.wpsr-fm-multiple-btn').css({'display': 'none'});
             wpsrChatContainer.style.display = 'block';
@@ -478,10 +642,20 @@ jQuery(document).ready(function($) {
         item.addEventListener('click', function () {
             const channelName = this.getAttribute('data-channel-name');
             const link = this.querySelector('a');
-            const dataPrefilled = link ? link.getAttribute('data-prefilled') : null;
+            if (!link) {
+                return;
+            }
 
+            const dataPrefilled = link.getAttribute('data-prefilled');
             selectedChannelName   = link.getAttribute('data-channel');
             selectedChannelNumber = link.getAttribute('data-number');
+            selectedChannelMessageContext = link.getAttribute('data-message-context') || '';
+            if (selectedChannelMessageContext === 'none') {
+                selectedChannelMessageContext = '';
+            }
+            selectedChannelMessageContextFormat = link.getAttribute('data-message-context-format') || '';
+            selectedChannelPageMessageFormat = link.getAttribute('data-page-message-format') || '';
+            selectedChannelProductInfo = wpsrParseProductInfo(link.getAttribute('data-product-context-info') || link.getAttribute('data-woocommerce-product-info'));
 
             const formWrapper = document.querySelector('.wpsr-fluentform-wrapper');
             if(channelName === 'fluent_forms'){
@@ -532,7 +706,7 @@ jQuery(document).ready(function($) {
                 const hasFluentForm = $('.wpsr-fm-chat-wrapper').hasClass('wpsr-has-fluent-form');
 
                 if (prefilledContainer && !hasFluentForm) {
-                    const wpsrChatContainer = document.querySelector('.iconChatContainer');
+                    const wpsrChatContainer = document.querySelector('.wpsr_icon_chat_container');
                     if(wpsrChatContainer){
                         if(channelItems.length === 1){
                             $('.wpsr-fm-chat-wrapper .wpsr-fm-chat-box').toggleClass('wpsr-fm-chat-box-display');
@@ -548,17 +722,17 @@ jQuery(document).ready(function($) {
             } else {
                 const wpsrChannels = document.querySelector('.wpsr-channels');
                 if (wpsrChannels) {
-                    wpsrChannels.style.display = 'visible';
+                    wpsrChannels.style.display = '';
                 }
                 const prefilledContainer = document.querySelector('.wpsr-prefilled-input-container');
                 if (prefilledContainer) {
-                    prefilledContainer.style.display = 'hidden';
+                    prefilledContainer.style.display = 'none';
                 }
             }
 
             const activeChannel = jQuery('.wpsr-channel-item .whatsapp, .wpsr-channel-item .sms');
             if (activeChannel.length > 0 && prefilledPlatformName.includes(channelName)) {
-                const wpsrChatContainer = document.querySelector('.iconChatContainer');
+                const wpsrChatContainer = document.querySelector('.wpsr_icon_chat_container');
                 const prefilledContainer = document.querySelector('.wpsr-prefilled-input-container');
                 if (prefilledContainer && !$('.wpsr-fm-chat-wrapper').hasClass('wpsr-has-fluent-form')) {
                     prefilledContainer.style.display = 'flex';

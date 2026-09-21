@@ -21,7 +21,7 @@ class SocialChat extends BaseChat
      *
      * Get Credential
      *
-     * @return json response
+     * @return void
      * @since 1.0.0
      */
     public function getSettings($postId = null)
@@ -50,7 +50,7 @@ class SocialChat extends BaseChat
      *
      * Update Credential
      *
-     * @return json response
+     * @return void
      * @since 1.0.0
      */
     public function updateSettings($postId = null, $args = [])
@@ -68,7 +68,10 @@ class SocialChat extends BaseChat
             $menuOrder = $args['menu_order'];
             unset($args['menu_order']);
             $db = App::getInstance('db');
+            // post_type is re-asserted here: this is a raw UPDATE that bypasses the
+            // WordPress post API, so it must not rely on the caller's guard alone.
             $db->table('posts')->where('ID', $postId)
+                ->where('post_type', 'wpsr_social_chats')
                 ->update([
                     'menu_order' => absint($menuOrder)
                 ]);

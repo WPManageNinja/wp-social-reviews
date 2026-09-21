@@ -87,7 +87,19 @@ export const reviewsHeaderMixin = {
         
         shouldShowWriteReview() {
             return this.metaStyles.display_header_write_review === true &&
-                this.businessInfo;
+                this.businessInfo &&
+                this.hasWriteReviewButtonTarget;
+        },
+
+        hasWriteReviewButtonTarget() {
+            const usesCustomUrl = this.metaStyles.add_custom_war_btn_url === 'true' &&
+                this.metaStyles.war_btn_source === 'custom_url';
+
+            if (!usesCustomUrl) {
+                return true;
+            }
+
+            return String(this.metaStyles.war_btn_source_custom_url || '').trim().length > 0;
         },
         
         // Template2-specific computeds (can be used by Template2 or other templates)

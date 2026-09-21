@@ -116,7 +116,7 @@
                                   href="https://www.instagram.com/accounts/privacy_and_security/" target="_blank"><strong>public</strong></a> [Account Privacy->Private Account] to have access token that are automatically refreshed.</div>
                               <el-icon><InfoFilled /></el-icon>
                             </el-tooltip>
-                            <el-button size="small" @click.prevent="oAuthLogin()" type="primary">Get Refresh Token</el-button>
+                            <el-button size="small" @click.prevent="oAuthLogin()" type="primary" :loading="instagramAuthLoading" :disabled="instagramAuthLoading">Get Refresh Token</el-button>
                           </span>
                     <remove @confirm="clearVerificationConfigs(account.user_id)" platform="instagram"></remove>
                   </div>
@@ -128,7 +128,7 @@
                          <el-icon><InfoFilled /></el-icon>
                          {{ $t('Source Invalid') }}
                        </span>
-                      <a href="#" @click.prevent="oAuthLogin(account.api_type)">Reconnect</a>
+                      <a href="#" @click.prevent="oAuthLogin(account.api_type)" :class="{'wpsr-link-disabled': instagramAuthLoading}">Reconnect</a>
                     </div>
                 </div>
                  <div v-else-if="account.encryption_error" class="wpsr-account-error-status-wrapper">
@@ -137,7 +137,7 @@
                         <el-icon><InfoFilled /></el-icon>
                         {{ $t('Encryption Error') }}
                       </span>
-                     <a href="#" @click.prevent="oAuthLogin(account.api_type)">Reconnect</a>
+                     <a href="#" @click.prevent="oAuthLogin(account.api_type)" :class="{'wpsr-link-disabled': instagramAuthLoading}">Reconnect</a>
                     </span>
                  </div>
                </div>
@@ -166,8 +166,8 @@
               <span class="wpsr-connections-tabs-label">
                 <el-icon size="18"><Suitcase /></el-icon>
                 <div class="wpsr-connections-tabs-label-group">
-                  <span>Business Basic</span>
-                  <p>Connects via Instagram</p>
+                  <span>{{ this.$t('Business Basic') }}</span>
+                  <p>{{ this.$t('Connects via Instagram')}}</p>
                 </div>
               </span>
              </template>
@@ -191,23 +191,11 @@
                 </ul>
              </div>
              <div class="wpsr-accounts-connect-wrapper">
-               <el-button class="wpsr-login-with-ig-btn" @click.prevent="oAuthLogin()" size="default" type="primary">
+               <el-button class="wpsr-login-with-ig-btn" @click.prevent="oAuthLogin()" size="default" type="primary" :loading="instagramAuthLoading" :disabled="instagramAuthLoading">
                  <img :src="assets_url+'/images/icon/icon-instagram-small.png'" alt="Instagram">
-                 {{ $t('Continue with Instagram') }}
+                 {{ $t('Connect Instagram Account') }}
                </el-button>
-             </div>
-             <div class="wpsr-connection-permission-wrapper">
-               <el-collapse v-model="activePermissionPanel">
-                 <el-collapse-item title="This permissions will be granted, when you connect your user account" name="1">
-                   <div class="wpsr-connection-permission-item">
-                     <div class="wpsr-connection-permission-item-header">
-                       <el-icon size="16" color="var(--wpsr-icon-disabled-color)"><Key /></el-icon>
-                       <span>instagram_business_basic</span>
-                     </div>
-                      <p>This permission is used to retrieve your Instagram account’s name, statistics, posts, and other related information from the account you’ve authorized.</p>
-                   </div>
-                 </el-collapse-item>
-               </el-collapse>
+               <p class="wpsr-connect-redirect-note">{{ $t('You will be redirected to WP Social Ninja, then to Instagram to approve access.') }}</p>
              </div>
            </el-tab-pane>
            <el-tab-pane label="Business Advanced" name="business">
@@ -241,53 +229,21 @@
              </div>
              <div class="wpsr-accounts-connect-wrapper">
                <span v-if="credentialsType === 'business'">
-                <el-button class="wpsr-login-with-facebook" @click.prevent="oAuthLogin()" size="default" type="primary">
-                  <img :src="assets_url+'/images/icon/login-fb-btn.png'" alt="Continue with Facebook">
+                <el-button class="wpsr-login-with-facebook" @click.prevent="oAuthLogin()" size="default" type="primary" :loading="instagramAuthLoading" :disabled="instagramAuthLoading">
+                  <FacebookMarkIcon/>
+                  {{ $t('Connect Facebook Account') }}
                 </el-button>
+                <p class="wpsr-connect-redirect-note">{{ $t('You will be redirected to WP Social Ninja, then to Facebook to approve access.') }}</p>
               </span>
-             </div>
-             <div class="wpsr-connection-permission-wrapper">
-               <el-collapse v-model="activePermissionPanel">
-                 <el-collapse-item title="This permissions will be granted, when you connect your user account" name="1">
-                   <div class="wpsr-connection-permission-item">
-                     <div class="wpsr-connection-permission-item-header">
-                       <el-icon size="16" color="var(--wpsr-icon-disabled-color)"><Key /></el-icon>
-                       <span>instagram_basic</span>
-                     </div>
-                     <p>This permission lets us display information about the Instagram account you connect with, so it appears in the header above the feed and helps identify your connected account.</p>
-                   </div>
-                   <div class="wpsr-connection-permission-item">
-                     <div class="wpsr-connection-permission-item-header">
-                       <el-icon size="16" color="var(--wpsr-icon-disabled-color)"><Key /></el-icon>
-                       <span>pages_show_list</span>
-                     </div>
-                     <p>This permission lets us fetch the names of the Instagram accounts you manage, so you can connect multiple accounts at the same time.</p>
-                   </div>
-                   <div class="wpsr-connection-permission-item">
-                     <div class="wpsr-connection-permission-item-header">
-                       <el-icon size="16" color="var(--wpsr-icon-disabled-color)"><Key /></el-icon>
-                       <span>pages_read_engagement</span>
-                     </div>
-                     <p>This permission allows us to view your Page’s follower count, read its content, and access other engagement metrics.</p>
-                   </div>
-                   <div class="wpsr-connection-permission-item">
-                     <div class="wpsr-connection-permission-item-header">
-                       <el-icon size="16" color="var(--wpsr-icon-disabled-color)"><Key /></el-icon>
-                       <span>business_management</span>
-                     </div>
-                     <p>This permission helps us access the names of the Instagram accounts you manage and is required alongside other permissions for full functionality.</p>
-                   </div>
-                 </el-collapse-item>
-               </el-collapse>
              </div>
            </el-tab-pane>
 
-           <el-tab-pane label="Account  Manually" name="manually">
+           <el-tab-pane label="Manual Setup" name="manually">
              <template #label>
               <span class="wpsr-connections-tabs-label">
                 <el-icon size="18"><User /></el-icon>
                  <div class="wpsr-connections-tabs-label-group">
-                     <span>Account  Manually</span>
+                     <span>{{ $t('Manual Setup') }}</span>
                      <p>Connect via Token</p>
                  </div>
               </span>
@@ -356,22 +312,27 @@
       </div>
     </div>
   </el-dialog>
+  <AuthRedirectOverlay
+      :visible="instagramAuthLoading"
+      :title="`${$t('Redirecting to')} ${authServiceHost}`"
+      :subtitle="$t('You will be redirected to our authentication portal. This may take up to 5 seconds.')"
+  />
 </template>
-<style lang="scss">
-
-</style>
 <script>
 import Remove from '../../../core-ui/editor/RemoveConfirm';
 import InputPassword from "../../../core-ui/editor/InputPassword.vue";
 import CreateTemplateIcon from  '../../../pieces/icons/CreateTemplateIcon.vue';
+import AuthRedirectOverlay from '../../../core-ui/AuthRedirectOverlay.vue';
+import FacebookMarkIcon from '../../../pieces/icons/FacebookMarkIcon.vue';
 
 export default {
   props: ['instagramModal', 'access_token', 'expires_in', 'credentials_type'],
   data() {
     return {
-      activePermissionPanel: [],
       loading: false,
       inner_loading: false,
+      instagramAuthLoading: false,
+      _openBusinessModal: false,
       admin_page_url: this.appVars.admin_page_url,
       type: null,
       credentialsType: 'business_basic',
@@ -391,9 +352,11 @@ export default {
   },
 
   components: {
+    FacebookMarkIcon,
     InputPassword,
     Remove,
-    CreateTemplateIcon
+    CreateTemplateIcon,
+    AuthRedirectOverlay,
   },
 
   methods: {
@@ -417,33 +380,36 @@ export default {
       this.addNewAccount = !this.addNewAccount;
     },
     oAuthLogin(apiType = '') {
-      const currentUrl = window.location.href;
-      const isEditor = currentUrl.includes('#/edit-instagram-template/');
-      let callBackUrl;
-      if (isEditor) {
-        const baseUrl = window.location.origin + window.location.pathname;
-        let templateId = null;
-        const hashMatch = window.location.hash.match(/edit-instagram-template\/?(\d+)/);
-        if (hashMatch && hashMatch[1]) {
-          templateId = hashMatch[1];
-        } else {
-          templateId = this.template_id || '';
-        }
-        callBackUrl = `${baseUrl}?page=wpsocialninja.php&edit-instagram-template&${templateId}`;
-      } else {
-        callBackUrl = this.admin_page_url;
-      }
+      if (this.instagramAuthLoading) return;
+      this.credentialsType = apiType || this.credentialsType;
+      this.instagramAuthLoading = true;
 
-      this.credentialsType = apiType !== '' ? apiType : this.credentialsType;
-      if (this.credentialsType === 'business_basic'){
-        let clientId = '563840396380629';
-        let redirectUrl = 'https://wpsocialninja.com/api/instagram-basic-business-display-redirect.php';
-        window.open('https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id='+clientId+'&redirect_uri='+redirectUrl+'&response_type=code&scope=instagram_business_basic&state=' + encodeURIComponent(callBackUrl), '_self');
-      } else if (this.credentialsType === 'business') {
-        let clientId = '443259723723907';
-        let redirectUrl = 'https://wpsocialninja.com/api/instagram-graph-api-redirect.php';
-        window.open('https://graph.facebook.com/oauth/authorize?client_id='+ clientId +'&redirect_uri='+ redirectUrl +'&scope=instagram_basic,pages_read_engagement,pages_show_list,business_management&state=' + encodeURIComponent(callBackUrl) , '_self');
-      }
+      try {
+        const hash = window.location.hash;
+        const hashMatch = hash.match(/edit-instagram-template\/?(\d+)/);
+        if (hashMatch && hashMatch[1]) {
+          window.sessionStorage.setItem('wpsn_auth_return_route', JSON.stringify({
+            name: 'edit-instagram-template',
+            templateId: hashMatch[1],
+          }));
+        }
+      } catch (e) {}
+
+      this.$post('platforms/feeds/configs/prepare', {
+        platform:   'instagram',
+        provider:   'instagram',
+        flow:       this.credentialsType,
+        return_url: this.admin_page_url,
+      }).then(response => {
+        if (response && response.data && response.data.url) {
+          window.location.href = response.data.url;
+        } else {
+          this.instagramAuthLoading = false;
+        }
+      }).catch(error => {
+        this.instagramAuthLoading = false;
+        this.handleError(error);
+      });
     },
 
     saveVerificationConfigs() {
@@ -508,6 +474,11 @@ export default {
         if (response.data) {
           if (response.data.business_accounts) {
             this.businessAccounts = response.data.business_accounts;
+          }
+
+          if (this._openBusinessModal && response.data.business_accounts && Object.keys(response.data.business_accounts).length) {
+            this._openBusinessModal = false;
+            this.businessAccountsModal = true;
           }
 
           if (response.data.connected_accounts && response.data.connected_accounts.length !== 0) {
@@ -581,49 +552,6 @@ export default {
       return 'Access Token Expires in ' + Math.floor(days) + ' Days';
     },
 
-    checkForConfigurationParameter() {
-      // Check main URL parameters
-      const queryString = window.location.search;
-      const urlParams = new URLSearchParams(queryString);
-      let configuration = urlParams.get('configuration');
-      
-      // If not found in main URL, check hash parameters
-      if (!configuration) {
-        const hash = window.location.hash;
-        const hashQuery = hash.split('?')[1];
-        
-        if (hashQuery) {
-          const hashParams = new URLSearchParams(hashQuery);
-          configuration = hashParams.get('configuration');
-        }
-      }
-      
-      return configuration === 'true';
-    },
-
-    clearConfigurationParameter() {
-      const url = new URL(window.location.href);
-      if (url.search) {
-        // Keep only the page parameter
-        const cleanUrl = url.origin + url.pathname + '?page=wpsocialninja.php' + url.hash;
-        window.history.replaceState({}, '', cleanUrl);
-      }
-      
-      // Clear from hash parameters - remove all query parameters from hash
-      const hash = window.location.hash;
-      if (hash.includes('?')) {
-        const [base] = hash.split('?');
-        window.location.hash = base;
-      }
-    },
-    getCredentialsType() {
-      const hash = window.location.hash || "";
-      const queryStart = hash.indexOf("?");
-      if (queryStart === -1) return null;
-      const queryString = hash.slice(queryStart + 1);
-      const params = new URLSearchParams(queryString);
-      return params.get("credentialsType");
-    }
   },
 
   computed: {
@@ -641,18 +569,20 @@ export default {
       },
       set(value) {
         if (!value) {
-          // Reset when modal is closed
           this.selectedAccounts = [];
           this.selectAll = false;
           this.isIndeterminate = false;
         }
         this._businessAccountsModal = value;
       }
-    }
+    },
+    authServiceHost() {
+      try { return new URL(this.appVars.auth_service_url).hostname; } catch (e) { return this.appVars.auth_service_url; }
+    },
   },
   watch: {
     'instagramAccessToken': {
-      handler(newVal, oldVal) {
+      handler(newVal) {
         if (this.credentialsType === 'manually') {
           if (newVal.indexOf('EAAGTJHJgNIMB') !== -1) {
             this.apiType = 'business';
@@ -663,50 +593,24 @@ export default {
       },
       deep: true
     },
-    'instagram_modal': {
-      handler(newVal) {
-        if (newVal) {
-          let credentials_type = this.getCredentialsType();
-          const hasConfigurationParam = this.checkForConfigurationParameter();
-          if (hasConfigurationParam && credentials_type === 'business') {
-            const checkBusinessAccounts = () => {
-              if (this.businessAccounts && Object.keys(this.businessAccounts).length > 0) {
-                this.businessAccountsModal = true;
-                setTimeout(this.clearConfigurationParameter, 500);
-              } else {
-                setTimeout(checkBusinessAccounts, 500);
-              }
-            };
-            setTimeout(checkBusinessAccounts, 100);
-          } else if(credentials_type === 'business_basic') {
-            this.instagram_modal = true;
-            const checkBusinessAccounts = () => {
-              if (this.businessAccounts && Object.keys(this.businessAccounts).length > 0) {
-                setTimeout(this.clearConfigurationParameter, 500);
-              } else {
-                setTimeout(checkBusinessAccounts, 500);
-              }
-            };
-            setTimeout(checkBusinessAccounts, 100);
-          }
-        }
-      },
-      immediate: true
-    }
   },
   mounted() {
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
-    let platform = urlParams.get('platform');
-    let credentials_type = urlParams.get('credentialsType');
+    try {
+      const consumed = JSON.parse(window.sessionStorage.getItem('wpsn_auth_consumed_result') || 'null');
+      if (consumed && consumed.platform === 'instagram' && consumed.flow === 'business') {
+        window.sessionStorage.removeItem('wpsn_auth_consumed_result');
+        this._openBusinessModal = true;
+      }
+    } catch (e) {}
 
-    if (this.instagramAccessToken) {
-      this.instagram_modal = true;
-      this.credentialsType = credentials_type ? credentials_type : this.credentialsType;
-      this.saveVerificationConfigs();
-    }
     this.getVerificationConfigs();
     this.addNewAccount = false;
   }
 }
 </script>
+<style scoped>
+.wpsr-link-disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+</style>

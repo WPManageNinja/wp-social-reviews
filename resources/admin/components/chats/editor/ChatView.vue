@@ -1,5 +1,5 @@
 <template>
-    <div class="wpsr_editor" v-if="chatConfig">
+    <div class="wpsr_editor" v-if="chatConfig" :class="{ 'wpsr-editor-sidebar-minimized': wpsrSidebarMinimized, 'wpsr-sidebar-resizing': wpsrSidebarResizing }">
         <editor-header
             :title="template_title"
             :platform_section="'chats'"
@@ -8,7 +8,7 @@
             @update-settings="saveUpdatedChatSettings"
         ></editor-header>
         <div class="wpsr_editor_wrapper">
-            <el-container>
+            <el-container :style="{ '--wpsr-editor-sidebar-width': wpsrSidebarWidth + 'px' }">
                 <el-main>
                     <keep-alive>
                         <component :is="component" :configs="chatConfig"/>
@@ -18,7 +18,9 @@
                     </div>
                 </el-main>
 
+                <SidebarToggleButton :minimized="wpsrSidebarMinimized" @toggle="toggleEditorSidebar" />
                 <el-aside class="wpsr-editor-sidebar">
+                    <SidebarResizeHandle :width="wpsrSidebarWidth" :min="wpsrSidebarMinWidth" :max="wpsrSidebarMaxWidth" @resize-start="startSidebarResize" @resize-step="stepSidebarResize" />
                     <UpgradeApp />
                     <el-tabs v-model="activeTab" class="wpsr-element-tab-wrapper">
                         <el-tab-pane :label="$t('General')" name="general" class="wpsr-element-tab-item">
@@ -72,7 +74,9 @@ import StyleTab from './editor-ui/StyleTab.vue';
 import {commonMixin} from "../../../mixins/commonMixin";
 import EditorHeader from "../../pieces/EditorHeader";
 import UpgradeApp from "../../pieces/UpgradeApp.vue";
-import ProCrownIcon from "../../pieces/icons/ProCrownIcon";
+import SidebarToggleButton from '../../pieces/SidebarToggleButton';
+import SidebarResizeHandle from '../../pieces/SidebarResizeHandle';
+import { editorSidebarMixin } from "../../../mixins/editorSidebarMixin";
 export default {
     name: "ChatView",
     components: {
@@ -82,9 +86,10 @@ export default {
         ChannelTab,
         StyleTab,
         UpgradeApp,
-        ProCrownIcon
+        SidebarToggleButton,
+        SidebarResizeHandle
     },
-    mixins: [commonMixin],
+    mixins: [commonMixin, editorSidebarMixin],
     data() {
         return {
             template_id: '',

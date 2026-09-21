@@ -1,14 +1,48 @@
 (function () {
     'use strict';
 
-    document.addEventListener('DOMContentLoaded', function () {
-        var forms = document.querySelectorAll('.wpsr-review-form');
-        forms.forEach(function (form) {
+    /**
+     * Wire up every review form inside root that isn't wired up yet.
+     *
+     * An uninitialized form is not merely inert — it keeps its native
+     * method="post" submit and posts the whole page. Forms that arrive after
+     * page load must be initialized through window.wpsrInitReviewForms().
+     *
+     * @param {Element|Document} root
+     */
+    function initReviewForms(root) {
+        var scope = root && root.querySelectorAll ? root : document;
+
+        scope.querySelectorAll('.wpsr-review-form').forEach(function (form) {
+            if (form.dataset.wpsrInitialized === 'true') return;
+            form.dataset.wpsrInitialized = 'true';
+
             initTurnstile(form);
             initRatingWidget(form);
             initMediaPreview(form);
             initFormSubmission(form);
         });
+    }
+
+    window.wpsrInitReviewForms = initReviewForms;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initReviewForms(document);
+    });
+
+    // Fail-safe for a form this script never saw: a plain page POST would lose
+    // the reviewer's details. Initialize it, then resubmit over AJAX.
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (!form.classList || !form.classList.contains('wpsr-review-form')) return;
+        if (form.dataset.wpsrInitialized === 'true') return;
+
+        e.preventDefault();
+        initReviewForms(form.parentNode || document);
+
+        if (typeof form.requestSubmit === 'function') {
+            form.requestSubmit();
+        }
     });
 
     /**
@@ -379,6 +413,8 @@
                     formData.append('form_id',     formId);
                     formData.append('_wpsr_nonce', nonce ? nonce.value : '');
                     formData.append('file',        file);
+                    // Tells the server which media field's limits and types to enforce.
+                    formData.append('field_name',  input.getAttribute('name') || '');
                     // Always send the session ID — it is generated before any upload fires,
                     // so parallel first-batch requests all share the same bucket.
                     formData.append('upload_session_id', uploadSessionId);
@@ -546,17 +582,28 @@
                 body.append('wpsr_media_tokens', JSON.stringify(mediaTokenMap));
             }
 
-            // Include the upload session ID so the server can claim the correct
-            // per-session orphan-tracking bucket on successful submission.
+            // Include every field's upload session ID so the server can claim each
+            // per-session orphan-tracking bucket. Sent as a map because repeating a
+            // single key would leave the server with only the last value.
+            var uploadSessionMap = {};
             form.querySelectorAll('.wpsr-field-media input[type="file"]').forEach(function (fileInput) {
+                var fieldName = fileInput.getAttribute('name');
+                if (!fieldName) return;
                 var previewEl = fileInput.parentElement.querySelector('.wpsr-media-preview');
                 if (previewEl && typeof previewEl._getSessionId === 'function') {
                     var sid = previewEl._getSessionId();
                     if (sid) {
-                        body.append('wpsr_upload_session_id', sid);
+                        uploadSessionMap[fieldName] = sid;
                     }
                 }
             });
+            var sessionFieldNames = Object.keys(uploadSessionMap);
+            if (sessionFieldNames.length) {
+                body.append('wpsr_upload_sessions', JSON.stringify(uploadSessionMap));
+                // Dual-write the legacy key so a Pro build predating the map still claims
+                // a session. The first media field is the one it would have claimed.
+                body.append('wpsr_upload_session_id', uploadSessionMap[sessionFieldNames[0]]);
+            }
             body.append('action', action);
             body.append('form_id', formId);
 

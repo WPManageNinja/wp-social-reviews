@@ -7,6 +7,9 @@
         <span class="wpsr-yt-video-player" :id="'wpsr-video-play-'+index"></span>
         <a
             class="wpsr-yt-video-preview wpsr-yt-video-playmode wpsr-yt-post-media"
+            tabindex="0"
+            role="button"
+            @keydown="wpsrActivateOnKey"
             @click="$emit('youtube-video-playmode', $event, feed, configs.feed_settings.video_settings.play_mode, index)"
             :title="feed.snippet.title"
             :class="(image_settings.optimized_images  === 'true' && isPlaceholder(feed.media_url)) ? 'wpsr-animated-background' : ''"
@@ -36,9 +39,10 @@
 <script type="text/babel">
 
 import {commonMixin} from "../../../../../mixins/commonMixin";
+import {ytMixin} from "../../../../../mixins/ytMixin";
 export default {
     name: 'youtube_preview_image',
-    mixins: [commonMixin],
+    mixins: [commonMixin, ytMixin],
     props: ['feed', 'index', 'configs','feed_info', 'image_settings'],
 }
 </script>

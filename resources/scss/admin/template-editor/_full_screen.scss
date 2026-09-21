@@ -15,6 +15,14 @@ div.mce-inline-toolbar-grp.mce-arrow-up {
   z-index: 999999 !important;
 }
 
+// .el-overlay backs dialogs, drawers and message boxes. Element Plus teleports it to <body>
+// with a z-index near 2000, so it would otherwise render under .wrap, which the full-screen
+// editor pins at 100099. It has to stay below the popper layer above, or a select opened
+// inside a dialog is drawn behind the dialog.
+.toplevel_page_wpsocialninja .el-overlay {
+  z-index: 100100 !important;
+}
+
 .el-notification{
   word-break: break-word;
 }
@@ -81,41 +89,37 @@ span.wpsr_platforms.wpsr_has_platform_multi img {
 }
 
 
-.wpsr_set_boxed {
-  background: white;
-  min-height: 350px;
+// Not wrapped in .wpsr_set_boxed anywhere in the current markup - these apply
+// directly so the license management screen gets its header/body spacing and
+// the centered narrow box instead of stretching full width.
+.wpsr_set_header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #dcdfe5;
 
-  .wpsr_set_header {
-    padding: 15px 20px;
-    border-bottom: 1px solid #dcdfe5;
+  .wpsr_set_header_title {
+    display: inline-block;
 
-    .wpsr_set_header_title {
-      display: inline-block;
-
-      h3 {
-        line-height: 100%;
-        margin: 0;
-        padding: 0;
-        color: var(--wpsr-heading-text, #0E121B);
-      }
-    }
-
-    .wpsr_set_actions {
-      float: right;
+    h3 {
       line-height: 100%;
+      margin: 0;
+      padding: 0;
+      color: var(--wpsr-heading-text, #0E121B);
     }
   }
 
-  .wpsr_set_body {
-    padding: 15px 20px;
+  .wpsr_set_actions {
+    float: right;
+    line-height: 100%;
   }
+}
 
-  .fc_narrow_box {
-    max-width: 860px;
-    padding: 30px 45px;
-    margin: 0 auto;
-  }
+.wpsr_set_body {
+  padding: 15px 20px;
+}
 
+.fc_narrow_box {
+  max-width: 860px;
+  margin: 0 auto;
 }
 
 .text-align-center {

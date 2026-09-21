@@ -1,0 +1,111 @@
+.wpsr-fb-feed-header.wpsr-fb-feed-header-layout-minimal{
+  .wpsr-fb-feed-user-profile-banner{
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+
+  .wpsr-fb-feed-user-info-wrapper{
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+
+    .wpsr-fb-feed-user-info-head{
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+
+      .wpsr-fb-feed-header-info{
+        flex-grow: 0;
+        justify-content: center;
+        gap: 14px;
+        @media screen and (max-width: 767px) {
+          flex-direction: column;
+        }
+
+        .wpsr-fb-feed-user-profile-pic{
+          position: static;
+          top: auto;
+          height: auto;
+          flex: 0 0 auto;
+          align-self: center;
+          img{
+            width: 80px;
+            height: 80px;
+            min-width: 80px;
+            padding: 3px;
+            border: 3px solid #1877F2;
+            box-sizing: border-box;
+            box-shadow: none;
+            object-fit: cover;
+            @media screen and (max-width: 767px) {
+              width: 70px;
+              height: 70px;
+              min-width: 70px;
+            }
+          }
+        }
+
+        .wpsr-fb-feed-user-info{
+          flex: 0 1 auto;
+          padding: 0;
+          text-align: left;
+          @media screen and (max-width: 767px) {
+            text-align: center;
+          }
+        }
+      }
+    }
+  }
+
+  .wpsr-fb-feed-follow-button-group{
+    position: static;
+    top: auto;
+    right: auto;
+    margin-left: 4px;
+    @media screen and (max-width: 767px) {
+      margin-left: 0;
+      justify-content: center;
+    }
+  }
+}
+
+.wpsr-fb-feed-header-layout-minimal .wpsr-fb-feed-follow-button-group .wpsr-fb-feed-btn a{
+  border-radius: 8px;
+  box-shadow: none;
+  &:hover,
+  &:focus{
+    box-shadow: none;
+  }
+}
+
+.is-mobile-active{
+  .wpsr-fb-feed-header.wpsr-fb-feed-header-layout-minimal .wpsr-fb-feed-user-info-wrapper .wpsr-fb-feed-user-info-head .wpsr-fb-feed-header-info{
+    flex-direction: column;
+
+    .wpsr-fb-feed-user-profile-pic{
+      flex: 0 0 auto;
+      align-self: center;
+      img{
+        width: 70px;
+        height: 70px;
+        min-width: 70px;
+      }
+    }
+    .wpsr-fb-feed-user-info{
+      padding: 0;
+      text-align: center;
+    }
+  }
+
+  .wpsr-fb-feed-header.wpsr-fb-feed-header-layout-minimal .wpsr-fb-feed-follow-button-group{
+    position: static;
+    top: auto;
+    margin-left: 0;
+    justify-content: center;
+  }
+}

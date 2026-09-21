@@ -1,4 +1,10 @@
 <template>
+    <AuthRedirectOverlay
+        :visible="googleAuthLoading"
+        :title="`${$t('Redirecting to')} ${authServiceHost}`"
+        :subtitle="$t('You will be redirected to our authentication portal. This may take up to 5 seconds.')"
+    />
+
     <el-dialog class="wpsr-connection-modal" width="50%"  title="YouTube Configuration" v-model="youtube_modal">
       <template #header>
         <div class="wpsr-connection-modal-header">
@@ -19,12 +25,13 @@
                 <div class="wpsr-user-profile">
                   <div class="wpsr-user-profile-inner">
                     <div class="wpsr-user-profile-pic">
-                      <el-icon><UserFilled /></el-icon>
+                      <img v-if="config.user_avatar" :src="config.user_avatar" :alt="config.user_name || 'YouTube'">
+                      <el-icon v-else><UserFilled /></el-icon>
                     </div>
                     <div class="wpsr-user-details">
                       <div class="wpsr-user-details-inner">
-                        <div class="wpsr-user-details-info wpsr-flex-align-center">
-                          <h3>{{ $t('Successfully Connected') }}</h3>
+                        <div class="wpsr-user-details-info">
+                          <h3>{{ config.user_name || $t('Successfully Connected') }} </h3>
                         </div>
                         <div class="wpsr-user-actions">
                           <remove @confirm="clearVerificationConfigs" platform="youtube"></remove>
@@ -98,21 +105,13 @@
                   <div class="wpsr-accounts-connect-wrapper">
                     <div class="wpsr-connection-modal-input-wrapper">
                       <div class="wpsr-connection-button-info-wrapper">
-                        <h3>Get Your Google Access Code</h3>
-                        <p>Simply click the button below to instantly receive your Google access code—it only takes one click.</p>
+                        <h3>{{ $t('Display Your YouTube Videos') }}</h3>
+                        <p>{{ $t('Connect your YouTube account to show videos, playlists, and live streams from your channels.') }}</p>
                       </div>
                       <div class="wpsr-connection-modal-input-heading-wrapper">
-                        <el-button class="wpsr-mb-20" type="primary" size="default" @click="loginGoogle">{{ $t('Sign In And Get Google Access Code') }}</el-button>
-                        <h4 class="wpsr-connection-modal-input-heading">
-                          {{ $t('Access Code') }}
-                        </h4>
+                        <el-button class="wpsr-mb-20" type="primary" size="default" :loading="googleAuthLoading" :disabled="googleAuthLoading" @click="loginGoogle">{{ $t('Connect YouTube Channel') }}</el-button>
+                        <p class="wpsr-connect-redirect-note">{{ $t('You will be redirected to WP Social Ninja, then to Google to approve access.') }}</p>
                       </div>
-                      <InputPassword
-                          id="access_code"
-                          v-model="accessCode"
-                          placeholder="Enter your access code"
-                          @keyup.enter.native="saveVerificationConfigs"
-                      />
                     </div>
                   </div>
                 </el-tab-pane>
@@ -154,7 +153,7 @@
             </div>
 
           <el-button
-              v-if="!isConnected || reConnect"
+              v-if="(!isConnected || reConnect) && credentialsType !== 'oauth2.0'"
               size="default"
               type="success"
               class="wpsr_primary_btn"
@@ -202,25 +201,28 @@
 </template>
 
 <script type="text/babel">
+import AuthRedirectOverlay from '../../../core-ui/AuthRedirectOverlay';
 import Remove from '../../../core-ui/editor/RemoveConfirm';
 import InputPassword from '../../../core-ui/editor/InputPassword';
 import ShieldCheckLineIcon from "../../../pieces/icons/ShieldCheckLineIcon.vue";
 import {ElNotification} from "element-plus";
 import CreateTemplateIcon from "../../../pieces/icons/CreateTemplateIcon.vue";
+import { wpsrBuildAuthReturnUrl as buildWpsrAuthReturnUrl } from "../../../../utils";
 
 export default {
     data(){
         return {
             loading: false,
+            googleAuthLoading: false,
             config: {},
             credentialsType: 'api_key',
-            accessCode:'',
             accessToken:'',
             oauthAccessToken: false,
             oauthAccessCode: false,
             manualAccessToken: false,
             isConnected: false,
             hasApikey: false,
+            admin_page_url: this.appVars.admin_page_url,
             apiKey: '',
             channelId: '',
             disabled: false,
@@ -228,29 +230,62 @@ export default {
         }
     },
     components:{
+        AuthRedirectOverlay,
         CreateTemplateIcon,
         ShieldCheckLineIcon,
         Remove,
         InputPassword,
         ElNotification
     },
-    props:['youtubeModal'],
+    props: {
+        youtubeModal: {
+            type: Boolean,
+            default: false
+        },
+        wpsrAuthReturnUrlBuilder: {
+            type: Function,
+            default: null
+        }
+    },
     methods: {
       getDisableState() {
         if (this.credentialsType === 'api_key') {
           return !this.apiKey;
-        } else if (this.credentialsType === 'oauth2.0') {
-          return !this.accessCode;
         }
         return false;
       },
+      wpsrBuildAuthReturnUrl(routeName, authPlatform = '') {
+            const fallbackUrl = this.admin_page_url || this.appVars.admin_page_url;
+
+            if (typeof this.wpsrAuthReturnUrlBuilder === 'function') {
+                return this.wpsrAuthReturnUrlBuilder(routeName, authPlatform, fallbackUrl);
+            }
+
+            const templateId = this.$route && this.$route.params ? this.$route.params.template_id : '';
+            return buildWpsrAuthReturnUrl(routeName, authPlatform, fallbackUrl, templateId);
+        },
       loginGoogle(){
-            window.open('https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&prompt=consent&client_id=324795500171-938tfnrb8bfna4n9hrfmtncq17vnhpf7.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Fwpsocialninja.com%2Fgapi%2F&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube.readonly');
+            this.googleAuthLoading = true;
+            this.$post('platforms/feeds/configs/prepare', {
+                platform: 'youtube',
+                provider: 'google',
+                flow: 'youtube',
+                return_url: this.wpsrBuildAuthReturnUrl('edit-youtube-template', 'youtube'),
+                source: 'YouTube'
+            }).then(response => {
+                if (response && response.data && response.data.url) {
+                    window.open(response.data.url, '_self');
+                } else {
+                    this.googleAuthLoading = false;
+                }
+            }).catch(error => {
+                this.googleAuthLoading = false;
+                this.handleError(error);
+            });
         },
         saveVerificationConfigs(){
               this.loading = true;
               let settings = {
-                  accessCode: this.accessCode,
                   accessToken: this.accessToken,
                   credentialsType: this.credentialsType,
                   apiKey: this.apiKey,
@@ -309,7 +344,6 @@ export default {
                       if( response.data.settings.access_token && response.data.settings.credentials_type === 'oauth2.0'){
                           this.oauthAccessToken = true;
                           this.oauthAccessCode = true;
-                          this.accessCode = '';
                       }
 
                       else if( response.data.settings.access_token && response.data.settings.credentials_type === 'manually_connect'){
@@ -340,7 +374,6 @@ export default {
                   if(response.data) {
                       this.credentialsType = 'api_key';
                       this.accessToken = '';
-                      this.accessCode = '';
                       this.apiKey = '';
                       this.channelId = '';
                       this.oauthAccessToken = false;
@@ -383,6 +416,9 @@ export default {
         }
     },
     computed:{
+        authServiceHost() {
+            try { return new URL(this.appVars.auth_service_url).hostname; } catch (e) { return this.appVars.auth_service_url; }
+        },
         youtube_modal:{
             get(){
                 return this.youtubeModal

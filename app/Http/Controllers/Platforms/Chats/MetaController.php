@@ -3,21 +3,60 @@
 namespace WPSocialReviews\App\Http\Controllers\Platforms\Chats;
 
 use WPSocialReviews\App\Http\Controllers\Controller;
-use WPSocialReviews\Framework\Request\Request;
+use WPSocialReviews\App\Services\Platforms\Chats\Helper as ChatHelper;
+use WPSocialReviews\Framework\Http\Request\Request;
 
 class MetaController extends Controller
 {
+    /**
+     * The only post type these endpoints may read from or write to.
+     *
+     * absint() casts the ID but does not validate what it points at. Downstream,
+     * SocialChat::updateSettings() runs a raw `menu_order` UPDATE and an
+     * update_post_meta() on whatever ID it is handed, and neither performs a
+     * capability check of its own — so without this guard a low-privilege
+     * wpsn_* capability holder could write to any post on the site.
+     */
+    const CHAT_POST_TYPE = 'wpsr_social_chats';
+
+    /**
+     * @param int $postId
+     * @return bool Whether the ID resolves to a chat widget.
+     */
+    private function isChatWidget($postId)
+    {
+        return $postId && get_post_type($postId) === self::CHAT_POST_TYPE;
+    }
+
     public function index(Request $request, $postId)
     {
         $postId = absint($postId);
+
+        if (!$this->isChatWidget($postId)) {
+            return $this->sendError([
+                'message' => __('Chat widget not found.', 'wp-social-reviews')
+            ], 404);
+        }
+
         do_action('wpsocialreviews/get_chat_settings', $postId);
     }
 
     public function update(Request $request, $postId)
     {
         $postId = absint($postId);
-        $settings = json_decode($request->get('args'), true);
-        $settings = wp_unslash($settings);
+
+        if (!$this->isChatWidget($postId)) {
+            return $this->sendError([
+                'message' => __('Chat widget not found.', 'wp-social-reviews')
+            ], 404);
+        }
+
+        $settings = $this->decodeJsonParam($request->get('args'));
+
+        if (null === $settings) {
+            return $this->invalidJsonPayload();
+        }
+
         $settings = $this->sanitizeChatSettings($settings);
         do_action('wpsocialreviews/update_chat_settings', $postId, $settings);
     }
@@ -25,6 +64,13 @@ class MetaController extends Controller
     public function delete(Request $request, $postId)
     {
         $postId = absint($postId);
+
+        if (!$this->isChatWidget($postId)) {
+            return $this->sendError([
+                'message' => __('Chat widget not found.', 'wp-social-reviews')
+            ], 404);
+        }
+
         do_action('wpsocialreviews/delete_chat_settings', $postId);
     }
 
@@ -49,6 +95,11 @@ class MetaController extends Controller
             'chat_button.button_text'           => 'sanitize_text_field',
             'chat_button.display_icon'          => 'wpsr_sanitize_boolean',
             'chat_button.prefilled_message'     => 'wpsr_sanitize_boolean',
+            'chat_button.message_context'       => [$this, 'sanitizeMessageContext'],
+            'chat_button.custom_message_format' => 'sanitize_textarea_field',
+            'chat_button.page_message_format'   => 'sanitize_textarea_field',
+            'chat_button.woocommerce_message_format' => 'sanitize_textarea_field',
+            'chat_button.fluentcart_message_format' => 'sanitize_textarea_field',
             'chat_button.prefilled_placeholder_text' => 'sanitize_text_field',
 
             // --- Settings ---
@@ -141,6 +192,24 @@ class MetaController extends Controller
     }
 
     /**
+     * Sanitize WhatsApp message context mode.
+     *
+     * @param string $messageContext
+     * @return string
+     */
+    private function sanitizeMessageContext($messageContext)
+    {
+        if (!defined('WPSOCIALREVIEWS_PRO')) {
+            return 'none';
+        }
+
+        $messageContext = sanitize_key($messageContext);
+        $allowedContexts = ['none', 'page', 'woocommerce_product', 'fluentcart_product', 'custom'];
+
+        return in_array($messageContext, $allowedContexts, true) ? $messageContext : 'none';
+    }
+
+    /**
      * Sanitize channels array
      *
      * @param array $channels
@@ -156,8 +225,8 @@ class MetaController extends Controller
                 'displayName'   => isset($channel['displayName']) ? sanitize_text_field($channel['displayName']) : '',
                 'label'         => isset($channel['label']) ? sanitize_text_field($channel['label']) : '',
                 'title'         => isset($channel['title']) ? sanitize_text_field($channel['title']) : '',
-                'credential'    => isset($channel['credential']) ? sanitize_text_field($channel['credential']) : '',
-                'webUrl'        => isset($channel['webUrl']) ? $this->sanitizeWebUrl($channel['webUrl']) : '',
+                'credential'    => isset($channel['credential']) ? $this->sanitizeChannelCredential($channel['credential'], $channel['name'] ?? '') : '',
+                'webUrl'        => isset($channel['webUrl']) ? $this->sanitizeWebUrl($channel['webUrl'], $channel['name'] ?? '') : '',
                 'placeholder'   => isset($channel['placeholder']) ? sanitize_text_field($channel['placeholder']) : '',
                 'description'   => isset($channel['description']) ? sanitize_text_field($channel['description']) : '',
                 'icon'          => isset($channel['icon']) ? sanitize_url($channel['icon']) : '',
@@ -169,20 +238,36 @@ class MetaController extends Controller
     }
 
     /**
-     * Sanitize webUrl to preserve custom protocol URLs
+     * Sanitize webUrl using channel-specific allowed URI schemes.
      *
      * @param string $url
+     * @param string $channelName
      * @return string
      */
-    private function sanitizeWebUrl($url)
+    private function sanitizeWebUrl($url, $channelName = '')
     {
-        // Check if URL starts with a custom protocol (like viber://, tel://, etc.)
-        if (preg_match('/^[a-z0-9]+:\/\/.*/i', $url)) {
-            // Preserve custom protocol URLs as-is
-            return $url;
+        return ChatHelper::sanitizeChannelSettingUrl($url, $channelName);
+    }
+
+    /**
+     * Sanitize channel credential values.
+     *
+     * @param string $credential
+     * @param string $channelName
+     * @return string
+     */
+    private function sanitizeChannelCredential($credential, $channelName = '')
+    {
+        if ($channelName === 'fluent_forms') {
+            return ChatHelper::getFluentFormsShortcode(wp_unslash($credential));
         }
-        
-        // For regular URLs, use WordPress sanitize_url
-        return sanitize_url($url);
+
+        $credential = sanitize_text_field($credential);
+
+        if (ChatHelper::getUriScheme($credential)) {
+            return ChatHelper::sanitizeChannelSettingUrl($credential, $channelName);
+        }
+
+        return $credential;
     }
 }

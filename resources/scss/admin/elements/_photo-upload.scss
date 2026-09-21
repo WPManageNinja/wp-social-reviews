@@ -62,3 +62,21 @@
   background: #F5F7FA;
   border-color: #B0B7C3;
 }
+.wpsr-photo-clear-btn {
+  border: none;
+  background: none;
+  color: #99A0AE;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+  outline: none;
+}
+.wpsr-photo-clear-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.wpsr-photo-clear-btn:hover:not(:disabled) {
+  color: #D53F3F;
+}

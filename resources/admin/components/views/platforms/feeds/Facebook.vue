@@ -90,51 +90,21 @@
               <span class="wpsr-connections-tabs-label">
                 <i class="wpsr-icon"><ShieldCheckLineIcon/></i>
                 <div class="wpsr-connections-tabs-label-group">
-                  <span>OAuth 2.0</span>
-                  <p>Connects via Facebook</p>
+                  <span>{{ $t('Quick Connect') }}</span>
+                  <p>{{ $t('Recommended · One-click setup') }}</p>
                 </div>
               </span>
             </template>
 
             <div class="wpsr-accounts-connect-wrapper">
+              <p>{{ $t('Connect your Facebook account to display posts from the Pages you manage.') }}</p>
               <div class="wpsr-modal-btn-with-info">
-                <el-button class="wpsr-login-with-facebook" @click.prevent="oAuthLogin" size="default" type="primary">
-                <img :src="assets_url+'/images/icon/login-fb-btn.png'" alt="Continue with Facebook"></el-button>
+                <el-button class="wpsr-login-with-facebook" @click.prevent="oAuthLogin" size="default" type="primary" :loading="facebookAuthLoading" :disabled="facebookAuthLoading">
+                  <FacebookMarkIcon/>
+                  {{ $t('Connect Facebook Account') }}
+                </el-button>
               </div>
-            </div>
-            <div class="wpsr-connection-permission-wrapper">
-              <el-collapse v-model="activePermissionPanel">
-                <el-collapse-item title="This permissions will be granted, when you connect your user account" name="1">
-                  <div class="wpsr-connection-permission-item">
-                    <div class="wpsr-connection-permission-item-header">
-                      <el-icon size="16" color="var(--wpsr-icon-disabled-color)"><Key /></el-icon>
-                      <span>business_management</span>
-                    </div>
-                    <p>This permission is used to retrieve the names of the Facebook Pages you manage. It works alongside other permissions to enable features that require identifying and connecting your Pages.</p>
-                  </div>
-                  <div class="wpsr-connection-permission-item">
-                    <div class="wpsr-connection-permission-item-header">
-                      <el-icon size="16" color="var(--wpsr-icon-disabled-color)"><Key /></el-icon>
-                      <span>pages_read_user_content</span>
-                    </div>
-                    <p>This permission allows our plugin to read user-generated content on your Facebook Page, including posts, comments made by users or other Pages.</p>
-                  </div>
-                  <div class="wpsr-connection-permission-item">
-                    <div class="wpsr-connection-permission-item-header">
-                      <el-icon size="16" color="var(--wpsr-icon-disabled-color)"><Key /></el-icon>
-                      <span>pages_read_engagement</span>
-                    </div>
-                    <p>This permission allows us to access data about your Page, including follower counts, published content, and other engagement metrics.</p>
-                  </div>
-                  <div class="wpsr-connection-permission-item">
-                    <div class="wpsr-connection-permission-item-header">
-                      <el-icon size="16" color="var(--wpsr-icon-disabled-color)"><Key /></el-icon>
-                      <span>pages_show_list</span>
-                    </div>
-                    <p>This permission is used to retrieve the names of the Facebook Pages you manage, enabling you to connect and manage multiple Pages at the same time.</p>
-                  </div>
-                </el-collapse-item>
-              </el-collapse>
+              <p class="wpsr-connect-redirect-note">{{ $t('You will be redirected to WP Social Ninja, then to Facebook to approve access.') }}</p>
             </div>
             <div class="wpsr-alert wpsr-alert-info wpsr-d-flex wpsr-mt-20">
               <el-icon size="18" color="var(--wpsr-svg-secondary-color)"><InfoFilled /></el-icon>
@@ -142,12 +112,12 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="Account  Manually" name="manual">
+          <el-tab-pane label="Manual Setup" name="manual">
             <template #label>
               <span class="wpsr-connections-tabs-label">
                 <el-icon size="18"><User /></el-icon>
                  <div class="wpsr-connections-tabs-label-group">
-                    <span>Account  Manually</span>
+                    <span>{{ $t('Manual Setup') }}</span>
                     <p>Connect via Token</p>
                  </div>
               </span>
@@ -334,13 +304,20 @@
       </div>
     </div>
   </el-dialog>
+  <AuthRedirectOverlay
+      :visible="facebookAuthLoading"
+      :title="`${$t('Redirecting to')} ${authServiceHost}`"
+      :subtitle="$t('You will be redirected to our authentication portal. This may take up to 5 seconds.')"
+  />
 </template>
 
 <script type="text/babel">
 import Remove from '../../../core-ui/editor/RemoveConfirm';
 import InputPassword from '../../../core-ui/editor/InputPassword';
 import ShieldCheckLineIcon from '../../../pieces/icons/ShieldCheckLineIcon';
+import FacebookMarkIcon from '../../../pieces/icons/FacebookMarkIcon.vue';
 import CreateTemplateIcon from  '../../../pieces/icons/CreateTemplateIcon.vue';
+import AuthRedirectOverlay from '../../../core-ui/AuthRedirectOverlay.vue';
 import {Calendar} from "@element-plus/icons-vue";
 
 export default {
@@ -349,6 +326,8 @@ export default {
     return {
       loading: false,
       inner_loading: false,
+      facebookAuthLoading: false,
+      _openBusinessModal: false,
       config: {},
       isConnected: false,
       connected_source_list: [],
@@ -368,41 +347,49 @@ export default {
       addNewAccount: false,
       hideInnerModal: false,
       credentialsType: 'oauth',
-      activePermissionPanel: [],
       template_id: null,
     }
   },
   components: {
+    FacebookMarkIcon,
     Calendar,
     Remove,
     InputPassword,
     ShieldCheckLineIcon,
-    CreateTemplateIcon
+    CreateTemplateIcon,
+    AuthRedirectOverlay
   },
   methods: {
     oAuthLogin() {
-        const currentUrl = window.location.href;
-        const isEditor = currentUrl.includes('#/edit-facebook-feed-template/');
+      if (this.facebookAuthLoading) return;
+      this.facebookAuthLoading = true;
 
-        let callBackUrl;
-        if (isEditor) {
-          const baseUrl = window.location.origin + window.location.pathname;
-          let templateId = null;
-          const hashMatch = window.location.hash.match(/edit-facebook-feed-template\/?(\d+)/);
-          if (hashMatch && hashMatch[1]) {
-            templateId = hashMatch[1];
-          } else {
-            templateId = this.template_id || '';
-          }
-          // Construct callback URL in the format expected by the OAuth redirect API
-          callBackUrl = `${baseUrl}?page=wpsocialninja.php&edit-facebook-feed-template&${templateId}`;
-        } else {
-          callBackUrl = this.admin_page_url;
+      try {
+        const hash = window.location.hash;
+        const hashMatch = hash.match(/edit-facebook-feed-template\/?(\d+)/);
+        if (hashMatch && hashMatch[1]) {
+          window.sessionStorage.setItem('wpsn_auth_return_route', JSON.stringify({
+            name: 'edit-facebook-feed-template',
+            templateId: hashMatch[1],
+          }));
         }
+      } catch (e) {}
 
-        let clientId = '443259723723907';
-        let redirectUrl = 'https://wpsocialninja.com/api/facebook-feed-graph-api-redirect.php';
-        window.open('https://graph.facebook.com/oauth/authorize?client_id='+ clientId +'&redirect_uri='+ redirectUrl +'&scope=pages_read_engagement,pages_read_user_content,pages_show_list,business_management&state=' + encodeURIComponent(callBackUrl), '_self');
+      this.$post('platforms/feeds/configs/prepare', {
+        platform:   'facebook_feed',
+        provider:   'facebook',
+        flow:       'feed',
+        return_url: this.admin_page_url,
+      }).then(response => {
+        if (response && response.data && response.data.url) {
+          window.location.href = response.data.url;
+        } else {
+          this.facebookAuthLoading = false;
+        }
+      }).catch(error => {
+        this.facebookAuthLoading = false;
+        this.handleError(error);
+      });
     },
     addAccount() {
       this.addNewAccount = !this.addNewAccount;
@@ -494,18 +481,12 @@ export default {
                 this.isConnected = true;
               }
 
-              // Only automatically open businessAccountsModal when templateId is present in URL
-              if (this.isConnected && this.accessToken) {
-                const hasTemplateId = this.checkForTemplateId();
-                if (hasTemplateId) {
-                  this.businessAccountsModal = true;
-                  this.hideInnerModal = true;
-                } else {
-                  setTimeout(() => {
-                    this.businessAccountsModal = true;
-                    this.hideInnerModal = true;
-                  }, 100);
-                }
+              // After a bridge OAuth return, open the page-selection modal once
+              // the authorized Pages list has loaded.
+              if (this._openBusinessModal && this.authorized_source_list && Object.keys(this.authorized_source_list).length) {
+                this._openBusinessModal = false;
+                this.businessAccountsModal = true;
+                this.hideInnerModal = true;
               }
 
               this.$emit('findEnabledPlatforms');
@@ -621,6 +602,9 @@ export default {
         this.$emit('facebook_settings', newVal);
       }
     },
+    authServiceHost() {
+      try { return new URL(this.appVars.auth_service_url).hostname; } catch (e) { return this.appVars.auth_service_url; }
+    },
     businessAccountsModal: {
       get() {
         return this._businessAccountsModal;
@@ -664,10 +648,14 @@ export default {
     }
   },
   mounted(){
-    if (this.accessToken !== '') {
-      this.saveVerificationConfigs();
-    }
-   // this.businessAccountsModal = true;
+    try {
+      const consumed = JSON.parse(window.sessionStorage.getItem('wpsn_auth_consumed_result') || 'null');
+      if (consumed && consumed.platform === 'facebook_feed') {
+        window.sessionStorage.removeItem('wpsn_auth_consumed_result');
+        this._openBusinessModal = true;
+      }
+    } catch (e) {}
+
     this.getVerificationConfigs();
     this.addNewAccount = false;
   }

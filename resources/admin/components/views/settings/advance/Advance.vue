@@ -115,7 +115,7 @@
           </div>
         </div>
 
-        <div class="wpsr-settings-container">
+        <div class="wpsr-settings-container" v-if="hasPermission(['wpsn_full_access'])">
           <div class="wpsr-setting-section wpsr-mb-24">
             <div class="wpsr-settings-header">
               <h3 class="wpsr-feed-settings-title">

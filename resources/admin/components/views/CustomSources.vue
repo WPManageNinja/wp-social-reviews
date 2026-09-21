@@ -6,7 +6,7 @@
         <h2>Add Reviews from Any Platform You Want</h2>
         <p>Build unlimited custom review feeds with your branding & ratings. Show them exactly how you want.</p>
         <div>
-          <UpgradeToProButton/>
+          <UpgradeToProButton placement="feature_lock_custom_sources"/>
         </div>
       </div>
     </div>
@@ -370,6 +370,8 @@
       <el-dialog
           class="wpsr-confirmation-modal"
           v-model="show_delete_modal"
+          :close-on-click-modal="!loading"
+          :show-close="!loading"
           width="40%"
           :before-close="handleDeleteClose">
         <div class="wpsr-delete-content">
@@ -384,8 +386,8 @@
         </div>
         <template #footer>
           <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-            <el-button class="wpsr_default_btn" @click="show_delete_modal = false">Cancel</el-button>
-            <el-button class="wpsr_primary_btn" type="danger" @click="confirmDelete()">Delete {{ isBulkDelete ? 'Sources' : 'Source' }}</el-button>
+            <el-button class="wpsr_default_btn" :disabled="loading" @click="show_delete_modal = false">Cancel</el-button>
+            <el-button class="wpsr_primary_btn" type="danger" :loading="loading" @click="confirmDelete()">Delete {{ isBulkDelete ? 'Sources' : 'Source' }}</el-button>
           </div>
         </template>
       </el-dialog>
@@ -771,6 +773,7 @@ export default {
           .then(response => {
             if (response) {
               this.handleSuccess(response.message || `Successfully deleted ${selectedIds.length} source(s)`);
+              this.show_delete_modal = false;
               this.getItems();
               this.selectedItems = [];
               this.bulkAction = '';

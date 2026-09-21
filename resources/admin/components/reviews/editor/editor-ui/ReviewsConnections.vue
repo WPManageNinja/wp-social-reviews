@@ -12,6 +12,7 @@
         :filteredPlatforms="connectionFilteredPlatforms"
         :configurationInfo="configurationInfo"
         :connectionMode="true"
+        :wpsr-auth-return-url-builder="wpsrBuildAuthReturnUrl"
         @update:reviewsShowSettingModal="updateReviewsShowSettingModal"
     />
     </div>
@@ -20,6 +21,7 @@
 
 <script type="text/babel">
 import ReviewsPlatforms from "../../../views/platforms/reviews/ReviewsPlatforms";
+import { wpsrBuildAuthReturnUrl as buildWpsrAuthReturnUrl } from "../../../../utils";
 
 export default {
   name: "ReviewsConnections",
@@ -70,6 +72,10 @@ export default {
   },
 
   methods: {
+      wpsrBuildAuthReturnUrl(routeName, authPlatform = '', fallbackUrl = '') {
+        const templateId = this.$route && this.$route.params ? this.$route.params.template_id : '';
+        return buildWpsrAuthReturnUrl(routeName, authPlatform, fallbackUrl || this.appVars.admin_page_url, templateId);
+      },
       updateReviewsShowSettingModal(val) {
         this.$emit('update:activeTab', 'connection');
       }

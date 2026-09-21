@@ -1,0 +1,34 @@
+.wpsr-video-uploader {
+  width: 100%;
+}
+
+.wpsr-video-or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  color: #99A0AE;
+  font-size: 12px;
+}
+.wpsr-video-or:before,
+.wpsr-video-or:after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--wpsr-primary-border, #E1E4EA);
+}
+
+/* Same button as the author image, with the explanation reading on from it. */
+.wpsr-video-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.wpsr-video-upload-row .wpsr-photo-upload-btn {
+  flex-shrink: 0;
+}
+.wpsr-video-upload-hint {
+  color: #99A0AE;
+  font-size: 12px;
+  text-align: left;
+}

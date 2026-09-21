@@ -1,0 +1,359 @@
+// Template 4 — "Spotlight Hero": a CSS quantity query promotes every 5th item to a 2x2 hero tile
+
+.wpsr-tiktok-feed-template4 {
+  // light-on-dark statistics icons, the meta layer sits on a dark scrim
+  .wpsr-tiktok-feed-reactions-icon-like {
+    background-image: url('../../../../images/tiktok-images/like.svg');
+  }
+  .wpsr-tiktok-feed-reactions-icon-comment {
+    background-image: url('../../../../images/tiktok-images/comments.svg');
+  }
+  .wpsr-tiktok-feed-reactions-icon-play {
+    background-image: url('../../../../images/tiktok-images/view.svg');
+  }
+}
+
+.wpsr-tiktok-feed-wrapper {
+  &.wpsr-tiktok-feed-template4 {
+
+    // .wpsr-row's flexbox can't flow items around a double-height tile, so use CSS Grid (masonry is JS-positioned, left alone)
+    &:not(.wpsr-tiktok-feed-masonry-activate) .wpsr-tt-all-feed.wpsr-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-auto-flow: dense;
+      align-items: start;
+      gap: 16px;
+      // cancels .wpsr-row's -15px gutter, this grid's items have no .wpsr-col-* padding to offset
+      margin-left: 0;
+      margin-right: 0;
+      // items zero out .wpsr-mb-30 below (gap handles rows), so restore the 30px before footer/Load More
+      margin-bottom: 30px;
+
+      // neutralise the flex column widths and spacing helpers
+      > * {
+        flex: initial;
+        width: auto;
+        max-width: none;
+        padding-left: 0;
+        padding-right: 0;
+        margin-bottom: 0;
+        aspect-ratio: 9 / 16;
+      }
+
+      // hero spans 2 rows from here up, so rows need a fixed height (a minmax cap would overflow) and tiles crop instead
+      @media only screen and (min-width: 768px) {
+        grid-template-columns: repeat(3, 1fr);
+        grid-auto-rows: 38vh;
+        align-items: stretch;
+
+        > * {
+          aspect-ratio: auto;
+        }
+      }
+      @media only screen and (min-width: 1100px) {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      // Columns Gap control still applies
+      &.wpsr-column-gap-no_gap {
+        gap: 0;
+        .wpsr-tiktok-feed-item { border-radius: 0; }
+      }
+      &.wpsr-column-gap-narrow { gap: 5px; }
+      &.wpsr-column-gap-small  { gap: 10px; }
+      &.wpsr-column-gap-wide   { gap: 20px; }
+      &.wpsr-column-gap-wider  { gap: 25px; }
+
+      // hero repeats on items 1, 6, 11, ... so Load More keeps the pattern; :nth-last-child(n+5) leaves a short trailing group uniform
+      > *:nth-child(5n+1):nth-last-child(n+5) {
+        grid-column: span 2;
+        grid-row: span 2;
+        // height comes from the two fixed-height rows it spans (grid-auto-rows above)
+        aspect-ratio: auto;
+        align-self: stretch;
+
+        .wpsr-tiktok-feed-item { height: 100%; }
+
+        // hero keeps its caption and author permanently visible
+        .wpsr-feed-description-link {
+          max-height: 6em;
+          opacity: 1;
+          margin-bottom: 10px;
+        }
+        .wpsr-feed-description-text {
+          font-size: 15px;
+          line-height: 1.45;
+          -webkit-line-clamp: 3;
+        }
+        .wpsr-tiktok-feed-content-top-wrapper {
+          max-height: 60px;
+          opacity: 1;
+          margin-bottom: 12px;
+        }
+        .wpsr-tiktok-feed-spotlight-overlay {
+          padding: 22px 20px 20px;
+        }
+        .wpsr-tiktok-feed-statistics .wpsr-tiktok-feed-reaction-count {
+          font-size: 14px;
+        }
+      }
+
+      // at two columns a 2x2 hero leaves no small tile to establish the row heights, so it spans width only
+      @media only screen and (max-width: 767px) {
+        > *:nth-child(5n+1):nth-last-child(n+5) {
+          grid-row: span 1;
+          aspect-ratio: 4 / 5;
+        }
+      }
+
+      // at one column a 2x2 hero would swallow the whole feed
+      @media only screen and (max-width: 575px) {
+        grid-template-columns: 1fr;
+
+        > *:nth-child(5n+1):nth-last-child(n+5) {
+          grid-column: span 1;
+          aspect-ratio: 9 / 16;
+        }
+      }
+    }
+
+    .wpsr-tiktok-feed-item {
+      position: relative;
+      height: 100%;
+      overflow: hidden;
+      border-radius: 14px;
+      background-color: #14141a;
+      transition: 0.3s;
+
+      [data-playmode="popup"] { cursor: pointer; }
+
+      &:hover,
+      &:focus-within {
+        .wpsr-tt-post-img { transform: scale(1.04); }
+
+        .wpsr-tiktok-feed-spotlight-overlay {
+          padding-top: 40px;
+          background: linear-gradient(180deg, rgba(10, 10, 14, 0) 0%, rgba(10, 10, 14, 0.55) 42%, rgba(10, 10, 14, 0.94) 100%);
+        }
+
+        // small tiles reveal their caption on hover; the hero already shows it
+        .wpsr-feed-description-link {
+          max-height: 5em;
+          opacity: 1;
+          margin-bottom: 8px;
+        }
+        .wpsr-tiktok-feed-content-box { opacity: 0; }
+      }
+    }
+
+    .wpsr-tiktok-feed-inner {
+      position: relative;
+      height: 100%;
+    }
+
+    .wpsr-tiktok-feed-content-preview {
+      height: 100%;
+
+      // the card carries a tabindex in popup mode, so focus must be visible
+      &:focus-visible {
+        outline: 2px solid #72aee6;
+        outline-offset: -2px;
+      }
+    }
+
+    // the grid item owns the aspect ratio, everything inside only fills it (a padding-top ratio would add to a real height here)
+    .wpsr-tiktok-feed-image {
+      position: relative;
+      height: 100%;
+      overflow: hidden;
+
+      // media wrapper in the editor preview (.wpsr-tt-post-media) and on the frontend (.wpsr-tiktok-feed-video-preview)
+      .wpsr-tt-post-media,
+      .wpsr-tiktok-feed-video-preview {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: block;
+        height: 100%;
+        // template-1.scss sets an unscoped padding-top:100% here, which adds to height:100% and over-sizes the media box
+        padding-top: 0;
+      }
+
+      img.wpsr-tt-post-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.45s ease;
+      }
+    }
+
+    .wpsr-tiktok-feed-content-box {
+      // template-1.scss gives this 100% size plus content-box padding:15px, overflowing the tile and offsetting the play icon
+      box-sizing: border-box;
+      transition: 0.3s;
+    }
+
+    // meta layer, always present so the statistics read without hovering (and on touch, where hover never happens)
+    .wpsr-tiktok-feed-spotlight-overlay {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 2;
+      padding: 28px 14px 12px;
+      pointer-events: none;
+      transition: 0.3s;
+      background: linear-gradient(180deg, rgba(10, 10, 14, 0) 0%, rgba(10, 10, 14, 0.65) 55%, rgba(10, 10, 14, 0.92) 100%);
+    }
+
+    // caption, collapsed on small tiles until hover and always open on the hero
+    .wpsr-feed-description-link {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: 0.3s;
+    }
+
+    .wpsr-feed-description-text {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.4;
+      text-decoration: none;
+
+      a { color: #ffffff; text-decoration: underline; }
+    }
+
+    // author row, hero only, collapsed on small tiles to keep them clean
+    .wpsr-tiktok-feed-content-top-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: 0.3s;
+
+      &.wpsr-tiktok-feed-author-avatar-wrapper-remove-spacing {
+        display: none;
+      }
+    }
+
+    .wpsr-tiktok-feed-author-avatar-wrapper {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+
+      .wpsr-tiktok-feed-author-name {
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.3;
+        margin-top: 0;
+        text-decoration: none;
+      }
+
+      .wpsr-tiktok-feed-time {
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .wpsr-tiktok-feed-author-name,
+      .wpsr-tiktok-feed-time {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+    }
+
+    img.wpsr-tiktok-feed-author-avatar {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      max-height: 32px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.85);
+      object-fit: cover;
+      box-sizing: border-box;
+    }
+
+    .wpsr-feed-avatar-right {
+      display: flex;
+      flex-direction: column;
+      margin-left: 8px;
+      min-width: 0;
+    }
+
+    .wpsr-tiktok-icon-temp-4 {
+      display: block;
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      pointer-events: auto;
+      background-image: url('../../../../images/icon/icon-tiktok-white.svg');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      opacity: 0.95;
+    }
+
+    .wpsr-tiktok-feed-statistics {
+      width: 100%;
+
+      &.wpsr-remove-white-space { display: none; }
+    }
+
+    .wpsr-tiktok-feed-reactions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .wpsr-tiktok-feed-reaction-wrapeer {
+      flex-direction: inherit;
+      align-items: center;
+      pointer-events: auto;
+      text-decoration: none;
+
+      .wpsr-tiktok-feed-reactions-icon {
+        width: 16px;
+        height: 16px;
+        min-width: 16px;
+        margin: 0 4px 0 0;
+        background-size: 16px 16px;
+        background-color: transparent;
+      }
+    }
+
+    .wpsr-tiktok-feed-reaction-count {
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.2;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    }
+
+    @media only screen and (max-width: 767px) {
+      .wpsr-tiktok-feed-spotlight-overlay { padding: 24px 12px 10px; }
+
+      .wpsr-tiktok-feed-reaction-count { font-size: 12px; }
+
+      img.wpsr-tiktok-feed-author-avatar {
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        max-height: 28px;
+      }
+    }
+  }
+}

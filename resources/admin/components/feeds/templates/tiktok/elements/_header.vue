@@ -1,6 +1,6 @@
 <template>
   <div v-if="header_settings.display_header === 'true' && Object.entries(user).length" class="wpsr-row">
-    <div class="wpsr-tiktok-feed-header wpsr-col-12" :class="header_settings.display_profile_photo === 'false' ? 'wpsr-tiktok-feed-profile-pic-hide' : ''">
+    <div class="wpsr-tiktok-feed-header wpsr-col-12" :class="[headerLayoutClass, header_settings.display_profile_photo === 'false' ? 'wpsr-tiktok-feed-profile-pic-hide' : '']">
       <div class="wpsr-tiktok-feed-user-info-wrapper">
         <div class="wpsr-tiktok-feed-user-info-head">
 
@@ -62,6 +62,10 @@ export default {
   computed: {
     user() {
       return this.account && this.account.data && this.account.data.user ? this.account.data.user : {};
+    },
+    headerLayoutClass() {
+      const wpsrHeaderLayout = this.header_settings && this.header_settings.header_layout === 'minimal' ? 'minimal' : 'classic';
+      return 'wpsr-tiktok-feed-header-layout-' + wpsrHeaderLayout;
     }
   }
 }

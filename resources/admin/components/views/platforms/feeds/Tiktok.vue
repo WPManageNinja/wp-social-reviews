@@ -85,45 +85,23 @@
           <div class="wpsr-accounts-connect-wrapper" :class="Object.keys(connected_source_list).length !== 0 ? 'wpsr-mt-20' : ''" v-if="reConnect || Object.keys(connected_source_list).length === 0">
             <div class="wpsr-connection-modal-input-wrapper">
               <div class="wpsr-connection-button-info-wrapper">
-                <h3>Get Your TikTok Access Code</h3>
-                <p>Simply click the button below to instantly receive your TikTok access code—it only takes one click.</p>
+                <h3>{{ $t('Display Your TikTok Videos') }}</h3>
+                <p>{{ $t('Connect your TikTok account to show your videos and profile info on your site.') }}</p>
               </div>
-              <div class="wpsr-connection-modal-input-heading-wrapper">
-                <div class="wpsr-modal-btn-with-info wpsr-mb-20">
-                  <el-button
-                      class="wpsr-login-with-tiktok"
-                      @click.prevent="oAuthLogin"
-                      size="default"
-                      type="primary"
-                  >
-                    <img :src="assets_url+'/images/icon/icon-tiktok.png'"  alt="Continue with TikTok">
-                    <p>{{ $t('Continue with TikTok') }}</p>
-                  </el-button>
-                </div>
-                <h4 class="wpsr-connection-modal-input-heading">
-                  {{ $t('Access Code') }}
-                  <el-tooltip
-                      :raw-content="true"
-                      effect="dark"
-                      placement="right-start"
-                      :content="$t('Please enter a valid access code.')"
-                  >
-                    <el-icon size="18" color="var(--wpsr-icon-info-secondary-color)"><InfoFilled /></el-icon>
-                  </el-tooltip>
-                </h4>
-              </div>
-              <InputPassword
-                  class="wpsr-mb-10"
-                  type="text"
-                  size="default"
-                  v-model="tiktok_access_code"
-                  placeholder="Enter a valid access code"
-              />
-              <div class="wpsr-modal-group-btn">
-                <el-button :disabled="!tiktok_access_code" class="wpsr_primary_btn" size="default" type="success" @click="saveVerificationConfigs">
-                  {{ $t('Connect') }}
+              <div class="wpsr-modal-btn-with-info">
+                <el-button
+                    class="wpsr-login-with-tiktok"
+                    @click.prevent="oAuthLogin()"
+                    size="default"
+                    type="primary"
+                    :loading="tiktokAuthLoading"
+                    :disabled="tiktokAuthLoading"
+                >
+                  <img :src="assets_url+'/images/icon/icon-tiktok.png'"  alt="TikTok">
+                  <p>{{ $t('Connect TikTok Account') }}</p>
                 </el-button>
               </div>
+              <p class="wpsr-connect-redirect-note">{{ $t('You will be redirected to WP Social Ninja, then to TikTok to approve access.') }}</p>
             </div>
           </div>
 
@@ -167,13 +145,18 @@
         />
       </el-dialog>
     </div>
+    <AuthRedirectOverlay
+        :visible="tiktokAuthLoading"
+        :title="`${$t('Redirecting to')} ${authServiceHost}`"
+        :subtitle="$t('You will be redirected to our authentication portal. This may take up to 5 seconds.')"
+    />
   </div>
 </template>
 
 <script type="text/babel">
 import Remove from '../../../core-ui/editor/RemoveConfirm';
-import InputPassword from '../../../core-ui/editor/InputPassword';
 import CreateTemplateIcon from  '../../../pieces/icons/CreateTemplateIcon.vue';
+import AuthRedirectOverlay from '../../../core-ui/AuthRedirectOverlay.vue';
 import AddOns from "./AddOns";
 
 export default {
@@ -184,10 +167,11 @@ export default {
       inner_loading: false,
       reConnect: false,
       isConnected: false,
+      tiktokAuthLoading: false,
+      admin_page_url: this.appVars.admin_page_url,
       config: {},
       connected_source_list: [],
       accessToken: this.access_token,
-      tiktok_access_code: '',
       addonStatus: 'Install and Activate The Plugin',
       isNinjaTiktokFeedActive: this.appVars.is_custom_feed_for_tiktok_activated,
       isNinjaTiktokFeedInstalled: this.appVars.is_custom_feed_for_tiktok_installed,
@@ -203,42 +187,42 @@ export default {
   components:{
     AddOns,
     Remove,
-    InputPassword,
-    CreateTemplateIcon
+    CreateTemplateIcon,
+    AuthRedirectOverlay
   },
   methods: {
-    oAuthLogin(account) {
-      if(account.encryption_error){
+    oAuthLogin(account = {}) {
+      if (this.tiktokAuthLoading) return;
+      if (account && account.encryption_error) {
         this.reConnect = true;
       }
-      // let url = 'https://www.tiktok.com/v2/auth/authorize/?client_key='+this.user_credentials.client_id+'&response_type=code&scope=user.info.basic,video.list&redirect_uri='+this.user_credentials.redirect_uri;
-      let url = 'https://www.tiktok.com/v2/auth/authorize/?client_key=aw4cddbhcvsbl34m&response_type=code&scope=user.info.profile,user.info.stats,video.list&redirect_uri=https://wpsocialninja.com/api/tiktok_callback';
-      window.open(url, '_blank');
-    },
-    saveVerificationConfigs(){
-      this.loading = true;
-      this.inner_loading = true;
-      let access_code = this.tiktok_access_code;
+      this.tiktokAuthLoading = true;
 
-      let settings = {
-        access_code
-      };
+      try {
+        const hash = window.location.hash;
+        const hashMatch = hash.match(/edit-tiktok-template\/?(\d+)/);
+        if (hashMatch && hashMatch[1]) {
+          window.sessionStorage.setItem('wpsn_auth_return_route', JSON.stringify({
+            name: 'edit-tiktok-template',
+            templateId: hashMatch[1],
+          }));
+        }
+      } catch (e) {}
 
-      this.$post('platforms/feeds/configs', {
-        settings: JSON.stringify(settings),
-        platform:'tiktok'
-      })
-          .then(response => {
-            if(response.data) {
-              this.getVerificationConfigs();
-              this.handleSuccess(response.data.message);
-              this.tiktok_access_code = '';
-            }
-          }).catch(error => {
+      this.$post('platforms/feeds/configs/prepare', {
+        platform:   'tiktok',
+        provider:   'tiktok',
+        flow:       'feed',
+        return_url: this.admin_page_url,
+      }).then(response => {
+        if (response && response.data && response.data.url) {
+          window.location.href = response.data.url;
+        } else {
+          this.tiktokAuthLoading = false;
+        }
+      }).catch(error => {
+        this.tiktokAuthLoading = false;
         this.handleError(error);
-      }).always(() => {
-        this.loading = false;
-        this.inner_loading = false;
       });
     },
 
@@ -340,12 +324,12 @@ export default {
       const currentUrl = window.location.href;
       return currentUrl + 'settings/tiktok-settings';
     },
+    authServiceHost() {
+      try { return new URL(this.appVars.auth_service_url).hostname; } catch (e) { return this.appVars.auth_service_url; }
+    },
   },
 
   mounted(){
-    if (this.accessToken !== '') {
-      this.saveVerificationConfigs();
-    }
     this.getVerificationConfigs();
 
     if(!this.isNinjaTiktokFeedActive){

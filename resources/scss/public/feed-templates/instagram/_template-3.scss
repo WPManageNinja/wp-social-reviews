@@ -1,0 +1,400 @@
+.wpsr-ig-feed-template3 {
+  .wpsr-ig-post-overlay-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 6px 16px -8px rgba(16, 24, 40, 0.2);
+
+    .wpsr-ig-playmode {
+      display: block;
+      position: relative;
+    }
+
+    // :focus-within keeps the overlay reachable by keyboard.
+    &:hover,
+    &:focus-within {
+      .wpsr-ig-post-overlay-bottom {
+        opacity: 0;
+        visibility: hidden;
+      }
+      .wpsr-ig-post-overlay-hover {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+
+    // An inline video needs its own frame; the overlays would sit on top of the controls.
+    // Ties the hover rule above on specificity, so it has to stay after it.
+    &.wpsr-ig-post-playing {
+      .wpsr-ig-post-overlay-bottom,
+      .wpsr-ig-post-overlay-hover {
+        opacity: 0;
+        visibility: hidden;
+      }
+    }
+
+    // Inline display mode is the only one that renders native video controls, and they own the
+    // bottom strip of the card.
+    &:has(video[controls]) {
+      .wpsr-ig-post-overlay-bottom {
+        padding-bottom: 64px;
+      }
+      .wpsr-ig-post-overlay-hover {
+        bottom: 64px;
+      }
+    }
+
+    .wpsr-ig-post-overlay-bottom {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 3;
+      padding: 8px 10px;
+      height: auto;
+      box-sizing: border-box;
+      display: flex;
+      align-items: flex-end;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.85) 45%, rgba(255, 255, 255, 0.97) 100%);
+      border-radius: 0 0 8px 8px;
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      pointer-events: none;
+    }
+
+    .wpsr-ig-post-overlay-bottom-info {
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .wpsr-ig-post-overlay-user {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .wpsr-ig-post-overlay-avatar {
+      @include wpsr-ig-avatar(26px, rgba(0, 0, 0, 0.1));
+    }
+
+    .wpsr-ig-post-overlay-user-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .wpsr-ig-post-overlay-username {
+      color: #262626;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .wpsr-ig-post-overlay-time {
+      color: #595959;
+      font-size: 10px;
+      font-weight: 400;
+      line-height: 1.2;
+    }
+
+    .wpsr-ig-post-overlay-ig-icon {
+      svg {
+        width: 18px;
+        height: 18px;
+        path {
+          fill: #262626;
+        }
+      }
+    }
+
+    .wpsr-ig-post-overlay-hover {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 4;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      background-color: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .wpsr-ig-post-overlay-hover-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      max-height: 100%;
+      // Without this the padding is added on top of max-height and the overlay overflows the card.
+      box-sizing: border-box;
+      overflow: hidden;
+
+      // Everything except the caption keeps its size, so the caption is what gives way.
+      > *:not(.wpsr-ig-post-caption) {
+        flex: none;
+      }
+    }
+
+    .wpsr-ig-post-overlay-hover-icon {
+      svg {
+        width: 24px;
+        height: 24px;
+        path {
+          fill: #262626;
+        }
+      }
+    }
+
+    // The caption hook renders .wpsr-ig-post-caption, so style that or the theme and the admin diverge.
+    .wpsr-ig-post-overlay-hover .wpsr-ig-post-caption {
+      @include wpsr-ig-overlay-scrollbar(rgba(38, 38, 38, 0.35));
+      margin-bottom: 10px;
+      // Long captions scroll in the leftover space instead of pushing the username and avatar out.
+      flex: 0 1 auto;
+      min-height: 0;
+
+      p {
+        color: #262626;
+        font-weight: 400;
+        line-height: 1.5;
+        margin: 0;
+        word-break: break-word;
+        a {
+          color: #00376b;
+          text-decoration: none;
+          pointer-events: auto;
+          &:hover,
+          &:focus {
+            text-decoration: underline;
+          }
+        }
+      }
+    }
+
+    // Statistics live in this overlay, so the shared .wpsr-ig-post-info styles do not reach them.
+    // The overlay is a light wash, so they take the dark text colour rather than template 4's white.
+    .wpsr-ig-post-overlay-hover .wpsr-ig-post-statistics {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+
+      // margin-right, not gap: the Statistics Spacing control writes margin-right here.
+      .wpsr-ig-post-single-statistic {
+        display: flex;
+        align-items: center;
+        margin-right: 15px;
+        color: #262626;
+
+        &:last-child {
+          margin-right: 0;
+        }
+
+        span {
+          color: #262626;
+          font-size: 13px;
+          font-weight: 600;
+        }
+
+        svg {
+          width: 16px;
+          height: 16px;
+          fill: #262626;
+          margin-right: 6px;
+        }
+      }
+    }
+
+    .wpsr-ig-post-overlay-hover-user {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 8px;
+      // Colour, weight and line-height come from the card-level rules; only the size differs here.
+      .wpsr-ig-post-overlay-username {
+        font-size: 13px;
+      }
+      .wpsr-ig-post-overlay-time {
+        font-size: 11px;
+      }
+    }
+
+    .wpsr-ig-post-overlay-hover-avatar {
+      img {
+        @include wpsr-ig-avatar(36px, rgba(0, 0, 0, 0.1));
+      }
+    }
+  }
+
+  // Column spacing and masonry height are in card-shared, together with template 4.
+  .wpsr-column-gap-no_gap {
+    // Cards butt against each other here, so the elevation would read as seams.
+    .wpsr-ig-post-overlay-card {
+      border-radius: 0;
+      box-shadow: none;
+      .wpsr-ig-post-overlay-bottom {
+        border-radius: 0;
+      }
+    }
+  }
+}
+
+// Highlights Layout - shared across all templates
+.wpsr-ig-highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-bottom: 20px;
+
+  .wpsr-highlight-item {
+    .wpsr-ig-post,
+    .wpsr-ig-post-overlay-card {
+      height: 100%;
+      margin-bottom: 0;
+      .wpsr-ig-playmode {
+        height: 100%;
+      }
+      .wpsr-ig-post-media-wrapper {
+        height: 100%;
+        a {
+          height: 100%;
+          display: block;
+        }
+      }
+      .wpsr-ig-post-image-wrap {
+        height: 100%;
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+    }
+  }
+
+  // 15-post cycle: positions 1, 8 and 12 are the large cards - the only offsets that pack into 6 rows with no gaps.
+  @media screen and (min-width: 768px) {
+    // Truncate the username on every card, then undo it on the big ones.
+    .wpsr-highlight-item {
+      .wpsr-ig-post-overlay-username {
+        max-width: 60px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .wpsr-highlight-item:nth-child(15n+1),
+    .wpsr-highlight-item:nth-child(15n+8),
+    .wpsr-highlight-item:nth-child(15n+12) {
+      grid-row: span 2;
+      grid-column: span 2;
+
+      .wpsr-ig-post-overlay-username {
+        max-width: none;
+        overflow: visible;
+        text-overflow: unset;
+        white-space: normal;
+      }
+
+      // Set as a custom property so the customizer's own font-size still wins.
+      --wpsr-ig-highlight-caption-size: 24px;
+    }
+
+    // Regular cards are a quarter of the width, so their caption is scaled down.
+    .wpsr-highlight-item:not(:nth-child(15n+1)):not(:nth-child(15n+8)):not(:nth-child(15n+12)) {
+      --wpsr-ig-highlight-caption-size: 14px;
+    }
+
+    .wpsr-highlight-item .wpsr-ig-post-caption p {
+      font-size: var(--wpsr-ig-highlight-caption-size, inherit);
+    }
+  }
+
+  // Template 2 puts its text below the media, so it needs a column layout instead of a full-height media wrapper.
+  .wpsr-ig-feed-template2 & {
+    .wpsr-highlight-item .wpsr-ig-post {
+      display: flex;
+      flex-direction: column;
+
+      .wpsr-ig-post-media-wrapper {
+        flex: 0 0 auto;
+        height: auto;
+      }
+
+      .wpsr-ig-post-info {
+        flex: 1 1 auto;
+      }
+    }
+  }
+
+  @media screen and (max-width: 767px) {
+    grid-template-columns: repeat(2, 1fr);
+
+    .wpsr-highlight-item {
+      grid-column: span 1;
+      grid-row: span 1;
+    }
+
+    .wpsr-highlight-item:nth-child(5n+1) {
+      grid-column: span 2;
+
+      // Reset truncation on mobile-big cards
+      .wpsr-ig-post-overlay-username {
+        max-width: none;
+        overflow: visible;
+        text-overflow: unset;
+        white-space: normal;
+      }
+    }
+
+    // Truncate username on mobile-small cards
+    .wpsr-highlight-item:not(:nth-child(5n+1)) {
+      .wpsr-ig-post-overlay-username {
+        max-width: 60px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    // Trim hover caption on mobile
+    .wpsr-ig-post-overlay-hover .wpsr-ig-post-caption p {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+
+  // Column gap variants
+  &.wpsr-column-gap-no_gap {
+    gap: 0;
+    .wpsr-ig-post,
+    .wpsr-ig-post-overlay-card {
+      border-radius: 0;
+    }
+  }
+  &.wpsr-column-gap-narrow {
+    gap: 5px;
+  }
+  &.wpsr-column-gap-small {
+    gap: 10px;
+  }
+  &.wpsr-column-gap-wide {
+    gap: 20px;
+  }
+  &.wpsr-column-gap-wider {
+    gap: 25px;
+  }
+}

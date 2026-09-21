@@ -493,7 +493,7 @@
                     {{ $t("Upgrade to WP Social Ninja Pro and unlock all the features.") }}
                     
                   </p>
-                  <UpgradeToProButton classes="wpsr_buy_pro_btn_inline" />
+                  <UpgradeToProButton :placement="upgradePlacement" />
                 </div>
               </div>
             </div>
@@ -586,6 +586,26 @@ export default {
     };
   },
   computed: {
+    upgradePlacement() {
+      // reviewPlatform is derived from the route name, so it arrives as the raw
+      // slug ("booking.com", "fluent-cart") and has to be normalised to match the
+      // feature_lock_reviews_* names PHP emits for the same platforms.
+      const platform = this.reviewPlatform || '';
+
+      // tp_slug is only filled in by the Pro plugin, and this block only renders
+      // on free installs — so Trustpilot arrives as PHP's placeholder.
+      if (!platform || platform === '_not_defined_yet_') {
+        return 'settings_reviews';
+      }
+
+      const slug = String(platform)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+      return slug ? `feature_lock_reviews_${slug}` : 'settings_reviews';
+    },
+
     validExpirationValue: {
       get() {
         if (!this.allGlobalSettings || !this.allGlobalSettings.global_settings) {
@@ -616,15 +636,11 @@ export default {
     filterDisplayOptions(items) {
       const platform = this.reviewPlatform;
 
+      // Tripadvisor bills per entity from a one-time allowance, so anything more
+      // frequent than weekly burns through it. 604800 = 1 Week.
       return items.filter((item) => {
-        if (platform === "tripadvisor") {
-          // Hide 1 Hour and 6 Hours options for this platform
-          if (
-            item.value === 60 * 60 ||
-            item.value === 60 * 60 * 6
-          ) {
-            return false;
-          }
+        if (platform === "tripadvisor" && item.value < 604800) {
+          return false;
         }
 
         return true;
@@ -667,6 +683,18 @@ export default {
       }
 
       let platform = this.reviewPlatform;
+
+      // Persist the schedule actually shown. validExpirationValue falls back when
+      // the stored value is no longer offered for this platform, so without this a
+      // save could keep a frequency the selector no longer displays.
+      if (
+        this.allGlobalSettings &&
+        this.allGlobalSettings.global_settings &&
+        this.validExpirationValue !== null
+      ) {
+        this.allGlobalSettings.global_settings.expiration = this.validExpirationValue;
+      }
+
       this.update(platform, this.allGlobalSettings);
     },
 

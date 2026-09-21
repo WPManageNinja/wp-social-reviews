@@ -1,5 +1,9 @@
 <template>
-    <div class="wpsr_editor" v-if="feedConfig" :class="{ 'wpsr-blurred': showWelcomePopup }">
+    <div v-if="!wpsrTiktokAddonActive" class="wpsr-tiktok-addon-required">
+        <TikTokFeedLandingPage />
+    </div>
+
+    <div class="wpsr_editor" v-else-if="feedConfig" :class="{ 'wpsr-blurred': showWelcomePopup, 'wpsr-editor-sidebar-minimized': wpsrSidebarMinimized, 'wpsr-sidebar-resizing': wpsrSidebarResizing }">
         <editor-header
             :title="template_title"
             :platform_section="platform_section"
@@ -8,7 +12,7 @@
             @update-settings="updateEditorSettings(platform_section)"
         ></editor-header>
         <div class="wpsr_editor_wrapper">
-            <el-container>
+            <el-container :style="{ '--wpsr-editor-sidebar-width': wpsrSidebarWidth + 'px' }">
                 <div v-if="feedConfig.feed_settings">
                     <div v-html="css"></div>
                 </div>
@@ -33,7 +37,9 @@
                         />
                   </div>
                 </el-main>
+                <SidebarToggleButton :minimized="wpsrSidebarMinimized" @toggle="toggleEditorSidebar" />
                 <el-aside class="wpsr-editor-sidebar">
+                    <SidebarResizeHandle :width="wpsrSidebarWidth" :min="wpsrSidebarMinWidth" :max="wpsrSidebarMaxWidth" @resize-start="startSidebarResize" @resize-step="stepSidebarResize" />
                     <UpgradeApp v-if="!has_pro" />
                     <el-tabs v-model="activeTab" class="wpsr-element-tab-wrapper">
                         <el-tab-pane label="General" name="general" class="wpsr-element-tab-item">
@@ -67,6 +73,7 @@
                                 <TiktokStyleEditor
                                     v-if="feedConfig.styles_config"
                                     :feed_config="feedConfig.styles_config"
+                                    :feed_settings="feedConfig.feed_settings"
                                     :elements="elements"
                                     @templateCss="templateCss"
                                 />
@@ -89,6 +96,8 @@ import TiktokFeedEditor from './editor-ui/TiktokFeedEditor';
 import EditorHeader from "../../pieces/EditorHeader";
 import Template1 from './../templates/tiktok/Template1';
 import Template2 from "../templates/tiktok/Template2.vue";
+import Template3 from "../templates/tiktok/Template3.vue";
+import Template4 from "../templates/tiktok/Template4.vue";
 import {templateMixin} from "../../../mixins/templateMixin";
 import {commonMixin} from "../../../mixins/commonMixin";
 import {jsLibraryMixin} from "../../../mixins/jsLibraryMixin";
@@ -102,15 +111,21 @@ import OnboardWelcomePopup from "../../pieces/OnboardWelcomePopup.vue";
 import TiktokFeedConnection from './editor-ui/TiktokFeedConnection';
 import DemoTemplateAlert from "../../pieces/DemoTemplateAlert.vue";
 import ProCrownIcon from '../../pieces/icons/ProCrownIcon';
+import SidebarToggleButton from '../../pieces/SidebarToggleButton';
+import SidebarResizeHandle from '../../pieces/SidebarResizeHandle';
+import { editorSidebarMixin } from "../../../mixins/editorSidebarMixin";
+import TikTokFeedLandingPage from "../../views/advertise/TikTokFeedLandingPage.vue";
 
 export default {
     name: "TiktokView",
-    mixins: [templateMixin, commonMixin, jsLibraryMixin, helperStyle],
+    mixins: [templateMixin, commonMixin, jsLibraryMixin, helperStyle, editorSidebarMixin],
     components: {
         DemoTemplateAlert,
         OnboardWelcomePopup,
         Template1,
         Template2,
+        Template3,
+        Template4,
         TiktokFeedEditor,
         EditorHeader,
         TiktokStyleEditor,
@@ -119,7 +134,15 @@ export default {
         UpgradeToProButton,
         TiktokFeedConnection,
         UpgradeApp,
-        ProCrownIcon
+        ProCrownIcon,
+        SidebarToggleButton,
+        SidebarResizeHandle,
+        TikTokFeedLandingPage
+    },
+    computed: {
+        wpsrTiktokAddonActive() {
+            return !!(this.appVars && this.appVars.is_custom_feed_for_tiktok_activated);
+        }
     },
     data() {
         return {
@@ -131,6 +154,8 @@ export default {
             templates : {
               'template1' : markRaw(Template1),
               'template2' : markRaw(Template2),
+              'template3' : markRaw(Template3),
+              'template4' : markRaw(Template4),
             },
             layoutType: '',
             counter: 0,
@@ -248,6 +273,11 @@ export default {
           handler(val) {
             let template = val
             this.feedConfig.feed_settings.template = template;
+            // template4 only offers Grid in the editor, so fall back to it if masonry/carousel was active
+            if (template === 'template4' && this.feedConfig.feed_settings.layout_type !== 'grid') {
+              this.feedConfig.feed_settings.layout_type = 'grid';
+              this.layoutType = 'grid';
+            }
             this.component = '';
             this.component = this.templates[val];
             this.handleLayout();
@@ -264,6 +294,10 @@ export default {
         }
     },
     mounted() {
+        // Without the Custom Feed for TikTok add-on no handler answers the editor route.
+        if (!this.wpsrTiktokAddonActive) {
+            return;
+        }
         let that = this;
         this.getFeedSettings(this.platform_section);
         this.setupEventListeners();

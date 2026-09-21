@@ -131,7 +131,7 @@
 </template>
 
 <script>
-import { debounce } from '../../../../utils';
+import { debounce, wpsrFetchFluentPlayerMedia } from '../../../../utils';
 import EditorGroup from './../../../core-ui/editor/EditorGroup';
 import UpgradeToProButton from '../../../views/advertise/UpgradeToProButton';
 import EditorCollapsiblePanel from '../../../core-ui/editor/EditorCollapsiblePanel.vue';
@@ -209,7 +209,7 @@ export default {
               placeholder: this.$t('Type something and press enter....'),
               disabled: !this.has_pro,
               tooltip: true,
-              tooltipText: this.$t("You can use this setting to show posts that contain certain specific words or hashtags in the caption. <br/> Separate multiple words or hashtags using commas. ex: #hashtag1,word1,word2,#hashtag2"),
+              tooltipText: this.$t('You can use this setting to show posts that contain certain specific words or hashtags in the caption.') + '<br>' + this.$t('Separate multiple words or hashtags using commas. ex: #hashtag1,word1,word2,#hashtag2'),
             },
             {
               fieldKey: 'excludes_inputs',
@@ -218,7 +218,7 @@ export default {
               placeholder: this.$t('Type something and press enter....'),
               disabled: !this.has_pro,
               tooltip: true,
-              tooltipText: this.$t('You can use this setting to hiding posts that contain certain specific words or hashtags in the caption. <br/> Separate multiple words or hashtags using commas. ex: #hashtag1,word1,#hashtag2,word2')
+              tooltipText: this.$t('You can use this setting to hide posts that contain certain specific words or hashtags in the caption.') + '<br>' + this.$t('Separate multiple words or hashtags using commas. ex: #hashtag1,word1,#hashtag2,word2')
             },
             {
               fieldKey: 'hide_posts_by_id',
@@ -228,138 +228,11 @@ export default {
               disabled: !this.has_pro,
               tooltip: true,
               autosize: {minRows: 2, maxRows: 4},
-              tooltipText: this.$t('You can find the ID of a video by viewing the video on YouTube and copy/pasting the ID number from the end of the URL </br> ex: https://www.youtube.com/watch?v=azeHzcW5OgY [ in this URL ID is "azeHzcW5OgY" ]')
+              tooltipText: this.$t('You can find the video ID by viewing the video on YouTube and copying the ID number from the end of the URL.') + '<br>ex: https://www.youtube.com/watch?v=azeHzcW5OgY'
             }
           ],
 
-          layout_settings: [
-            {
-              fieldKey: 'layout_type',
-              type: 'image_select',
-              title: this.$t('Layout Type'),
-              options: [
-                {
-                  key: 'grid',
-                  title: this.$t('Grid'),
-                  img: this.assets_url + '/images/template/global-template/grid.png',
-                },
-                {
-                  key: 'carousel',
-                  title: this.$t('Carousel'),
-                  pro: !this.has_pro,
-                  img: this.assets_url + '/images/template/global-template/slider.png',
-                },
-              ]
-            },
-            {
-              fieldKey: 'template',
-              type: 'image_select',
-              options: [
-                {
-                  key: 'template1',
-                  title: 'Template 1',
-                  img: this.assets_url + '/images/template/youtube-template/template1.png'
-                },
-                {
-                  key: 'template2',
-                  title: 'Template 2',
-                  pro: !this.has_pro,
-                  img: this.assets_url + '/images/template/youtube-template/template2.png'
-                },
-                {
-                  key: 'template3',
-                  title: 'Template 3',
-                  pro: !this.has_pro,
-                  img: this.assets_url + '/images/template/youtube-template/template3.png'
-                },
-              ]
-            },
-            {
-              title: this.$t('Layout Styling'),
-              type: 'section_title',
-              condition: {
-                'key': 'layout_type',
-                'operator': 'Arr',
-                'selector': ['grid']
-              },
-            },
-            {
-
-              fieldKey: 'responsive_column_number',
-              type: 'select',
-              title: this.$t('Number of Columns'),
-              responsive: true,
-              condition: {
-                'key': 'layout_type',
-                'selector': 'grid'
-              },
-              options: [
-                {
-                  value: '12',
-                  label: this.$t('1 Column')
-                },
-                {
-                  value: '6',
-                  label: this.$t('2 Column')
-                },
-                {
-                  value: '4',
-                  label: this.$t('3 Column')
-                },
-                {
-                  value: '3',
-                  label: this.$t('4 Column')
-                },
-                {
-                  value: '5',
-                  label: this.$t('5 Column')
-                },
-                {
-                  value: '2',
-                  label: this.$t('6 Column')
-                },
-                {
-                  value: '1',
-                  label: this.$t('10 Column')
-                },
-              ]
-            },
-            {
-              fieldKey: 'column_gaps',
-              type: 'select',
-              title: this.$t('Columns Gap'),
-              condition: {
-                'key': 'layout_type',
-                'selector': 'grid'
-              },
-              options: [
-                {
-                  value: 'default',
-                  label: this.$t('Default')
-                },
-                {
-                  value: 'no_gap',
-                  label: this.$t('No Gap')
-                },
-                {
-                  value: 'narrow',
-                  label: this.$t('Narrow')
-                },
-                {
-                  value: 'small',
-                  label: this.$t('Small')
-                },
-                {
-                  value: 'wide',
-                  label: this.$t('Wide')
-                },
-                {
-                  value: 'wider',
-                  label: this.$t('Wider')
-                }
-              ]
-            },
-          ],
+          layout_settings: [],
 
           source_settings: [
             {
@@ -422,7 +295,7 @@ export default {
                 'selector': 'playlist_feed'
               },
               tooltip: true,
-              tooltipText: this.$t('Enter any Playlist ID to display YouTube videos from a Playlist. You can find the ID of your YouTube Playlist from the URL. <br> ex: "https://www.youtube.com/playlist?list=y8zkrq6pkOc&list=PLXpD0vT4thWHBqJ5fvNRZmnzaATJ2WzY8" copy the ID after "list=" and <br> the ID will look like "PLXpD0vT4thWHBqJ5fvNRZmnzaATJ2WzY8')
+              tooltipText: this.$t('Enter any Playlist ID to display YouTube videos from a Playlist. You can find the ID of your YouTube Playlist from the URL.') + '<br>ex: https://www.youtube.com/playlist?list=PLXpD0vT4thWHBqJ5fvNRZmnzaATJ2WzY8 — copy the ID after "list="'
             },
             {
               fieldKey: 'video_id',
@@ -434,7 +307,7 @@ export default {
                 'selector': 'single_video'
               },
               tooltip: true,
-              tooltipText: this.$t('Enter any video ID to display specific YouTube videos. Separate multiple video ID\'s with comma. <br> You can find the ID of your YouTube video from the URL. <br> ex: "https://www.youtube.com/watch?v=QSVpos-WJFg" copy the ID after "watch?v=" and <br> the ID will look like "QSVpos-WJFg"')
+              tooltipText: this.$t('Enter any video ID to display specific YouTube videos. Separate multiple video IDs with commas. You can find the ID from the URL.') + '<br>ex: https://www.youtube.com/watch?v=QSVpos-WJFg — copy the ID after "watch?v="'
             },
             {
               fieldKey: 'search_term',
@@ -513,7 +386,7 @@ export default {
                 }
               ],
               tooltip: true,
-              tooltipText: this.$t("The Load More button will only display on your site's preview/live pages/posts <br> not while you're in editing mode in the WordPress Editor.")
+              tooltipText: this.$t("The Load More button will only display on your site's preview/live pages/posts.") + "<br>" + this.$t("It will not display while you are in editing mode in the WordPress Editor.")
             },
             {
               fieldKey: 'load_more_button_text',
@@ -544,6 +417,21 @@ export default {
           ],
           video_settings: [],
           header_settings: [
+                {
+                    fieldKey: 'header_layout',
+                    type: 'select',
+                    title: this.$t('Header Layout'),
+                    options: [
+                        {
+                            value: 'classic',
+                            label: this.$t('Classic')
+                        },
+                        {
+                            value: 'minimal',
+                            label: this.$t('Minimal')
+                        }
+                    ]
+                },
                 {
                     fieldKey: 'display_banner',
                     type: 'switch',
@@ -850,6 +738,13 @@ export default {
                 value: 'youtube',
                 label: this.$t('Redirect to YouTube')
               }
+            ],
+            // Filled from Fluent Player's media list, see fetchFluentPlayerMedia().
+            fluentPlayerMediaOptions: [
+              {
+                value: 0,
+                label: this.$t('Default player design')
+              }
             ]
         }
     },
@@ -872,7 +767,7 @@ export default {
         });
       },
       setVideoSettings() {
-        if (this.image_settings.has_gdpr === 'false') {
+        if (this.image_settings.has_gdpr === 'false' && !this.videoSettingsOptions.some((option) => option.value === 'gallery')) {
           this.videoSettingsOptions.push(
             {
               value: 'inline',
@@ -915,8 +810,15 @@ export default {
             fieldKey: 'play_mode',
             type: 'select',
             title: this.$t('Play Mode'),
-            options: this.videoSettingsOptions
+            options: this.videoSettingsOptions,
+            condition: {
+              data: this.feed_config,
+              key: 'template',
+              operator: '!=',
+              selector: 'template5'
+            }
           },
+          ...this.fluentPlayerSettings(),
           // {
           //     fieldKey: 'image_size',
           //     type: 'select',
@@ -1012,12 +914,288 @@ export default {
           },
         ]
       },
+      /**
+       * Fluent Player fields, only when that plugin is installed
+       *
+       * @return {Array}
+       */
+      fluentPlayerSettings() {
+        if (!this.appVars || !this.appVars.has_fluent_player) {
+          return [];
+        }
+
+        return [
+          {
+            fieldKey: 'use_fluent_player',
+            type: 'switch',
+            title: this.$t('Play with Fluent Player'),
+            active_value: 'true',
+            inactive_value: 'false',
+            tooltip: true,
+            tooltipText: this.$t('Play the videos in Fluent Player instead of the YouTube player. The videos still come from YouTube. This preview always shows the YouTube player.')
+          },
+          {
+            fieldKey: 'fluent_player_media',
+            type: 'select',
+            title: this.$t('Player Design'),
+            condition: {key: 'use_fluent_player', selector: 'true'},
+            options: this.fluentPlayerMediaOptions,
+            tooltip: true,
+            tooltipText: this.$t('Reuse the design and the layers (call to action, email capture) of one of your Fluent Player videos for this feed.')
+          },
+          {
+            fieldKey: 'fluent_player_layers_at_end',
+            type: 'switch',
+            title: this.$t('Show Layers at Video End'),
+            active_value: 'true',
+            inactive_value: 'false',
+            condition: {key: 'use_fluent_player', selector: 'true'},
+            tooltip: true,
+            tooltipText: this.$t('Layers are set to appear at a fixed time, so a late one never shows on a short video. Turn this on to move them to the end of whichever video is playing.')
+          }
+        ];
+      },
+      /**
+       * Load the player design options from Fluent Player's REST route
+       *
+       * The saved id is seeded first so the select never renders empty while
+       * the list loads, or when that video is no longer published.
+       */
+      /**
+       * Load the player designs, seeding the saved id so the select is never empty
+       *
+       * Spliced in place: the field config already holds this array.
+       */
+      fetchFluentPlayerMedia() {
+        const savedId = this.savedFluentPlayerMedia();
+
+        const show = (medias) => {
+          const options = [{value: 0, label: this.$t('Default player design')}, ...medias];
+
+          if (savedId && !options.some((option) => option.value === savedId)) {
+            options.push({value: savedId, label: '#' + savedId});
+          }
+
+          this.fluentPlayerMediaOptions.splice(0, this.fluentPlayerMediaOptions.length, ...options);
+        };
+
+        show([]);
+        wpsrFetchFluentPlayerMedia(this.appVars).then(show);
+      },
+      savedFluentPlayerMedia() {
+        const videoSettings = this.feed_config && this.feed_config.video_settings;
+        return videoSettings ? parseInt(videoSettings.fluent_player_media, 10) || 0 : 0;
+      },
+      setLayoutSettings() {
+        // rebuilt so the layout_type options re-read feed_config.template, which is replaced wholesale on update,
+        // leaving a value baked in at data() time stale
+        const isPlaylistPlayer = this.feed_config && this.feed_config.template === 'template5';
+
+        const layoutTypeOptions = [
+          {
+            key: 'grid',
+            title: this.$t('Grid'),
+            img: this.assets_url + '/images/template/global-template/grid.png',
+          },
+        ];
+
+        // Template 5 (Playlist Player) has a fixed two-column player + list layout, so carousel mode doesn't apply
+        if (!isPlaylistPlayer) {
+          layoutTypeOptions.push({
+            key: 'carousel',
+            title: this.$t('Carousel'),
+            pro: !this.has_pro,
+            img: this.assets_url + '/images/template/global-template/slider.png',
+          });
+        }
+
+        this.layout_settings = [
+          {
+            fieldKey: 'layout_type',
+            type: 'image_select',
+            title: this.$t('Layout Type'),
+            options: layoutTypeOptions
+          },
+          {
+            fieldKey: 'template',
+            type: 'image_select',
+            options: [
+              {
+                key: 'template1',
+                title: this.$t('Video Grid'),
+                img: this.assets_url + '/images/template/youtube-template/template1.png'
+              },
+              {
+                key: 'template2',
+                title: this.$t('Hover Overlay'),
+                pro: !this.has_pro,
+                img: this.assets_url + '/images/template/youtube-template/template2.png'
+              },
+              {
+                key: 'template3',
+                title: this.$t('List View'),
+                pro: !this.has_pro,
+                img: this.assets_url + '/images/template/youtube-template/template3.png'
+              },
+              {
+                key: 'template4',
+                title: this.$t('Text-Top Card'),
+                pro: !this.has_pro,
+                img: this.assets_url + '/images/template/youtube-template/template4.png'
+              },
+              {
+                key: 'template5',
+                title: this.$t('Player & Playlist'),
+                pro: !this.has_pro,
+                img: this.assets_url + '/images/template/youtube-template/template5.png'
+              },
+            ]
+          },
+          {
+            title: this.$t('Layout Styling'),
+            type: 'section_title',
+            condition: [
+              {
+                'key': 'layout_type',
+                'operator': 'Arr',
+                'selector': ['grid']
+              },
+              {
+                'key': 'template',
+                'operator': '!=',
+                'selector': 'template5'
+              }
+            ],
+          },
+          {
+
+            fieldKey: 'responsive_column_number',
+            type: 'select',
+            title: this.$t('Number of Columns'),
+            responsive: true,
+            condition: [
+              {
+                'key': 'layout_type',
+                'selector': 'grid'
+              },
+              {
+                'key': 'template',
+                'operator': '!=',
+                'selector': 'template5'
+              }
+            ],
+            options: [
+              {
+                value: '12',
+                label: this.$t('1 Column')
+              },
+              {
+                value: '6',
+                label: this.$t('2 Column')
+              },
+              {
+                value: '4',
+                label: this.$t('3 Column')
+              },
+              {
+                value: '3',
+                label: this.$t('4 Column')
+              },
+              {
+                value: '5',
+                label: this.$t('5 Column')
+              },
+              {
+                value: '2',
+                label: this.$t('6 Column')
+              },
+              {
+                value: '1',
+                label: this.$t('10 Column')
+              },
+            ]
+          },
+          {
+            fieldKey: 'column_gaps',
+            type: 'select',
+            title: this.$t('Columns Gap'),
+            condition: [
+              {
+                'key': 'layout_type',
+                'selector': 'grid'
+              },
+              {
+                'key': 'template',
+                'operator': '!=',
+                'selector': 'template5'
+              }
+            ],
+            options: [
+              {
+                value: 'default',
+                label: this.$t('Default')
+              },
+              {
+                value: 'no_gap',
+                label: this.$t('No Gap')
+              },
+              {
+                value: 'narrow',
+                label: this.$t('Narrow')
+              },
+              {
+                value: 'small',
+                label: this.$t('Small')
+              },
+              {
+                value: 'wide',
+                label: this.$t('Wide')
+              },
+              {
+                value: 'wider',
+                label: this.$t('Wider')
+              }
+            ]
+          },
+        ];
+      },
       fetch: debounce(function () {
         this.$emit('fetchFeed');
       }, 500)
     },
+    watch: {
+      'feed_config.template': function () {
+        // rebuilt so play_mode's condition.data re-reads feed_config, which is replaced wholesale on update rather than mutated
+        this.setVideoSettings();
+        this.setLayoutSettings();
+      },
+      'feed_config.header_settings.header_layout': function (newval, oldval) {
+        // Guard against hydration: without oldval a saved minimal feed would
+        // lose a banner the user had deliberately switched back on.
+        if (!oldval || newval === oldval) {
+          return;
+        }
+        // Deferred a macrotask: EditorGroup holds isUpdating for the change that
+        // opened this watcher and drops any modelValue sync arriving first, so
+        // the Display Banner switch would keep rendering the stale value.
+        setTimeout(() => {
+          this.$emit('update:feed_config', {
+            ...this.feed_config,
+            header_settings: {
+              ...this.feed_config.header_settings,
+              display_banner: newval === 'minimal' ? 'false' : 'true'
+            }
+          });
+        }, 0);
+      }
+    },
     mounted() {
       this.setVideoSettings();
+      this.setLayoutSettings();
+
+      if (this.appVars && this.appVars.has_fluent_player) {
+        this.fetchFluentPlayerMedia();
+      }
     }
 }
 </script>

@@ -65,7 +65,11 @@ export default {
       return this.metaStyles.add_custom_war_btn_url === 'false' && this.isSingleBusiness;
     },
     shouldShowCustomUrlButton() {
-      return this.metaStyles.add_custom_war_btn_url === 'true' && this.metaStyles.war_btn_source !== 'native_form';
+      if (this.metaStyles.add_custom_war_btn_url !== 'true' || this.metaStyles.war_btn_source === 'native_form') {
+        return false;
+      }
+
+      return this.metaStyles.war_btn_source !== 'custom_url' || this.hasCustomButtonUrl;
     },
     shouldShowNativeFormButton() {
       return this.metaStyles.add_custom_war_btn_url === 'true' && this.metaStyles.war_btn_source === 'native_form';
@@ -79,8 +83,11 @@ export default {
     },
     customButtonUrl() {
       return this.metaStyles.war_btn_source === 'custom_url'
-          ? this.metaStyles.war_btn_source_custom_url
+          ? String(this.metaStyles.war_btn_source_custom_url || '').trim()
           : 'javascript:void(0)';
+    },
+    hasCustomButtonUrl() {
+      return String(this.metaStyles.war_btn_source_custom_url || '').trim().length > 0;
     },
     availablePlatforms() {
       return this.allPlatforms(this.businessInfo.platforms)

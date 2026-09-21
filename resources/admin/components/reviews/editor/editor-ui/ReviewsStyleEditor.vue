@@ -13,7 +13,7 @@
                 </span>
             </template>
             <div class="wpsr-styling-components-wrapper">
-                <UpgradeToProBanner />
+                <UpgradeToProBanner placement="feature_lock_reviews_style" />
                 <div v-for="(option, insideIndex) in options" :key="insideIndex">
                   <!-- Add a conditional wrapper div to prevent empty divs -->
                   <div v-if="shouldRenderOption(option, insideIndex)" class="wpsr-styling-components" :class="!has_pro ? 'wpsr-style-upgrade':''">

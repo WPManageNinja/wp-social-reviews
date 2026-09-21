@@ -27,7 +27,25 @@ export default {
         });
         return urls;
     },
+    // Only http(s) URLs may reach an href/src. Anything else — javascript:,
+    // data:, a relative path — resolves to a non-http protocol and is dropped.
+    wpsrSafeUrl(url) {
+        if (typeof url !== 'string' || url === '') {
+            return '';
+        }
+        try {
+            let protocol = new URL(url, window.location.href).protocol;
+            return (protocol === 'http:' || protocol === 'https:') ? url : '';
+        } catch (e) {
+            return '';
+        }
+    },
+    // Escape a URL for use inside a double-quoted CSS url("...") token.
+    wpsrCssUrlEscape(url) {
+        return url.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    },
     wpsrAddTwitterCards(tcObj, index) {
+        let $that = this;
         let checkLinks = wpsrFeeds[index].element.find('.wpsr-has-card-url');
         checkLinks.each(function () {
             let $self = $(this),
@@ -69,28 +87,49 @@ export default {
                             });
                         }
                     }
-                    let imgHtml = '',
-                        domainUrl = (typeof link !== 'undefined') ? link.replace(/^https?\:\/\//i, "").split('/')[0] : '';
-                    if (twitter_card.hasOwnProperty('twitter:image') && twitter_card['twitter:image'] !== '') {
-                        imgHtml = '<div class="wpsr-tc-image" style="background-image: url(' + twitter_card['twitter:image'] + ')"><img src="' + twitter_card['twitter:image'] + '" alt="' + twitter_card['twitter:image:alt'] + '"></div>'
+                    let domainUrl = (typeof link !== 'undefined') ? link.replace(/^https?\:\/\//i, "").split('/')[0] : '';
+
+                    // Card fields are scraped from third-party pages, so every value
+                    // below is attacker-controlled. Build the card with DOM APIs
+                    // rather than concatenating into an HTML string: attributes set
+                    // via .attr()/.css() and text set via .text() are never parsed
+                    // as markup, so a quote in a title, image URL or alt text cannot
+                    // break out of its context.
+                    let $card = $('<a>', {
+                        'class': 'wpsr-twitter-card wpsr-tc-type-' + twitter_card['twitter:card'],
+                        target: '_blank'
+                    }).attr('href', $that.wpsrSafeUrl(link));
+
+                    let cardImage = $that.wpsrSafeUrl(twitter_card['twitter:image']);
+                    if (cardImage) {
+                        $('<div>', {'class': 'wpsr-tc-image'})
+                            .css('background-image', 'url("' + $that.wpsrCssUrlEscape(cardImage) + '")')
+                            .append($('<img>').attr({
+                                src: cardImage,
+                                alt: twitter_card['twitter:image:alt'] || ''
+                            }))
+                            .appendTo($card);
                     }
 
-                    $self.find('.wpsr-tweet-text').append('<a class="wpsr-twitter-card wpsr-tc-type-' + twitter_card['twitter:card'] + '" href="' + link + '" target="_blank">' +
-                        imgHtml +
-                        '<div class="wpsr-tc-summary-info">' +
-                        '<p class="wpsr-tc-heading">' + twitter_card['twitter:title'].substr(0, 48) + titleIndicator + '</p>' +
-                        '<p class="wpsr-tc-desc">' + twitter_card['twitter:description'].substring(0, 100) + desIndicator + '</p>' +
-                        '<p class="wpsr-tc-url">' + domainUrl + '</p>' +
-                        '</div>' +
-                        '</a>');
+                    $('<div>', {'class': 'wpsr-tc-summary-info'})
+                        .append($('<p>', {'class': 'wpsr-tc-heading'})
+                            .text(twitter_card['twitter:title'].substr(0, 48) + titleIndicator))
+                        .append($('<p>', {'class': 'wpsr-tc-desc'})
+                            .text(twitter_card['twitter:description'].substring(0, 100) + desIndicator))
+                        .append($('<p>', {'class': 'wpsr-tc-url'}).text(domainUrl))
+                        .appendTo($card);
+
+                    $self.find('.wpsr-tweet-text').append($card);
                 }
             }
             $self.removeClass('wpsr-has-card-url');
             $(this).addClass('wpsr-tc-active');
-            // remove the url from the tweet content
-            if ($self.find('.wpsr-tweet-text').find('a[href="' + link + '"]').length) {
-                $self.find('.wpsr-tweet-text').find('a.wpsr-link-tweet[href="' + link + '"]').hide();
-            }
+            // remove the url from the tweet content — match on the href property
+            // instead of interpolating the URL into a jQuery selector string,
+            // which a quote or bracket in the URL would otherwise corrupt.
+            $self.find('.wpsr-tweet-text').find('a.wpsr-link-tweet').filter(function () {
+                return $(this).attr('href') === link;
+            }).hide();
             return wpsrFeeds[index].tcLinksToCheck;
         });
     },
@@ -108,14 +147,26 @@ export default {
                     security: wpsr_ajax_params.wpsr_nonce
                 },
                 success: function (data) {
-                    if (data.substring(0, 1) !== '<' && data.substring(0, 200).indexOf('<meta') === -1) {
-                        let urlObject = jQuery.parseJSON(data);
-                        if (urlObject && urlObject.hasOwnProperty('error')) {
-                        } else {
-                            $that.wpsrAddTwitterCards(urlObject, index);
-                            window.dispatchEvent(new Event('resize'));
+                    let urlObject = data;
+                    // jQuery only hands back a string when the response has no
+                    // JSON content type; when it does, data is already parsed.
+                    if (typeof data === 'string') {
+                        // A leading '<' or an early <meta> means something printed
+                        // markup ahead of the JSON — not a response we can parse.
+                        if (data.substring(0, 1) === '<' || data.substring(0, 200).indexOf('<meta') !== -1) {
+                            return;
+                        }
+                        try {
+                            urlObject = JSON.parse(data);
+                        } catch (e) {
+                            return;
                         }
                     }
+                    if (!urlObject || typeof urlObject !== 'object' || urlObject.hasOwnProperty('error')) {
+                        return;
+                    }
+                    $that.wpsrAddTwitterCards(urlObject, index);
+                    window.dispatchEvent(new Event('resize'));
                 }
             });
         }

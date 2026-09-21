@@ -157,7 +157,6 @@ export default {
             this.triggerImageCount = 4;
             this.localShowSeeMoreButton = false;
             this.shouldPaddingNeedToAdd = false;
-            this.shouldShowTitle = false;
         }
         
         if(this.options.length <= this.triggerImageCount) {

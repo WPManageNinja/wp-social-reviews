@@ -291,6 +291,7 @@ import { CircleCheckFilled } from '@element-plus/icons-vue';
 import ColorMode from "../../components/pieces/ColorMode.vue";
 import SocialNinjaIcon from "../../components/pieces/icons/SocialNinjaIcon.vue";
 import { PlatformIconMixin } from '../../mixins/PlatformIconMixin';
+import { canRenderFacebookProTemplate } from '../../mixins/fbFeedMixin';
 export default {
     name: 'Onboard',
     mixins: [PlatformIconMixin],
@@ -409,7 +410,21 @@ export default {
                 return this.templateOptionsByPlatform['chats'] || [];
             } else {
                 const platform = this.selectedFeedPlatform;
-                return this.templateOptionsByPlatform[this.formData.platform_types][platform] || [];
+                const options = this.templateOptionsByPlatform[this.formData.platform_types][platform] || [];
+                if (platform !== 'facebook') {
+                    return options;
+                }
+                // An older Pro cannot render every template this version lists, and picking one
+                // would silently produce a template1 feed. Without Pro they all stay visible and
+                // locked as the upsell, so only an installed Pro gets filtered.
+                if (!this.has_pro) {
+                    return options;
+                }
+                const renderable = (this.appVars && this.appVars.facebook_pro_templates) || [];
+                return options.filter((option) => {
+                    const name = option.value && option.value.name;
+                    return !name || name === 'template1' || canRenderFacebookProTemplate(name, renderable);
+                });
             }
         }
     },

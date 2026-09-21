@@ -5,8 +5,9 @@ namespace WPSocialReviews\App\Http\Controllers;
 use WPSocialReviews\App\Models\Post;
 use WPSocialReviews\App\Models\Template;
 use WPSocialReviews\Framework\Foundation\Application;
-use WPSocialReviews\Framework\Request\Request;
+use WPSocialReviews\Framework\Http\Request\Request;
 use WPSocialReviews\App\Services\Platforms\Reviews\ReviewsTrait;
+use WPSocialReviews\App\Services\PermissionManager;
 use WPSocialReviews\App\Services\Widgets\Helper;
 class TemplatesController extends Controller
 {
@@ -14,6 +15,26 @@ class TemplatesController extends Controller
 
     protected $app = null;
     protected $postType = 'wp_social_reviews';
+
+    // The shared title/delete endpoints serve every WP Social Ninja template
+    // type (review/feed, notification, chat widget, custom source). The type
+    // guard in Post::updatePost()/deletePost() must allow all of them — while
+    // still rejecting non-WPSN posts.
+    protected $managedPostTypes = [
+        'wp_social_reviews',
+        'wpsr_reviews_notify',
+        'wpsr_social_chats',
+        'wpsr_custom_source',
+    ];
+
+    // Each managed type keeps the capability its own screen requires, so holding
+    // wpsn_manage_templates alone never reaches another screen's objects.
+    protected $managedPostTypeCapabilities = [
+        'wp_social_reviews'   => 'wpsn_manage_templates',
+        'wpsr_reviews_notify' => 'wpsn_manage_notification_popup',
+        'wpsr_social_chats'   => 'wpsn_manage_chat_widgets',
+        'wpsr_custom_source'  => 'wpsn_full_access',
+    ];
 
     public function __construct(Application $app)
     {
@@ -67,7 +88,7 @@ class TemplatesController extends Controller
             'connected_platform_sections' => $validShortcodeType,
             'all_valid_platforms'         => $platforms,
             'items'                       => $templates,
-            'total_items'                 => $post->count()
+            'total_items'                 => $templates->total()
         ];
     }
 
@@ -164,12 +185,12 @@ class TemplatesController extends Controller
 
             $template = Template::find($id);
 
-            $template['post_title'] = '(Duplicate) ' . $template['post_title'];
-            $template = $this->app->applyCustomFilters('template_duplicate', $template);
-
             if (!$template) {
                 continue;
             }
+
+            $template['post_title'] = '(Duplicate) ' . $template['post_title'];
+            $template = $this->app->applyCustomFilters('template_duplicate', $template);
 
             $templateId = $post->createPost(
                 [
@@ -214,6 +235,21 @@ class TemplatesController extends Controller
     }
 
     /**
+     * True when the current user holds the capability owning this object's post type.
+     * Unmanaged and missing post types are always refused; deletePost() re-checks the type.
+     */
+    protected function userCanManageObject($postId)
+    {
+        $postType = get_post_type((int) $postId);
+
+        if (!$postType || !isset($this->managedPostTypeCapabilities[$postType])) {
+            return false;
+        }
+
+        return PermissionManager::currentUserCan($this->managedPostTypeCapabilities[$postType]);
+    }
+
+    /**
      *
      * Delete template and meta from posts, post meta table.
      *
@@ -234,7 +270,13 @@ class TemplatesController extends Controller
 
         $deletedCount = 0;
         foreach ($ids as $id) {
-            $post->deletePost($id);
+            if (!$this->userCanManageObject($id)) {
+                continue;
+            }
+
+            if (!$post->deletePost($id, $this->managedPostTypes)) {
+                continue;
+            }
             $deletedCount++;
             do_action('wpsocialreviews/template_deleted', $id);
         }
@@ -267,6 +309,12 @@ class TemplatesController extends Controller
     public function updateTitle(Request $request, Post $post, $templateId)
     {
         try {
+            if (!$this->userCanManageObject($templateId)) {
+                wp_send_json_error([
+                    'message' => __('You are not allowed to update this item', 'wp-social-reviews')
+                ], 403);
+            }
+
             $templateTitle = sanitize_text_field($request->get('template_title', ''));
 
             $this->app->doCustomAction('before_save_title', $templateId);
@@ -275,7 +323,12 @@ class TemplatesController extends Controller
                 'post_title' => $templateTitle,
             ];
             $args   = $this->app->applyCustomFilters('template_title', $updateArgs);
-            $result = $post->updatePost($args);
+            $result = $post->updatePost($args, $this->managedPostTypes);
+            if ($result === false) {
+                wp_send_json_error([
+                    'message' => __('Failed to update title', 'wp-social-reviews')
+                ], 422);
+            }
             $this->app->doCustomAction('after_save_title', $templateId);
 
             return [
@@ -291,4 +344,3 @@ class TemplatesController extends Controller
         }
     }
 }
-

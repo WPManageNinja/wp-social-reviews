@@ -232,6 +232,8 @@ export const tableMixin = {
             }).then(response => {
                 if (response) {
                     this.handleSuccess(response.message || `Successfully duplicated ${selectedIds.length} item(s)`);
+                    this.show_duplicate_modal = false;
+                    this.show_bulk_duplicate_modal = false;
                     this.getItems();
                     this.selectedItems = [];
                     this.bulkAction = '';
@@ -275,6 +277,7 @@ export const tableMixin = {
                 if (response) {
                     const actionText = status === 'enable' ? 'enabled' : 'disabled';
                     this.handleSuccess(response.message || `Successfully ${actionText} ${selectedIds.length} item(s)`);
+                    this.show_status_modal = false;
                     this.getItems();
                     this.selectedItems = [];
                     this.bulkAction = '';
@@ -326,6 +329,8 @@ export const tableMixin = {
             }).then(response => {
                 if (response) {
                     this.handleSuccess(response.message || `Successfully updated ${selectedIds.length} item(s)`);
+                    this.show_status_modal = false;
+                    this.show_bulk_status_modal = false;
                     this.getItems();
                     this.selectedItems = [];
                     this.bulkAction = '';
@@ -550,6 +555,10 @@ export const tableMixin = {
                 case 'not-spam':
                     this.bulkMarkAsNotSpam();
                     break;
+                // Only reachable on screens that pull in reviewCategoryMixin.
+                case 'category':
+                    this.openBulkCategoryModal();
+                    break;
                 default:
                     this.$notify.warning('Selected action is not supported yet');
             }
@@ -604,6 +613,8 @@ export const tableMixin = {
                 .then(response => {
                     if (response) {
                         this.handleSuccess(response.message || `Successfully duplicated ${selectedIds.length} item(s)`);
+                        this.show_duplicate_modal = false;
+                        this.show_bulk_duplicate_modal = false;
                         this.getItems();
                         this.selectedItems = [];
                         this.bulkAction = '';

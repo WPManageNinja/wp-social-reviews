@@ -1,6 +1,6 @@
 <template>
   <div>
-    <p v-if="Object.keys(this.reviewsinfo).length && !has_pro" style="text-align: center; font-size: 15px;">To add multiple businesses. <a style="display:block; color: #fff;" href="https://wpsocialninja.com/?utm_source=wp_site&amp;utm_medium=plugin&amp;utm_campaign=upgrade" target="_blank" class="wpsr_buy_pro_btn_primary wpsr_buy_pro_btn_inline">Upgrade to Pro</a></p>
+    <p v-if="Object.keys(this.reviewsinfo).length && !has_pro" style="text-align: center; font-size: 15px;">To add multiple businesses. <a style="display:block; color: #fff;" :href="upgradeUrl" target="_blank" class="wpsr_buy_pro_btn_primary wpsr_buy_pro_btn_inline">Upgrade to Pro</a></p>
     <el-button
         v-if="Object.keys(this.reviewsinfo).length && has_pro"
         style="width: 100%"
@@ -49,6 +49,8 @@
 
 <script type="text/babel">
 import SaveAndResetButton from './SaveAndResetButton';
+import { wpsrUpgradeUrl } from '../../../../utils/upgradeUrl';
+
 export default {
   name: 'AirbnbForm',
   components: {
@@ -61,6 +63,13 @@ export default {
       business_type: '',
       type: 'text',
       addNewBusiness: false,
+    }
+  },
+  computed: {
+    upgradeUrl(){
+      // Distinct from the generic Airbnb lock: this user already has Airbnb
+      // connected and is specifically blocked on adding a second business.
+      return wpsrUpgradeUrl('feature_lock_reviews_airbnb_multiple_business');
     }
   },
   methods:{

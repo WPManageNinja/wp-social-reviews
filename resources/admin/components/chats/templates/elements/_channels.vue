@@ -20,9 +20,11 @@
 
 <script type="text/babel">
 import icons from './_icons';
+import { wpsrChatMessageContextMixin } from './chatMessageContextMixin';
 export default {
   name: 'channels',
   props: ['configs', 'templateSettings', 'image_url'],
+  mixins: [wpsrChatMessageContextMixin],
   components:{
     icons,
   },
@@ -54,6 +56,7 @@ export default {
       let configs = this.configs;
       let is_url = this.isUrl(channel.credential);
       let credential = is_url ? channel.credential : channel.webUrl+channel.credential.replace("+", "");
+      credential = this.wpsrAppendContextToChatUrl(credential, channel);
 
       if(configs.settings.popup_target === 'true') {
         let params = `scrollbars=no,resizable=no,status=no,location=no,toolbar=no,menubar=no,width=800,height=500,left=100,top=100`;

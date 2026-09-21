@@ -140,6 +140,7 @@ a.wpsr-reviewer-image-animation::before {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0;
     svg{
       height: 16px;
       width: 16px;
@@ -742,6 +743,16 @@ a.wpsr-reviewer-image-animation::before {
         height: 25px;
         width: auto;
         object-fit: cover;
+      }
+      .wpsr-business-info-platform-icon{
+        width: 75px;
+        height: 25px;
+        object-fit: contain;
+      }
+      .wpsr-business-info-platform-icon-small{
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
       }
       span{
         //padding-left: 5px;
@@ -1444,6 +1455,89 @@ a.wpsr-reviewer-image-animation::before {
   }
 }
 
+.wpsr-reviews-empty-state{
+  flex: 0 0 100%;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 40px 15px;
+  color: #606266;
+  font-size: 16px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+@media screen and (max-width: 767px) {
+  .wpsr-reviews-slider-wrapper-inner > .wpsr-reviews-sort-toolbar{
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+}
+
+.wpsr-reviews-layout-badge,
+.wpsr-reviews-layout-notification{
+  .wpsr-fixed-height .wpsr-reviews-sort-toolbar{
+    padding-left: 5px;
+  }
+}
+
+.wpsr-reviews-slider-wrapper-inner > .wpsr-reviews-empty-state{
+  width: 100%;
+}
+
+.wpsr-feed-wrap.wpsr-slider-empty .wpsr-reviews-slider-wrapper-inner{
+  > .swiper-container,
+  > .wpsr-swiper-carousel-wrapper{
+    display: none;
+  }
+}
+
+.rtl .wpsr-reviews-sort-toolbar{
+  .wpsr-reviews-sort-message{
+    text-align: left;
+  }
+  .wpsr-reviews-search-field + .wpsr-reviews-sort-toolbar-field{
+    margin-left: 0;
+    margin-right: auto;
+  }
+  .wpsr-reviews-sort-toolbar-field::after{
+    right: auto;
+    left: 10px;
+  }
+  .wpsr-reviews-sort-select,
+  .wpsr-reviews-rating-select{
+    padding: 6px 12px 6px 30px;
+  }
+  .wpsr-reviews-search-input{
+    padding: 6px 12px 6px 34px;
+  }
+  .wpsr-reviews-search-icon{
+    right: auto;
+    left: 12px;
+  }
+}
+
+@mixin wpsr-popup-sort-toolbar {
+  .wpsr-reviews-sort-toolbar{
+    margin-bottom: 12px;
+    .wpsr-reviews-sort-toolbar-field{
+      flex: 1 1 100%;
+    }
+    .wpsr-reviews-sort-select,
+    .wpsr-reviews-rating-select,
+    .wpsr-reviews-search-input{
+      width: 100%;
+    }
+  }
+}
+
+.wpsr-reviews-layout-notification{
+  @include wpsr-popup-sort-toolbar;
+}
+
+.wpsr-reviews-layout-badge{
+  @include wpsr-popup-sort-toolbar;
+}
+
 .wpsr-reviews-loadmore{
   text-align: center;
   width: auto;
@@ -1504,10 +1598,7 @@ a.wpsr-reviewer-image-animation::before {
   }
 }
 
-@keyframes rotateAnimation {
-  0%   {transform: rotate(0deg);}
-  100% {transform: rotate(360deg);}
-}
+// rotateAnimation is defined once in elements/_load-more.scss, which universel imports.
 
 .wpsr-star-container {
   width: 20px;

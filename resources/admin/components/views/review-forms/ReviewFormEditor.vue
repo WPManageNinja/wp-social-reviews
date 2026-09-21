@@ -1,5 +1,18 @@
 <template>
-  <div class="wpsr_editor" v-if="!fetchingForm">
+  <div v-if="!has_pro" class="wpsr-page-container wpsr-all-templates-page">
+    <div class="wpsr-managers-upgrade-to-pro" style="height: 100vh;">
+      <img :src="assets_url+'/images/promotion/native-forms.png'" alt="">
+      <div class="wpsr-managers-upgrade-message">
+        <h2>{{ $t('Collect Reviews Directly on Your Website') }}</h2>
+        <p>{{ $t('Create review forms, collect submissions, and moderate reviews — all from your site.') }}</p>
+        <div>
+          <UpgradeToProButton placement="feature_lock_review_form_editor"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wpsr_editor" v-else-if="!fetchingForm">
     <!-- Editor Header -->
     <div class="settings_header">
       <div class="settings_left">
@@ -74,7 +87,7 @@
 
                     <!-- Media upload preview -->
                     <div v-else-if="field.type === 'media'" class="wpsr-preview-media">
-                      <span class="wpsr-preview-placeholder">{{ $t('Choose files...') }}</span>
+                      <span class="wpsr-preview-placeholder">{{ (field.max_files || 3) > 1 ? $t('Choose files...') : $t('Choose file...') }}</span>
                     </div>
 
                     <!-- Checkbox preview (privacy / content permission) -->
@@ -220,7 +233,7 @@
                           </div>
                           <!-- Media field extras -->
                           <template v-if="field.type === 'media'">
-                            <div class="wpsr-filters-row">
+                            <div v-if="field.name !== 'author_website_logo'" class="wpsr-filters-row">
                               <span class="wpsr-editor-inside-left wpsr-element-center wpsr-input-field-label">{{ $t('Max Files') }}</span>
                               <div class="wpsr-reviews-number wpsr-editor-inside-right">
                                 <el-input-number v-model="field.max_files" :min="1" :max="10" size="small" controls-position="right" class="wpsr-text-input" />
@@ -284,6 +297,7 @@
                       <div class="wpsr-editor-inside-right">
                         <el-select v-model="settings.general.target_platform" size="small" class="wpsr-text-input">
                           <el-option value="native_form" :label="$t('Native Form (Generic)')" />
+                          <el-option value="testimonial" :label="$t('Testimonial')" />
                           <el-option value="fluent-cart" :label="$t('Fluent Cart Product')" :disabled="!appVars.hasFluentCart" />
                           <el-option value="woocommerce" :label="$t('WooCommerce Product')" :disabled="!appVars.hasWooCommerce" />
                         </el-select>
@@ -295,6 +309,9 @@
                       </p>
                       <p v-else-if="settings.general.target_platform === 'woocommerce' && !appVars.hasWooCommerce" style="color: #e6a23c; font-size: 12px; margin: 4px 0 0;">
                         {{ $t('WooCommerce is not active. Reviews will fall back to generic mode until reactivated.') }}
+                      </p>
+                      <p v-else-if="isTestimonialTarget" style="color: #e6a23c; font-size: 12px; margin: 4px 0 0;">
+                        {{ $t('Submissions will appear under All Testimonials. Changing the target does not move reviews already collected by this form.') }}
                       </p>
                     </div>
                   </div>
@@ -398,6 +415,7 @@ import EditPenIcon from '../../pieces/icons/EditPenIcon.vue';
 import CopyDocumentIcon from '../../pieces/icons/CopyDocumentIcon.vue';
 import FullScreenIcon from '../../pieces/icons/FullScreenIcon.vue';
 import ColorMode from '../../pieces/ColorMode.vue';
+import UpgradeToProButton from '../advertise/UpgradeToProButton.vue';
 
 export default {
   name: 'ReviewFormEditor',
@@ -411,7 +429,8 @@ export default {
     EditPenIcon,
     CopyDocumentIcon,
     FullScreenIcon,
-    ColorMode
+    ColorMode,
+    UpgradeToProButton
   },
   data() {
     return {
@@ -427,18 +446,48 @@ export default {
         status: 'active'
       },
       schema: this.getDefaultSchema(),
-      settings: this.getDefaultSettings()
+      settings: this.getDefaultSettings(),
+      wpsrTestimonialFieldNames: ['author_position', 'author_company', 'author_website_url', 'author_website_logo']
     }
   },
   computed: {
     canManageCaptchaSettings() {
       return this.hasPermission(['wpsn_reviews_platforms_settings', 'wpsn_full_access']);
     },
+    isTestimonialTarget() {
+      return this.settings.general.target_platform === 'testimonial';
+    },
     editableFields() {
-      return this.schema.fields.filter(f => f.type !== 'hidden');
+      return this.schema.fields.filter(field => {
+        if (field.type === 'hidden') {
+          return false;
+        }
+        // Author fields only make sense on a form that produces testimonials.
+        if (this.wpsrTestimonialFieldNames.includes(field.name)) {
+          return this.isTestimonialTarget;
+        }
+        return true;
+      });
+    }
+  },
+  watch: {
+    'settings.general.target_platform'(target) {
+      // Leaving the testimonial target must not leave author fields rendering.
+      if (target === 'testimonial') {
+        return;
+      }
+      this.schema.fields.forEach(field => {
+        if (this.wpsrTestimonialFieldNames.includes(field.name)) {
+          field.enabled = false;
+        }
+      });
     }
   },
   mounted() {
+    // Review forms are Pro-only; core/free has no endpoint to answer this.
+    if (!this.has_pro) {
+      return;
+    }
     this.fetchForm();
     this.checkFullScreen();
   },
@@ -454,7 +503,11 @@ export default {
           { type: 'rating', name: 'rating', label: 'Rating', required: true, enabled: true, max_stars: 5, default: 0 },
           { type: 'text', name: 'review_title', label: 'Review Title', placeholder: 'Summarize your experience', required: false, enabled: true, maxlength: 200 },
           { type: 'textarea', name: 'review_text', label: 'Your Review', placeholder: 'Share your experience...', required: true, enabled: true, maxlength: 5000, rows: 5 },
-          { type: 'media', name: 'media', label: 'Upload Photos', required: false, enabled: false, max_files: 3, max_size_mb: 5, allowed_types: ['image/jpeg', 'image/png', 'image/webp'] },
+          { type: 'media', name: 'review_images', label: 'Upload Photos', required: false, enabled: false, max_files: 3, max_size_mb: 5, allowed_types: ['image/jpeg', 'image/png', 'image/webp'] },
+          { type: 'text', name: 'author_position', label: 'Your Position', placeholder: 'e.g. Marketing Manager', required: false, enabled: false, maxlength: 100 },
+          { type: 'text', name: 'author_company', label: 'Company', placeholder: 'e.g. Acme Inc.', required: false, enabled: false, maxlength: 150 },
+          { type: 'url', name: 'author_website_url', label: 'Company Website', placeholder: 'https://example.com', required: false, enabled: false },
+          { type: 'media', name: 'author_website_logo', label: 'Company Logo', required: false, enabled: false, max_files: 1, max_size_mb: 2, allowed_types: ['image/jpeg', 'image/png', 'image/webp'] },
           { type: 'privacy_policy', name: 'privacy_accepted', label: 'I agree to the <a href="{privacy_url}" target="_blank">Privacy Policy</a>', required: true, enabled: true, privacy_policy_url: '' },
           { type: 'content_permission', name: 'content_permission', label: 'I grant permission to share my review publicly on this website', required: true, enabled: true },
           { type: 'hidden', name: 'source_url', value: '{{current_url}}' },

@@ -103,6 +103,31 @@
   
 }
 
+/* Stand-in for videos facebook refuses to embed, e.g. reels */
+.wpsr-fb-feed-video-not-embeddable{
+  display: block;
+  position: relative;
+  background: #17191a;
+  img{
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .wpsr-fb-feed-video-not-embeddable-note{
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 10px;
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #fff;
+    background: rgba(23,25,26,0.7);
+  }
+}
+
 /* Album video play icon specific styling */
 .wpsr-fb-feed-video-play-album {
   width: 35px;

@@ -11,7 +11,7 @@
                </template>
 
                 <div class="wpsr-styling-components-wrapper">
-                    <UpgradeToProBanner />
+                    <UpgradeToProBanner placement="feature_lock_facebook_style" />
                     <div v-for="(option, index) in options" :key="index">
                       <h3 v-if="show_section(optionsKey, option) && option.title" class="wpsr-style-title">{{ option.title }}</h3>
                         <div v-if="option.styles && option.styles.length && hasVisibleElements(option, optionsKey)" class="wpsr-styling-components" :class="!has_pro ? 'wpsr-style-upgrade':''">
@@ -203,6 +203,7 @@ export default {
       }
 
       let style_container = [
+        this.feed_config.styles.profile_photo,
         this.feed_config.styles.user_name,
         this.feed_config.styles.description,
         this.feed_config.styles.likes,

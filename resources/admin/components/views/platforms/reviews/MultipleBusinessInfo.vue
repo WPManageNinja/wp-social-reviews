@@ -11,11 +11,19 @@
       </p>
     </div>
 
-    <div class="wpsr-user-accounts-heading" :class="platFormName === 'google' || platFormName === 'facebook' || platFormName === 'fluent-cart' ? 'wpsr-jc-between' : ''">
+    <div class="wpsr-alert wpsr-alert-warning wpsr-d-flex wpsr-mb-20" v-if="deprecationNotice">
+      <InfoIcon color="var(--wpsr-icon-info-warning-color)"/>
+      <p>
+        <strong>{{$t('Note')}}</strong>
+        {{ deprecationNotice }}
+      </p>
+    </div>
+
+    <div v-if="platFormName !== 'woocommerce' || hasWooCommerce" class="wpsr-user-accounts-heading" :class="platFormName === 'google' || platFormName === 'facebook' || platFormName === 'fluent-cart' || platFormName === 'woocommerce' ? 'wpsr-jc-between' : ''">
 
       <h4 v-if="Object.keys(reviewsinfo).length && platFormName !== 'facebook' && platFormName !== 'woocommerce' && platFormName !== 'fluent-cart' && platFormName !== 'google'">{{$t('Your Connected Business Accounts')}}</h4>
 
-      <h4 v-if="(platFormName === 'woocommerce')">{{$t('Your Connected WooCommerce Products')}}</h4>
+      <h4 v-if="(platFormName === 'woocommerce' && hasWooCommerce)">{{$t('Your Connected WooCommerce Products')}}</h4>
       <h4 v-if="(platFormName === 'fluent-cart' && hasFluentCart)">{{$t('Your Connected FluentCart Products')}}</h4>
 
       <h4 v-if="platFormName === 'google' && Object.keys(locationList).length && !Object.keys(reviewsinfo).length">
@@ -51,9 +59,23 @@
           @click.prevent="connectAllProducts">
         {{ connectingAll ? $t('Connecting...') : $t('Connect All Products') }} {{ !has_pro ? $t(' (Pro)') : ''}}
       </el-button>
+
+      <el-button
+          v-if="platFormName === 'woocommerce' && hasWooCommerce"
+          class="wpsr_simple_btn"
+          type="success"
+          :loading="syncingWooReviews"
+          :disabled="!has_pro || syncingWooReviews"
+          @click.prevent="syncWooReviews">
+        {{ syncingWooReviews ? $t('Syncing...') : $t('Sync All Reviews') }} {{ !has_pro ? $t(' (Pro)') : ''}}
+      </el-button>
     </div>
 
-    <div v-if="Object.keys(reviewsinfo).length" :class="Object.keys(reviewsinfo).length > 3 ? 'wpsr-scrollbar' : ''">
+    <div
+        v-if="Object.keys(reviewsinfo).length"
+        ref="scrollContainer"
+        :class="Object.keys(reviewsinfo).length > 3 ? 'wpsr-scrollbar' : ''"
+        @scroll="onScroll">
       <div class="wpsr-connected-accounts">
         <div v-for="info in reviewsinfo">
         <div class="wpsr-user-profile">
@@ -99,11 +121,28 @@
                  <a href="#" @click.prevent="loginWithFacebook">Reconnect</a>
               </div>
             </div>
+            <div v-else-if="getProductOverrideNotice(info)" class="wpsr-account-error-status-wrapper">
+              <el-tooltip
+                  effect="dark"
+                  :content="getProductOverrideNotice(info).tooltip"
+                  placement="top-start"
+              >
+                <div class="wpsr-account-error-status">
+                  <span>
+                    <el-icon><InfoFilled /></el-icon>{{ getProductOverrideNotice(info).label }}
+                  </span>
+                  <a v-if="getProductOverrideNotice(info).url" :href="getProductOverrideNotice(info).url" target="_blank">{{ $t('Review') }}</a>
+                </div>
+              </el-tooltip>
+            </div>
           </div>
 
           </div>
         </div>
       </div>
+      </div>
+      <div v-if="loadingMore" class="wpsr-reviews-load-more">
+        <el-icon class="is-loading"><Loading /></el-icon> {{ $t('Loading more...') }}
       </div>
     </div>
   </div>
@@ -131,8 +170,8 @@ import UpgradeToProModal from  '../../advertise/UpgradeToProModal.vue';
 
 export default {
   name: 'MultipleBusinessInfo',
-  props: ['reviewsinfo', 'platFormName', 'verifiedPlatform', 'verifyPlatform', 'isDownloadablePlatform', 'pageList', 'locationList', 'products', 'hasFluentCart'],
-  emits: ['sync-loader', 'add-new-template', 'clear-verification-credentials', 'login-with-facebook', 'toggle-add-business', 'products-connected'],
+  props: ['reviewsinfo', 'platFormName', 'verifiedPlatform', 'verifyPlatform', 'isDownloadablePlatform', 'pageList', 'locationList', 'productsCount', 'hasFluentCart', 'hasWooCommerce', 'pagination', 'loadingMore', 'deprecationNotice'],
+  emits: ['sync-loader', 'add-new-template', 'clear-verification-credentials', 'login-with-facebook', 'toggle-add-business', 'products-connected', 'load-more'],
   components: {
     TrashcanIcon,
     InfoIcon,
@@ -146,22 +185,48 @@ export default {
       showUpgradeModal: false,
       selectedPlatform: 'general',
       selectedFeatureType: 'default',
-      connectingAll: false
+      connectingAll: false,
+      syncingWooReviews: false,
+      wooSyncProgressInterval: null
     }
   },
   computed: {
     hasUnconnectedProducts() {
-      if (!this.products || !this.products.length) {
+      if (!this.productsCount) {
         return false;
       }
-      const connectedIds = Object.keys(this.reviewsinfo).map(id => parseInt(id));
-      return this.products.some(product => {
-        const productId = parseInt(product.ID);
-        return !connectedIds.includes(productId);
-      });
+      const connectedCount = this.pagination ? this.pagination.total : Object.keys(this.reviewsinfo).length;
+      return this.productsCount > connectedCount;
     }
   },
   methods:{
+    onScroll(event) {
+      if (!this.pagination || this.loadingMore || this.pagination.page >= this.pagination.total_pages) {
+        return;
+      }
+      const el = event.target;
+      const scrolledNearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
+      if (scrolledNearBottom) {
+        this.$emit('load-more');
+      }
+    },
+    getProductOverrideNotice(info) {
+      if (this.platFormName === 'fluent-cart' && info.has_fluentcart_integration_override) {
+        return {
+          label: this.$t('Overridden in FluentCart'),
+          tooltip: this.$t('A FluentCart-side integration is configured for this product and overrides the settings here.'),
+          url: info.fluentcart_integration_url
+        };
+      }
+      if (this.platFormName === 'woocommerce' && info.has_woocommerce_product_override) {
+        return {
+          label: this.$t('Has Product-Level Override'),
+          tooltip: this.$t('This product has its own template selected under Product Data → WP Social Ninja, which overrides your global Main Review Hub setting.'),
+          url: info.woocommerce_override_url
+        };
+      }
+      return null;
+    },
     showProModal() {
       if (this.has_pro) return;
 
@@ -203,6 +268,60 @@ export default {
         this.connectingAll = false;
       }
     },
+    async syncWooReviews() {
+      this.syncingWooReviews = true;
+      try {
+        const response = await this.$post('pro/settings/woocommerce/import-reviews');
+        if (response && response.success) {
+          this.handleSuccess(response.message);
+          this.startWooSyncPolling();
+        } else {
+          this.handleError(response.message || 'Failed to start sync.');
+          this.syncingWooReviews = false;
+        }
+      } catch (error) {
+        this.handleError(error.message || 'Failed to start sync. Please try again.');
+        this.syncingWooReviews = false;
+      }
+    },
+    // Keeps the button's loading state on for the whole background sync, not
+    // just the initial trigger request — and picks up a sync already running
+    // (e.g. started from Advanced Settings) when this modal is opened.
+    async checkWooSyncProgress() {
+      try {
+        const response = await this.$get('pro/settings/woocommerce/import-progress');
+        const isActive = !!(response && response.success && response.data && response.data.is_active);
+        const wasActive = this.syncingWooReviews;
+        this.syncingWooReviews = isActive;
+        if (isActive) {
+          this.startWooSyncPolling();
+        } else {
+          this.stopWooSyncPolling();
+          if (wasActive) {
+            // Sync just finished — refresh the connected-products list, same
+            // event FluentCart's "Connect All Products" already uses.
+            this.$emit('products-connected');
+          }
+        }
+      } catch (error) {
+        // Silent — non-critical background check.
+      }
+    },
+    startWooSyncPolling() {
+      if (this.wooSyncProgressInterval) {
+        return;
+      }
+      this.checkWooSyncProgress();
+      this.wooSyncProgressInterval = setInterval(() => {
+        this.checkWooSyncProgress();
+      }, 3000);
+    },
+    stopWooSyncPolling() {
+      if (this.wooSyncProgressInterval) {
+        clearInterval(this.wooSyncProgressInterval);
+        this.wooSyncProgressInterval = null;
+      }
+    },
     manuallySyncReviews(platFormName, credentials) {
       this.$emit('sync-loader', true);
       this.$post('platforms/reviews/configs/manually-sync-reviews',{
@@ -221,6 +340,21 @@ export default {
             this.$emit('sync-loader', false);
           })
     }
+  },
+  watch: {
+    platFormName: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal === 'woocommerce') {
+          this.checkWooSyncProgress();
+        } else {
+          this.stopWooSyncPolling();
+        }
+      }
+    }
+  },
+  beforeUnmount() {
+    this.stopWooSyncPolling();
   }
 }
 </script>

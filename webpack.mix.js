@@ -3,6 +3,48 @@ const path = require('path');
 const fs = require("fs-extra");
 
 // -------------------------------------------------
+// Application environment (config/app.php)
+// -------------------------------------------------
+// The WPFluent framework falls back to config('app.env') whenever WP_DEBUG is
+// off, so a 'dev' value that reaches a release leaves the *global*
+// $wpdb->show_errors enabled for the whole request and dumps request details
+// into 404 REST responses. Local builds use 'dev' and production builds rewrite
+// it to 'production', matching the other Fluent plugins.
+//
+// build.sh re-asserts 'production' on the copied artifact, so a release is safe
+// even when the node build is skipped.
+const setAppEnv = (env) => {
+    const configPath = path.resolve(__dirname, 'config/app.php');
+
+    if (!fs.existsSync(configPath)) {
+        console.warn(`\n[env] config/app.php not found, skipping env rewrite.\n`);
+        return;
+    }
+
+    const source = fs.readFileSync(configPath, 'utf8');
+    const pattern = /(['"]env['"]\s*=>\s*)['"][^'"]*['"]/;
+
+    if (!pattern.test(source)) {
+        // Fail loudly: silently shipping the wrong env is the bug this prevents.
+        throw new Error(
+            "[env] Could not find the 'env' key in config/app.php. " +
+            'Fix setAppEnv() in webpack.mix.js before building.'
+        );
+    }
+
+    const updated = source.replace(pattern, `$1'${env}'`);
+
+    if (updated !== source) {
+        fs.writeFileSync(configPath, updated);
+        console.log(`\n[env] config/app.php => '${env}'\n`);
+    }
+};
+
+setAppEnv(
+    (mix.inProduction() || process.argv.includes('--production')) ? 'production' : 'dev'
+);
+
+// -------------------------------------------------
 // Babel: Force modern Babel config to avoid legacy transforms and regenerator-runtime
 // -------------------------------------------------
 mix.babelConfig({
@@ -43,6 +85,14 @@ mix.webpackConfig({
     performance: {
         hints: false
     },
+    externals: {
+        '@wordpress/blocks':       'wp.blocks',
+        '@wordpress/components':   'wp.components',
+        '@wordpress/element':      'wp.element',
+        '@wordpress/i18n':         'wp.i18n',
+        '@wordpress/block-editor': 'wp.blockEditor',
+        '@wordpress/editor':       'wp.editor',
+    },
 });
 
 // -------------------------------------------------
@@ -70,6 +120,8 @@ mix
     .js('resources/admin/main.js', 'assets/js/social-review-admin.js').vue({ version: 3 })
     .js('resources/public/chat.js', 'assets/js/chat.js')
     .js('resources/public/wp-social-review.js', 'assets/js/wp-social-review.js')
+    // Its own bundle: enqueued only on pages where the pro sort toolbar rendered.
+    .js('resources/public/reviews-sort-toolbar.js', 'assets/js/wpsr-reviews-sort-toolbar.js')
     .js('resources/public/social-ninja-modal.js', 'assets/js/social-ninja-modal.js')
     .js('resources/public/wpsn-notification.js', 'assets/js/wpsn-notification.js')
     .js('resources/public/wpsr-fb-album.js', 'assets/js/wpsr-fb-album.js')
@@ -98,7 +150,8 @@ mix
 
     // Assets
     .copy('resources/images', 'assets/images')
-    .copy('resources/fonts', 'assets/fonts');
+    .copy('resources/fonts', 'assets/fonts')
+    .copy('resources/admin/gutenblocks/wpsr-shortcode-block.LICENSE.txt', 'assets/js/wpsr-shortcode-block.js.LICENSE.txt');
 
 // Keep comment extraction enabled so release builds ship the required JS license files.
 mix.options({

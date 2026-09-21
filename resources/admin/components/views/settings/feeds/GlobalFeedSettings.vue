@@ -85,12 +85,10 @@
 </template>
   
   <script>
-  import RemoveConfirm from '../../../core-ui/editor/RemoveConfirm';
   import { InfoFilled } from '@element-plus/icons-vue';
   export default {
     name: "GlobalFeedSettings",
     components: {
-      RemoveConfirm,
       InfoFilled
     },
     data() {
@@ -134,19 +132,6 @@
     },
   
     methods: {
-      resetData() {
-        this.$del('settings/reset-images', {
-          platform: 'reviews',
-        }).then(response => {
-          if (response) {
-            this.handleSuccess(response.message);
-          }
-        }).catch((errors) => {
-          this.handleError(errors);
-        }).always(() => {
-  
-        });
-      },
       saveAdvanceSettings() {
         this.loading = true;
         this.$post('settings/advance-settings', {

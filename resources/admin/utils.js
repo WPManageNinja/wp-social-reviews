@@ -150,6 +150,47 @@ export function debounce(func, wait = 0, options = {}) {
     return debounced;
 }
 
+export function wpsrBuildAuthReturnUrl(routeName, authPlatform = '', fallbackUrl = '', templateId = '') {
+    const wpsrAppendAuthPlatform = (url) => {
+        if (!authPlatform) {
+            return url;
+        }
+
+        const separator = url.indexOf('?') === -1 ? '?' : '&';
+        return `${url}${separator}wpsn_auth_platform=${encodeURIComponent(authPlatform)}`;
+    };
+
+    if (!routeName) {
+        return wpsrAppendAuthPlatform(fallbackUrl);
+    }
+
+    const currentUrl = window.location.href;
+    const isEditor = currentUrl.includes(`#/` + routeName + `/`);
+
+    if (!isEditor) {
+        return wpsrAppendAuthPlatform(fallbackUrl);
+    }
+
+    const baseUrl = window.location.origin + window.location.pathname;
+    const hashMatch = window.location.hash.match(new RegExp(routeName + '\\/?(\\d+)'));
+    const wpsrTemplateId = templateId || (hashMatch && hashMatch[1] ? hashMatch[1] : '');
+
+    if (!wpsrTemplateId) {
+        return wpsrAppendAuthPlatform(fallbackUrl);
+    }
+
+    // The bridge strips unrecognised URL params, so store editor context in sessionStorage
+    // instead of embedding it in the return URL.
+    try {
+        window.sessionStorage.setItem('wpsn_auth_return_route', JSON.stringify({ name: routeName, templateId: wpsrTemplateId }));
+    } catch (e) {}
+
+    const urlParams = new URLSearchParams(window.location.search || '');
+    const page = urlParams.get('page') || 'wpsocialninja.php';
+
+    return wpsrAppendAuthPlatform(`${baseUrl}?page=${encodeURIComponent(page)}`);
+}
+
 /**
  * Creates a throttled function that only invokes `func` at most once per
  * every `wait` milliseconds.
@@ -299,4 +340,40 @@ function getIteratee(predicate) {
     }
 
     return (value) => value;
+}
+
+/**
+ * Load Fluent Player's media list from its own REST route.
+ *
+ * Only the request is shared; each caller seeds its own saved id.
+ *
+ * @param {Object} appVars
+ * @returns {Promise<Array<{value: number, label: string}>>} empty when page 1 fails
+ */
+export function wpsrFetchFluentPlayerMedia(appVars) {
+    const fetchPage = (page) => window.jQuery.ajax({
+        url: appVars.rest.base_url + 'wp/v2/fluent_player_media',
+        data: {per_page: 100, page, orderby: 'title', order: 'asc', _fields: 'id,title'},
+        headers: {'X-WP-Nonce': appVars.rest.nonce}
+    });
+
+    const toOptions = (medias) => medias.map((media) => ({
+        value: media.id,
+        label: media.title.rendered || '#' + media.id
+    }));
+
+    return fetchPage(1).then(
+        (medias, status, jqXHR) => {
+            // Every page: per_page caps at 100, and a failed one must not lose the rest.
+            const totalPages = parseInt(jqXHR.getResponseHeader('X-WP-TotalPages'), 10) || 1;
+            const rest = [];
+
+            for (let page = 2; page <= totalPages; page++) {
+                rest.push(fetchPage(page).then((more) => more || [], () => []));
+            }
+
+            return Promise.all(rest).then((pages) => toOptions([].concat(medias || [], ...pages)));
+        },
+        () => []
+    );
 }

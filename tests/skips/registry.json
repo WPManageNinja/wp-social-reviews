@@ -1,0 +1,27 @@
+{
+    "schema": 1,
+    "allowed_reason_categories": [
+        "known-failure",
+        "optional-sibling-missing"
+    ],
+    "skips": [
+        {
+            "id": "family-pro-optional-missing",
+            "owner_plugin": "pro",
+            "suite": "family",
+            "test": "registered optional sibling availability",
+            "surface": "WP Social Ninja Pro sibling checkout and test tree",
+            "reason_category": "optional-sibling-missing",
+            "reason": "Optional registered Pro checkout may be absent; family sweep must report it once.",
+            "declaration": "tests/family/plugins.json",
+            "evidence": {
+                "type": "source-condition",
+                "path": "tests/family/plugins.json",
+                "condition": "runtime.availability=optional and missing_sibling.policy=skip"
+            },
+            "expires_on": "2027-12-31",
+            "revisit": "Revisit whenever Pro checkout appears, path override changes, or family registry changes.",
+            "default_gate": false
+        }
+    ]
+}

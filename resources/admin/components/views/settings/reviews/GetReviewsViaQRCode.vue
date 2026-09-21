@@ -277,7 +277,7 @@
         <div class="wpsr-managers-upgrade-message">
           <h2>Upgrade to Pro and turn every scan into a 5-star opportunity!</h2>
           <p>Create branded QR codes that lead users directly to your review forms. Track scan counts, analyze campaign performance, and effortlessly build trust and credibility—online and offline.</p>
-          <UpgradeToProButton/>
+          <UpgradeToProButton placement="feature_lock_review_qr_code"/>
         </div>
       </div>
     </div>

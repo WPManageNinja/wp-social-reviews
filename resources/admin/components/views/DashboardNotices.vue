@@ -62,11 +62,36 @@
         <div class="wpsr_review_notice-aside"></div>
         <h3>Update WP Social Ninja Pro Plugin</h3>
         <p>
-          We've restructured our WP Social Ninja Pro plugin files to improve code efficiency. To ensure all Pro features work correctly, please update the
-          <a :href="admin_url.replace('admin.php', 'plugins.php')+'?s=wp-social-ninja-pro&plugin_status=all'">WP Social Ninja Pro</a> version. If you face any issues, please open a support ticket <a href="https://wpmanageninja.com/support-tickets/" target="_blank">here</a>. Our support team is always here to help you.
+          A new version of WP Social Ninja Pro is available. To make sure all Pro features keep working correctly, please update
+          <a :href="admin_url.replace('admin.php', 'plugins.php')+'?s=wp-social-ninja-pro&plugin_status=all'">WP Social Ninja Pro</a>. If you run into any issues, open a support ticket <a href="https://wpmanageninja.com/support-tickets/" target="_blank">here</a> . Our support team is always happy to help.
         </p>
       </div>
       <a class="wpsr_hide_pro_upgrade_notice" @click="updateStatus('hide_pro_upgrade_notice', '1')">
+        <el-icon><Close /></el-icon>
+      </a>
+    </div>
+
+    <!-- Notices injected by add-ons via the `wpsocialreviews/dashboard_notices` filter -->
+    <div
+      class="wpsr_dashboard_notice"
+      v-for="(notice, index) in localCustomNotices"
+      :key="'wpsr-custom-notice-' + index"
+    >
+      <div class="wpsr_review_notice" :class="'wpsr_notice_' + (notice.type || 'warning')">
+        <div class="wpsr_review_notice-aside"></div>
+        <h3 v-if="notice.title">{{ notice.title }}</h3>
+        <p v-if="notice.message">{{ notice.message }}</p>
+        <div class="wpsr_review_notice_actions" v-if="noticeActions(notice).length">
+          <a
+            v-for="(action, aIndex) in noticeActions(notice)"
+            :key="'wpsr-custom-notice-action-' + index + '-' + aIndex"
+            :href="action.url"
+            :target="action.target"
+            :rel="action.rel"
+          >{{ action.label }}</a>
+        </div>
+      </div>
+      <a class="wpsr_hide_pro_upgrade_notice" v-if="notice.dismissible !== false" @click="dismissCustomNotice(index)">
         <el-icon><Close /></el-icon>
       </a>
     </div>
@@ -76,7 +101,7 @@
 <script type="text/babel">
 export default {
   name: 'DashboardNotices',
-  props: ['displayNotice', 'displayOptInNotice', 'displayProUpdateNotice', 'displayNewsletter', 'userData'],
+  props: ['displayNotice', 'displayOptInNotice', 'displayProUpdateNotice', 'displayNewsletter', 'userData', 'customNotices'],
   data() {
     return {
       showNotice: this.displayNotice,
@@ -85,10 +110,43 @@ export default {
       showProUpdateNotice: this.displayProUpdateNotice,
       showNewsletter: this.displayNewsletter,
       admin_url: this.appVars.admin_url,
-      message: ''
+      message: '',
+      localCustomNotices: Array.isArray(this.customNotices) ? [...this.customNotices] : []
     }
   },
   methods: {
+    // Build a safe, structured list of action links for a custom notice.
+    // Add-ons supply `notice.actions: [{ label, url, target }]` instead of HTML,
+    // so links render via bound <a> tags (no v-html) with validated URLs.
+    noticeActions(notice){
+        if (!notice || !Array.isArray(notice.actions)) return [];
+        return notice.actions
+          .filter(action => action && this.isSafeNoticeUrl(action.url))
+          .map(action => {
+              let external = action.target === '_blank';
+              return {
+                  label: action.label || action.text || action.url,
+                  url: action.url,
+                  target: external ? '_blank' : '_self',
+                  rel: external ? 'noopener noreferrer' : null
+              };
+          });
+    },
+    isSafeNoticeUrl(url){
+        if (!url || typeof url !== 'string') return false;
+        let value = url.trim();
+        let lower = value.toLowerCase();
+        if (lower.startsWith('javascript:') || lower.startsWith('vbscript:') || lower.startsWith('data:')) {
+            return false;
+        }
+        // Allow http(s), protocol-relative, root/relative, anchors...
+        if (/^(https?:|\/\/|\/|#)/i.test(value)) return true;
+        // ...and scheme-less relative paths; reject any other scheme.
+        return !/^[a-z0-9+\-.]+:/i.test(value);
+    },
+    dismissCustomNotice(index){
+        this.localCustomNotices.splice(index, 1);
+    },
     updateStatus(notice_type, value){
         let args = {
           notice_type : notice_type,

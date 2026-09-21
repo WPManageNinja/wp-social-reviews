@@ -1,4 +1,3 @@
-@import '../../elements/animation';
 .wpsr-yt-popup-overlay {
   position: fixed;
   z-index: 9999;
@@ -163,13 +162,18 @@
     .wpsr-yt-popup-video-player{
       position: relative;
       padding-top: 56.25%; /* 16:9 Aspect Ratio */
-      iframe{
+      // Not for Fluent Player, which sizes its own iframe.
+      &:not(.wpsr-fluent-player-slot) iframe{
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
         border: none;
+      }
+      // Fluent Player sizes itself; drop the 16:9 padding box.
+      &.wpsr-fluent-player-slot{
+        padding-top: 0;
       }
     }
     .wpsr-yt-popup-box-content{

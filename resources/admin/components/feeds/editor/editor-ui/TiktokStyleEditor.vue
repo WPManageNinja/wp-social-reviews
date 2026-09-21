@@ -10,7 +10,7 @@
                     <EditorCollapsiblePanel :isActive="isActive" :iconKey="options.title.toLowerCase().replace(/ /g, '_')" :label="options.title"/>
                 </template>
                 <div class="wpsr-styling-components-wrapper">
-                  <UpgradeToProBanner />
+                  <UpgradeToProBanner placement="feature_lock_tiktok_style" />
                   <div v-for="(option, index) in options" :key="index" >
                       <h3 v-if="show_section(key, option)" class="wpsr-style-title">{{ option.title }}</h3>
                       <div class="wpsr-styling-components" v-if="option.styles && option.styles.length && hasVisibleElements(option, key)" :class="!has_pro ? 'wpsr-style-upgrade':''">
@@ -92,6 +92,10 @@ export default {
     elements: {
       type: Object,
       default: () => ({})
+    },
+    feed_settings: {
+      type: Object,
+      default: () => ({})
     }
   },
   mixins: [helperStyle, StyleEditorMixin],
@@ -158,6 +162,7 @@ export default {
   computed: {
     style() {
       let style_container = [
+        this.feed_config.styles.profile_photo,
         this.feed_config.styles.user_name,
         this.feed_config.styles.description,
         this.feed_config.styles.statistics,

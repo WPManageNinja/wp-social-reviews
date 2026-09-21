@@ -1,0 +1,6 @@
+FROM wordpress:cli-php8.2
+
+# Foundation runner needs stock WP-CLI only. Coverage tooling lands in its own
+# stacked PR and must not make core lab builds depend on absent lockfiles.
+USER 33:33
+WORKDIR /workspace/wp-social-ninja

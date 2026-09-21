@@ -11,6 +11,8 @@
 </template>
 <script type="text/babel">
 import ProCrownIcon from "../../components/pieces/icons/ProCrownIcon"
+import { wpsrUpgradeUrl } from '../../utils/upgradeUrl';
+
 export default {
     name: "UpgradeApp",
     components: {
@@ -20,8 +22,10 @@ export default {
         upgradeBtnConfig() {
             return {
                 text: 'Upgrade Now',
-                pro_purchase_url: 'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade',
-                ...(this.appVars?.upgrade_btn_config || {})
+                ...(this.appVars?.upgrade_btn_config || {}),
+                // Rendered in the editor sidebar, so it reports as sidebar_cta
+                // rather than sharing the generic upgrade placement.
+                pro_purchase_url: wpsrUpgradeUrl('sidebar_cta')
             };
         }
     },

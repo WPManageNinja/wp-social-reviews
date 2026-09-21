@@ -74,10 +74,10 @@
           <div class="wpsr-feed-popup-photo-media" v-if="feed.attachments && feed.attachments.data && ((feed.status_type === 'added_video' && feed.attachments.data[0].url) || feed.attachments.data[0].type === 'video_inline')">
             <!-- Show video player when optimized images are off and it's a video -->
             <VideoPlayer
-              v-if="image_settings.optimized_images !== 'true' && (feed.status_type === 'added_video' || feed.attachments.data[0].type === 'video_inline') && getTimelineVideoUrl()"
-              :videoSrc="getTimelineVideoUrl()"
+              v-if="isTimelineVideoPost && timelineVideoUrl"
+              :videoSrc="timelineVideoUrl"
               :videoId="'wpsr-timeline-video-' + currentIndex"
-              :videoKey="getTimelineVideoUrl()"
+              :videoKey="timelineVideoUrl"
               :controls="true"
               :preload="'metadata'"
               :containerClass="'wpsr-feed-popup-video-wrapper'"
@@ -87,19 +87,27 @@
               @error="handleVideoError"
               @canplay="handleVideoCanPlay"
             />
-            <!-- Show iframe when no direct video URL available -->
-            <div v-else-if="image_settings.optimized_images !== 'true' && (feed.status_type === 'added_video' || feed.attachments.data[0].type === 'video_inline') && !getTimelineVideoUrl()" class="wpsr-iframe-video-container" style="position: relative; width: 100%; aspect-ratio: 16/9; background:#000; overflow:hidden;">
-              <iframe 
-                :id="'wpsr-timeline-iframe-' + currentIndex" 
-                :src="`https://www.facebook.com/plugins/video.php?href=${feed.attachments.data[0].url}?autoplay=1`" 
-                allowtransparency="true" 
-                allowfullscreen="true" 
-                frameborder="0" 
-                scrolling="no" 
-                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture" 
-                style="position:absolute; top:0; left:0; width: 100%; height: 100%;">
-              </iframe>
-            </div>
+            <!-- No direct video URL, so let facebook play it in a frame -->
+            <template v-else-if="isTimelineVideoPost && !timelineVideoUrl">
+              <div v-if="wpsrIsEmbeddable(feed)" class="wpsr-iframe-video-container" style="position: relative; width: 100%; aspect-ratio: 16/9; background:#000; overflow:hidden;">
+                <iframe
+                  :id="'wpsr-timeline-iframe-' + currentIndex"
+                  :src="wpsrVideoEmbedUrl(timelineAttachmentUrl)"
+                  allowtransparency="true"
+                  allowfullscreen="true"
+                  frameborder="0"
+                  scrolling="no"
+                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
+                  style="position:absolute; top:0; left:0; width: 100%; height: 100%;">
+                </iframe>
+              </div>
+              <!-- Facebook refuses to frame this one, so link out instead -->
+              <a v-else class="wpsr-fb-feed-video-not-embeddable" :href="timelineAttachmentUrl" target="_blank" rel="nofollow">
+                <img v-if="feed.media_url || feed.full_picture" :src="feed.media_url ? feed.media_url : feed.full_picture" alt="">
+                <div class="wpsr-fb-feed-video-play"><div class="wpsr-fb-feed-video-play-icon"></div></div>
+                <span class="wpsr-fb-feed-video-not-embeddable-note">{{ $t('View on Facebook') }}</span>
+              </a>
+            </template>
             <!-- Show clickable thumbnail when optimized images are on -->
             <a v-else-if="feed.media_type === 'IMAGE' || feed.media_type === null" :href="`${feed.permalink_url}?autoplay=1`" target="_blank">
               <img v-if="feed.media_url || feed.full_picture" :src="feed.media_url ? feed.media_url : feed.full_picture" alt="">
@@ -237,8 +245,10 @@
 import EventPopup from "./_event_popup";
 import Statistics from "./_statistics";
 import VideoPlayer from "./_video";
+import {fbVideoMixin} from "../../../../../mixins/fbVideoMixin";
 export default {
   name: 'facebook_feed_popup_box',
+  mixins: [fbVideoMixin],
   components: {EventPopup, Statistics, VideoPlayer},
   props: ['feed', 'settings', 'account', 'currentIndex', 'feedLength', 'albumFeedLength', 'feed_type', 'image_settings'],
   data() {
@@ -263,6 +273,24 @@ export default {
         deep: true
       }
     },
+  computed: {
+    timelineAttachment() {
+      return this.feed && this.feed.attachments && this.feed.attachments.data ? this.feed.attachments.data[0] : null;
+    },
+    // A timeline post carrying a video, rendered by us rather than as an optimized thumbnail.
+    isTimelineVideoPost() {
+      return this.image_settings.optimized_images !== 'true'
+        && !!this.timelineAttachment
+        && (this.feed.status_type === 'added_video' || this.timelineAttachment.type === 'video_inline');
+    },
+    // Null when facebook gives no playable source, which is what sends us to the embed.
+    timelineVideoUrl() {
+      return this.getTimelineVideoUrl();
+    },
+    timelineAttachmentUrl() {
+      return this.timelineAttachment ? this.timelineAttachment.url : '';
+    }
+  },
   methods: {
     activeCarousel() {
       const swiper = new Swiper('.wpsr-feed-popup-carousel-wrapper', {
@@ -480,8 +508,8 @@ export default {
   mounted() {
     document.addEventListener('click', this.closePopUpBox);
   },
-  beforeDestroy() {
-    // Pause all videos when component is destroyed
+  // Vue 3 renamed this; under the old name the click listener was never removed.
+  beforeUnmount() {
     this.pauseAllVideos();
     document.removeEventListener('click', this.closePopUpBox);
   }

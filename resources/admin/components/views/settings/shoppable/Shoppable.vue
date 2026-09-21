@@ -103,7 +103,7 @@
             <p>Easily link Instagram posts to your landing pages, blog posts, products, and more. Instagram shoppable by
               hashtags increases <strong>user engagement</strong>, drives more <strong>traffic</strong>, & boosts
               <strong>conversions</strong> through user-generated content.</p>
-            <UpgradeToProButton />
+            <UpgradeToProButton placement="feature_lock_instagram_shoppable" />
           </div>
         </div>
 

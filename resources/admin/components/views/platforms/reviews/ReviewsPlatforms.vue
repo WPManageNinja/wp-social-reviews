@@ -1,6 +1,11 @@
 <template>
   <!-- social reviews - wrap with v-show -->
   <div class="wpsr-platforms-group" v-if="hasReviewsToShow">
+    <AuthRedirectOverlay
+        :visible="facebookAuthLoading"
+        :title="`${$t('Redirecting to')} ${authServiceHost}`"
+        :subtitle="$t('You will be redirected to our authentication portal. This may take up to 5 seconds.')"
+    />
     <el-row v-if="displayTitle">
       <el-col :span="24">
         <div class="wpsr-platform-title-wrapper">
@@ -181,12 +186,17 @@
                       :reviewsinfo="reviewsinfo"
                       :platFormName="platFormName"
                       :hasFluentCart="hasFluentCartInstalled"
+                      :hasWooCommerce="hasWooCommerceInstalled"
                       :isDownloadablePlatform="true"
-                      :products="productLists"
+                      :productsCount="fluentCartProductsCount"
+                      :pagination="reviewsPagination"
+                      :loadingMore="loadingMoreReviews"
+                      :deprecationNotice="deprecationNotice"
                       @sync-loader="syncLoaderActivate"
                       @add-new-template="addNewTemplate"
                       @clear-verification-credentials="clearVerificationCredentials"
                       @products-connected="getApiCredential(platFormName)"
+                      @load-more="loadMoreReviews"
                   />
 
                   <AliExpressForm
@@ -240,6 +250,7 @@
                       v-if="platFormName === 'woocommerce'"
                       :platFormName="platFormName"
                       :hasProducts="hasWooProducts"
+                      :hasWooCommerce="hasWooCommerceInstalled"
                       :sourceId="sourceId"
                       @update:sourceId="value => sourceId = value"
                       @save-reviews="saveReviews"
@@ -250,6 +261,7 @@
                       v-if="platFormName === 'fluent-cart'"
                       :platFormName="platFormName"
                       :hasFluentCart="hasFluentCartInstalled"
+                      :hasFluentCartProducts="hasFluentCartProducts"
                       :sourceId="sourceId"
                       @update:sourceId="value => sourceId = value"
                       @save-reviews="saveReviews"
@@ -300,10 +312,10 @@
                   <!-- google access token -->
                   <GoogleLoginForm
                       v-if="platFormName === 'google'"
-                      v-model="verificationData"
                       :locationList="locationList"
+                      :google-auth-loading="googleAuthLoading"
+                      :auth-service-url="appVars.auth_service_url"
                       @login-with-google="loginWithGoogle"
-                      @verify-now="verifyNow"
                   />
 
                   <div v-if="platFormName === 'facebook'">
@@ -325,18 +337,21 @@
                           <span class="wpsr-connections-tabs-label">
                             <i class="wpsr-icon"><ShieldCheckLineIcon/></i>
                             <div class="wpsr-connections-tabs-label-group">
-                              <span>OAuth 2.0</span>
-                              <p>Connects via Facebook</p>
+                              <span>{{ $t('Quick Connect') }}</span>
+                              <p>{{ $t('Recommended · One-click setup') }}</p>
                             </div>
                           </span>
                         </template>
                         <div class="wpsr-accounts-connect-wrapper">
-                            <p v-if="(!Object.keys(this.reviewsinfo).length || reConnect)">To display Facebook pages reviews, please authorize in Facebook</p>
+                            <p v-if="(!Object.keys(this.reviewsinfo).length || reConnect)">{{ $t('Connect your Facebook account to display reviews from the Pages you manage.') }}</p>
                             <!-- facebook login button -->
                             <div class="wpsr-modal-btn-with-info" v-if="(!Object.keys(this.reviewsinfo).length || reConnect)">
-                              <el-button class="wpsr-login-with-facebook" @click.prevent="loginWithFacebook" size="default" type="primary">
-                                <img :src="assets_url+'/images/icon/login-fb-btn.png'" alt="Continue with Facebook"></el-button>
+                              <el-button class="wpsr-login-with-facebook" @click.prevent="loginWithFacebook" size="default" type="primary" :loading="facebookAuthLoading" :disabled="facebookAuthLoading">
+                                <FacebookMarkIcon/>
+                                {{ $t('Connect Facebook Account') }}
+                              </el-button>
                             </div>
+                            <p class="wpsr-connect-redirect-note" v-if="(!Object.keys(this.reviewsinfo).length || reConnect)">{{ $t('You will be redirected to WP Social Ninja, then to Facebook to approve access.') }}</p>
                         </div>
                       </el-tab-pane>
                       <el-tab-pane name="manually_connect">
@@ -344,7 +359,7 @@
                           <span class="wpsr-connections-tabs-label">
                             <el-icon size="18"><User /></el-icon>
                             <div class="wpsr-connections-tabs-label-group">
-                              <span>Manually Connect a Page</span>
+                              <span>{{ $t('Manual Setup') }}</span>
                               <p>Connect via Token</p>
                             </div>
                           </span>
@@ -395,55 +410,33 @@
                       to fetch it to your website.</p>
                   </div>
 
-                  <div v-if="platFormName === 'facebook'"  class="wpsr-connection-permission-wrapper">
-                    <el-collapse v-model="activePermissionPanel">
-                      <el-collapse-item title="This permissions will be granted, when you connect your user account" name="1">
-                        <div class="wpsr-connection-permission-item">
-                          <div class="wpsr-connection-permission-item-header">
-                            <el-icon size="16" color="var(--wpsr-icon-disabled-color)"><Key /></el-icon>
-                            <span>business_management</span>
-                          </div>
-                          <p>This permission is used to retrieve the names of the Facebook Pages you manage. It works alongside other permissions to enable features that require identifying and connecting your Pages.</p>
-                        </div>
-                        <div class="wpsr-connection-permission-item">
-                          <div class="wpsr-connection-permission-item-header">
-                            <el-icon size="16" color="var(--wpsr-icon-disabled-color)"><Key /></el-icon>
-                            <span>pages_read_user_content</span>
-                          </div>
-                          <p>This permission allows our plugin to read user-generated content on your Facebook Page, including posts, comments, reviews, and ratings made by users or other Pages.</p>
-                        </div>
-                        <div class="wpsr-connection-permission-item">
-                          <div class="wpsr-connection-permission-item-header">
-                            <el-icon size="16" color="var(--wpsr-icon-disabled-color)"><Key /></el-icon>
-                            <span>pages_read_engagement</span>
-                          </div>
-                          <p>This permission allows us to access data about your Page, including follower counts, published content, and other engagement metrics.</p>
-                        </div>
-                        <div class="wpsr-connection-permission-item">
-                          <div class="wpsr-connection-permission-item-header">
-                            <el-icon size="16" color="var(--wpsr-icon-disabled-color)"><Key /></el-icon>
-                            <span>pages_show_list</span>
-                          </div>
-                          <p>This permission is used to retrieve the names of the Facebook Pages you manage, enabling you to connect and manage multiple Pages at the same time.</p>
-                        </div>
-                      </el-collapse-item>
-                    </el-collapse>
-                  </div>
 
                   <div v-if="(platFormName === 'facebook' && !pageList.length)" class="wpsr-alert wpsr-alert-info wpsr-d-flex wpsr-mt-20">
                     <el-icon size="18" color="var(--wpsr-svg-secondary-color)"><InfoFilled /></el-icon>
                     <p>
-                      <strong>Note:</strong>This does not give us permission to manage your Facebook
-                      pages, it simply allows the WP SOCIAL NINJA plugin to see a list of pages and retrieve
-                      their public content from the API. All the data is stored in your database, WP Social
-                      Ninja just works as a tool to fetch it to your website.
+                      <strong>{{ $t('Note:') }}</strong>
+                      {{ $t('WP Social Ninja does not manage or post to your Facebook account. It only reads the public content you approve. Tokens and data are stored on your own site — our connection service only passes the authorization through and never stores your data.') }}
                     </p>
                   </div>
                 </div>
 
+                <PlatformQuickSetup
+                    v-if="platFormName === 'woocommerce' || platFormName === 'fluent-cart'"
+                    :reviewsinfo="reviewsinfo"
+                    :platform="platFormName"
+                    :platformLabel="platFormName === 'woocommerce' ? 'WooCommerce' : 'FluentCart'"
+                    @quick-setup-complete="onQuickSetupComplete"
+                />
+                <div
+                    v-if="(platFormName === 'woocommerce' || platFormName === 'fluent-cart') && Object.keys(reviewsinfo).length"
+                    class="wpsr-quick-setup-or-divider"
+                >
+                  <span>{{ $t('or') }}</span>
+                </div>
                 <CreateTemplate
                     v-if="platFormName === 'yelp' || platFormName === 'woocommerce' || platFormName === 'fluent-cart' || platFormName === 'aliexpress' || url_based_platforms.includes(platFormName)"
                     :reviewsinfo="reviewsinfo"
+                    :secondary="platFormName === 'woocommerce' || platFormName === 'fluent-cart'"
                     @add-new-template="addNewTemplate"
                 />
                 <CreateTemplate
@@ -481,6 +474,7 @@ import GoogleLoginForm from "./GoogleLoginForm.vue";
 import DownloadingForm from "./DownloadingForm.vue";
 import PlatformCard from "./PlatformCard.vue";
 import CreateTemplate from "./CreateTemplate.vue";
+import PlatformQuickSetup from "./PlatformQuickSetup.vue";
 import GoogleApiForm from "./GoogleApiForm.vue";
 import GeneralApiForm from "./GeneralApiForm.vue";
 import WoocommerceForm from "./WoocommerceForm.vue";
@@ -489,12 +483,16 @@ import FacebookForm from "./FacebookForm.vue";
 import { ElNotification } from 'element-plus';
 import ThumbsUpIcon from "../../../pieces/icons/ThumbsUpIcon.vue";
 import ShieldCheckLineIcon from "../../../pieces/icons/ShieldCheckLineIcon.vue";
+import FacebookMarkIcon from "../../../pieces/icons/FacebookMarkIcon.vue";
 import ProCrownIcon from "../../../pieces/icons/ProCrownIcon.vue";
 import FluentCartForm from "./FluentCartForm.vue";
+import AuthRedirectOverlay from "../../../core-ui/AuthRedirectOverlay.vue";
+import { wpsrBuildAuthReturnUrl as buildWpsrAuthReturnUrl } from "../../../../utils";
 
 export default {
   name: "ReviewsPlatforms",
   components: {
+    FacebookMarkIcon,
     ProCrownIcon,
     ShieldCheckLineIcon,
     UpgradeToProModal,
@@ -505,6 +503,7 @@ export default {
     DownloadingForm,
     PlatformCard,
     CreateTemplate,
+    PlatformQuickSetup,
     GoogleApiForm,
     GeneralApiForm,
     WoocommerceForm,
@@ -512,7 +511,8 @@ export default {
     FacebookForm,
     ElNotification,
     ThumbsUpIcon,
-    FluentCartForm
+    FluentCartForm,
+    AuthRedirectOverlay
   },
   props: {
     column: {
@@ -550,9 +550,13 @@ export default {
     showCustomSources: {
       type: Boolean,
       default: true
+    },
+    wpsrAuthReturnUrlBuilder: {
+      type: Function,
+      default: null
     }
   },
-  emits: ['update:reviewsShowSettingModal', 'open-editor-panel'],
+  emits: ['update:reviewsShowSettingModal', 'open-editor-panel', 'auth-configuration-consumed'],
   data() {
     return {
       // Add a loading state
@@ -572,6 +576,9 @@ export default {
       platformTitle: '',
       activePlatformName: '',
       reviewsinfo: {},
+      reviewsPerPage: 10,
+      reviewsPagination: null,
+      loadingMoreReviews: false,
       loading: false,
       sourceText: '',
       apiUrl: '',
@@ -604,18 +611,22 @@ export default {
       reConnect: false,
       viaUrl: false,
       hasWooProducts: false,
+      hasWooCommerceInstalled: !!this.appVars.hasWooCommerce,
       hasFluentCartInstalled: !!this.appVars.hasFluentCart,
       hasFluentCartProducts: false,
-      productLists: [],
+      fluentCartProductsCount: 0,
       errorNotice: [],
       promotion: [],
       languages: [],
+      deprecationNotice: '',
       language: 'en',
       version: '',
       credentialsType : 'oauth',
       isBusinessListVisible: false,
-      activePermissionPanel: [],
       addNewBusiness: false,
+      openBusinessListAfterCredentialLoad: false,
+      googleAuthLoading: false,
+      facebookAuthLoading: false,
     }
   },
   methods: {
@@ -638,28 +649,61 @@ export default {
     verifyNow() {
       this.saveConfigs();
     },
-    loginWithGoogle() {
-      window.open('https://accounts.google.com/o/oauth2/v2/auth?scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fbusiness.manage&access_type=offline&prompt=consent&include_granted_scopes=true&response_type=code&client_id=1066221839285-b63ib6vnhv9aed2euhtecbp2nojvq9rp.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Fwpsocialninja.com%2Fgapi%2F&state=' + this.admin_page_url);
-    },
-    loginWithFacebook(){
-      const currentUrl = window.location.href;
-      const isEditor = currentUrl.includes('#/edit-template/');
-      let callBackUrl;
-      if (isEditor) {
-        const baseUrl = window.location.origin + window.location.pathname;
-        let templateId = null;
-        const hashMatch = window.location.hash.match(/edit-template\/?(\d+)/);
-        if (hashMatch && hashMatch[1]) {
-          templateId = hashMatch[1];
-        } else {
-          templateId = this.$route.params.template_id || '';
-        }
-        callBackUrl = `${baseUrl}?page=wpsocialninja.php&edit-template&${templateId}`;
-      } else {
-        callBackUrl = this.admin_page_url;
+    wpsrBuildAuthReturnUrl(routeName, authPlatform = '') {
+      if (typeof this.wpsrAuthReturnUrlBuilder === 'function') {
+        return this.wpsrAuthReturnUrlBuilder(routeName, authPlatform, this.admin_page_url);
       }
 
-      window.open('https://www.facebook.com/dialog/oauth?client_id=443259723723907&redirect_uri=https://wpsocialninja.com/api/facebook-login.php&state='+encodeURIComponent(callBackUrl)+'&scope=pages_show_list,pages_read_engagement,pages_read_user_content,business_management', '_self');
+      const templateId = this.$route && this.$route.params ? this.$route.params.template_id : '';
+      return buildWpsrAuthReturnUrl(routeName, authPlatform, this.admin_page_url, templateId);
+    },
+    loginWithGoogle() {
+      if (this.googleAuthLoading) {
+        return;
+      }
+
+      this.googleAuthLoading = true;
+      this.$post('platforms/reviews/configs/prepare', {
+        platform: 'google',
+        flow: 'reviews',
+        return_url: this.wpsrBuildAuthReturnUrl('edit-template', 'google'),
+        source: 'Google Reviews'
+      }).then(response => {
+        if (response && response.data && response.data.url) {
+          window.open(response.data.url, '_self');
+        } else {
+          this.googleAuthLoading = false;
+        }
+      }).catch(errors => {
+        this.googleAuthLoading = false;
+        this.handleError(errors);
+      });
+    },
+    loginWithFacebook(){
+      if (this.facebookAuthLoading) {
+        return;
+      }
+
+      // NOTE: Facebook reviews is a Pro-only platform. This button only renders in the has_pro
+      // branch (non-Pro users get UpgradeToProModal). The prepare/consume handlers for
+      // platform: 'facebook' are registered by FacebookBusiness ($authProvider = 'facebook')
+      // in wp-social-ninja-pro, so the 'no auth handler registered' path is unreachable here.
+      this.facebookAuthLoading = true;
+      this.$post('platforms/reviews/configs/prepare', {
+        platform: 'facebook',
+        flow: 'reviews',
+        return_url: this.wpsrBuildAuthReturnUrl('edit-template', 'facebook'),
+        source: 'Facebook Reviews'
+      }).then(response => {
+        if (response && response.data && response.data.url) {
+          window.open(response.data.url, '_self');
+        } else {
+          this.facebookAuthLoading = false;
+        }
+      }).catch(errors => {
+        this.facebookAuthLoading = false;
+        this.handleError(errors);
+      });
     },
     socialSettingModal(
         platformName,
@@ -683,6 +727,7 @@ export default {
       // Always set the platform name and basic info first
       this.platFormName = platformName;
       this.platformTitle = platformTitle;
+      this.reviewsPagination = null;
 
       if (!this.has_pro && (platformName !== 'google' && platformName !== 'airbnb')) {
         this.internalDialog = true;
@@ -759,9 +804,17 @@ export default {
     getApiCredential(platformName) {
       this.verificationData = '';
       this.acces_token_loader = true;
-      this.$get(`platforms/reviews/configs`, {
+      const requestParams = {
         platform: platformName
-      })
+      };
+      // Only the WooCommerce/FluentCart connected-products list can run into
+      // the thousands — paginate just that request (always page 1 on initial
+      // load; loadMoreReviews() fetches subsequent pages), other platforms
+      // keep the existing full-list response.
+      if (platformName === 'woocommerce' || platformName === 'fluent-cart') {
+        requestParams.per_page = this.reviewsPerPage;
+      }
+      this.$get(`platforms/reviews/configs`, requestParams)
           .then(response => {
             if (response) {
               if (response.credential) {
@@ -829,6 +882,9 @@ export default {
                 if (this.platFormName === 'google') {
                   this.locationList = response.additional_info.location_lists;
                   this.location_id = response.additional_info.connected_accounts;
+                  if (this.openBusinessListAfterCredentialLoad && Object.keys(this.locationList || {}).length) {
+                    this.addNewBusiness = true;
+                  }
                 } else {
                   this.locationList = response.additional_info;
                 }
@@ -838,14 +894,14 @@ export default {
                 this.languages = response.additional_info.languages;
               }
 
+              this.deprecationNotice = (response.additional_info && response.additional_info.deprecation_notice) || '';
+
               if (this.platFormName === 'fluent-cart' && response.additional_info) {
-                this.hasFluentCartProducts = Array.isArray(response.additional_info) ? response.additional_info.length > 0 : !!response.additional_info;
-                if (Array.isArray(response.additional_info)) {
-                  this.productLists = response.additional_info;
-                }
+                this.hasFluentCartProducts = !!response.additional_info.has_products;
+                this.fluentCartProductsCount = response.additional_info.products_count || 0;
               } else if (this.platFormName === 'fluent-cart') {
                 this.hasFluentCartProducts = false;
-                this.productLists = [];
+                this.fluentCartProductsCount = 0;
               }
 
               if (this.platFormName === 'google' && response.business_info) {
@@ -855,11 +911,39 @@ export default {
                   this.reviewsinfo = response.business_info;
                 }
               }
+
+              this.reviewsPagination = response.pagination || null;
             }
           }).catch((errors) => {
         this.handleError(errors);
       }).always(() => {
+        this.openBusinessListAfterCredentialLoad = false;
         this.acces_token_loader = false;
+      });
+    },
+    loadMoreReviews() {
+      if (this.loadingMoreReviews || !this.reviewsPagination || this.reviewsPagination.page >= this.reviewsPagination.total_pages) {
+        return;
+      }
+      this.loadingMoreReviews = true;
+      const nextPage = this.reviewsPagination.page + 1;
+      this.$get(`platforms/reviews/configs`, {
+        platform: this.platFormName,
+        page: nextPage,
+        per_page: this.reviewsPerPage
+      }).then(response => {
+        if (response && response.business_info) {
+          // Append the next page onto the currently loaded connected products,
+          // rather than replacing — this drives the scroll-to-load-more list.
+          this.reviewsinfo = { ...this.reviewsinfo, ...response.business_info };
+        }
+        if (response && response.pagination) {
+          this.reviewsPagination = response.pagination;
+        }
+      }).catch((errors) => {
+        this.handleError(errors);
+      }).always(() => {
+        this.loadingMoreReviews = false;
       });
     },
     saveReviews() {
@@ -1005,6 +1089,18 @@ export default {
 
       });
     },
+    onQuickSetupComplete(data) {
+      if (data && data.template_id) {
+        this.$router.push({
+          name: 'edit-template',
+          params: {
+            template_id: data.template_id
+          }
+        });
+        // close modal after successful quick setup, same as addNewTemplate()
+        this.internalDialog = false;
+      }
+    },
     getEnabledPlatforms() {
       this.$get('platforms/enabled')
           .then(response => {
@@ -1039,11 +1135,90 @@ export default {
       this.$router.push({
         name: 'custom-sources'
       });
+    },
+    applyAuthConfiguration(info) {
+      if (!info || !info.configuration || info.platform_type !== 'reviews') {
+        return;
+      }
+
+      this.internalDialog = true;
+      this.isBusinessListVisible = true;
+      this.verificationData = info.oauth_token;
+      this.platFormName = info.platform;
+      this.platformTitle = this.getPlatformTitle();
+
+      if (info.auth_consumed) {
+        this.applyConsumedAuthConfiguration(info);
+      } else {
+        this.saveConfigs();
+      }
+
+      // One-shot: tell the parent to drop the trigger so a tab-switch re-mount
+      // does not reopen this modal. The reviews tab is v-if-gated, so the parent's
+      // configurationInfo (not any child-local flag) is the state that survives.
+      this.$emit('auth-configuration-consumed');
+
+      let hash = window.location.hash || '';
+      let cleanHash = hash.split('?')[0];
+      let newUrl = window.location.origin + window.location.pathname + window.location.search + cleanHash;
+      window.history.replaceState({}, '', newUrl);
+    },
+    applyConsumedAuthConfiguration(info) {
+      if (info.platform === 'google') {
+        const locations = info.locations || {};
+
+        if (info.load_existing || !Object.keys(locations).length) {
+          this.openBusinessListAfterCredentialLoad = true;
+          this.getApiCredential(this.platFormName);
+          return;
+        }
+
+        this.locationList = locations;
+        this.location_id = [];
+        this.addNewBusiness = Object.keys(locations).length > 0;
+        this.acces_token_loader = false;
+
+        if (!Object.keys(locations).length) {
+          this.handleError('No Google Business Profile locations were found for this Google account.');
+        }
+
+        return;
+      }
+
+      if (info.platform === 'facebook') {
+        const pages = info.settings || {};
+
+        // Connection type is always OAuth when returning from the auth bridge.
+        this.credentialsType = 'oauth';
+        this.pageList = pages;
+
+        if (info.business_info && Object.keys(info.business_info).length) {
+          this.reviewsinfo = info.business_info;
+        }
+
+        // Open the page-selection modal so the user can pick a page to fetch reviews from.
+        this.addNewBusiness = Object.keys(pages).length > 0;
+        this.acces_token_loader = false;
+
+        // Refresh connected business state alongside the freshly stored pages list.
+        this.getApiCredential(this.platFormName);
+
+        if (!Object.keys(pages).length) {
+          this.handleError('No Facebook pages were found for this account.');
+        }
+
+        return;
+      }
+
+      this.getApiCredential(this.platFormName);
     }
   },
 
   computed: {
-    hasReviewsToShow() {  
+    authServiceHost() {
+      try { return new URL(this.appVars.auth_service_url).hostname; } catch (e) { return this.appVars.auth_service_url; }
+    },
+    hasReviewsToShow() {
       // Show if there are filtered platforms OR if custom sources should be shown
       return this.filteredPlatforms.length > 0 || this.shouldShowCustomSources;
     },
@@ -1072,6 +1247,14 @@ export default {
        return shouldShow;
      }
    },
+  watch: {
+    configurationInfo: {
+      handler(value) {
+        this.applyAuthConfiguration(value);
+      },
+      deep: true
+    }
+  },
   created() {
     let urlParams = this.urlParams;
     if(urlParams === '' || urlParams === undefined) return;
@@ -1113,19 +1296,7 @@ export default {
   },
   mounted() {
     this.getEnabledPlatforms();
-    if(this.configurationInfo && this.configurationInfo.configuration && this.configurationInfo.platform_type === 'reviews') {
-      this.internalDialog = true;
-      this.isBusinessListVisible = true
-      this.verificationData = this.configurationInfo.oauth_token;
-      this.platFormName = this.configurationInfo.platform;
-      this.platformTitle = this.getPlatformTitle();
-      this.saveConfigs();
-      // // Clean up the URL: remove all query params from the hash
-      let hash = window.location.hash || '';
-      let cleanHash = hash.split('?')[0];
-      let newUrl = window.location.origin + window.location.pathname + window.location.search + cleanHash;
-      window.history.replaceState({}, '', newUrl);
-    }
+    this.applyAuthConfiguration(this.configurationInfo);
   },
 }
 </script>

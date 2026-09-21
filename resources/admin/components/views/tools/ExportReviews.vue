@@ -107,7 +107,7 @@ export default {
       }
     },
     downloadLink() {
-      const security = window.WPSocialReviewsAdmin && window.WPSocialReviewsAdmin.wpsr_admin_nonce ? window.WPSocialReviewsAdmin.wpsr_admin_nonce : "";
+      const security = window.WPSocialReviewsAdmin && window.WPSocialReviewsAdmin.wpsr_import_export_nonce ? window.WPSocialReviewsAdmin.wpsr_import_export_nonce : "";
       let url = `${ajaxurl}?action=wpsr_export_data&type=${this.selectedExport}&security=${encodeURIComponent(security)}`;
       if (this.selectedExport === 'template' || this.selectedExport === 'notifications' || this.selectedExport === 'chat-widget' && this.selectedTemplate) {
         let selectedTemplateObject = this.templates.find(template => template.ID === this.selectedTemplate);

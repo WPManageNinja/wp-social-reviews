@@ -19,6 +19,24 @@
 //}
 .wpsr-yt-video{
   margin-bottom: 30px;
+
+  // the card clips its children, so ring the card when a control inside takes focus
+  &:focus-within {
+    outline: 2px solid #72aee6;
+    outline-offset: -2px;
+  }
+
+  // where :has() is available, keep the ring off mouse clicks
+  @supports selector(:has(*)) {
+    &:focus-within {
+      outline: none;
+    }
+    &:has(:focus-visible) {
+      outline: 2px solid #72aee6;
+      outline-offset: -2px;
+    }
+  }
+
   &:hover{
     .wpsr-yt-video-preview{
       svg{
@@ -132,7 +150,7 @@
       padding: 0;
       margin-top: 8px;
       margin-bottom: 0;
-      word-break: break-all;
+      word-break: break-word;
     }
     .wpsr-yt-channel-title{
       text-decoration: none;

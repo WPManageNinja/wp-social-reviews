@@ -1,0 +1,29 @@
+.wpsr-reviews-sort-toolbar-preview {
+  position: relative;
+  cursor: help;
+  opacity: 0.7;
+  transition: opacity 0.15s ease-in-out;
+
+  .wpsr-reviews-sort-toolbar-field,
+  .wpsr-reviews-search-input,
+  .wpsr-reviews-sort-select,
+  .wpsr-reviews-rating-select {
+    pointer-events: none;
+  }
+
+  .wpsr-reviews-search-input,
+  .wpsr-reviews-sort-select,
+  .wpsr-reviews-rating-select {
+    background-color: #fafafa;
+    color: #606266;
+    &:disabled {
+      opacity: 1;
+      cursor: help;
+      background-image: none;
+    }
+  }
+
+  &:hover {
+    opacity: 1;
+  }
+}

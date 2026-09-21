@@ -1,0 +1,54 @@
+// Shared by the two overlay-card templates, 3 and 4.
+
+// Avatars sit inside a post, where the shared media rules place every img absolutely.
+@mixin wpsr-ig-avatar($size, $ring, $min-width: auto) {
+  width: $size;
+  height: $size;
+  min-width: $min-width;
+  max-width: $size;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid $ring;
+  position: static;
+  transform: none;
+}
+
+// Caption panels that scroll inside a fixed-height overlay.
+@mixin wpsr-ig-overlay-scrollbar($thumb) {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+  scrollbar-width: thin;
+  scrollbar-color: $thumb transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $thumb;
+    border-radius: 2px;
+  }
+}
+
+.wpsr-ig-feed-template3,
+.wpsr-ig-feed-template4 {
+  // elements/universel spaces the card inside the column; these two space the column itself,
+  // so the margin moves up one level.
+  .wpsr-column-gap-no_gap [class*="wpsr-col"] {
+    margin-bottom: 0;
+  }
+
+  @each $name, $space in (narrow: 10px, small: 20px, wide: 40px, wider: 50px) {
+    .wpsr-column-gap-#{$name} [class*="wpsr-col"] {
+      margin-bottom: $space;
+      > div {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.wpsr-ig-feed-template3.wpsr-instagram-masonry-activate .wpsr-ig-post-overlay-card,
+.wpsr-ig-feed-template4.wpsr-instagram-masonry-activate .wpsr-ig-post-pin-card {
+  height: initial;
+}

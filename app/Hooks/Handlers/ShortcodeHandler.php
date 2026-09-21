@@ -10,6 +10,7 @@ use WPSocialReviews\App\Services\Platforms\Reviews\Helper;
 use WPSocialReviews\App\Services\Helper as GlobalHelper;
 use WPSocialReviews\App\Services\Platforms\Feeds\Facebook\Helper as FacebookHelper;
 use WPSocialReviews\App\Services\Platforms\Feeds\Config;
+use WPSocialReviews\App\Services\Platforms\Feeds\Youtube\Helper as YoutubeHelper;
 use WPSocialReviews\App\Services\Platforms\Feeds\Twitter\TwitterFeed;
 use WPSocialReviews\App\Services\Platforms\Feeds\Instagram\InstagramFeed;
 use WPSocialReviews\Framework\Database\Orm\Collection;
@@ -28,6 +29,7 @@ class ShortcodeHandler
     public $platform = '';
     public $imageSettings = [];
     public $productId = null;
+    private static $localizeScriptLoaded = false;
 
     public function addShortcode()
     {
@@ -35,6 +37,7 @@ class ShortcodeHandler
         // add_shortcode('wp_social_ninja_wall_feed', array($this, 'makeSocialWallFeedShortcode'));
         add_action('wp_enqueue_scripts', array($this, 'registerScripts'), 999);
         add_action('wp_social_ninja_add_layout_script', array($this, 'enqueueScripts'));
+        add_filter('script_loader_tag', array($this, 'addFrontendVarsBeforeScript'), 10, 3);
     }
 
     public function makeShortcode($args = [], $content = null, $tag = '')
@@ -69,6 +72,13 @@ class ShortcodeHandler
             return __('Provided platform name is not valid.', 'wp-social-reviews');
         }
 
+        // Same visibility policy as the AJAX renderers: never render a draft, private,
+        // password-protected, or wrong-post-type template on a public page. Users who
+        // can edit the template still get admin previews via the edit_post fallback.
+        if (!$this->isPublicRenderableTemplate($templateId)) {
+            return '';
+        }
+
         $this->platform = $platform;
         $this->productId = $product_id;
 
@@ -91,12 +101,62 @@ class ShortcodeHandler
 
     }
 
+    /**
+     * Check whether a template id may be rendered on a public (unauthenticated) request.
+     *
+     * Template configs live in post meta, so the public AJAX renderers would otherwise
+     * accept any post id — including unpublished/draft/private templates and posts
+     * belonging to other plugin post types that share the `_wpsr_template_config`
+     * meta key (notifications, chat widgets). The `wpsr-ajax-nonce` used by those
+     * endpoints is printed for logged-out visitors, so it authenticates nothing here.
+     *
+     * Users who can edit the template keep access, so admin-side previews still work.
+     *
+     * @param int $wpsr_template_id
+     * @param array $wpsr_extra_post_types Extra post types this caller may serve; every other check still applies.
+     *
+     * @return bool
+     * @since 4.3.1
+     */
+    public function isPublicRenderableTemplate($wpsr_template_id, $wpsr_extra_post_types = [])
+    {
+        $wpsr_template_id = absint($wpsr_template_id);
+
+        if (empty($wpsr_template_id)) {
+            return false;
+        }
+
+        $wpsr_template_post = get_post($wpsr_template_id);
+
+        if (empty($wpsr_template_post)) {
+            return false;
+        }
+
+        $wpsr_allowed_post_types = apply_filters(
+            'wpsocialreviews/public_renderable_template_post_types',
+            array_merge(['wp_social_reviews'], (array) $wpsr_extra_post_types)
+        );
+
+        if (!in_array($wpsr_template_post->post_type, $wpsr_allowed_post_types, true)) {
+            return false;
+        }
+
+        // A published but password-protected template must still satisfy the post
+        // password challenge; anonymous AJAX callers never do, so fall through to the
+        // edit_post capability check (admin previews) rather than exposing its feed.
+        if ($wpsr_template_post->post_status === 'publish' && !post_password_required($wpsr_template_post)) {
+            return true;
+        }
+
+        return current_user_can('edit_post', $wpsr_template_id);
+    }
+
     public function templateMeta($templateId, $platform)
     {
         $this->platform = $platform;
         $encodedMeta = get_post_meta($templateId, '_wpsr_template_config', true);
         $template_meta = json_decode($encodedMeta, true);
-        if (!$template_meta || empty($template_meta)) {
+        if (empty($template_meta)) {
             return ['error_message' => __('No template is available for this shortcode!!', 'wp-social-reviews')];
         }
 
@@ -114,6 +174,8 @@ class ShortcodeHandler
         } elseif ($platform === 'youtube') {
             $configs = Arr::get($template_meta, 'feed_settings', []);
             $template_meta = Config::formatYoutubeConfig($configs, []);
+            // render path only, so the constraint never round-trips back into the saved settings
+            $template_meta = YoutubeHelper::applyTemplateConstraints($template_meta);
         } elseif ($platform === 'instagram') {
             $configs = Arr::get($template_meta, 'feed_settings', []);
             $template_meta = Config::formatInstagramConfig($configs, []);
@@ -199,6 +261,16 @@ class ShortcodeHandler
                 $platforms = Arr::get($template_meta, 'platform', []);
                 $validTemplatePlatforms = Helper::validPlatforms($platforms);
             }
+
+            // Pin the shuffle for this page view on a random feed that gets a sort toolbar (see Helper::randomFeedSeed).
+            if (Helper::visitorSortToolbarEnabled($template_meta, $templateId, $templateType, $platforms)) {
+                $wpsr_random_seed = Helper::randomFeedSeed($template_meta);
+
+                if ($wpsr_random_seed) {
+                    $template_meta['wpsr_random_seed'] = $wpsr_random_seed;
+                }
+            }
+
             $data = Review::paginatedReviews($validTemplatePlatforms, $template_meta);
             $reviews = $data['reviews'];
 
@@ -475,9 +547,7 @@ class ShortcodeHandler
         //pagination settings
         $pagination_settings = $this->formatPaginationSettings($feed);
 
-        $template = Arr::get($settings['feed_settings'], 'template', '');
-        // render template 1, template 2, template 3 from template 1
-        $template = !defined('WPSOCIALREVIEWS_PRO') && ($template === 'template2' || $template === 'template3') ? 'template1' : $template;
+        $template = YoutubeHelper::resolveTemplate(Arr::get($settings['feed_settings'], 'template', ''));
 
         $layout = Arr::get($settings, 'feed_settings.layout_type');
         if ($layout) {
@@ -692,16 +762,19 @@ class ShortcodeHandler
             'translations'  => $translations
         ));
 
-        if (defined('WPSOCIALREVIEWS_PRO') && $template !== 'template1') {
+        $wpsr_pro_html = FacebookFeedTemplateHandler::canRenderProTemplate($template)
+            ? apply_filters('wpsocialreviews/add_facebook_feed_template', $template_body_data)
+            : null;
 
-            $html .= apply_filters('wpsocialreviews/add_facebook_feed_template', $template_body_data);
-        } else {
-            $html .= $app->view->make('public.feeds-templates.facebook.template1', $template_body_data);
-        }
+        // No renderer ran, so the filter handed back the array it was given.
+        $html .= is_string($wpsr_pro_html)
+            ? $wpsr_pro_html
+            : $app->view->make('public.feeds-templates.facebook.template1', $template_body_data);
 
         $html .= $app->view->make('public.feeds-templates.facebook.footer', array(
             'templateId'      => $templateId,
             'feeds'           => $feeds,
+            'template'        => $template,
             'feed_settings'   => $settings['feed_settings'],
             'layout_type'     => $settings['layout_type'],
             'column_gaps'     => $settings['column_gaps'],
@@ -742,11 +815,13 @@ class ShortcodeHandler
             'template2' => 'public.feeds-templates.instagram.template2',
         ];
         $template = Arr::get($settings['feed_settings'], 'template', '');
-        if (!isset($templateMapping[$template])) {
-            $error_message = __('No templates found!! Please save and try again', 'wp-social-reviews');
-            return apply_filters('wpsocialreviews/display_frontend_error_message', $platform, $error_message);
+        $isProTemplate = InstagramTemplateHandler::canRenderProTemplate($template);
+
+        // Mirrors Facebook: an unrenderable template falls back instead of blanking the feed.
+        if (!isset($templateMapping[$template]) && !$isProTemplate) {
+            $template = 'template1';
         }
-        $file = $templateMapping[$template];
+        $file = isset($templateMapping[$template]) ? $templateMapping[$template] : '';
 
         $layout = Arr::get($settings, 'feed_settings.layout_type');
         do_action('wp_social_review_loading_layout_' . $layout, $templateId, $settings);
@@ -761,11 +836,11 @@ class ShortcodeHandler
             $hasMulti = false;
             foreach ($feeds as $index => $feed) {
                 /* translators: %s: Human-readable time difference. */
-                $feeds[$index]['time_ago'] = sprintf(__('%s ago', 'wp-social-reviews'), human_time_diff(strtotime(Arr::get($feed, 'timestamp'))));
+                $feeds[$index]['time_ago'] = sprintf(__('%s ago', 'wp-social-reviews'), human_time_diff(strtotime(Arr::get($feed, 'timestamp', ''))));
                 if (isset($feed['comments'])) {
                     foreach ($feed['comments'] as $commentIndex => $comment) {
                         // translators: Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
-                        $feeds[$index]['comments'][$commentIndex]['time_ago'] = sprintf(__('%s ago', 'wp-social-reviews'), human_time_diff(strtotime($comment['timestamp'])));
+                        $feeds[$index]['comments'][$commentIndex]['time_ago'] = sprintf(__('%s ago', 'wp-social-reviews'), human_time_diff(strtotime(Arr::get($comment, 'timestamp', ''))));
                     }
                 }
 
@@ -818,14 +893,26 @@ class ShortcodeHandler
         ));
 
         if(!empty($feeds)) {
-            $html .= $app->view->make($file, array(
+            $template_body_data = array(
                 'templateId'    => $templateId,
                 'feeds'         => $feeds,
                 'template_meta' => $settings['feed_settings'],
                 'sinceId'       => $pagination_settings['sinceId'],
                 'maxId'         => $pagination_settings['maxId'],
                 'image_settings' => $this->imageSettings
-            ));
+            );
+
+            if ($isProTemplate) {
+                $template_body_data['header'] = $settings['header'];
+                $wpsr_pro_html = apply_filters('wpsocialreviews/add_instagram_feed_template', $template_body_data);
+
+                // No renderer ran, so the filter handed back the array it was given.
+                $html .= is_string($wpsr_pro_html)
+                    ? $wpsr_pro_html
+                    : $app->view->make($templateMapping['template1'], $template_body_data);
+            } else {
+                $html .= $app->view->make($file, $template_body_data);
+            }
         }
 
         $html .= $app->view->make('public.feeds-templates.instagram.footer',
@@ -983,8 +1070,6 @@ class ShortcodeHandler
 
     /**
      *  Enqueue All Front-End Assets
-     *
-     * @param
      */
     public function registerScripts()
     {
@@ -996,6 +1081,10 @@ class ShortcodeHandler
 
         wp_register_script('wp-social-review', WPSOCIALREVIEWS_URL . 'assets/js/wp-social-review.js',
             array('jquery'), WPSOCIALREVIEWS_VERSION, true);
+
+        // Registered only; the reviews header view enqueues it when the pro toolbar rendered.
+        wp_register_script('wpsr-reviews-sort-toolbar', WPSOCIALREVIEWS_URL . 'assets/js/wpsr-reviews-sort-toolbar.js',
+            array('jquery', 'wp-social-review'), WPSOCIALREVIEWS_VERSION, true);
 
         wp_register_script('social-ninja-modal', WPSOCIALREVIEWS_URL . 'assets/js/social-ninja-modal.js',
             array('jquery'), WPSOCIALREVIEWS_VERSION, true);
@@ -1143,6 +1232,14 @@ class ShortcodeHandler
             'going'      => Arr::get($translations, 'going') ?: __( 'going', 'wp-social-reviews' ),
             'went'       => Arr::get($translations, 'went') ?: __( 'went', 'wp-social-reviews' ),
             'ai_generated_summary' => Arr::get($translations, 'ai_generated_summary') ?: __( 'AI-Generated Summary', 'wp-social-reviews' ),
+            // Frontend review sort/rating toolbar. Split singular/plural because JS cannot call _n().
+            'reviews_showing_one'   => __('Showing 1 review', 'wp-social-reviews'),
+            /* translators: %s: number of reviews now shown. */
+            'reviews_showing_many'  => __('Showing %s reviews', 'wp-social-reviews'),
+            /* translators: 1: number of reviews now shown, 2: number of reviews that match. */
+            'reviews_showing_range' => __('Showing %1$s of %2$s reviews', 'wp-social-reviews'),
+            'no_reviews_found'      => __('No reviews match this filter.', 'wp-social-reviews'),
+            'reviews_update_failed' => __('Could not update the reviews. Please try again.', 'wp-social-reviews'),
             'plugin_url' => WPSOCIALREVIEWS_URL,
             'image_settings'   => $image_settings,
             'upload_url' => $upload_url,
@@ -1170,7 +1267,7 @@ class ShortcodeHandler
     }
 
     /**
-     * @deprecated Use wp_add_inline_script in registerScripts() instead.
+     * @deprecated Use enqueueScripts() instead.
      * Kept public for backward compatibility with Oxygen widget integrations.
      */
     public function loadLocalizeScripts()
@@ -1184,7 +1281,7 @@ class ShortcodeHandler
         $params = $this->buildLocalizeParams();
         ?>
         <script type="text/javascript" id="wpsr-localize-script">
-            window.wpsr_ajax_params = <?php echo json_encode($params); ?>;
+            window.wpsr_ajax_params = <?php echo wp_json_encode($params); ?>;
         </script>
         <?php
         $jsLoaded = true;
@@ -1194,14 +1291,26 @@ class ShortcodeHandler
     {
         static $jsLoaded;
 
-        wp_add_inline_script('wp-social-review', $this->buildLocalizeJs(), 'before');
-
         if ($jsLoaded) {
             return;
         }
 
         wp_enqueue_script('wp-social-review');
         $jsLoaded = true;
+    }
+
+    public function addFrontendVarsBeforeScript($tag, $handle, $src)
+    {
+        if ($handle !== 'wp-social-review' || self::$localizeScriptLoaded) {
+            return $tag;
+        }
+
+        self::$localizeScriptLoaded = true;
+
+        return wp_get_inline_script_tag(
+            $this->buildLocalizeJs(),
+            array('id' => 'wp-social-review-js-before')
+        ) . $tag;
     }
 
     public function enqueueNotificationScripts()
@@ -1217,7 +1326,8 @@ class ShortcodeHandler
             return;
         }
         $params = array(
-            'ajax_url' => admin_url('admin-ajax.php'),
+            'ajax_url'   => admin_url('admin-ajax.php'),
+            'wpsr_nonce' => wp_create_nonce('wpsr-ajax-nonce'),
         );
         ?>
         <script type="text/javascript" id="wpsr-localize-popup-script">
@@ -1240,16 +1350,62 @@ class ShortcodeHandler
 
     public function handleLoadMoreAjax()
     {
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading AJAX parameters for pagination, not processing sensitive form data
+        if (!check_ajax_referer('wpsr-ajax-nonce', 'security', false)) {
+            wp_send_json_error([
+                'message' => __('Invalid nonce.', 'wp-social-reviews')
+            ], 403);
+        }
+
         $templateId = absint(Arr::get($_REQUEST, 'template_id'));
+
+        // Read before the check below, which uses it to pick the allowed post types.
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading AJAX parameters for pagination, not processing sensitive form data
         $platform = sanitize_text_field(Arr::get($_REQUEST, 'platform'));
+
+        // Notification popups render a reviews feed from their own post type, so allow it here only.
+        $wpsr_extra_post_types = $platform === 'reviews' ? ['wpsr_reviews_notify'] : [];
+
+        if (!$this->isPublicRenderableTemplate($templateId, $wpsr_extra_post_types)) {
+            wp_send_json_error([
+                'message' => __('Invalid template.', 'wp-social-reviews')
+            ], 403);
+        }
+
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading AJAX parameters for pagination, not processing sensitive form data
         $page = absint(Arr::get($_REQUEST, 'page', 2));
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading AJAX parameters for pagination, not processing sensitive form data
         $feed_type = sanitize_text_field(Arr::get($_REQUEST, 'feed_type' , ''));
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading AJAX parameters for pagination, not processing sensitive form data
         $feed_id = sanitize_text_field(Arr::get($_REQUEST, 'feed_id' , null));
+
+        list($order, $exactRating, $wpsr_search) = $this->readReviewSortParams();
+
+        // Reviews only, since the other feeds share this endpoint; within reviews it covers every request.
+        if ($platform === 'reviews' && !Helper::allowVisitorFeedRequest($wpsr_search !== '')) {
+            wp_send_json_error([
+                'message' => $wpsr_search !== ''
+                    ? __('Too many searches. Please wait a moment and try again.', 'wp-social-reviews')
+                    : __('Too many requests. Please wait a moment and try again.', 'wp-social-reviews')
+            ], 429);
+        }
+
+        // Append pages may reuse the first page's total to skip the COUNT; it never sizes the page.
+        $knownTotal = null;
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading AJAX parameters for pagination, not processing sensitive form data
+        $requestedTotal = Arr::get($_REQUEST, 'total_reviews');
+        if ($page > 1 && is_numeric($requestedTotal) && absint($requestedTotal) > 0) {
+            $knownTotal = absint($requestedTotal);
+        }
+
+        // Product scope captured at render time, so a re-fetch stays on that product.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading AJAX parameters for pagination, not processing sensitive form data
+        $wpsr_product_id = absint(Arr::get($_REQUEST, 'product_id', 0));
+
+        // Shuffle seed echoed back so a re-fetch repeats the order; absint() because it reaches ORDER BY.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading AJAX parameters for pagination, not processing sensitive form data
+        $wpsr_random_seed = absint(Arr::get($_REQUEST, 'seed', 0));
+
+        $responseExtras = [];
 
         if ($platform == 'youtube') {
             $content = (new YoutubeTemplateHandler())->getPaginatedFeedHtml($templateId, $page);
@@ -1262,15 +1418,64 @@ class ShortcodeHandler
         }else if ($platform == 'reviews') {
             $this->platform = 'reviews';
             $this->imageSettings = Helper::getImageSettings($platform);
-            $content = (new ReviewsTemplateHandler())->getPaginatedFeedHtml($templateId, $page, $this->imageSettings);
+            $feedData = (new ReviewsTemplateHandler())->getPaginatedFeedData($templateId, $page, $this->imageSettings, $order, $exactRating, $knownTotal, $wpsr_product_id, $wpsr_random_seed, $wpsr_search);
+
+            // Reviews also answer with the total and applied sort/rating/search; other platforms stay content-only.
+            $content = Arr::get($feedData, 'content', '');
+            $wpsr_has_more = Arr::get($feedData, 'has_more');
+
+            $responseExtras = [
+                'total_reviews' => (int) Arr::get($feedData, 'total_reviews', 0),
+                'order'         => Arr::get($feedData, 'order', ''),
+                'exactRating'   => (int) Arr::get($feedData, 'exactRating', -1),
+                'search'        => (string) Arr::get($feedData, 'search', ''),
+                // Only a searched query answers this; null everywhere else, where total_reviews is a real count.
+                'has_more'      => is_null($wpsr_has_more) ? null : (bool) $wpsr_has_more,
+            ];
         } else {
             $content = apply_filters('wpsr_feed_items_by_page_' . $platform, '', $templateId, $page);
         }
 
-        wp_send_json([
+        wp_send_json(array_merge([
             'content' => $content
-        ]);
+        ], $responseExtras));
         die();
+    }
+
+    /**
+     * Pro only: read the visitor's sort key (or null), exact rating (or -1) and search term (or '') from the request.
+     */
+    private function readReviewSortParams()
+    {
+        if (!defined('WPSOCIALREVIEWS_PRO')) {
+            return [null, -1, ''];
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce already verified by the caller
+        $requestedOrder = sanitize_text_field(Arr::get($_REQUEST, 'order', ''));
+        $order = null;
+        // Length cap before the lookup so an oversized value never reaches the map.
+        if (strlen($requestedOrder) <= 32 && isset(Helper::sortMap()[$requestedOrder])) {
+            $order = $requestedOrder;
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce already verified by the caller
+        $requestedRating = Arr::get($_REQUEST, 'rating', -1);
+        // Non-scalars first: intval([9]) is 1, which would pass the allowlist as a 1-star request.
+        $requestedRating = is_scalar($requestedRating) ? intval($requestedRating) : -1;
+        $exactRating = in_array($requestedRating, [1, 2, 3, 4, 5], true) ? $requestedRating : -1;
+
+        // $_GET, not $_REQUEST: that folds in $_COOKIE, and a stray 'search' cookie could never be cleared.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce already verified by the caller
+        $requestedSearch = Arr::get($_GET, 'search', '');
+        // Cut to bytes first, so an oversized term is never unslashed and regex-scanned in full.
+        $requestedSearch = is_scalar($requestedSearch) ? substr((string) $requestedSearch, 0, 1000) : '';
+        // wp_unslash() first, or a search for McDonald's arrives as McDonald\'s and matches no review.
+        $requestedSearch = $requestedSearch === '' ? '' : sanitize_text_field(wp_unslash($requestedSearch));
+        // Bounds last, so an oversized or one-character term never reaches the unindexable LIKE scan.
+        $search = Helper::sanitizeVisitorSearch($requestedSearch);
+
+        return [$order, $exactRating, $search];
     }
 
     public function makeSocialWallFeedShortcode($args = [], $content = null, $tag = '')
@@ -1285,6 +1490,12 @@ class ShortcodeHandler
         }
 
         $templateId = absint($args['id']);
+
+        // Same visibility policy as the primary shortcode / AJAX renderers.
+        if (!$this->isPublicRenderableTemplate($templateId)) {
+            return '';
+        }
+
         $feed_meta       = get_post_meta($templateId, '_wpsr_template_config', true);
         $decodedMeta     = json_decode($feed_meta, true);
         $feed_settings   = Arr::get($decodedMeta, 'social_wall_settings', array());

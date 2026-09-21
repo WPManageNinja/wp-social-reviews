@@ -99,8 +99,18 @@
                   <span>{{ $t('Duplicate') }}</span>
                 </span>
               </el-option>
+              <el-option :label="$t('Assign Category')" value="category">
+                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                  <el-icon><PriceTag /></el-icon>
+                  <span>{{ $t('Assign Category') }}</span>
+                </span>
+              </el-option>
             </el-select>
             <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
+            <el-button v-if="canManageCategories" @click="show_manage_categories_modal = true">
+              <el-icon class="wpsr-mr-5"><PriceTag /></el-icon>
+              {{ $t('Manage Categories') }}
+            </el-button>
           </div>
           <el-input
               class="wpsr-input-default"
@@ -178,6 +188,24 @@
               <span class="wpsr-rating">{{ scope.row.rating }}</span>
             </template>
           </el-table-column>
+          <el-table-column :label="$t('Categories')" min-width="140">
+            <template #default="scope">
+              <div v-if="scope.row.categories && scope.row.categories.length" class="wpsr-d-flex wpsr-gap-4" style="flex-wrap: wrap;">
+                <el-tag
+                    v-for="category in scope.row.categories"
+                    :key="category.id"
+                    size="small"
+                    closable
+                    disable-transitions
+                    @close="removeCategoryFromReview(scope.row, category)"
+                >
+                  {{ category.name }}
+                </el-tag>
+              </div>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+
           <el-table-column :label="$t('Create Date')" min-width="120" sortable>
             <template #default="scope">
               <span class="wpsr-date">{{ wpsrDateFormat(scope.row.review_time, 'DD MMM, YYYY') }}</span>
@@ -334,6 +362,8 @@
     <el-dialog
         class="wpsr-confirmation-modal"
         v-model="show_delete_modal"
+        :close-on-click-modal="!loading"
+        :show-close="!loading"
         width="40%"
         :before-close="handleDeleteClose">
       <div class="wpsr-delete-content">
@@ -354,8 +384,8 @@
       </div>
       <template #footer>
         <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-          <el-button class="wpsr_default_btn" @click="show_delete_modal = false">Cancel</el-button>
-          <el-button class="wpsr_primary_btn" type="danger" @click="confirmDelete()">Confirm</el-button>
+          <el-button class="wpsr_default_btn" :disabled="loading" @click="show_delete_modal = false">Cancel</el-button>
+          <el-button class="wpsr_primary_btn" type="danger" :loading="loading" @click="confirmDelete()">Confirm</el-button>
         </div>
       </template>
     </el-dialog>
@@ -364,6 +394,8 @@
     <el-dialog
         class="wpsr-confirmation-modal"
         v-model="show_status_modal"
+        :close-on-click-modal="!loading"
+        :show-close="!loading"
         width="40%">
       <div class="wpsr-delete-content">
         <h4>Are you sure, you want to {{ bulkAction }} {{ selectedItems.length }} testimonial(s)?</h4>
@@ -377,8 +409,8 @@
       </div>
       <template #footer>
         <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-          <el-button class="wpsr_default_btn" @click="show_status_modal = false">Cancel</el-button>
-          <el-button class="wpsr_primary_btn" @click="performStatusUpdate()">Confirm</el-button>
+          <el-button class="wpsr_default_btn" :disabled="loading" @click="show_status_modal = false">Cancel</el-button>
+          <el-button class="wpsr_primary_btn" :loading="loading" @click="performStatusUpdate()">Confirm</el-button>
         </div>
       </template>
     </el-dialog>
@@ -387,6 +419,8 @@
     <el-dialog
         class="wpsr-confirmation-modal"
         v-model="show_duplicate_modal"
+        :close-on-click-modal="!loading"
+        :show-close="!loading"
         width="40%">
       <div class="wpsr-delete-content">
         <h4>Are you sure, you want to duplicate {{ selectedItems.length }} testimonial(s)?</h4>
@@ -399,11 +433,35 @@
       </div>
       <template #footer>
         <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-          <el-button class="wpsr_default_btn" @click="show_duplicate_modal = false">Cancel</el-button>
-          <el-button class="wpsr_primary_btn" type="primary" @click="performDuplicate()">Confirm</el-button>
+          <el-button class="wpsr_default_btn" :disabled="loading" @click="show_duplicate_modal = false">Cancel</el-button>
+          <el-button class="wpsr_primary_btn" type="primary" :loading="loading" @click="performDuplicate()">Confirm</el-button>
         </div>
       </template>
     </el-dialog>
+
+    <!--Bulk Assign/Remove Category Modal-->
+    <BulkCategoryModal
+        v-model="show_category_modal"
+        :categories="categories"
+        :selected-count="selectedItems.length"
+        :applying="applyingBulkCategory"
+        :loading="categoriesLoading"
+        :load-error="categoriesLoadError"
+        @submit="applyBulkCategory"
+        @retry="loadCategories"
+    />
+
+    <!--Browse/Rename/Delete Categories Modal-->
+    <ManageCategoriesModal
+        v-model="show_manage_categories_modal"
+        :categories="categories"
+        :loading="categoriesLoading"
+        :loaded="categoriesLoaded"
+        :load-error="categoriesLoadError"
+        :route-prefix="categoryRoutePrefix"
+        @categories-changed="onCategoriesChanged"
+        @retry="loadCategories"
+    />
   </div>
   <PermissionsNotification v-if="!hasPermission(['wpsn_manage_testimonials', 'wpsn_full_access'])" />
   </div>
@@ -414,16 +472,22 @@ import ReviewForm from './ReviewForm';
 import TestimonialLandingPage from './advertise/TestimonialLandingPage';
 import {tableMixin} from "../../mixins/tableMixin";
 import PermissionsNotification from "./advertise/PermissionsNotification.vue";
-import { Search, Edit, Delete, DocumentCopy, MoreFilled, CircleCheck, CircleClose, WarningFilled, View, Hide } from '@element-plus/icons-vue';
+import { Search, Edit, Delete, DocumentCopy, MoreFilled, CircleCheck, CircleClose, WarningFilled, View, Hide, PriceTag } from '@element-plus/icons-vue';
 import ReviewsEmptyStates from "../pieces/icons/ReviewsEmptyStates.vue";
 import ReviewContentModal from "../pieces/ReviewContentModal.vue";
+import BulkCategoryModal from "../pieces/BulkCategoryModal.vue";
+import ManageCategoriesModal from "../pieces/ManageCategoriesModal.vue";
+import { reviewCategoryMixin } from "../../mixins/reviewCategoryMixin";
 
 export default {
   name: 'AllTestimonials',
-  mixins: [tableMixin],
+  mixins: [tableMixin, reviewCategoryMixin],
   data() {
     return {
       actionType: 'testimonial',
+      // Testimonials sit behind wpsn_manage_testimonials, so category calls must
+      // use the testimonials-prefixed routes rather than the reviews ones.
+      categoryRoutePrefix: 'testimonials',
       show_add_modal: false,
       show_edit_modal: false,
       editRow: false,
@@ -440,7 +504,9 @@ export default {
           author_position: '',
           author_company: '',
           author_website_logo: '',
-          author_website_url: ''
+          author_website_url: '',
+          video_url: '',
+          video_poster: ''
         }
       },
       //for empty fields after two consecutive add
@@ -459,6 +525,9 @@ export default {
   },
   components: {
     ReviewContentModal,
+    BulkCategoryModal,
+    ManageCategoriesModal,
+    PriceTag,
     ReviewsEmptyStates,
     PermissionsNotification,
     TestimonialLandingPage,
@@ -565,6 +634,7 @@ export default {
   },
   mounted() {
     this.getAll('testimonials');
+    this.loadCategories();
   }
 }
 </script>

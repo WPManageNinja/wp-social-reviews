@@ -168,11 +168,8 @@ export default {
     }
   },
 
-  mounted() {
-    this.$parent.$refs[this.videoId] = this;
-  },
-  
-  beforeDestroy() {
+  // Vue 3 renamed this; the old name never fired, so the video kept playing.
+  beforeUnmount() {
     this.pauseVideo();
   }
 };

@@ -228,6 +228,8 @@
   <el-dialog
       class="wpsr-confirmation-modal"
       v-model="show_delete_modal"
+      :close-on-click-modal="!loading"
+      :show-close="!loading"
       width="40%"
       :before-close="handleDeleteClose">
     <div class="wpsr-delete-content">
@@ -249,8 +251,8 @@
     </div>
     <template #footer>
       <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-        <el-button class="wpsr_default_btn" @click="show_delete_modal = false">Cancel</el-button>
-        <el-button class="wpsr_primary_btn" type="danger" @click="confirmDelete()">Confirm</el-button>
+        <el-button class="wpsr_default_btn" :disabled="loading" @click="show_delete_modal = false">Cancel</el-button>
+        <el-button class="wpsr_primary_btn" type="danger" :loading="loading" @click="confirmDelete()">Confirm</el-button>
       </div>
     </template>
   </el-dialog>
@@ -259,6 +261,8 @@
   <el-dialog
       class="wpsr-confirmation-modal"
       v-model="show_status_modal"
+      :close-on-click-modal="!loading"
+      :show-close="!loading"
       width="40%">
     <div class="wpsr-delete-content">
       <h4>Are you sure, you want to {{ bulkAction }} {{ selectedItems.length }} notification(s)?</h4>
@@ -272,8 +276,8 @@
     </div>
     <template #footer>
       <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-        <el-button class="wpsr_default_btn" @click="show_status_modal = false">Cancel</el-button>
-        <el-button class="wpsr_primary_btn" @click="performStatusUpdate()">Confirm</el-button>
+        <el-button class="wpsr_default_btn" :disabled="loading" @click="show_status_modal = false">Cancel</el-button>
+        <el-button class="wpsr_primary_btn" :loading="loading" @click="performStatusUpdate()">Confirm</el-button>
       </div>
     </template>
   </el-dialog>
@@ -282,6 +286,8 @@
   <el-dialog
       class="wpsr-confirmation-modal"
       v-model="show_bulk_duplicate_modal"
+      :close-on-click-modal="!loading"
+      :show-close="!loading"
       width="40%">
     <div class="wpsr-delete-content">
       <h4>Are you sure, you want to duplicate {{ selectedItems.length }} notification(s)?</h4>
@@ -294,8 +300,8 @@
     </div>
     <template #footer>
       <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-        <el-button class="wpsr_default_btn" @click="show_bulk_duplicate_modal = false">Cancel</el-button>
-        <el-button class="wpsr_primary_btn" @click="performBulkDuplicate()">Confirm</el-button>
+        <el-button class="wpsr_default_btn" :disabled="loading" @click="show_bulk_duplicate_modal = false">Cancel</el-button>
+        <el-button class="wpsr_primary_btn" :loading="loading" @click="performBulkDuplicate()">Confirm</el-button>
       </div>
     </template>
   </el-dialog>
@@ -304,6 +310,8 @@
   <el-dialog
       class="wpsr-confirmation-modal"
       v-model="show_bulk_status_modal"
+      :close-on-click-modal="!loading"
+      :show-close="!loading"
       width="40%">
     <div class="wpsr-delete-content">
       <h4>Are you sure, you want to {{ bulkAction }} {{ selectedItems.length }} notification(s)?</h4>
@@ -317,8 +325,8 @@
     </div>
     <template #footer>
       <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-        <el-button class="wpsr_default_btn" @click="show_bulk_status_modal = false">Cancel</el-button>
-        <el-button class="wpsr_primary_btn" @click="templateStatus()">Confirm</el-button>
+        <el-button class="wpsr_default_btn" :disabled="loading" @click="show_bulk_status_modal = false">Cancel</el-button>
+        <el-button class="wpsr_primary_btn" :loading="loading" @click="templateStatus()">Confirm</el-button>
       </div>
     </template>
   </el-dialog>

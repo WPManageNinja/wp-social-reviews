@@ -147,7 +147,7 @@
       <template #title="{ isActive}">
         <EditorCollapsiblePanel :isActive="isActive" iconKey="follow_button" :isPro="!has_pro" :label="$t('Like Button')"/>
       </template>
-      <UpgradeToProBanner />
+      <UpgradeToProBanner placement="feature_lock_facebook_editor" />
       <div class="wpsr-switch-row">
         <span class="wpsr-editor-inside-left wpsr-element-center">{{$t('Display Like Button ')}}</span>
         <div class="wpsr-editor-inside-right">
@@ -171,7 +171,7 @@
       <template #title="{ isActive}">
         <EditorCollapsiblePanel :isActive="isActive" iconKey="share_button" :isPro="!has_pro" :label="$t('Share Button')"/>
       </template>
-      <UpgradeToProBanner />
+      <UpgradeToProBanner placement="feature_lock_facebook_editor" />
       <div class="wpsr-switch-row">
         <span class="wpsr-editor-inside-left wpsr-element-center">{{$t('Display Share Button')}}</span>
         <div class="wpsr-editor-inside-right">
@@ -208,6 +208,7 @@
 import FeedEditorGroup from './../../../core-ui/editor/EditorGroup';
 import UpgradeToProButton from '../../../views/advertise/UpgradeToProButton';
 import { debounce } from '../../../../utils';
+import { canRenderFacebookProTemplate } from '../../../../mixins/fbFeedMixin';
 import EditorCollapsiblePanel from '../../../core-ui/editor/EditorCollapsiblePanel.vue';
 import AccountSelector from '../../../core-ui/editor/AccountSelector.vue';
 import UpgradeToProBanner from '../../../views/advertise/UpgradeToProBanner.vue';
@@ -360,7 +361,7 @@ export default {
             }
           ],
           tooltip: true,
-          tooltipText: this.$t('The Load More button will only display on your site’s preview/live pages/posts <br> not while you’re in editing mode in the WordPress Editor.')
+          tooltipText: this.$t("The Load More button will only display on your site's preview/live pages/posts.") + "<br>" + this.$t("It will not display while you are in editing mode in the WordPress Editor."),
         },
         {
           fieldKey: 'load_more_button_text',
@@ -393,6 +394,21 @@ export default {
         pro: []
       },
       header_settings: [
+        {
+          fieldKey: 'header_layout',
+          type: 'select',
+          title: this.$t('Header Layout'),
+          options: [
+            {
+              value: 'classic',
+              label: this.$t('Classic')
+            },
+            {
+              value: 'minimal',
+              label: this.$t('Minimal')
+            }
+          ]
+        },
         {
           fieldKey: 'display_cover_photo',
           type: 'switch',
@@ -766,6 +782,26 @@ export default {
       });
       return options;
     },
+    // Ask whether the template really renders, not what it is called. An older Pro falls back
+    // to template1 publicly, so every control keyed on a pro template must fall back with it.
+    wpsrCanRenderTemplate(template) {
+      return canRenderFacebookProTemplate(template, this.facebook_pro_templates);
+    },
+    // Feed types whose branch actually renders an author bar / platform icon.
+    // Templates 1 and 2 only do it on the timeline; 3 and 4 carry it into media feeds too.
+    wpsrAuthorFeedTypes() {
+      const wpsrTemplate = this.feed_config.template;
+      if (!this.wpsrCanRenderTemplate(wpsrTemplate)) {
+        return ['timeline_feed'];
+      }
+      if (wpsrTemplate === 'template4') {
+        return ['timeline_feed', 'photo_feed', 'video_feed', 'video_playlist_feed'];
+      }
+      if (wpsrTemplate === 'template3') {
+        return ['timeline_feed', 'video_feed', 'video_playlist_feed'];
+      }
+      return ['timeline_feed'];
+    },
     setData() {
       this.feed_settings['free'] = [
         {
@@ -844,11 +880,12 @@ export default {
           title: this.$t('Display Platform Icon'),
           active_value: 'true',
           inactive_value: 'false',
+          // Templates 3 and 4 draw the icon on photo and video feeds too, not just timeline.
           condition: {
             'key': 'feed_type',
             'data': this.feed_config.source_settings,
-            'operator': '==',
-            'selector': 'timeline_feed',
+            'operator': 'includes',
+            'selector': this.wpsrAuthorFeedTypes(),
           }
         },
         {
@@ -873,8 +910,8 @@ export default {
           condition: {
             'key': 'feed_type',
             'data': this.feed_config.source_settings,
-            'operator': '==',
-            'selector': 'timeline_feed',
+            'operator': 'includes',
+            'selector': this.wpsrAuthorFeedTypes(),
           }
         },
         {
@@ -899,8 +936,8 @@ export default {
           condition: {
             'key': 'feed_type',
             'data': this.feed_config.source_settings,
-            'operator': '==',
-            'selector': 'timeline_feed',
+            'operator': 'includes',
+            'selector': this.wpsrAuthorFeedTypes(),
           }
         },
         {
@@ -1056,12 +1093,18 @@ export default {
       
     },
     setLayouts() {
+      // Template 4 ships its own mosaic grid, so it has no layout to choose. Only drop these
+      // controls when the mosaic really renders: the template1 fallback still uses both.
+      const wpsrHideForMosaic = this.wpsrCanRenderTemplate('template4')
+        ? [{'key': 'template', 'operator': '!=', 'selector': 'template4'}]
+        : [];
       this.layout_settings = [
         {
           fieldKey: 'layout_type',
           type: 'image_select',
           title: this.$t('Layout Type'),
           condition: [
+            ...wpsrHideForMosaic,
             {
               'key': 'feed_type',
               'data': this.feed_config.source_settings,
@@ -1126,14 +1169,28 @@ export default {
           options: [
             {
               key: 'template1',
-              title: 'Template 1',
-              img: this.assets_url + '/images/template/facebook-template/template2.png'
+              title: this.$t('Classic Post'),
+              img: this.assets_url + '/images/template/facebook-template/template1.png'
             },
             {
               key: 'template2',
-              title: 'Template 2',
+              title: this.$t('Media First'),
               pro: !this.has_pro,
-              img: this.assets_url + '/images/template/facebook-template/template1.png'
+              img: this.assets_url + '/images/template/facebook-template/template2.png'
+            },
+            {
+              key: 'template3',
+              title: this.$t('Profile Card'),
+              // Older Pro releases cannot render template3, so keep it locked there.
+              pro: !this.wpsrCanRenderTemplate('template3'),
+              img: this.assets_url + '/images/template/facebook-template/template3.png'
+            },
+            {
+              key: 'template4',
+              title: this.$t('Overlay Card'),
+              // Older Pro releases cannot render template4, so keep it locked there.
+              pro: !this.wpsrCanRenderTemplate('template4'),
+              img: this.assets_url + '/images/template/facebook-template/template4.png'
             }
           ]
         },
@@ -1151,11 +1208,15 @@ export default {
           type: 'select',
           title: this.$t('Number of Columns'),
           responsive: true,
-          condition: {
-            'key': 'layout_type',
-            'operator': 'Arr',
-            'selector': ['grid', 'masonry']
-          },
+          condition: [
+            {
+              'key': 'layout_type',
+              'operator': 'Arr',
+              'selector': ['grid', 'masonry']
+            },
+            // Template 4's mosaic fixes its own column count by :nth-child.
+            ...wpsrHideForMosaic
+          ],
           options: [
             {
               value: '12',
@@ -1318,7 +1379,7 @@ export default {
           placeholder: this.$t('Type something and press enter....'),
           disabled: !this.has_pro,
           tooltip: true,
-          tooltipText: this.$t("You can use this setting to show posts that contain certain specific words or hashtags in the caption. <br/> Separate multiple words or hashtags using commas. ex: #hashtag1,word1,word2,#hashtag2"),
+          tooltipText: this.$t('You can use this setting to show posts that contain certain specific words or hashtags in the caption.') + '<br>' + this.$t('Separate multiple words or hashtags using commas. ex: #hashtag1,word1,word2,#hashtag2'),
         },
         {
           fieldKey: 'excludes_inputs',
@@ -1327,7 +1388,7 @@ export default {
           placeholder: this.$t('Type something and press enter....'),
           disabled: !this.has_pro,
           tooltip: true,
-          tooltipText: this.$t('You can use this setting to hiding posts that contain certain specific words or hashtags in the caption. <br/> Separate multiple words or hashtags using commas. ex: #hashtag1,word1,#hashtag2,word2')
+          tooltipText: this.$t('You can use this setting to hide posts that contain certain specific words or hashtags in the caption.') + '<br>' + this.$t('Separate multiple words or hashtags using commas. ex: #hashtag1,word1,#hashtag2,word2')
         },
         {
           fieldKey: 'hide_posts_by_id',
@@ -1337,7 +1398,7 @@ export default {
           disabled: !this.has_pro,
           autosize: {minRows: 2, maxRows: 4},
           tooltip: true,
-          tooltipText: this.$t('You can find the ID of a Post by viewing the post on Facebook and copy/pasting the ID number from the end of the URL </br> ex: https://www.facebook.com/105787145076291/posts/219046507083687/ [ in this URL ID is "219046507083687" ]')
+          tooltipText: this.$t('You can find the post ID by viewing the post on Facebook and copying the ID number from the end of the URL.') + '<br>ex: https://www.facebook.com/105787145076291/posts/219046507083687/'
         },
         {
           fieldKey: 'date_range',
@@ -1510,6 +1571,21 @@ export default {
         this.updateSourceSettings();
       },
       deep: true
+    },
+    'feed_config.header_settings.header_layout': {
+      handler(newval, oldval) {
+        // Guard against hydration: without oldval a saved minimal feed would
+        // lose a cover photo the user had deliberately switched back on.
+        if (!oldval || newval === oldval) {
+          return;
+        }
+        // Deferred a macrotask: EditorGroup holds isUpdating for the change that
+        // opened this watcher and drops any modelValue sync arriving first, so
+        // the Display Cover Photo switch would keep rendering the stale value.
+        setTimeout(() => {
+          this.feed_config.header_settings.display_cover_photo = newval === 'minimal' ? 'false' : 'true';
+        }, 0);
+      }
     }
   },
   mounted() {

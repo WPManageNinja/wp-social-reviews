@@ -128,7 +128,7 @@
             <div class="wpsr-promote-lp-section-title wpsr-d-flex wpsr-flex-column wpsr-flex-align-center">
               <h2>Showcase Testimonials that make a difference and <br> be one of the happy clients</h2>
               <div class="wpsr_buy_pro_btn_wrapper">
-                <a :href="upgradeBtnConfig.pro_purchase_url" class="wpsr_buy_pro_btn">
+                <a :href="upgradeBtnConfig.pro_purchase_url" class="wpsr_buy_pro_btn" target="_blank">
                   {{ upgradeBtnConfig.text || 'Upgrade to Pro' }}
                 </a>
               </div>
@@ -140,14 +140,17 @@
   </div>
 </template>
 <script type="text/babel">
+import { wpsrUpgradeUrl } from '../../../utils/upgradeUrl';
+
 export default {
-  name: 'NotificationsLandingPage',
+  name: 'TestimonialLandingPage',
   computed: {
     upgradeBtnConfig() {
       return {
         text: 'Upgrade to Pro',
-        pro_purchase_url: 'https://wpsocialninja.com/?utm_source=wp_site&utm_medium=plugin&utm_campaign=upgrade',
-        ...(this.appVars?.upgrade_btn_config || {})
+        ...(this.appVars?.upgrade_btn_config || {}),
+        // The whole page is the testimonials feature lock.
+        pro_purchase_url: wpsrUpgradeUrl('feature_lock_testimonials')
       };
     }
   }

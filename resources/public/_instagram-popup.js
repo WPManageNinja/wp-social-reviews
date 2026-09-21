@@ -355,11 +355,11 @@ export default {
                 <div class="wpsr-feed-popup-box-wraper-inner wpsrm_inner ${className}">
                 
                 ${currentPopupSettings.display_next_prev_arrows === 'true' ?
-                    `<div class="wpsr-prev-btn wpsr-ig-prev-btn"><span class="icon-angle-left"></span></div>
-                     <div class="wpsr-next-btn wpsr-ig-next-btn"><span class="icon-angle-right"></span></div>` : ``
+                    `<button type="button" class="wpsr-prev-btn wpsr-ig-prev-btn" aria-label="Previous post"><span class="icon-angle-left"></span></button>
+                     <button type="button" class="wpsr-next-btn wpsr-ig-next-btn" aria-label="Next post"><span class="icon-angle-right"></span></button>` : ``
                 }
-                  
-                  <div class="wpsr-feed-popup-close-btn wpsrm_close"></div>
+
+                  <button type="button" class="wpsr-feed-popup-close-btn wpsrm_close" aria-label="Close"></button>
                     <div class="wpsr-feed-popup-media wpsr-ig-feed-popup-media">
                         ${ (currentFeed.children && currentFeed.children.data && currentFeed.has_carousel ) ? this.renderCarousel() : this.renderMedia() }
                         

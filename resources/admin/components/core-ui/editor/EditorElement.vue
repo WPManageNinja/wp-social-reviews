@@ -255,6 +255,7 @@
                 :filterable="field.isFilterable ? true : false"
                 :teleported="isTypograpy ? true : false"
                 :popper-append-to-body="isTypograpy ? true : false"
+                :disabled="field.disabled"
                 class="wpsr-text-input"
             >
                 <el-option

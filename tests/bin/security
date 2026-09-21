@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# Unified Phase 22–26 security launcher. Existing selector CLI remains unchanged.
+#
+#   tests/bin/security --list [selectors]
+#   tests/bin/security [selectors]
+#   tests/bin/security doctor [--config-only]
+#   tests/bin/security self-test
+#   tests/bin/security dast [zap|nuclei|all]
+#   tests/bin/security fuzz [audit|self-test]
+#   tests/bin/security secrets [audit|self-test]
+#   tests/bin/security semgrep [fixtures|security|quality|all]
+#   tests/bin/security audit
+
+set -uo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+VERB="${1:-}"
+case "$VERB" in
+    doctor)
+        shift
+        exec php "$ROOT/tests/security/lab/doctor.php" "$@"
+        ;;
+    self-test)
+        shift
+        [ "$#" -eq 0 ] || { echo 'security self-test accepts no arguments.' >&2; exit 2; }
+        exec bash "$ROOT/tests/security/self-test.sh"
+        ;;
+    dast)
+        shift
+        PROFILE="${1:-all}"
+        [ "$#" -le 1 ] || { echo 'security dast accepts zap, nuclei, or all.' >&2; exit 2; }
+        case "$PROFILE" in
+            zap) exec bash "$ROOT/tests/bin/run-zap-baseline.sh" ;;
+            nuclei) exec bash "$ROOT/tests/bin/run-nuclei-baseline.sh" ;;
+            all)
+                bash "$ROOT/tests/bin/run-zap-baseline.sh"; ZAP=$?
+                bash "$ROOT/tests/bin/run-nuclei-baseline.sh"; NUCLEI=$?
+                [ "$ZAP" -eq 0 ] && [ "$NUCLEI" -eq 0 ]; exit $?
+                ;;
+            *) echo 'security dast accepts zap, nuclei, or all.' >&2; exit 2 ;;
+        esac
+        ;;
+    fuzz)
+        shift
+        MODE="${1:-audit}"
+        [ "$#" -le 1 ] || { echo 'security fuzz accepts audit or self-test.' >&2; exit 2; }
+        exec bash "$ROOT/tests/bin/run-fuzz.sh" "$MODE"
+        ;;
+    secrets)
+        shift
+        MODE="${1:-audit}"
+        [ "$#" -le 1 ] || { echo 'security secrets accepts audit or self-test.' >&2; exit 2; }
+        exec bash "$ROOT/tests/bin/run-release-secrets.sh" "$MODE"
+        ;;
+    semgrep)
+        shift
+        PACK="${1:-all}"
+        [ "$#" -le 1 ] || { echo 'security semgrep accepts fixtures, security, quality, or all.' >&2; exit 2; }
+        exec bash "$ROOT/tests/bin/run-semgrep.sh" "$PACK"
+        ;;
+    audit)
+        shift
+        [ "$#" -eq 0 ] || { echo 'security audit accepts no arguments.' >&2; exit 2; }
+        exec bash "$ROOT/tests/security/audit.sh"
+        ;;
+esac
+exec php "$ROOT/tests/security/run.php" "$@"

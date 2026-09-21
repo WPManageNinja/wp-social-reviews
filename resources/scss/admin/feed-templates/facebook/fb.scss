@@ -9,3 +9,35 @@
 }
 
 @import '../../elements/feed-popup';
+// Editor device-preview only. `.is-mobile-active` / `.is-tablet-active` are set by
+// ResponsiveBar.vue, so these rules must never reach the public bundle.
+.is-mobile-active,
+.is-tablet-active {
+  .wpsr-fb-highlights-grid {
+    grid-template-columns: repeat(2, 1fr);
+
+    // :nth-child(n) matches the desktop pattern's specificity so this reset wins on source order.
+    .wpsr-fb-highlight-item:nth-child(n) {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
+    .wpsr-fb-highlight-item:nth-child(5n + 1) {
+      grid-column: span 2;
+    }
+  }
+
+  .wpsr-fb-feed-template4 {
+    .wpsr-fb-overlay-avatar {
+      width: 30px;
+      height: 30px;
+      min-width: 30px;
+    }
+    .wpsr-fb-overlay-username {
+      font-size: 14px;
+    }
+    .wpsr-fb-overlay-text-body .wpsr-fb-feed-content {
+      font-size: 14px;
+    }
+  }
+}
