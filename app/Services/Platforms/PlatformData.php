@@ -191,8 +191,13 @@ class PlatformData
         $this->sendPlatformDataDeleteEmail();
         $this->deleteRevokedAccount( $wpsr_statuses );
         $platformNameWithType = (new PlatformManager())->getPlatformOfficialName($this->platform, true);
-        // translators: Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
-        $error = sprintf(__( 'An account admin has deauthorized the WP Social Ninja app used to power the WP Social Ninja plugin. The account was not reconnected within the 7-day limit, and all %1$s account data was automatically deleted on your website due to %2$s data privacy rules.', 'wp-social-reviews' ), $platformNameWithType, $this->platform);
+        if ($this->revokeCanBeTokenExpiry()) {
+            // translators: Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
+            $error = sprintf(__( 'An account lost access to the WP Social Ninja app used to power the WP Social Ninja plugin: either an account admin removed the app, or its access token expired and could not be renewed. The account was not reconnected within the 7-day limit, and all %1$s account data was automatically deleted on your website due to %2$s data privacy rules.', 'wp-social-reviews' ), $platformNameWithType, $this->platform);
+        } else {
+            // translators: Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
+            $error = sprintf(__( 'An account admin has deauthorized the WP Social Ninja app used to power the WP Social Ninja plugin. The account was not reconnected within the 7-day limit, and all %1$s account data was automatically deleted on your website due to %2$s data privacy rules.', 'wp-social-reviews' ), $platformNameWithType, $this->platform);
+        }
         (new PlatformErrorManager($this->platform))->addError('platform_data_deleted', $error);
     }
     
@@ -470,6 +475,14 @@ class PlatformData
         }
     }
 
+    /**
+     * Instagram Login tokens expire after 60 days, so its revoke path also fires on an expired token.
+     */
+    public function revokeCanBeTokenExpiry()
+    {
+        return $this->platform === 'instagram';
+    }
+
     public function isAppPermissionError($response)
     {
         $error_code    = (int) Arr::get($response, 'error.code', 0);
@@ -544,8 +557,13 @@ class PlatformData
 
         $policyPlatform = $this->platform === 'tiktok' ? 'TikTok' : 'Facebook';
         $data['platform'] = $platform;
-        // translators: Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
-        $data['message']  = sprintf(__('An account admin has deauthorized the WP Social Ninja app used to power the WP Social Ninja plugin on %1$s. If the %2$s source is not reconnected within 7 days then all %2$s data will be automatically deleted on your website due to %3$s data privacy rules.', 'wp-social-reviews'), $site_url, $platform, $policyPlatform);
+        if ($this->revokeCanBeTokenExpiry()) {
+            // translators: Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
+            $data['message']  = sprintf(__('An account lost access to the WP Social Ninja app used to power the WP Social Ninja plugin on %1$s: either an account admin removed the app, or its access token expired and could not be renewed. If the %2$s source is not reconnected within 7 days then all %2$s data will be automatically deleted on your website due to %3$s data privacy rules.', 'wp-social-reviews'), $site_url, $platform, $policyPlatform);
+        } else {
+            // translators: Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
+            $data['message']  = sprintf(__('An account admin has deauthorized the WP Social Ninja app used to power the WP Social Ninja plugin on %1$s. If the %2$s source is not reconnected within 7 days then all %2$s data will be automatically deleted on your website due to %3$s data privacy rules.', 'wp-social-reviews'), $site_url, $platform, $policyPlatform);
+        }
         // translators: Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
         $data['direction'] = sprintf( __( 'To prevent the automated deletion of data for the account, please reconnect your source for the plugin platforms %s within 7 days.', 'wp-social-reviews' ), $configuration_page );
 
@@ -565,8 +583,13 @@ class PlatformData
 
         // translators: Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
         $subject         = sprintf(__( 'All %s Data has been Removed', 'wp-social-reviews' ), $platform);
-        // translators: Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
-        $title         = sprintf(__( 'An account admin has deauthorized the WP Social Ninja %s App used to power the WP Social Ninja plugin.', 'wp-social-reviews' ), $policyPlatform);
+        if ($this->revokeCanBeTokenExpiry()) {
+            // translators: Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
+            $title         = sprintf(__( 'An account lost access to the WP Social Ninja %s App used to power the WP Social Ninja plugin: either an account admin removed the app, or its access token expired and could not be renewed.', 'wp-social-reviews' ), $policyPlatform);
+        } else {
+            // translators: Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
+            $title         = sprintf(__( 'An account admin has deauthorized the WP Social Ninja %s App used to power the WP Social Ninja plugin.', 'wp-social-reviews' ), $policyPlatform);
+        }
 
         $site_url      = sprintf( '<a href="%s">%s<a/>', esc_url( home_url() ), __( 'your website', 'wp-social-reviews' ) );
 

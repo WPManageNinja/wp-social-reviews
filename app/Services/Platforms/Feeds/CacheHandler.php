@@ -28,8 +28,6 @@ class CacheHandler
 	/**
 	 * Create cache
 	 *
-	 * cache the data for future usage
-	 *
 	 * @param string $transientName transient name
 	 * @param string|array $data           data
 	 *
@@ -151,7 +149,6 @@ class CacheHandler
     public function clearTemplateCache($platform, $templateId)
     {
         try {
-            // Get template configuration
             $encodedMeta = get_post_meta($templateId, '_wpsr_template_config', true);
             $templateConfig = json_decode($encodedMeta, true);
 
@@ -165,12 +162,10 @@ class CacheHandler
                 throw new \Exception(esc_html__('No connected accounts found for this template.', 'wp-social-reviews'));
             }
 
-            // Clear cache for each account
             foreach ($accountIds as $accountId) {
                 $this->clearCacheByAccount($accountId);
             }
 
-            // Also clear page caches
             $this->clearPageCaches($platform);
 
             return [
@@ -184,7 +179,7 @@ class CacheHandler
     }
 
     /**
-     * Other Caching plugins page caches need to clear
+     * Purge the page caches of known caching plugins
      *
      * @param string $platform
      *
@@ -192,27 +187,24 @@ class CacheHandler
      */
     public function clearPageCaches($platform = '')
     {
-        // Custom plugin hook for cache purging
         do_action('wpsocialreviews/purge_cache');
 
-        // clear wp litespeed caches
+        // LiteSpeed Cache
         if(defined('LSCWP_V')) {
-            // LiteSpeed Cache plugin hook
             do_action( 'litespeed_purge', 'wpsn_purge_'.$platform ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
         }
 
-        // clear wp redis caches
+        // Nginx Helper
         if(defined('NGINX_HELPER_BASEURL')) {
-            // Nginx Helper plugin hook
             do_action('rt_nginx_helper_purge_all'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
         }
 
-        // clear wp rocket caches
+        // WP Rocket
         if ( function_exists( 'rocket_clean_domain' ) ) {
             rocket_clean_domain();
         }
 
-        // clear godaddy internal caches
+        // GoDaddy managed hosting
         if(class_exists('\WPaaS\Cache')) {
             if (has_action('shutdown', ['\WPaaS\Cache', 'ban'])) {
                 return;
@@ -222,7 +214,7 @@ class CacheHandler
             add_action('shutdown', ['\WPaaS\Cache', 'ban'], PHP_INT_MAX);
         }
 
-        // clear wp-fastest caches
+        // WP Fastest Cache
         if ( isset( $GLOBALS['wp_fastest_cache'] ) && method_exists( $GLOBALS['wp_fastest_cache'], 'deleteCache' ) ){
             $GLOBALS['wp_fastest_cache']->deleteCache();
         }
@@ -231,17 +223,17 @@ class CacheHandler
             wp_cache_clear_cache();
         }
 
-        // clear autooptimizepress caches
+        // Autoptimize
         if(class_exists('autoptimizeCache')) {
             \autoptimizeCache::clearall();
         }
 
-        // clear wp-optimize caches
+        // WP-Optimize
         if(class_exists('WPO_Page_Cache')) {
             (new \WPO_Page_Cache())->purge();
         }
 
-        // clear SiteGround Optimizer caches
+        // SiteGround Optimizer
         if (function_exists('sg_cachepress_purge_cache')) {
             sg_cachepress_purge_cache();
         }
@@ -250,9 +242,8 @@ class CacheHandler
             (new \CF\WordPress\Hooks())->purgeCacheEverything();
         }
 
-        // clear cloudflare breeze plugins caches
+        // Breeze
         if(defined('BREEZE_VERSION')) {
-            // Breeze plugin hook
             do_action('breeze_purge_cache'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
         }
     }

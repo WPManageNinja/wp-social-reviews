@@ -14,7 +14,17 @@ const wpSocialReviews = new WPSocialReviews();
 const router = createRouter({
     history: createWebHashHistory(),
     routes: wpSocialReviews.applyFilters('wpsr_global_vue_routes', routes),
-    linkActiveClass: 'active'
+    linkActiveClass: 'active',
+    // Query-only changes (filters, onboarding cleanup) keep their position; a new screen starts at the top.
+    scrollBehavior(to, from, savedPosition) {
+        if (savedPosition) {
+            return savedPosition;
+        }
+        if (to.path === from.path) {
+            return false;
+        }
+        return { top: 0 };
+    }
 });
 
 router.beforeEach((to, from, next) => {
@@ -26,13 +36,10 @@ router.beforeEach((to, from, next) => {
     next();
 });
 
-// Create the app
 const app = createApp(App);
 
-// Use Element Plus
 app.use(ElementPlus);
 
-// Add global properties
 app.config.globalProperties.$rest = wpSocialReviews.$rest;
 app.config.globalProperties.$get = wpSocialReviews.$get;
 app.config.globalProperties.$post = wpSocialReviews.$post;
@@ -41,6 +48,8 @@ app.config.globalProperties.$put = wpSocialReviews.$put;
 app.config.globalProperties.$patch = wpSocialReviews.$patch;
 app.config.globalProperties.appVars = window.WPSocialReviewsAdmin;
 app.config.globalProperties.has_pro = !!window.WPSocialReviewsAdmin.has_pro;
+// A build that ships without Pro sets this to leave Pro-locked UI out instead of showing it locked.
+app.config.globalProperties.hide_pro_features = !!window.WPSocialReviewsAdmin.hide_pro_features;
 app.config.globalProperties.facebook_pro_templates = window.WPSocialReviewsAdmin.facebook_pro_templates || [];
 app.config.globalProperties.instagram_pro_templates = window.WPSocialReviewsAdmin.instagram_pro_templates || [];
 app.config.globalProperties.is_custom_feed_for_tiktok_activated = !!window.WPSocialReviewsAdmin.has_custom_feed_for_tiktok;
@@ -49,7 +58,6 @@ app.config.globalProperties.assets_url = window.WPSocialReviewsAdmin.assets_url;
 app.config.globalProperties.assets_url_pro = window.WPSocialReviewsAdmin.assets_url_pro;
 app.config.globalProperties.hasPermission = wpSocialReviews.hasPermission;
 
-// Add mixin with all methods
 app.mixin({
     data() {
         return {
@@ -57,7 +65,6 @@ app.mixin({
         }
     },
     computed: {
-        // Map hasPro (camelCase) to has_pro (snake_case) global property
         hasPro() {
             return this.has_pro || false;
         }
@@ -118,19 +125,15 @@ app.mixin({
         show_platform_icon: wpSocialReviews.show_platform_icon,
         convertToPercentage: wpSocialReviews.convertToPercentage,
         ratingIcon: wpSocialReviews.ratingIcon,
+        ratingQualityLabel: wpSocialReviews.ratingQualityLabel,
+        platformDisplayName: wpSocialReviews.platformDisplayName,
+        platformIconsFor: wpSocialReviews.platformIconsFor,
 
         // Moment.js methods
         moment: moment,
-        // longLocalDate: wpSocialReviews.longLocalDate,
-        // longLocalDateTime: wpSocialReviews.longLocalDateTime,
-        // dateTimeFormat: wpSocialReviews.dateTimeFormat,
-        // localDate: wpSocialReviews.localDate,
-        // humanDiffTime: wpSocialReviews.humanDiffTime,
-        // waitingTime: wpSocialReviews.waitingTime
     }
 });
 
-// Register global components
 app.component('WpsrSkeleton', WpsrSkeleton);
 
 app.use(router);

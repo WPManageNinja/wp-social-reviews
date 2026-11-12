@@ -14,7 +14,7 @@
     <div class="wpsr-alert wpsr-alert-warning wpsr-d-flex wpsr-mb-20" v-if="deprecationNotice">
       <InfoIcon color="var(--wpsr-icon-info-warning-color)"/>
       <p>
-        <strong>{{$t('Note')}}</strong>
+        <strong>{{$t('Notice')}}</strong>
         {{ deprecationNotice }}
       </p>
     </div>
@@ -97,12 +97,19 @@
                 </p>
               </div>
               <div class="wpsr-user-actions">
-                <el-tooltip class="item" effect="dark" content="Manually Sync Reviews" placement="top-start">
+                <el-tooltip class="item" effect="dark" :content="platFormName === 'booking.com' || platFormName === appVars.tp_slug ? $t('Fetch the latest reviews now. Syncs are limited, and reviews also update automatically.') : $t('Fetch the latest reviews now')" placement="top-start">
                   <el-button @click="manuallySyncReviews(platFormName, info)" class="wpsr_default_btn wpsr_icon_btn wpsr_mini">
                     <el-icon ><Refresh /></el-icon>
                   </el-button>
                 </el-tooltip>
                 <remove v-if="!info.is_imported && platFormName !== 'fluent-cart'" @confirm="clearVerificationCredentials(platFormName, info.place_id)" :platform="platFormName"></remove>
+                <el-tooltip v-if="platFormName === 'fluent-cart'" effect="dark" :content="$t('Disconnect product')" placement="top-start">
+                  <remove
+                      @confirm="clearVerificationCredentials(platFormName, info.place_id)"
+                      :platform="platFormName"
+                      :message="$t('Disconnect this product? Its reviews are kept and appear again if you reconnect it or a customer submits a new review. To delete reviews, go to All Reviews.')"
+                  ></remove>
+                </el-tooltip>
               </div>
             </div>
             <div v-if="info.has_critical_error" class="wpsr-account-error-status-wrapper">

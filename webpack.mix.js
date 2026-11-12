@@ -2,17 +2,9 @@ const mix = require('laravel-mix');
 const path = require('path');
 const fs = require("fs-extra");
 
-// -------------------------------------------------
-// Application environment (config/app.php)
-// -------------------------------------------------
-// The WPFluent framework falls back to config('app.env') whenever WP_DEBUG is
-// off, so a 'dev' value that reaches a release leaves the *global*
-// $wpdb->show_errors enabled for the whole request and dumps request details
-// into 404 REST responses. Local builds use 'dev' and production builds rewrite
-// it to 'production', matching the other Fluent plugins.
-//
-// build.sh re-asserts 'production' on the copied artifact, so a release is safe
-// even when the node build is skipped.
+// ---- Application environment (config/app.php) ----
+// With WP_DEBUG off the framework uses app.env, and 'dev' turns on $wpdb->show_errors
+// globally. Production builds write 'production'; build.sh re-asserts it on the artifact.
 const setAppEnv = (env) => {
     const configPath = path.resolve(__dirname, 'config/app.php');
 
@@ -25,7 +17,7 @@ const setAppEnv = (env) => {
     const pattern = /(['"]env['"]\s*=>\s*)['"][^'"]*['"]/;
 
     if (!pattern.test(source)) {
-        // Fail loudly: silently shipping the wrong env is the bug this prevents.
+        // Fail loudly rather than ship the wrong env.
         throw new Error(
             "[env] Could not find the 'env' key in config/app.php. " +
             'Fix setAppEnv() in webpack.mix.js before building.'
@@ -44,9 +36,7 @@ setAppEnv(
     (mix.inProduction() || process.argv.includes('--production')) ? 'production' : 'dev'
 );
 
-// -------------------------------------------------
-// Babel: Force modern Babel config to avoid legacy transforms and regenerator-runtime
-// -------------------------------------------------
+// ---- Babel: modern targets, so no legacy transforms or regenerator-runtime ----
 mix.babelConfig({
     presets: [
         ['@babel/preset-env', {
@@ -57,9 +47,7 @@ mix.babelConfig({
     ]
 });
 
-// -------------------------------------------------
-// Webpack configuration
-// -------------------------------------------------
+// ---- Webpack configuration ----
 mix.webpackConfig({
     resolve: {
         extensions: ['.js', '.vue', '.json'],
@@ -77,11 +65,9 @@ mix.webpackConfig({
             }
         ]
     },
-    // Fix stats configuration
     stats: {
         children: true
     },
-    // Fix performance hints
     performance: {
         hints: false
     },
@@ -95,22 +81,17 @@ mix.webpackConfig({
     },
 });
 
-// -------------------------------------------------
-// Source maps (dev only) + clean assets (production)
-// -------------------------------------------------
+// ---- Source maps (dev) and a clean assets dir (production) ----
 if (!mix.inProduction()) {
     mix.webpackConfig({
         devtool: 'source-map'
     }).sourceMaps(true, 'source-map');
 } else {
-    // Clean assets directory before production build
     let fs = require('fs-extra');
     fs.remove('assets');
 }
 
-// -------------------------------------------------
-// Mix setup
-// -------------------------------------------------
+// ---- Mix setup ----
 mix
     .setPublicPath('assets')
     .setResourceRoot('../')
@@ -122,6 +103,8 @@ mix
     .js('resources/public/wp-social-review.js', 'assets/js/wp-social-review.js')
     // Its own bundle: enqueued only on pages where the pro sort toolbar rendered.
     .js('resources/public/reviews-sort-toolbar.js', 'assets/js/wpsr-reviews-sort-toolbar.js')
+    // Its own bundle: enqueued only when an Marquee layout renders.
+    .js('resources/public/marquee.js', 'assets/js/wpsr-marquee.js')
     .js('resources/public/social-ninja-modal.js', 'assets/js/social-ninja-modal.js')
     .js('resources/public/wpsn-notification.js', 'assets/js/wpsn-notification.js')
     .js('resources/public/wpsr-fb-album.js', 'assets/js/wpsr-fb-album.js')
@@ -170,7 +153,7 @@ mix.options({
 });
 
 
-// DEBUG: Print full config to diagnose other issues (optional)
+// Set DEBUG_WEBPACK=true to print the full webpack config.
 if (process.env.DEBUG_WEBPACK === 'true') {
     console.log(JSON.stringify(mix.config.webpackConfig, null, 2));
 }

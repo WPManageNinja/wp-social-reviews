@@ -7,7 +7,7 @@ defined('ABSPATH') or die;
 
 <a target="_blank"
    href="<?php echo esc_url('https://twitter.com/' . Arr::get($feed, 'user.screen_name', '')); ?>"
-   class="wpsr-tweet-author-name">
+   class="wpsr-tweet-author-name" dir="auto">
     <span>
         <?php echo esc_html(Arr::get($feed, 'user.name', '')); ?>
     </span>

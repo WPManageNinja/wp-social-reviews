@@ -1,19 +1,7 @@
 /**
- * Upgrade URL helper for the admin SPA.
- *
- * URLs are always built in PHP (see App\Services\UpgradeUrl) so the
- * wpsocialreviews/link affiliate filter — which is allowed to replace the
- * destination outright — is never bypassed. The SPA only swaps in the placement
- * (utm_content) for the spot the user actually clicked, leaving the rest of the
- * tracking vocabulary exactly as PHP produced it.
- *
- * Placements are passed as plain strings — a shared one such as 'top_bar', or a
- * 'feature_lock_*' naming the locked feature — so the value stays greppable from
- * the analytics side. The full vocabulary lives in App\Services\UpgradeUrl.
- *
- * Shared components (UpgradeToProButton, UpgradeToProBanner) render on many
- * screens, so they take the placement as a prop: the caller knows the spot, the
- * component does not.
+ * Upgrade URLs are built in PHP (App\Services\UpgradeUrl) so the wpsocialreviews/link
+ * affiliate filter is never bypassed. The SPA only sets utm_content to the clicked
+ * placement, a greppable string such as 'top_bar' or 'feature_lock_*'.
  */
 
 /**

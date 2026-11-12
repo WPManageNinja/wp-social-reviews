@@ -107,62 +107,63 @@
             </div>
             <div class="wpsr-controls-right">
               <div class="wpsr-controls-bulk-actions">
-                <el-select class="wpsr-select-field-primary" v-model="bulkAction" :placeholder="$t('Bulk Action')" size="default" style="width: 160px;">
-                  <el-option :label="$t('Approve')" value="enable">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><CircleCheck /></el-icon>
-                    <span>{{ $t('Approve') }}</span>
-                  </span>
-                  </el-option>
-                  <el-option :label="$t('Disapprove')" value="disable">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><CircleClose /></el-icon>
-                    <span>{{ $t('Disapprove') }}</span>
-                  </span>
-                  </el-option>
-                  <el-option :label="$t('Delete')" value="delete">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><Delete /></el-icon>
-                    <span>{{ $t('Delete') }}</span>
-                  </span>
-                  </el-option>
-                  <el-option :label="$t('Duplicate')" value="duplicate">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><DocumentCopy /></el-icon>
-                    <span>{{ $t('Duplicate') }}</span>
-                  </span>
-                  </el-option>
-                  <el-option :label="$t('Mark as Spam')" value="mark-spam">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><WarningFilled /></el-icon>
-                    <span>{{ $t('Mark as Spam') }}</span>
-                  </span>
-                  </el-option>
-                  <el-option :label="$t('Not Spam')" value="not-spam">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><CircleCheck /></el-icon>
-                    <span>{{ $t('Not Spam') }}</span>
-                  </span>
-                  </el-option>
-                  <el-option :label="$t('Assign Category')" value="category">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><PriceTag /></el-icon>
-                    <span>{{ $t('Assign Category') }}</span>
-                  </span>
-                  </el-option>
-                </el-select>
-                <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
-                <el-button v-if="canManageCategories" @click="show_manage_categories_modal = true">
+                <div class="wpsr-bulk-action-group">
+                  <el-select class="wpsr-select-field-primary" v-model="bulkAction" :placeholder="$t('Bulk Action')" size="default" style="width: 160px;">
+                    <el-option :label="$t('Approve')" value="enable">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><CircleCheck /></el-icon>
+                      <span>{{ $t('Approve') }}</span>
+                    </span>
+                    </el-option>
+                    <el-option :label="$t('Disapprove')" value="disable">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><CircleClose /></el-icon>
+                      <span>{{ $t('Disapprove') }}</span>
+                    </span>
+                    </el-option>
+                    <el-option :label="$t('Delete')" value="delete">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><Delete /></el-icon>
+                      <span>{{ $t('Delete') }}</span>
+                    </span>
+                    </el-option>
+                    <el-option :label="$t('Duplicate')" value="duplicate">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><DocumentCopy /></el-icon>
+                      <span>{{ $t('Duplicate') }}</span>
+                    </span>
+                    </el-option>
+                    <el-option :label="$t('Mark as Spam')" value="mark-spam">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><WarningFilled /></el-icon>
+                      <span>{{ $t('Mark as Spam') }}</span>
+                    </span>
+                    </el-option>
+                    <el-option :label="$t('Not Spam')" value="not-spam">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><CircleCheck /></el-icon>
+                      <span>{{ $t('Not Spam') }}</span>
+                    </span>
+                    </el-option>
+                    <el-option :label="$t('Assign Category')" value="category">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><PriceTag /></el-icon>
+                      <span>{{ $t('Assign Category') }}</span>
+                    </span>
+                    </el-option>
+                  </el-select>
+                  <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
+                </div>
+                <el-button v-if="canManageCategories" class="wpsr-manage-categories-btn" @click="show_manage_categories_modal = true">
                   <el-icon class="wpsr-mr-5"><PriceTag /></el-icon>
                   {{ $t('Manage Categories') }}
                 </el-button>
               </div>
               <el-input
-                  class="wpsr-input-default"
+                  class="wpsr-input-default wpsr-controls-search"
                   v-model="search_string"
                   placeholder="Search..."
                   size="default"
-                  style="width: 200px;"
                   @keyup.enter="getItems()"
                   @clear="handleClear"
                   clearable>
@@ -190,7 +191,7 @@
 
               <el-table-column :label="$t('Review')" min-width="200">
                 <template #default="scope">
-                  <strong class="wpsr-item-title">{{ scope.row.review_title }}</strong>
+                  <strong class="wpsr-item-title" dir="auto">{{ scope.row.review_title }}</strong>
                   <ReviewContentModal
                       :content="scope.row.reviewer_text"
                       :title="scope.row.review_title"
@@ -210,7 +211,7 @@
                     <img class="wpsr-image-cell" v-if="scope.row.reviewer_img" :src="scope.row.reviewer_img" height="80" width="80"/>
                     <img class="wpsr-image-cell" v-else :src="assets_url+'/images/template/review-template/placeholder-image.png'"
                          height="80" width="80"/>
-                    <span class="wpsr-platform-name wpsr-ml-10">{{ scope.row.reviewer_name }}</span>
+                    <span class="wpsr-platform-name wpsr-ml-10" dir="auto">{{ scope.row.reviewer_name }}</span>
                   </div>
                 </template>
               </el-table-column>

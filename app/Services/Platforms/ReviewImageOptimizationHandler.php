@@ -48,7 +48,9 @@ class ReviewImageOptimizationHandler extends BaseImageOptimizationHandler
         // Gate on the template being publicly renderable before reading its meta, otherwise
         // an anonymous request could fetch a draft/private template's reviews and
         // materialize their images into the uploads directory.
-        if (!(new \WPSocialReviews\App\Hooks\Handlers\ShortcodeHandler())->isPublicRenderableTemplate($templateId)) {
+        // Notification popups render a reviews feed from their own post type, as in load-more.
+        $wpsr_extra_post_types = ['wpsr_reviews_notify'];
+        if (!(new \WPSocialReviews\App\Hooks\Handlers\ShortcodeHandler())->isPublicRenderableTemplate($templateId, $wpsr_extra_post_types)) {
             wp_send_json_error(['message' => __('Invalid template.', 'wp-social-reviews')], 403);
         }
 
@@ -107,7 +109,7 @@ class ReviewImageOptimizationHandler extends BaseImageOptimizationHandler
     {
         $ids = $reviews->pluck('review_id')->toArray();
         $userNames = $reviews->pluck('source_id')->toArray();
-        $resized_images = (new OptimizeImage())->getMediaIds($ids, $userNames);
+        $resized_images = (new OptimizeImage())->getMediaIds($ids, $userNames, $this->platform);
         return array_unique($resized_images);
     }
 
@@ -123,9 +125,12 @@ class ReviewImageOptimizationHandler extends BaseImageOptimizationHandler
             'booking' => WPSOCIALREVIEWS_BOOKING_MAX_RECORDS,
             'facebook' => WPSOCIALREVIEWS_FACEBOOK_MAX_RECORDS,
             'woocommerce' => WPSOCIALREVIEWS_WOOCOMMERCE_MAX_RECORDS,
-            'trustpilot' => WPSOCIALREVIEWS_TP_MAX_RECORDS,
             'testimonial' => WPSOCIALREVIEWS_TESTIMONIAL_MAX_RECORDS,
         ];
+
+        if (Helper::is_tp($platform)) {
+            return WPSOCIALREVIEWS_TP_MAX_RECORDS;
+        }
 
         return $maxRecordsMap[$platform] ?? 0;
     }
@@ -160,7 +165,7 @@ class ReviewImageOptimizationHandler extends BaseImageOptimizationHandler
 
     public function deleteBusinessMediaByUserName($platform, $userName)
     {
-        (new OptimizeImage())->deleteMediaByUserName($userName);
+        (new OptimizeImage())->deleteMediaByUserName($userName, $platform);
         $uploadDir = $this->getUploadDir($platform) . '/' . $userName;
         $this->deleteDirectory($uploadDir);
     }

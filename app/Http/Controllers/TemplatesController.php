@@ -16,24 +16,13 @@ class TemplatesController extends Controller
     protected $app = null;
     protected $postType = 'wp_social_reviews';
 
-    // The shared title/delete endpoints serve every WP Social Ninja template
-    // type (review/feed, notification, chat widget, custom source). The type
-    // guard in Post::updatePost()/deletePost() must allow all of them — while
-    // still rejecting non-WPSN posts.
+    // The shared title/delete endpoints serve every WPSN template type. The type guard
+    // in Post::updatePost()/deletePost() allows these and rejects any other post.
     protected $managedPostTypes = [
         'wp_social_reviews',
         'wpsr_reviews_notify',
         'wpsr_social_chats',
         'wpsr_custom_source',
-    ];
-
-    // Each managed type keeps the capability its own screen requires, so holding
-    // wpsn_manage_templates alone never reaches another screen's objects.
-    protected $managedPostTypeCapabilities = [
-        'wp_social_reviews'   => 'wpsn_manage_templates',
-        'wpsr_reviews_notify' => 'wpsn_manage_notification_popup',
-        'wpsr_social_chats'   => 'wpsn_manage_chat_widgets',
-        'wpsr_custom_source'  => 'wpsn_full_access',
     ];
 
     public function __construct(Application $app)
@@ -42,7 +31,6 @@ class TemplatesController extends Controller
     }
 
     /**
-     *
      * Get all templates from posts table.
      *
      * @param $request
@@ -74,13 +62,9 @@ class TemplatesController extends Controller
             $excludeWooCommerce
         );
 
-        //find all available platforms for templating
         $platforms = $this->validReviewsPlatforms();
         $validShortcodeType = $template->getValidShortcodeType($platforms);
         $feedPlatforms = $this->app->applyCustomFilters('available_valid_feed_platforms', []);
-//        if(!empty($feedPlatforms)){
-//            $feedPlatforms['social_wall'] = __('Social Wall', 'wp-social-reviews');
-//        }
         $platforms = ($platforms + $feedPlatforms);
 
         return [
@@ -93,7 +77,6 @@ class TemplatesController extends Controller
     }
 
     /**
-     *
      * Create single template on posts table and save template meta by post id on post meta table.
      *
      * @param $request
@@ -135,7 +118,7 @@ class TemplatesController extends Controller
             $postMeta = $template->getPlatformDefaultConfig($platform);
 
             $postMeta['feed_settings']['created_from_onboarding'] = (bool) $onboarding;
-            // if created from custom source create template, set the default header form id
+            // Templates created from a custom source default the write-review button to its form.
             if($formId){
                 $postMeta['add_custom_war_btn_url'] = 'true';
                 $formType = sanitize_text_field($request->get('form_type', ''));
@@ -161,7 +144,6 @@ class TemplatesController extends Controller
     }
 
     /**
-     *
      * Duplicate single template on posts table and save template meta by post id on post meta table.
      *
      * @param $request
@@ -240,17 +222,10 @@ class TemplatesController extends Controller
      */
     protected function userCanManageObject($postId)
     {
-        $postType = get_post_type((int) $postId);
-
-        if (!$postType || !isset($this->managedPostTypeCapabilities[$postType])) {
-            return false;
-        }
-
-        return PermissionManager::currentUserCan($this->managedPostTypeCapabilities[$postType]);
+        return PermissionManager::currentUserCanManagePostType(get_post_type((int) $postId));
     }
 
     /**
-     *
      * Delete template and meta from posts, post meta table.
      *
      * @param $templateId
@@ -296,7 +271,6 @@ class TemplatesController extends Controller
     }
 
     /**
-     *
      * Update template title on post table.
      *
      * @param $request

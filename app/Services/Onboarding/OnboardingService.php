@@ -186,12 +186,6 @@ class OnboardingService
                         'description' => __('Display videos from a specific Facebook video playlist', 'wp-social-reviews'),
                         'pro' => true
                     ],
-//                    [
-//                        'value' => 'photo_feed',
-//                        'title' => __('Photo Feed', 'wp-social-reviews'),
-//                        'description' => __('Display photos from a specific Facebook page', 'wp-social-reviews'),
-//                        'pro' => true
-//                    ],
                     [
                         'value' => 'event_feed',
                         'title' => __('Event Feed', 'wp-social-reviews'),
@@ -258,12 +252,6 @@ class OnboardingService
                         'description' => __('Embed posts from any TikTok account directly', 'wp-social-reviews'),
                         'pro' => false
                     ],
-//                    [
-//                        'value' => 'single',
-//                        'title' => __('Specific Video Feed', 'wp-social-reviews'),
-//                        'description' => __('Display specific videos from a TikTok account', 'wp-social-reviews'),
-//                        'pro' => true
-//                    ]
                 ]
             ],
         ];
@@ -399,7 +387,27 @@ class OnboardingService
                         'title' => __('Caption Card', 'wp-social-reviews'),
                         'description' => __('A modern grid for Instagram', 'wp-social-reviews'),
                         'icon' => $this->getAssetUrl('images/template/instagram-template/template2.png'),
-                        'pro' => true
+                        'pro' => false
+                    ],
+                    [
+                        'value' => [
+                            'name' => 'template5',
+                            'type' => 'grid'
+                        ],
+                        'title' => __('Author Card', 'wp-social-reviews'),
+                        'description' => __('Cards with the author, post time and caption', 'wp-social-reviews'),
+                        'icon' => $this->getAssetUrl('images/template/instagram-template/template5.png'),
+                        'pro' => false
+                    ],
+                    [
+                        'value' => [
+                            'name' => 'template6',
+                            'type' => 'grid'
+                        ],
+                        'title' => __('Author Bar', 'wp-social-reviews'),
+                        'description' => __('Photo tiles with the author and post time on each', 'wp-social-reviews'),
+                        'icon' => $this->getAssetUrl('images/template/instagram-template/template6.png'),
+                        'pro' => false
                     ],
                     [
                         'value' => [
@@ -440,6 +448,16 @@ class OnboardingService
                         'description' => __('A masonry style for Instagram', 'wp-social-reviews'),
                         'icon' => $this->getAssetUrl('images/template/instagram-template/template2-masonry.png'),
                         'pro' => true
+                    ],
+                    [
+                        'value' => [
+                            'name' => 'template2',
+                            'type' => 'list'
+                        ],
+                        'title' => __('List', 'wp-social-reviews'),
+                        'description' => __('One post per row, photo beside the caption', 'wp-social-reviews'),
+                        'icon' => $this->getAssetUrl('images/template/global-template/timeline.png'),
+                        'pro' => false
                     ],
                 ],
                 'facebook_feed' => [
@@ -668,7 +686,6 @@ class OnboardingService
         $hasCompletedSessions = !empty($allSessions);
         $latestSession = $this->getLatestSession($allSessions);
 
-        // Check if this is an old user
         $isOldUser = $this->isOldUser();
 
         return [
@@ -745,25 +762,22 @@ class OnboardingService
             return true;
         }
 
-        // Check if user is an old user (installed before onboarding feature)
         if ($this->isOldUser()) {
             return false;
         }
 
         $allSessions = get_option('wpsr_onboarding_sessions', []);
 
-        // Show onboarding if no sessions exist
         return empty($allSessions);
     }
 
     /**
-     * Check if this is an old user who shouldn't see onboarding
+     * Whether the site predates the onboarding wizard, so shouldn't see it
      *
      * @return bool
      */
     private function isOldUser()
     {
-        // Allow filter to override
         $showForOldUsers = apply_filters('wpsocialreviews/show_onboarding_for_old_users', false);
 
         if ($showForOldUsers) {
@@ -775,21 +789,19 @@ class OnboardingService
 
         $templateCount = Helper::getTemplateCount();
         if ($templateCount > 0) {
-            return true; // User has templates, consider them old
+            return true;
         }
 
         if (!$installDate) {
-            return false; // No install date means new user
+            return false;
         }
 
-        // Check if user has existing plugin data indicating they're an old user
         $globalSettings = get_option('wpsr_global_settings');
         if (!empty($globalSettings)) {
             return true;
         }
 
-        // Adjust this date to when you want to start showing onboarding
-        $onboardingIntroducedDate = strtotime('2025-07-24'); // Example date
+        $onboardingIntroducedDate = strtotime('2025-07-24');
 
         return $installDate < $onboardingIntroducedDate;
     }
@@ -827,7 +839,6 @@ class OnboardingService
     public function saveOnboardingData($data, $templateId = null)
     {
         try {
-            // Save onboarding status
             $status = [
                 'is_completed' => true,
                 'completed_at' => current_time('mysql'),
@@ -835,7 +846,6 @@ class OnboardingService
             ];
 
             if ($templateId) {
-                // Store per-template onboarding data
                 $allOnboardingData = get_option('wpsr_onboarding_sessions', []);
                 $allOnboardingData[$templateId] = $status;
                 update_option('wpsr_onboarding_sessions', $allOnboardingData);
@@ -908,10 +918,10 @@ class OnboardingService
 
 
     /**
-     * Get platform icon
+     * Whether the platform needs Pro
      *
      * @param string $platform
-     * @return string
+     * @return bool
      */
     protected function isProPlatform($platform)
     {

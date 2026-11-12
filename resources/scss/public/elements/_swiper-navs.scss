@@ -1,3 +1,5 @@
+@import "../reviews-templates/layout-mixins";
+
 .wpsr-swiper-carousel-wrapper .wpsr-swiper-prev-next,
 .wpsr-feed-popup-carousel-wrapper .wpsr-swiper-prev-next{
 	background-color: #000;
@@ -88,13 +90,17 @@
 			margin-right: 0;
 		}
 	}
+	// Swiper clips at this padding, so the hidden neighbour cards' shadows used to end in a hard vertical
+	// line. The mask fades the padding out instead. Keep the edge under the default 20px slide gap, or
+	// the next card peeks in.
 	.wpsr-reviews-slider{
+		--wpsr-slider-edge: 18px;
 		padding-top: 30px;
-		padding-left: 10px;
-		padding-right: 10px;
+		padding-left: var(--wpsr-slider-edge);
+		padding-right: var(--wpsr-slider-edge);
+		@include wpsr-edge-fade(var(--wpsr-slider-edge));
 		@media screen and (max-width: 767px) {
-			padding-left: 5px;
-			padding-right: 5px;
+			--wpsr-slider-edge: 5px;
 		}
 	}
 }

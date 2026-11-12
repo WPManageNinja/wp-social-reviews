@@ -8,16 +8,14 @@ function wpsrYtIframe(ytVideoId, iframeClass) {
     return '<iframe class="' + iframeClass + '" src="https://www.youtube.com/embed/' + ytVideoId + '?autoplay=1&rel=0" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>';
 }
 
-// Latest request token + in-flight xhr per feed. Only one video plays per feed at a
-// time, so a newer selection must supersede any request still in flight — even one
-// targeting a different (now-cleared) inline slot — or its late callback would refill
-// that slot and start a hidden autoplaying player.
+// Latest request token and in-flight xhr per feed. One video plays per feed, so a newer
+// selection supersedes any pending request, or its late callback would refill a cleared
+// slot and start a hidden autoplaying player.
 const wpsrPlayerRequests = {};
 
 /**
- * Fill a player slot with the clicked video.
- *
- * Only PHP can run the shortcode, so Fluent Player markup comes from the server.
+ * Fill a player slot with the clicked video. Fluent Player markup comes from the
+ * server, since only PHP can run the shortcode.
  *
  * @param {jQuery} slot
  * @param {number|string} templateId
@@ -29,8 +27,7 @@ const wpsrPlayerRequests = {};
 function wpsrPlayVideo(slot, templateId, ytVideoId, iframeClass, useFluentPlayer, duration) {
     let feed = wpsrPlayerRequests[templateId] || (wpsrPlayerRequests[templateId] = {token: 0, xhr: null});
 
-    // This selection supersedes any earlier one for the feed: bump the token so older
-    // callbacks bail, and abort the request they came from where one is still pending.
+    // Bump the token so older callbacks bail, and abort their request if still pending.
     let requestToken = ++feed.token;
     if (feed.xhr) {
         feed.xhr.abort();
@@ -109,9 +106,8 @@ export default {
         }
     },
     /**
-     * Open the popup for one video
-     *
-     * The overlay is rebuilt on each open, so a stable slot key tears the last down.
+     * Open the popup for one video. The overlay is rebuilt on each open, so a stable
+     * slot key tears the last one down.
      *
      * @param {Event} e
      * @param {Element} identifier clicked thumbnail

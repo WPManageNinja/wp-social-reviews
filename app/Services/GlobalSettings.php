@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Register a widget that render a feed shortcode
+ * Reads and formats the plugin's global settings.
  * @since 1.3.0
  */
 class GlobalSettings
@@ -64,7 +64,6 @@ class GlobalSettings
                     'conditional_rules' => array(
                         'min_rating' => Arr::get($settings,'global_settings.advance_settings.conditional_rules.min_rating', 3),
                         'blocked_keywords' => Arr::get($settings,'global_settings.advance_settings.conditional_rules.blocked_keywords', ''),
-//                        'require_verified_purchase' => Arr::get($settings,'global_settings.advance_settings.conditional_rules.require_verified_purchase', 'false'),
                         'min_review_length' => Arr::get($settings,'global_settings.advance_settings.conditional_rules.min_review_length', 0),
                     ),
                 )
@@ -95,26 +94,21 @@ class GlobalSettings
     }
 
     /**
-     * Determine the status for AI Review Summarizer using the helper class
-     * Falls back to legacy logic if Pro version is not available
+     * The saved AI Review Summarizer choice, or on when platform, API key and model are all set.
      */
     private function getAIReviewSummarizerStatus($settings)
     {
-        // If the setting already exists, respect the user's choice
         $existingSetting = Arr::get($settings, 'global_settings.advance_settings.ai_review_summarizer_enabled');
         if ($existingSetting !== null) {
             return $existingSetting;
         }
         
-        // Check if AI is properly configured (API key and model set)
         $settings = get_option('wpsr_global_settings', []);
         
-        // Check if all required settings are configured
         $platform = Arr::get($settings, 'global_settings.advance_settings.ai_platform', '');
         $apiKey = Arr::get($settings, 'global_settings.advance_settings.ai_api_key', '');
         $selectedModel = Arr::get($settings, 'global_settings.advance_settings.selected_model', '');
 
-        // All three are required for AI to work properly
         if (!empty($platform) && !empty($apiKey) && !empty($selectedModel)) {
             return 'true';
         }
@@ -122,49 +116,26 @@ class GlobalSettings
         return 'false';
     }
 
+    /**
+     * Options for the AI summarizer settings screen. ai_platforms is empty because
+     * Pro owns the provider classes and fills it in on the filter below.
+     */
     public function getAISummarizerAPISettingsOptions(){
 
-        $available_ai_platforms = [
-            'OpenAI' => 'OpenAI',
-            'OpenRouter' => 'OpenRouter'
-        ];
-
-        $open_ai_supported_models = [
-            'o3-mini' => 'o3-mini',
-            'o1' => 'o1',
-            'gpt-4o' => 'gpt-4o',
-            'gpt-4o-mini' => 'gpt-4o-mini',
-        ];
-
-        $open_router_supported_models = [
-            'google/gemini-2.0-flash-001' => 'google/gemini-2.0-flash-001',
-            'mistralai/mistral-small-24b-instruct-2501' => 'mistralai/mistral-small-24b-instruct-2501',
-            'deepseek/deepseek-r1-distill-qwen-32b' => 'deepseek/deepseek-r1-distill-qwen-32b',
-            'deepseek/deepseek-r1' => 'deepseek/deepseek-r1',
-        ];
-
-        $deepseek_supported_models = [
-            'deepseek/deepseek-r1-distill-qwen-32b' => 'deepseek/deepseek-r1-distill-qwen-32b',
-            'deepseek/deepseek-r1' => 'deepseek/deepseek-r1',
-        ];
-
         return apply_filters('wpsocialreviews/ai_summarizer_api_settings_option', [
-            'available_ai_platforms' => $available_ai_platforms,
-            'open_ai_supported_models' => $open_ai_supported_models,
-            'open_router_supported_models' => $open_router_supported_models,
-            'deepseek_supported_models' => $deepseek_supported_models,
+            'has_wordpress_ai' => function_exists('wp_ai_client_prompt'),
+            'ai_platforms' => [],
         ]);
     }
 
     public function getReviewPublishMode($settings)
     {
-        // Check if new review_publish_mode exists
         $newMode = Arr::get($settings, 'global_settings.advance_settings.review_publish_mode');
         if ($newMode) {
             return $newMode;
         }
 
-        // Check for old manually_review_approved setting and migrate
+        // Fall back to the legacy Fluent Forms manually_review_approved setting.
         $oldSetting = get_option('wpsr_fluent_forms_global_settings');
         if ($oldSetting && isset($oldSetting['global_settings']['manually_review_approved'])) {
             $manuallyApproved = $oldSetting['global_settings']['manually_review_approved'];
@@ -175,6 +146,6 @@ class GlobalSettings
             }
         }
 
-        return 'auto'; // Default fallback
+        return 'auto';
     }
 }

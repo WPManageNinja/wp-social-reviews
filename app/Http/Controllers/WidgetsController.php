@@ -13,8 +13,6 @@ class WidgetsController extends Controller
     protected $postType = 'wpsr_social_chats';
 
     /**
-     * Constructor
-     *
      * @param Application $app
      */
     public function __construct(Application $app)
@@ -23,7 +21,6 @@ class WidgetsController extends Controller
     }
 
     /**
-     *
      * Get all templates from posts table.
      *
      * @param $request
@@ -34,7 +31,6 @@ class WidgetsController extends Controller
      **/
     public function index(Request $request, Widget $widget)
     {
-        // sanitize search term
         $search = sanitize_text_field($request->get('search', ''));
 
         $widgets = $widget->getWidgetTemplate($search);
@@ -47,7 +43,6 @@ class WidgetsController extends Controller
     }
 
     /**
-     *
      * Create single template on posts table and save template meta by post id on post meta table
      *
      * @param $request
@@ -59,7 +54,6 @@ class WidgetsController extends Controller
     public function create(Request $request, Post $post)
     {
         try {
-            // normalize onboarding flag to boolean
             $onboarding = rest_sanitize_boolean($request->get('onboarding', false));
 
             $widgetId = $post->createPost(
@@ -74,7 +68,7 @@ class WidgetsController extends Controller
             $widgetMeta = Config::formatConfig();
             $widgetMeta['chat_settings']['created_from_onboarding'] = (bool) $onboarding;
 
-            // Use the same serialization logic as SocialChat
+            // Serialize the same way SocialChat does.
             global $wpdb;
             $charset = $wpdb->get_col_charset( $wpdb->posts, 'post_content' );
             $serializedMeta = 'utf8mb3' === $charset ? json_encode($widgetMeta, JSON_UNESCAPED_UNICODE) : serialize($widgetMeta);
@@ -91,7 +85,6 @@ class WidgetsController extends Controller
     }
 
     /**
-     *
      * Duplicate single or multiple templates on posts table and save template meta by post id on post meta table
      *
      * @param $request
@@ -176,7 +169,6 @@ class WidgetsController extends Controller
                 return __('No widgets selected', 'wp-social-reviews');
             }
 
-            // validate status registered post statuses if available
             $allowed_statuses = ['publish','draft','pending','private','trash'];
             if (!in_array($status, $allowed_statuses, true)) {
                 $status = 'draft';
@@ -213,7 +205,6 @@ class WidgetsController extends Controller
         }
     }
     /**
-     *
      * Delete single or multiple templates and meta from posts, post meta table
      *
      * @param $request

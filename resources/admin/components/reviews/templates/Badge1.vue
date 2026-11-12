@@ -7,25 +7,44 @@
          :class="badgeLinkClasses"
          :href="badgeUrl"
          :target="badgeTarget">
-        <div class="wpsr-reviews-badge-wrapper-inner">
+        <BadgeAvatarStack v-if="isAvatarStack"
+                          :businessInfo="businessInfo"
+                          :badgeSettings="badgeSettings"
+                          :reviews="reviews"
+                          :rating="businessInfo.average_rating ? formattedRating : ''"
+                          :reviewsCountText="hasReviewsCount ? formattedReviewsCount : ''"
+                          :platformIcons="platformIcons"/>
+        <BadgeScoreStrip v-else-if="isScoreStrip"
+                          :businessInfo="businessInfo"
+                          :badgeSettings="badgeSettings"
+                          :rating="businessInfo.average_rating ? formattedRating : ''"
+                          :reviewsCountText="hasReviewsCount ? formattedReviewsCount : ''"
+                          :platformIcons="platformIcons"/>
+        <BadgeSticker v-else-if="isSticker"
+                          :businessInfo="businessInfo"
+                          :badgeSettings="badgeSettings"
+                          :rating="businessInfo.average_rating ? formattedRating : ''"
+                          :reviewsCountText="hasReviewsCount ? formattedReviewsCount : ''"
+                          :platformIcons="platformIcons"/>
+        <div v-else class="wpsr-reviews-badge-wrapper-inner">
           <div v-if="shouldShowPlatformSection"
                class="wpsr-business-info-logo">
             <template v-if="isSinglePlatform && this.appVars.platforms_cards.some( card => card.platform === businessInfo.platform_name )">
-              <img v-if="shouldShowPlatformIcon(businessInfo, 'badge2')"
+              <img v-if="shouldShowPlatformIcon(businessInfo, 'badge2') && getPlatformIcon('small')"
                    :src="getPlatformIcon('small')"
                    :alt="businessInfo.platform_name">
-              <img v-else-if="shouldShowPlatformIcon(businessInfo, 'badge1')"
+              <img v-else-if="shouldShowPlatformIcon(businessInfo, 'badge1') && getPlatformIcon('default')"
                    :src="getPlatformIcon('default')"
                    :alt="businessInfo.platform_name">
             </template>
             <template v-else-if="isSinglePlatform && Object.entries(businessInfo.platforms).length > 0">
-              <img :src="getCustomSourcesPlatformIcon(businessInfo)" alt="">
+              <img v-if="getCustomSourcesPlatformIcon(businessInfo)" :src="getCustomSourcesPlatformIcon(businessInfo)" alt="">
             </template>
 
             <div v-if="shouldShowMultiplePlatforms" class="wpsr-business-info-paltforms">
               <template v-for="platform in availablePlatforms">
                 <img v-if="platform.logo && platform.logo !== ''" :src="platform.logo" alt="">
-                <img v-else
+                <img v-else-if="get_platform_icon(platform.platform_name, 'small')"
                      :key="platform.platform_name"
                      :src="get_platform_icon(platform.platform_name, 'small')"
                      :alt="platform.platform_name">
@@ -69,6 +88,16 @@
 <script>
 // import { reviewsMixin } from '../../../mixins/reviewsMixin';
 import { ReviewsBusinessInfoMixin } from "../../../mixins/ReviewsBusinessInfoMixin";
+import BadgeAvatarStack from "./elements/BadgeAvatarStack.vue";
+import BadgeScoreStrip from "./elements/BadgeScoreStrip.vue";
+import BadgeSticker from "./elements/BadgeSticker.vue";
+
+// Badge skins drawn with the avatar-stack layout; keep in sync with Pro's ReviewsTemplateHandlerPro::AVATAR_STACK_BADGES.
+const AVATAR_STACK_BADGES = ['badge3'];
+// Badge skins drawn with the score-strip layout; keep in sync with Pro's ReviewsTemplateHandlerPro::SCORE_STRIP_BADGES.
+const SCORE_STRIP_BADGES = ['badge4'];
+// Badge skins drawn with the sticker layout (circle or rounded-square); keep in sync with Pro's ReviewsTemplateHandlerPro::STICKER_BADGES.
+const STICKER_BADGES = ['badge5', 'badge6'];
 
 export default {
   name: "Badge1",
@@ -80,9 +109,14 @@ export default {
     businessInfo: {
       type: Object,
       required: true
+    },
+    reviews: {
+      type: Array,
+      default: () => []
     }
   },
   mixins: [ ReviewsBusinessInfoMixin ],
+  components: { BadgeAvatarStack, BadgeScoreStrip, BadgeSticker },
   computed: {
     badgeSettings() {
       return this.template_meta.badge_settings || {};
@@ -93,6 +127,9 @@ export default {
         this.badgeSettings.display_mode !== 'none' ? 'wpsr-enable-cursor' : '',
         this.isSinglePlatform ? this.businessInfo.platform_name : 'wpsr-has-multiple-reviews-platform',
         `wpsr-reviews-${this.badgeSettings.template}`,
+        this.isAvatarStack ? 'wpsr-badge-avatar-stack' : '',
+        this.isScoreStrip ? 'wpsr-badge-score-strip' : '',
+        this.isSticker ? 'wpsr-badge-sticker' : '',
         this.singlePlatformName
       ];
     },
@@ -100,7 +137,8 @@ export default {
       return [
         this.badgeSettings.display_mode !== 'none' ? 'wpsr-reviews-badge-btn' : '',
         this.badgeSettings.display_mode === 'none' ? 'wpsr-reviews-badge-html' : '',
-        `wpsr-${this.badgeSettings.badge_position}`
+        // The -rtl.css mirrors these rules with the editor layout, so the side is swapped to keep the chosen corner.
+        `wpsr-${document.documentElement.dir === 'rtl' && this.badgeSettings.badge_position ? this.badgeSettings.badge_position.replace(/left|right/, side => side === 'left' ? 'right' : 'left') : this.badgeSettings.badge_position}`
       ];
     },
     badgeUrl() {
@@ -140,6 +178,15 @@ export default {
           this.badgeSettings.custom_title.length &&
           this.badgeSettings.template === 'badge2';
     },
+    isAvatarStack() {
+      return AVATAR_STACK_BADGES.includes(this.badgeSettings.template);
+    },
+    isScoreStrip() {
+      return SCORE_STRIP_BADGES.includes(this.badgeSettings.template);
+    },
+    isSticker() {
+      return STICKER_BADGES.includes(this.badgeSettings.template);
+    },
     formattedRating() {
       return parseFloat(this.businessInfo.average_rating).toFixed(1);
     },
@@ -152,6 +199,10 @@ export default {
       return text.includes('{reviews_count}') && this.businessInfo.total_rating !== undefined
           ? text.replace('{reviews_count}', Number(this.businessInfo.total_rating).toLocaleString())
           : text.replace('{reviews_count}', '');
+    },
+    // Shared by BadgeAvatarStack and BadgeScoreStrip; see platformIconsFor() in WPSocialReviews.js.
+    platformIcons() {
+      return this.platformIconsFor(this.businessInfo, this.badgeSettings.display_platform_icon === 'true', this.template_meta.display_tp_brand);
     }
   },
   methods: {

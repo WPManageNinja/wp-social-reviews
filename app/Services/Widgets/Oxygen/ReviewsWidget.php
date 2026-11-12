@@ -23,9 +23,7 @@ class ReviewsWidget extends OxygenEl
     }
 
     function controls() {
-        /*****************************
-         * Reviews template list
-         *****************************/
+        // getTemplates() with several platforms lists every template except those platforms.
         $platforms = ['twitter', 'youtube', 'instagram'];
         $templates = Helper::getTemplates($platforms);
         $templates_control = $this->addOptionControl(
@@ -40,9 +38,6 @@ class ReviewsWidget extends OxygenEl
         );
         $templates_control->rebuildElementOnChange();
 
-        /*****************************
-         * Header/Business info
-         *****************************/
         $bi_section = $this->addControlSection( "wpsr_bi_section", __("Business Info/Header", "wp-social-reviews"), "assets/icon.png", $this );
         $bi_section->addStyleControls(
             array(
@@ -54,9 +49,6 @@ class ReviewsWidget extends OxygenEl
             )
         );
 
-        /*****************************
-         * Header/Business write a review btn
-         *****************************/
         $review_bi_war_btn = $bi_section->addControlSection( "wpsr_review_bi_war_section", __("Write a review button", "wp-social-reviews"), "assets/icon.png", $this );
         $review_bi_war_btn->addStyleControls(
             array(
@@ -105,9 +97,6 @@ class ReviewsWidget extends OxygenEl
             '.wpsr-business-info'
         )->whiteList();
 
-        /*****************************
-         * Reviewer Name
-         *****************************/
         $reviewer_name_section = $this->addControlSection( "wpsr_reviewer_name_section", __("Reviewer Name", "wp-social-reviews"), "assets/icon.png", $this );
         $reviewer_name_section->typographySection( __('Typography', 'wp-social-reviews'), '.wpsr-review-template .wpsr-review-info a .wpsr-reviewer-name', $this );
         $reviewer_name_section->addPreset(
@@ -117,9 +106,6 @@ class ReviewsWidget extends OxygenEl
             '.wpsr-review-template .wpsr-review-info a .wpsr-reviewer-name'
         )->whiteList();
 
-        /*****************************
-         * Review Title
-         *****************************/
         $review_title_section = $this->addControlSection( "wpsr_review_title_section", __("Review Title", "wp-social-reviews"), "assets/icon.png", $this );
         $review_title_section->typographySection( __('Typography', 'wp-social-reviews'), '.wpsr-review-title', $this );
         $review_title_section->addPreset(
@@ -129,9 +115,6 @@ class ReviewsWidget extends OxygenEl
             '.wpsr-review-title'
         )->whiteList();
 
-        /*****************************
-         * Review Date
-         *****************************/
         $review_date_section = $this->addControlSection( "wpsr_review_date_section", __("Review Date", "wp-social-reviews"), "assets/icon.png", $this );
         $review_date_section->typographySection( __('Typography', 'wp-social-reviews'), '.wpsr-review-template .wpsr-review-date', $this );
         $review_date_section->addPreset(
@@ -141,9 +124,6 @@ class ReviewsWidget extends OxygenEl
             '.wpsr-review-template .wpsr-review-date'
         )->whiteList();
 
-        /*****************************
-         * Review Text
-         *****************************/
         $review_text_section = $this->addControlSection( "wpsr_review_text_section", __("Review Text", "wp-social-reviews"), "assets/icon.png", $this );
         $review_text_section->typographySection( __('Typography', 'wp-social-reviews'), '.wpsr-review-template .wpsr-review-content p', $this );
         $review_text_section->addPreset(
@@ -153,9 +133,6 @@ class ReviewsWidget extends OxygenEl
             '.wpsr-review-template .wpsr-review-content p'
         )->whiteList();
 
-        /*****************************
-         * Platform Name
-         *****************************/
         $review_pn_section = $this->addControlSection( "wpsr_review_platform_name_section", __("Platform Name", "wp-social-reviews"), "assets/icon.png", $this );
         $review_pn_section->addStyleControls(
             array(
@@ -174,9 +151,6 @@ class ReviewsWidget extends OxygenEl
             '.wpsr-review-platform span'
         )->whiteList();
 
-        /*****************************
-         * Pagination
-         *****************************/
         $pagination_section = $this->addControlSection( "wpsr_reviews_pagination_section", __("Pagination", "wp-social-reviews"), "assets/icon.png", $this );
         $pagination_section->typographySection( __('Typography', 'wp-social-reviews'), '.wpsr_more span', $this );
         $pagination_section->addStyleControls(
@@ -218,9 +192,6 @@ class ReviewsWidget extends OxygenEl
             '.wpsr_more span'
         )->whiteList();
 
-        /*****************************
-         * Review Box
-         *****************************/
         $review_box_section = $this->addControlSection( "wpsr_review_box_section", __("Review Box", "wp-social-reviews"), "assets/icon.png", $this );
         $selector = '.wpsr-review-template';
         $review_box_section->addStyleControls(
@@ -289,7 +260,7 @@ class ReviewsWidget extends OxygenEl
         if ( isset( $_GET['ct_builder'] ) ) {
             wp_enqueue_style(
                 'wp_social_ninja_reviews',
-                WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_reviews.css',
+                WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_reviews' . (is_rtl() ? '-rtl' : '') . '.css',
                 array(),
                 WPSOCIALREVIEWS_VERSION
             );

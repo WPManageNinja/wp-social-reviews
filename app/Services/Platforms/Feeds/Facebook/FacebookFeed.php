@@ -506,6 +506,7 @@ class FacebookFeed extends BaseFeed
             'sources'          => $this->getConncetedSourceList(),
             'template_details' => $templateDetails,
             'elements'         => $facebookConfig->getStyleElement(),
+            'default_styles'   => $facebookConfig->formatStylesConfig([], $postId),
         ], 200);
     }
 
@@ -703,12 +704,7 @@ class FacebookFeed extends BaseFeed
             $singleVideoPlayListId = Helper::validateAndRetrieveSingleVideoPlaylistId( $singleVideoPlayList);
         }
         $feedType = $isEventEnabled ? 'event_feed' : $feedType;
-        $totalFeed      = Arr::get($apiSettings, 'feed_count');
-        $totalFeed      = !defined('WPSOCIALREVIEWS_PRO') && $totalFeed > 50 ? 50 : $totalFeed;
-        $totalFeed      = apply_filters('wpsocialreviews/facebook_feeds_limit', $totalFeed);
-        if(defined('WPSOCIALREVIEWS_PRO') && $totalFeed > 200){
-            $totalFeed = 200;
-        }
+        $totalFeed      = $this->resolveFeedLimit(Arr::get($apiSettings, 'feed_count'));
 
         if($totalFeed >= 100){
             $perPage = 100;
@@ -864,9 +860,12 @@ class FacebookFeed extends BaseFeed
                 $page_feeds = json_decode(wp_remote_retrieve_body($pages_data), true);
 
                 if(isset($page_feeds['paging']) && $pages > 1) {
+                    $fetchedPages = 1;
                     $nextUrl = Arr::get($page_feeds, 'paging.next');
-                    if($nextUrl) {
+                    while ($nextUrl && $fetchedPages < $pages) {
                         $page_feeds = $this->getNextPageUrlResponse($nextUrl, $page_feeds);
+                        $fetchedPages++;
+                        $nextUrl = Arr::get($page_feeds, 'paging.next');
                     }
                 }
 
@@ -998,6 +997,20 @@ class FacebookFeed extends BaseFeed
         }
 
         return $feeds;
+    }
+
+    /**
+     * The tier ceiling applies after facebook_feeds_limit, so the filter can lower a feed but not
+     * lift it past the tier. Pro's ceiling is itself filterable; a feed is cached as one blob.
+     */
+    public function resolveFeedLimit($feedCount)
+    {
+        $limit = absint(apply_filters('wpsocialreviews/facebook_feeds_limit', absint($feedCount)));
+        $max   = defined('WPSOCIALREVIEWS_PRO')
+            ? absint(apply_filters('wpsocialreviews/facebook_feeds_max_limit', 200))
+            : 50;
+
+        return max(1, min($limit, max(1, $max)));
     }
 
     public function getNextPageUrlResponse($nextUrl, $pageData)

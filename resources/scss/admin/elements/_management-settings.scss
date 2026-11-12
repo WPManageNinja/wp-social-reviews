@@ -48,7 +48,53 @@
     }
   }
 }
+.el-main.wpsr-global-settings-main{
+  // el-main's default overflow:auto would stop the sticky header below from sticking.
+  overflow: visible;
+  // Stretch the routed panel to the full container so its sticky header holds on short panels too.
+  > * {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+.wpsr-global-settings .el-aside.wpsr-global-settings-collapse-aside{
+  position: sticky;
+  top: 32px;
+  align-self: flex-start;
+  height: calc(100vh - 32px);
+  @media (max-width: 782px) {
+    top: 46px;
+    height: calc(100vh - 46px);
+  }
+  @media (max-width: 600px) {
+    top: 0;
+    height: 100vh;
+  }
+}
 .wpsr-global-settings-main{
+  .wpsr-gs-header, .wpsr_set_header{
+    position: sticky;
+    top: 32px;
+    z-index: 10;
+    // Canvas-coloured gap so scrolled cards slide under it instead of butting into the header; matches the wrapper's 24px top padding.
+    &::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      height: 24px;
+      background: var(--wpsr-secondary-bg, #F5F7FA);
+      pointer-events: none;
+    }
+    @media (max-width: 782px) {
+      top: 46px;
+    }
+    // WP admin bar stops being fixed below 600px.
+    @media (max-width: 600px) {
+      top: 0;
+    }
+  }
   .wpsr-gs-header, .wpsr_set_header{
     padding: 10px 32px;
     border-bottom: 1px solid var(--wpsr-primary-border, #E1E4EA);
@@ -60,7 +106,7 @@
       margin: 0;
       font-size: 18px;
       font-weight: 500;
-      color: var(--wpsr-heading-text, #FFF);
+      color: var(--wpsr-heading-text, #0E121B);
     }
   }
   .wpsr_set_header {
@@ -186,7 +232,7 @@
 }
 
 .wpsr-permission-tag, .wpsr-permission-more {
-  border-radius: var(--radius-6, 6px);
+  border-radius: var(--wpsr-radius-intermediate, 6px);
   background: var(--wpsr-secondary-bg, #F5F7FA);
   display: flex;
   padding: 4px 8px;
@@ -243,7 +289,7 @@
 .wpsr-custom-tooltip {
   position: fixed;
   z-index: 9999;
-  border-radius: var(--radius-16, 16px);
+  border-radius: 16px;
   border: 1px solid var(--wpsr-primary-border, #E1E4EA);
   background: var(--wpsr-primary-bg, #FFFFFF);
   box-shadow: 0 16px 32px -12px rgba(14, 18, 27, 0.10);
@@ -271,7 +317,7 @@
   background: var(--wpsr-secondary-bg, #F5F7FA);
   color: var(--wpsr-primary-text, #525866);
   padding: 4px 8px;
-  border-radius: var(--radius-6, 6px);
+  border-radius: var(--wpsr-radius-intermediate, 6px);
   font-size: 11px;
   font-weight: 400;
   border: none;

@@ -40,31 +40,18 @@ class PlatformController extends Controller
             'email' => $email,
         ];
 
-        // Allow add-ons (e.g. Pro) to inject their own dashboard notices, such as
-        // a "Pro requires a newer WP Social Ninja version" compatibility warning.
-        //
-        // The filter must return a list (array) of notices. Each notice is an
-        // associative array with the following shape:
-        //
-        //   [
-        //       'type'        => 'warning',          // optional: 'warning'|'error'|'info' (default 'warning')
-        //       'title'       => 'Plain text title', // optional: rendered as escaped text
-        //       'message'     => 'Plain text body.', // optional: rendered as escaped text (NO HTML)
-        //       'dismissible' => true,               // optional: set false to hide the close button (default true)
-        //       'actions'     => [                    // optional: call-to-action links
-        //           [
-        //               'label'  => 'Update now',    // link text (falls back to the url)
-        //               'url'    => 'https://...',    // http(s) or relative URL; unsafe schemes are dropped
-        //               'target' => '_blank',         // optional: '_blank' adds rel="noopener noreferrer"
-        //           ],
-        //       ],
-        //   ]
-        //
-        // IMPORTANT: 'title' and 'message' are rendered as plain text (no markup).
-        // Add-ons MUST NOT embed HTML in them; use the 'actions' array for links.
+        // Add-on notices: a list of ['type', 'title', 'message', 'dismissible', 'actions' =>
+        // [['label', 'url', 'target']]]. Title and message render as plain text, so add-ons
+        // must not put HTML in them. Unsafe URL schemes are dropped.
         $customNotices = apply_filters('wpsocialreviews/dashboard_notices', []);
         if (!is_array($customNotices)) {
             $customNotices = [];
+        }
+
+        if ($notices->isReconnectSnoozed()) {
+            $customNotices = array_filter($customNotices, function ($notice) {
+                return !is_array($notice) || !isset($notice['group']) || $notice['group'] !== 'reconnect';
+            });
         }
 
         wp_send_json_success([
@@ -73,7 +60,8 @@ class PlatformController extends Controller
             'displayProUpdateNotice' => $displayProUpdateNotice,
             'userData' => $notices->maybeDisplayNewsletter() ? $userData : [],
             'displayNewsletter' => empty($hasAdminErrors) && $notices->maybeDisplayNewsletter(),
-            'customNotices' => array_values($customNotices)
+            'customNotices' => array_values($customNotices),
+            'googleReconnectPlatforms' => $notices->getGoogleReconnectPlatforms()
         ], 200);
     }
 
@@ -94,7 +82,8 @@ class PlatformController extends Controller
         wp_send_json_success([
             'displayNotice' => $notices->getNoticesStatus(),
             'displayOptInNotice' => $notices->maybeDisplayOptIn(),
-            'displayNewsletter' => !($value === '1')
+            'displayNewsletter' => !($value === '1'),
+            'googleReconnectPlatforms' => $notices->getGoogleReconnectPlatforms()
         ], 200);
     }
 
@@ -135,11 +124,9 @@ class PlatformController extends Controller
 
     public function getStatuses()
     {
-        // Get saved statuses
         $statuses = get_option('wpsr_statuses', []);
 
-        // If platforms_statuses doesn't exist, initialize it as an empty array
-        // The Vue component will provide the defaults
+        // The Vue component supplies the defaults.
         if (!isset($statuses['platforms_statuses'])) {
             $statuses['platforms_statuses'] = [
                 'feeds' => [],
@@ -160,10 +147,8 @@ class PlatformController extends Controller
             return $this->sendError(['message' => 'Invalid statuses']);
         }
 
-        // Get existing statuses to preserve other data
         $existingStatuses = get_option('wpsr_statuses', []);
 
-        // Prepare the platforms_statuses structure
         $platformsStatuses = [
             'platforms_statuses' => [
                 'feeds' => [],
@@ -172,20 +157,17 @@ class PlatformController extends Controller
             ]
         ];
 
-        // Types to process
         $types = ['feeds', 'reviews', 'chats'];
 
         foreach ($types as $type) {
             if (isset($statuses[$type]) && is_array($statuses[$type])) {
                 foreach ($statuses[$type] as $platform => $value) {
-                    // Sanitize each value using WP REST sanitizer for booleans
                     $clean = rest_sanitize_boolean($value);
                     $platformsStatuses['platforms_statuses'][$type][$platform] = $clean;
                 }
             }
         }
 
-        // Merge with existing data to preserve other keys
         $finalStatuses = array_merge($existingStatuses, $platformsStatuses);
 
         update_option('wpsr_statuses', $finalStatuses);

@@ -54,19 +54,15 @@ export const ytMixin = {
         htmlSubstring(text) {
             if (!text) return '';
 
-            // Get translated strings for Read More/Less if available
             const readMoreText = this.$t ? this.$t('Read More') : 'Read More';
             const readLessText = this.$t ? this.$t('Read Less') : 'Read Less';
 
-            // Character limit for truncation
             const characterLimit = 100;
 
-            // If text is shorter than the limit, return it as is
             if (text.length <= characterLimit) {
                 return text;
             }
 
-            // Regular expression to match HTML tags
             const tagRegex = /<([^>\s]*)[^>]*>/g;
             let match;
             let stack = [];
@@ -75,36 +71,28 @@ export const ytMixin = {
             let charCount = 0;
             let indexMap = [];
 
-            // Process HTML tags and track their positions
             while ((match = tagRegex.exec(text)) !== null && charCount < characterLimit) {
-                // Get text between last tag and this one
                 const textBetween = text.substring(lastIndex, match.index);
 
-                // Count only visible characters (not tags)
                 const visibleChars = Math.min(textBetween.length, characterLimit - charCount);
 
-                // Add text between tags to result
                 result += textBetween.substring(0, visibleChars);
                 charCount += visibleChars;
 
-                // Store tag positions for later analysis
                 indexMap.push({ 'first': match.index, 'second': tagRegex.lastIndex });
 
-                // Add the tag to result
                 result += match[0];
 
-                // Update last position
                 lastIndex = tagRegex.lastIndex;
             }
 
-            // Add remaining text if we haven't reached the limit
             if (charCount < characterLimit) {
                 const remainingText = text.substring(lastIndex);
                 const visibleChars = Math.min(remainingText.length, characterLimit - charCount);
                 result += remainingText.substring(0, visibleChars);
             }
 
-            // Find a good breaking point based on tag positions
+            // Don't cut inside a tag that straddles the limit.
             let breakPoint = characterLimit;
             for (let i = 1; i < indexMap.length; i++) {
                 if (indexMap[i - 1].first < characterLimit && indexMap[i].second > characterLimit) {
@@ -113,11 +101,9 @@ export const ytMixin = {
                 }
             }
 
-            // Create excerpt and hidden content
             const excerpt = text.substring(0, breakPoint);
             const hideContent = text.substring(breakPoint);
 
-            // Create final content with read more/less buttons
             const addContent = excerpt +
                 "<span class='wpsr_add_read_more_slice_content'>" + hideContent + "</span>" +
                 "<span class='wpsr_read_more' tabindex='0'>" + readMoreText + "</span>" +
@@ -126,7 +112,7 @@ export const ytMixin = {
             return addContent;
         },
         get_header_avatar(account) {
-            if(account.avatar && account.avatar.local_avatar.length) {
+            if(account.avatar && account.avatar.local_avatar && account.avatar.local_avatar.length) {
                 return account.avatar.local_avatar;
             }
             if(account.items && account.items.length) {

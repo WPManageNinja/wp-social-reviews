@@ -565,7 +565,7 @@ class FacebookWidget extends OxygenEl
         if ( isset( $_GET['ct_builder'] ) ) {
             wp_enqueue_style(
                 'wp_social_ninja_fb',
-                WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_fb.css',
+                WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_fb' . (is_rtl() ? '-rtl' : '') . '.css',
                 array(),
                 WPSOCIALREVIEWS_VERSION
             );

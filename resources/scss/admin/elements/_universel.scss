@@ -879,9 +879,9 @@ input.readonly, input[readonly], textarea.readonly, textarea[readonly] {
   justify-content: center;
   align-items: center;
   gap: 2px;
-  border-radius: var(--radius-8, 8px);
-  border: 1px solid var(--stroke-soft-200, #E1E4EA);
-  background: var(--bg-white-0, #FFF);
+  border-radius: var(--wpsr-radius-md, 8px);
+  border: 1px solid var(--wpsr-primary-border, #E1E4EA);
+  background: var(--wpsr-primary-bg, #FFF);
   box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
 }
 .wpsr-upgrade-section {
@@ -1192,4 +1192,15 @@ input.readonly, input[readonly], textarea.readonly, textarea[readonly] {
   .wpsr-templates-table {
     min-width: 600px;
   }
+}
+
+.wpsr-visually-hidden{
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }

@@ -29,6 +29,7 @@ class GoogleMyBusiness extends BaseReview
     protected $authFlow = 'reviews';
     public $nextPageToken = '';
     public $locationNextPageToken = '';
+    private $fetchedAllReviews = true;
 
     public function __construct()
     {
@@ -187,6 +188,7 @@ class GoogleMyBusiness extends BaseReview
 
     public function verifyCredential($apiKey, $placeId)
     {
+        $this->extendSyncTimeLimit();
         $data = $this->fetchRemoteReviews($apiKey, $placeId);
 
         if (is_wp_error($data)) {
@@ -205,7 +207,8 @@ class GoogleMyBusiness extends BaseReview
         $business_info = $this->saveBusinessInfo($apiKey, $placeId, $data);
 
         $this->placeId = $placeId;
-        $this->reviewDelete($data['reviews'],$placeId);
+        $windowStart = $this->fetchedAllReviews ? null : $this->oldestReviewTime($data['reviews']);
+        $this->reviewDelete($data['reviews'], $placeId, $windowStart);
         $this->syncRemoteReviews($data['reviews']);
 
         $totalFetchedReviews = count($data['reviews']);
@@ -225,33 +228,16 @@ class GoogleMyBusiness extends BaseReview
 
     public function fetchRemoteReviews($apiKey, $placeId)
     {
-        $fetchUrl = $this->remoteBaseUrl.$placeId.'/reviews';
+        $this->fetchedAllReviews = true;
 
         $args = array(
             'headers' => array(
                 'Authorization' => 'Bearer ' . $apiKey,
             ),
+            'timeout' => 60,
         );
 
-        $response = wp_remote_get($fetchUrl, $args);
-
-        if (is_wp_error($response)) {
-            return $response;
-        }
-
-        $data = json_decode(wp_remote_retrieve_body($response), true);
-
-        $limit = apply_filters('wpsocialreviews/gmb_reviews_limit', 10);
-        $limit = $limit > 200 ? 200 : $limit;
-        // Only paginate (use nextPageToken) when we need more than the first page (50 reviews)
-        if (Arr::get($data, 'nextPageToken') && $limit > 50) {
-            $data['reviews'] = $this->getNextPageResponse($placeId, $data, $args);
-        }
-
-        if(Arr::get($data, 'error')){
-            $error_message = Arr::get($data, 'error.message');
-            throw new \Exception(esc_html($error_message));
-        }
+        $data = $this->requestReviewsPage($placeId, '', $args);
 
         if (empty($data) || empty($data['reviews'])) {
             throw new \Exception(
@@ -259,36 +245,103 @@ class GoogleMyBusiness extends BaseReview
             );
         }
 
-        $limit = apply_filters('wpsocialreviews/gmb_reviews_limit', 10);
-        $limit = $limit > 200 ? 200 : $limit;
+        $limit = $this->resolveReviewsLimit();
+
+        if (Arr::get($data, 'nextPageToken') && count($data['reviews']) < $limit) {
+            $data['reviews'] = $this->getNextPageResponse($placeId, $data, $args, $limit);
+        } elseif (Arr::get($data, 'nextPageToken')) {
+            $this->fetchedAllReviews = false;
+        }
+
+        if (count($data['reviews']) > $limit) {
+            $this->fetchedAllReviews = false;
+        }
+
         $data['reviews'] = array_slice($data['reviews'], 0, $limit);
 
         return $data;
     }
 
-    public function getNextPageResponse($placeId, $data, $args)
+    /**
+     * Follows nextPageToken until the limit or the last page. A failed page throws, so a
+     * partial list is never reconciled as if it were every review.
+     */
+    public function getNextPageResponse($placeId, $data, $args, $limit = null)
     {
-        $reviews = Arr::get($data, 'reviews');
+        $limit = $limit === null ? $this->resolveReviewsLimit() : $limit;
+        $reviews = (array) Arr::get($data, 'reviews', []);
         $this->nextPageToken = Arr::get($data, 'nextPageToken');
-        $totalReviewCount = Arr::get($data, 'totalReviewCount');
-        $limit = apply_filters('wpsocialreviews/gmb_reviews_limit', 10);
-        $limit = $limit > 200 ? 200 : $limit;
-        $total = $totalReviewCount >= $limit ? $limit : $totalReviewCount;
-        $pageSize = 50;
-        $pages = ceil($total/$pageSize);
-        $x = 1;
-        while($x < $pages) {
-            $x++;
-            $fetchUrl = $this->remoteBaseUrl.$placeId.'/reviews?pageToken='.$this->nextPageToken;
-            $response = wp_remote_get($fetchUrl, $args);
-            if (is_wp_error($response)) {
-                return $response;
-            }
-            $data = json_decode(wp_remote_retrieve_body($response), true);
-            $this->nextPageToken = Arr::get($data, 'nextPageToken');
-            $reviews = array_merge($reviews, Arr::get($data, 'reviews'));
+
+        while (!empty($this->nextPageToken) && count($reviews) < $limit) {
+            $page = $this->requestReviewsPage($placeId, $this->nextPageToken, $args);
+            $this->nextPageToken = Arr::get($page, 'nextPageToken');
+            $reviews = array_merge($reviews, (array) Arr::get($page, 'reviews', []));
         }
+
+        $this->fetchedAllReviews = empty($this->nextPageToken);
+
         return $reviews;
+    }
+
+    private function requestReviewsPage($placeId, $pageToken, $args)
+    {
+        $query = [
+            'pageSize' => 50,
+            'orderBy'  => 'updateTime desc',
+        ];
+        if (!empty($pageToken)) {
+            $query['pageToken'] = $pageToken;
+        }
+
+        $response = wp_remote_get($this->remoteBaseUrl . $placeId . '/reviews?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986), $args);
+
+        if (is_wp_error($response)) {
+            throw new \Exception(esc_html($response->get_error_message()));
+        }
+
+        $data = json_decode(wp_remote_retrieve_body($response), true);
+
+        if (Arr::get($data, 'error')) {
+            throw new \Exception(esc_html(Arr::get($data, 'error.message')));
+        }
+
+        return is_array($data) ? $data : [];
+    }
+
+    /** A sync is one request per 50 reviews. Raises a short limit; never shortens a longer or unlimited one. */
+    private function extendSyncTimeLimit()
+    {
+        $seconds = absint(apply_filters('wpsocialreviews/reviews_sync_time_limit', 300, $this->platform));
+        $current = (int) ini_get('max_execution_time');
+        if ($current > 0 && $current < $seconds && function_exists('set_time_limit')) {
+            @set_time_limit($seconds);
+        }
+    }
+
+    /** Free keeps its 200 ceiling; with Pro, the filter's value is final. */
+    private function resolveReviewsLimit()
+    {
+        $limit = absint(apply_filters('wpsocialreviews/gmb_reviews_limit', 10));
+
+        if (!defined('WPSOCIALREVIEWS_PRO')) {
+            $limit = min($limit, 200);
+        }
+
+        return max(1, $limit);
+    }
+
+    /** Oldest review_time in a fetch, in the format formatData() stores. */
+    private function oldestReviewTime($reviews)
+    {
+        $oldest = null;
+        foreach ($reviews as $review) {
+            $time = strtotime((string) Arr::get($review, 'updateTime', ''));
+            if ($time && ($oldest === null || $time < $oldest)) {
+                $oldest = $time;
+            }
+        }
+
+        return $oldest === null ? null : gmdate('Y-m-d H:i:s', $oldest);
     }
 
     public function formatData($review, $index)
@@ -328,6 +381,7 @@ class GoogleMyBusiness extends BaseReview
             'headers' => array(
                 'Authorization' => 'Bearer ' . $apiKey,
             ),
+            'timeout' => 60,
         );
 
         $account = explode('/', $placeId);
@@ -493,6 +547,7 @@ class GoogleMyBusiness extends BaseReview
 
         $token['created_at'] = Arr::get($token, 'created_at', time());
         $token['version'] = 'latest';
+        $token['auth_app'] = 'v2';
 
         update_option('wpsr_reviews_google_verification_configs', $this->encryptTokenConfig($token), 'no');
 
@@ -538,9 +593,42 @@ class GoogleMyBusiness extends BaseReview
         $locationLists      = get_option('wpsr_reviews_google_locations_list');
         // $connected_accounts = get_option('wpsr_reviews_google_connected_accounts');
 
-        return [
+        $info = [
             'location_lists' => $locationLists,
         ];
+
+        if (static::usesPreviousAuthApp()) {
+            $info['deprecation_notice'] = __('This Google connection uses our previous authorization app, which we will retire soon. Click Connect More Account → Connect Google Business Profile and sign in with the same Google account to switch. Your templates and settings stay as they are.', 'wp-social-reviews');
+        }
+
+        return $info;
+    }
+
+    /**
+     * Whether a connected OAuth business still runs on the previous OAuth app.
+     *
+     * @return bool
+     */
+    public static function usesPreviousAuthApp()
+    {
+        $token = (new DataProtector())->maybe_decrypt_tokens(get_option('wpsr_reviews_google_verification_configs', []));
+        if (!is_array($token) || empty($token['refresh_token']) || Arr::get($token, 'auth_app') === 'v2') {
+            return false;
+        }
+
+        // Removing every business leaves the token behind, so require an OAuth business too.
+        $businesses = get_option('wpsr_reviews_google_settings', []);
+        if (!is_array($businesses)) {
+            return false;
+        }
+
+        foreach ($businesses as $key => $business) {
+            if (is_array($business) && strpos((string) $key, 'accounts/') === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function getNextPageAccountsResponse($headers, $accountsData)
@@ -624,8 +712,7 @@ class GoogleMyBusiness extends BaseReview
     {
         $locations = Arr::get($data, 'locations', []);
         $this->locationNextPageToken = Arr::get($data, 'nextPageToken');
-        $total = apply_filters('wpsocialreviews/gmb_locations_limit', 200);
-        $total = $total > 200 ? 200 : $total;
+        $total = max(1, absint(apply_filters('wpsocialreviews/gmb_locations_limit', 200)));
         $pageSize = 100;
         $pages = ceil($total/$pageSize);
         $x = 1;

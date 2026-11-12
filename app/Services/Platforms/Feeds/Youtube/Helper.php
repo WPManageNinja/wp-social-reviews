@@ -85,14 +85,12 @@ class Helper
     }
 
     /**
-     *
      * Resolve the header layout CSS class from the feed settings.
      * 'classic' keeps the original header, 'minimal' renders the flat header.
      *
      * @param $feed_settings
      *
      * @return string
-     *
      **/
     public static function getHeaderLayoutClass($feed_settings = [])
     {

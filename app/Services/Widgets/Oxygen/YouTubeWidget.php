@@ -24,9 +24,6 @@ class YouTubeWidget extends OxygenEl
     }
 
     function controls() {
-        /*****************************
-         * template list
-         *****************************/
         $platforms = ['youtube'];
         $templates = Helper::getTemplates($platforms);
         $templates_control = $this->addOptionControl(
@@ -41,14 +38,8 @@ class YouTubeWidget extends OxygenEl
         );
         $templates_control->rebuildElementOnChange();
 
-        /*****************************
-         * Header
-         *****************************/
         $yt_header_section = $this->addControlSection( "wpsr_yt_header_section", __("Header", "wp-social-reviews"), "assets/icon.png", $this );
 
-        /*****************************
-         * Header Channel Name
-         *****************************/
         $yt_header_cn = $yt_header_section->addControlSection( "wpsr_yt_header_cn_section", __("Channel Name", "wp-social-reviews"), "assets/icon.png", $this );
         $yt_header_cn->addStyleControls(
             array(
@@ -83,9 +74,6 @@ class YouTubeWidget extends OxygenEl
             )
         );
 
-        /*****************************
-         * Header statistics
-         *****************************/
         $yt_header_stat = $yt_header_section->addControlSection( "wpsr_yt_header_stat_section", __("Statistics", "wp-social-reviews"), "assets/icon.png", $this );
         $yt_header_stat->addStyleControls(
             array(
@@ -120,9 +108,6 @@ class YouTubeWidget extends OxygenEl
             )
         );
 
-        /*****************************
-         * Header description
-         *****************************/
         $yt_header_des = $yt_header_section->addControlSection( "wpsr_yt_header_des_section", __("Description", "wp-social-reviews"), "assets/icon.png", $this );
         $yt_header_des->addStyleControls(
             array(
@@ -150,9 +135,6 @@ class YouTubeWidget extends OxygenEl
             )
         );
 
-        /*****************************
-         * Header follow btn
-         *****************************/
         $yt_header_fb = $yt_header_section->addControlSection( "wpsr_yt_header_fb_section", __("Subscribe Button", "wp-social-reviews"), "assets/icon.png", $this );
         $yt_header_fb_fz = $yt_header_fb->addStyleControl(
             array(
@@ -202,9 +184,6 @@ class YouTubeWidget extends OxygenEl
             '.wpsr-yt-header-subscribe-btn a'
         )->whiteList();
 
-        /*****************************
-         * Header Box
-         *****************************/
         $yt_header_box = $yt_header_section->addControlSection( "wpsr_yt_header_box_section", __("Box", "wp-social-reviews"), "assets/icon.png", $this );
         $yt_header_box->addStyleControls(
             array(
@@ -244,9 +223,6 @@ class YouTubeWidget extends OxygenEl
             '.wpsr-yt-header .wpsr-yt-header-inner'
         )->whiteList();
 
-        /*****************************
-         * Title
-         *****************************/
         $yt_title_section = $this->addControlSection( "wpsr_yt_title_section", __("Title", "wp-social-reviews"), "assets/icon.png", $this );
         $yt_title_section->typographySection( __('Typography', 'wp-social-reviews'), '.wpsr-yt-video-info h3, .wpsr-yt-video-info h3 a', $this );
         $yt_title_section->addPreset(
@@ -256,9 +232,6 @@ class YouTubeWidget extends OxygenEl
             '.wpsr-yt-video-info h3 a'
         )->whiteList();
 
-        /*****************************
-         * Statistics
-         *****************************/
         $yt_statistics_section = $this->addControlSection( "wpsr_yt_statistics_section", __("Statistics", "wp-social-reviews"), "assets/icon.png", $this );
         $yt_statistics_section->typographySection( __('Typography', 'wp-social-reviews'), '.wpsr-yt-video-info .wpsr-yt-video-statistics .wpsr-yt-video-statistic-item', $this );
 
@@ -269,9 +242,6 @@ class YouTubeWidget extends OxygenEl
             '.wpsr-yt-video-statistic-item'
         )->whiteList();
 
-        /*****************************
-         * description
-         *****************************/
         $yt_des_section = $this->addControlSection( "wpsr_yt_description_section", __("Description", "wp-social-reviews"), "assets/icon.png", $this );
         $yt_des_section->typographySection( __('Typography', 'wp-social-reviews'), '.wpsr-yt-video-description', $this );
         $yt_des_section->addPreset(
@@ -281,9 +251,6 @@ class YouTubeWidget extends OxygenEl
             '.wpsr-yt-video-description'
         )->whiteList();
 
-        /*****************************
-         * Pagination
-         *****************************/
         $pagination_section = $this->addControlSection( "wpsr_ig_pagination_section", __("Pagination", "wp-social-reviews"), "assets/icon.png", $this );
         $pagination_section->typographySection( __('Typography', 'wp-social-reviews'), '.wpsr_more', $this );
         $pagination_section->addStyleControls(
@@ -325,9 +292,6 @@ class YouTubeWidget extends OxygenEl
             '.wpsr_more'
         )->whiteList();
         
-        /*****************************
-         * Box
-         *****************************/
         $yt_box_section = $this->addControlSection( "wpsr_yt_box_section", __("Item Box", "wp-social-reviews"), "assets/icon.png", $this );
         $selector = '.wpsr-yt-video';
         $yt_box_section->addStyleControls(
@@ -394,7 +358,7 @@ class YouTubeWidget extends OxygenEl
         if ( isset( $_GET['ct_builder'] ) ) {
             wp_enqueue_style(
                 'wp_social_ninja_yt',
-                WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_yt.css',
+                WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_yt' . (is_rtl() ? '-rtl' : '') . '.css',
                 array(),
                 WPSOCIALREVIEWS_VERSION
             );

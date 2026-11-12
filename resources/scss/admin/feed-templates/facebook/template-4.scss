@@ -16,15 +16,16 @@ $wpsr-fb-overlay-avatar: 38px;
   }
 }
 
-// The glyph is a brand-blue square with the "f" punched out of it, which reads on the white
-// cards it was drawn for but shows the photo through the letter here. So a white plate goes
-// behind it, cut to the square exactly - the punched-out letter is all that picks it up.
+// The glyph is a blue square with the "f" cut out, so over a photo the photo shows through
+// the letter. A white plate cut to the square sits behind it to fill the letter.
 @mixin wpsr-fb-overlay-brand-icon {
   color: #0866ff;
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.55));
   // The plate is a neutral object next to the glyph, so RTL would otherwise reorder the two.
+  /*!rtl:ignore*/
   direction: ltr;
   unicode-bidi: isolate;
+  // That ltr box also needs its two margins left unflipped by the generated -rtl.css (rtl:ignore below).
 
   // The square measures 438/512em, inset 37/512em, corner 82/512em. It sits on the baseline
   // by way of the bottom margin, which is where an empty inline-block takes its baseline.
@@ -33,6 +34,7 @@ $wpsr-fb-overlay-avatar: 38px;
     display: inline-block;
     width: 0.8555em;
     height: 0.8555em;
+    /*!rtl:ignore*/
     margin-left: 0.0723em;
     margin-bottom: 0.0723em;
     border-radius: 0.1602em;
@@ -48,6 +50,7 @@ $wpsr-fb-overlay-avatar: 38px;
     line-height: 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /*!rtl:ignore*/
     margin-left: -0.9278em;
   }
 }
@@ -246,8 +249,7 @@ $wpsr-fb-overlay-avatar: 38px;
     // The card is a link; the overlay must not eat the click.
     pointer-events: none;
 
-    // Without the blur the wash is all there is, and a sharp photo reads straight through
-    // it, so it has to be near-opaque instead.
+    // Without the blur a sharp photo reads straight through, so the wash is near-opaque.
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
       background-color: rgba(8, 10, 14, 0.93);
     }

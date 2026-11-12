@@ -76,6 +76,8 @@ class ImageOptimizationHandler extends BaseImageOptimizationHandler
             $decodedMeta   = json_decode($encodedMeta, true);
             $feed_settings = Arr::get($decodedMeta, 'feed_settings', []);
 
+            $formattedMeta = [];
+
             $feedConfigs = null;
             if($this->platform == 'instagram'){
                 $formattedMeta = Config::formatInstagramConfig($feed_settings, array());
@@ -168,7 +170,8 @@ class ImageOptimizationHandler extends BaseImageOptimizationHandler
                 $account_ids = Arr::get($feed_settings, 'source_settings.selected_accounts', []);
             } else if ($this->platform == 'instagram') {
                 $connected_ids            = (new Common())->findConnectedAccounts();
-                $account_ids = Arr::get($feed_settings, 'source_settings.account_ids', []);
+                // Formatted settings, so a template saved without account_ids (e.g. from onboarding) gets its default account.
+                $account_ids = Arr::get($formattedMeta, 'feed_settings.source_settings.account_ids', []);
             } else if ($this->platform == 'tiktok') {
                 $connected_ids =  apply_filters('wpsocialreviews/get_connected_source_list',[]);
                 $account_ids = Arr::get($feed_settings, 'open_id', []);
@@ -454,7 +457,7 @@ class ImageOptimizationHandler extends BaseImageOptimizationHandler
                 $uploadDir = $this->getUploadDir($this->platform) . '/' . $userName;
                 $cacheHandler->clearCache();
             } else {
-                (new OptimizeImage())->deleteMediaByUserName($userName);
+                (new OptimizeImage())->deleteMediaByUserName($userName, $this->platform);
                 $uploadDir = $this->getUploadDir($this->platform) . '/' . $userName;
                 $cacheHandler->clearCacheByAccount($userId);
             }
@@ -513,7 +516,7 @@ class ImageOptimizationHandler extends BaseImageOptimizationHandler
                     (new OptimizeImage())->deleteMediaByPlatform($platform);
                     $uploadDir = $this->getUploadDir($platform) . '/' . $userName;
                 } else {
-                    (new OptimizeImage())->deleteMediaByUserName($userName);
+                    (new OptimizeImage())->deleteMediaByUserName($userName, $platform);
                     $uploadDir = $this->getUploadDir($platform) . '/' . $userName;
                 }
                 $this->deleteDirectory($uploadDir, $image_id);
@@ -601,7 +604,7 @@ class ImageOptimizationHandler extends BaseImageOptimizationHandler
                 $userNames[] = Arr::get($item, 'snippet.channelId');
             }
         }
-        $resized_images = (new OptimizeImage())->getMediaIds($ids, $userNames);
+        $resized_images = (new OptimizeImage())->getMediaIds($ids, $userNames, $this->platform);
         return array_unique($resized_images);
     }
 

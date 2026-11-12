@@ -2,6 +2,7 @@
 @import './follow_button';
 // After ./follow_button so the minimal layout's equal-weight button rules win.
 @import './header-layout-minimal';
+@import './header-layout-inline';
 @import '../../elements/feed-popup';
 .wpsr-instagram-slider-activate{
   //.slick-list{
@@ -332,4 +333,186 @@
     position: initial;
     transform: initial;
   }
+}
+
+// Caption links sit on the dark hover overlay in Classic Grid (and Author Bar, which reuses it).
+.wpsr-ig-feed-template1 .wpsr-ig-post .wpsr-ig-post-info .wpsr-ig-post-caption p a{
+  color: #fff;
+  opacity: 0.85;
+}
+
+// Author row of templates 5 and 6, which reuse the markup of templates 2 and 1.
+.wpsr-ig-post-author{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  .wpsr-ig-post-author-avatar{
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px #dbdbdb;
+  }
+  .wpsr-ig-post-author-details{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    line-height: 1.25;
+  }
+  .wpsr-ig-post-author-name{
+    font-size: 14px;
+    font-weight: 600;
+    color: #262626;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .wpsr-ig-post-author-time{
+    font-size: 12px;
+    color: #8e8e8e;
+  }
+}
+
+.wpsr-ig-feed-template5{
+  .wpsr-ig-post{
+    border-radius: 12px;
+    border: 1px solid #efefef;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+    .wpsr-ig-post-info{
+      padding: 10px 16px 16px;
+      align-items: flex-start;
+    }
+    .wpsr-shoppable-button{
+      margin: 12px 16px 0;
+      border-radius: 8px;
+    }
+    .wpsr-ig-post-info .wpsr-ig-post-caption p{
+      text-align: left;
+    }
+  }
+  .wpsr-ig-post-author{
+    padding: 14px 16px 0;
+  }
+}
+
+// List layout: one post per row. Card templates (Caption Card, Author Card) put the photo
+// beside the text; image-only templates simply stack.
+.wpsr-instagram-list-activate{
+  [class*="wpsr-col"]{
+    flex: 0 0 100%;
+    max-width: 100%;
+    width: 100%;
+  }
+  .wpsr-ig-post{
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  &.wpsr-ig-feed-template2 .wpsr-ig-post{
+    max-width: 760px;
+    .wpsr-ig-post-info{
+      align-items: flex-start;
+    }
+    .wpsr-ig-post-info .wpsr-ig-post-caption p{
+      text-align: left;
+    }
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    grid-template-rows: auto auto 1fr;
+    align-items: start;
+    > :first-child{
+      grid-column: 1;
+      grid-row: 1 / -1;
+      position: relative;
+    }
+    .wpsr-shoppable-button{
+      margin: 16px 16px 0;
+      border-radius: 8px;
+    }
+    > :not(:first-child){
+      grid-column: 2;
+    }
+    @media screen and (max-width: 600px){
+      display: block;
+    }
+  }
+}
+
+.wpsr-ig-feed-template6{
+  .wpsr-ig-post{
+    border-radius: 10px;
+  }
+  .wpsr-ig-post-author{
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 40px 12px 12px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.65));
+    pointer-events: none;
+    .wpsr-ig-post-author-avatar{
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+    }
+    .wpsr-ig-post-author-name,
+    .wpsr-ig-post-author-time{
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    }
+    .wpsr-ig-post-author-time{
+      opacity: 0.85;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference){
+  .wpsr-ig-feed-template5 .wpsr-ig-post,
+  .wpsr-ig-feed-template5 .wpsr-ig-post-media img,
+  .wpsr-ig-feed-template6 .wpsr-ig-post-media img,
+  .wpsr-ig-feed-template6 .wpsr-ig-post-author{
+    transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.45s ease, opacity 0.3s ease;
+  }
+  .wpsr-ig-feed-template6 .wpsr-ig-post .wpsr-ig-post-info > *{
+    transform: translateY(10px);
+    transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .wpsr-ig-feed-template5 .wpsr-ig-post:hover,
+  .wpsr-ig-feed-template5 .wpsr-ig-post:focus-within{
+    transform: translateY(-4px);
+    box-shadow: 0 14px 28px -10px rgba(16, 24, 40, 0.22);
+  }
+  .wpsr-ig-feed-template5 .wpsr-ig-post:hover .wpsr-ig-post-media img,
+  .wpsr-ig-feed-template6 .wpsr-ig-post:hover .wpsr-ig-post-media img{
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+  .wpsr-ig-feed-template6 .wpsr-ig-post:hover,
+  .wpsr-ig-feed-template6 .wpsr-ig-post:focus-within{
+    .wpsr-ig-post-author{
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    .wpsr-ig-post-info > *{
+      transform: translateY(0);
+    }
+  }
+}
+
+// Post time on Classic Grid's hover overlay and under Caption Card's image.
+.wpsr-ig-post .wpsr-ig-post-info .wpsr-ig-post-date{
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.85);
+}
+// Classic Grid centres the Buy button over the overlay, so the date moves to the bottom.
+.wpsr-ig-post .wpsr-ig-post-info .wpsr-shoppable-button ~ .wpsr-ig-post-date{
+  position: absolute;
+  bottom: 16px;
+  margin-top: 0;
+}
+.wpsr-ig-feed-template2 .wpsr-ig-post .wpsr-ig-post-info .wpsr-ig-post-date{
+  margin-top: 5px;
+  color: #737373;
 }

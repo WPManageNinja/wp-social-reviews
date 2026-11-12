@@ -49,6 +49,7 @@ a.wpsr-reviewer-image-animation::before {
   background: linear-gradient(90deg, #eee 10%, #ddd 18%, #eee 33%);
   background-size: 800px 104px;
 }
+// The drawer mirrors in RTL (opens from the left); _badge.scss moves the floating badges' 365px step-aside with it.
 .wpsr-reviews-wrapper.wpsr-reviews-layout-badge,
 .wpsr-reviews-wrapper.wpsr-reviews-layout-notification{
   position: fixed !important;
@@ -106,9 +107,12 @@ a.wpsr-reviewer-image-animation::before {
   .wpsr-popup-collapse{
     display: inline-flex;
     text-decoration: none;
+    // A right glyph turned to point down; mirroring the rotation would point it up.
+    /*!rtl:ignore*/
     transform: rotate(90deg);
     position: absolute;
     z-index: 2;
+    /*!rtl:ignore*/
     right: -10px;
     top: -15px;
     font-size: 28px;
@@ -519,6 +523,9 @@ a.wpsr-reviewer-image-animation::before {
   color: #1194dc;
   cursor: pointer;
   padding-left: 4px;
+  // The text around it is dir="auto"; logical sides keep the gap before the link in either direction.
+  padding-inline-start: 4px;
+  padding-inline-end: 0;
 }
 .wpsr-has-equal-height,
 .wpsr-reviews-content-length-deactive{
@@ -1491,6 +1498,8 @@ a.wpsr-reviewer-image-animation::before {
   }
 }
 
+// Already written for RTL, so the generated -rtl.css must not flip it back.
+/*!rtl:begin:ignore*/
 .rtl .wpsr-reviews-sort-toolbar{
   .wpsr-reviews-sort-message{
     text-align: left;
@@ -1515,6 +1524,7 @@ a.wpsr-reviewer-image-animation::before {
     left: 12px;
   }
 }
+/*!rtl:end:ignore*/
 
 @mixin wpsr-popup-sort-toolbar {
   .wpsr-reviews-sort-toolbar{

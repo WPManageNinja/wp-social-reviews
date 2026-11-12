@@ -191,7 +191,8 @@ class TwitterFeed extends BaseFeed
             'message'          => __('Success', 'wp-social-reviews'),
             'settings'         => $settings,
             'template_details' => $templateDetails,
-            'elements'  => $twitterConfig->getStyleElement()
+            'elements'  => $twitterConfig->getStyleElement(),
+            'default_styles' => $twitterConfig->formatStylesConfig([], $postId)
         ], 200);
     }
 

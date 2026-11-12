@@ -33,7 +33,8 @@
                             :class="[
                               template_meta.templateType === 'badge' ? 'wpsr-reviews-layout-badge' : '',
                               template_meta.templateType === 'notification' ? 'wpsr-reviews-layout-notification' : '',
-                              template_meta.templateType === 'notification' ? 'wpsr-'+template_meta.notification_settings.notification_position : '',
+                              wpsrNotificationPositionClass,
+                              has_pro && template_meta.templateType === 'slider' && template_meta.layout_style === 'score_slider' && template_meta.show_header === 'true' ? 'wpsr-reviews-layout-style-score_slider' : '',
                               `wpsr-reviews-${this.$route.params.template_id}`
                             ]"
                       >
@@ -80,6 +81,7 @@
                           :is="badge_component"
                           :template_meta="template_meta"
                           :businessInfo='business_info'
+                          :reviews="allFilteredReviews"
                       />
                     </div>
                     <div v-if="!allFilteredReviews.length && !errors.length && !(template_meta && template_meta.show_header === 'true')">
@@ -135,13 +137,14 @@
                     <el-tab-pane :label="!has_pro ? $t('Style') + ' ' : $t('Style')" name="style" class="wpsr-element-tab-item">
                       <template v-if="!has_pro" #label>
                         <span>{{$t('Style')}}</span>
-                        <span style="vertical-align: middle; margin-left: 4px;">
+                        <span style="vertical-align: middle; margin-inline-start: 4px;">
                           <ProCrownIcon :width="18" :height="18" />
                         </span>
                       </template>
 
                       <el-collapse accordion v-model="activeNames" v-if="template_meta">
                         <div class="wpsr-styling-divider"/>
+                        <StyleResetButton :styles_config="template_meta ? template_meta.styles_config : null" :default_styles="default_styles"/>
                         <ReviewsStyleEditor
                             v-if="template_meta.styles_config"
                             :feed_config="template_meta.styles_config"
@@ -177,6 +180,7 @@ import {reviewsMixin} from "../../../mixins/reviewsMixin";
 import {jsLibraryMixin} from "../../../mixins/jsLibraryMixin";
 import EditorHeader from "../../pieces/EditorHeader";
 import ReviewsStyleEditor from "./editor-ui/ReviewsStyleEditor";
+import StyleResetButton from "../../core-ui/editor/StyleResetButton.vue";
 import EditorViewInfoBar from '../../core-ui/editor/EditorViewInfoBar';
 import UpgradeToProButton from '../../views/advertise/UpgradeToProButton';
 import {helperStyle} from "../../../mixins/helperStyle";
@@ -199,6 +203,7 @@ export default {
         ReviewsConnections,
         ReviewsPlatforms,
         ReviewsStyleEditor,
+        StyleResetButton,
         EditorHeader,
         ReviewsEditor,
         StyleSection,
@@ -240,6 +245,7 @@ export default {
             infos: [],
             activeTab: 'general',
             elements: [],
+            default_styles: null,
             style: null,
             responsiveBarDevice: 'desktop',
             resized_images: [],
@@ -247,6 +253,9 @@ export default {
             revised_filtered_reviews: [],
             isUpdating: false,
             updateTimeout: null,
+            layoutInitTimer: null,
+            pendingMetaRequests: 0,
+            latestMetaRequestId: 0,
             reviws_platforms: window.WPSocialReviewsAdmin.platforms_cards,
             hasConfigurationInformation: {},
             showWelcomePopup: false,
@@ -289,11 +298,10 @@ export default {
         handleDevice (val, activeDevice) {
           this.$emit('handleDevice' , val, activeDevice);
           let template_type = this.template_meta.templateType;
-          this.curTemplateType(template_type);
           if (template_type === 'slider') {
             this.responsiveBarDevice = val;
-            this.activeCarousel();
           }
+          this.curTemplateType(template_type);
         },
         expandContent(val) {
             let that = this;
@@ -396,21 +404,40 @@ export default {
 
         curTemplateType(newValue) {
             this.templateTypeValue = newValue;
-            let that = this;
             this.loading = true;
-            if (newValue === 'slider') {
-                setTimeout(() => {
-                    that.activeCarousel();
-                },500);
-            } else if (newValue === 'masonry') {
-                setTimeout(() => {
-                    that.activeMasonry('.wpsr-active-masonry-layout', '.wpsr-all-reviews');
-                },500);
-            } else {
-              setTimeout(function() {
-                that.destroy();
-              }, 500);
+
+            // Several watchers call this in the same tick; collapse them into one layout build after the DOM patch.
+            clearTimeout(this.layoutInitTimer);
+            // A pending edit request rebuilds the layout when it lands; building now would use the old reviews.
+            if (this.pendingMetaRequests > 0) {
+                return;
             }
+            this.layoutInitTimer = setTimeout(() => {
+                this.layoutInitTimer = null;
+                if (newValue === 'slider') {
+                    this.activeCarousel();
+                } else if (newValue === 'masonry') {
+                    this.activeMasonry('.wpsr-active-masonry-layout', '.wpsr-all-reviews');
+                } else {
+                    this.destroy();
+                }
+            }, 0);
+        },
+
+        // Mirrors Review::filteredReviewsQuery(): only Slider/Marquee get "Number of Reviews" instead of the first page.
+        layoutNeedsNewReviews(fromType, toType) {
+            // Badge and notification URLs are built on the server.
+            if ([fromType, toType].some(type => type === 'badge' || type === 'notification')) {
+                return true;
+            }
+
+            const filterByTitle = this.template_meta.filterByTitle || 'all';
+            if (!this.template_meta.is_editor_initial_load || filterByTitle === 'include' || filterByTitle === 'exclude') {
+                return false;
+            }
+
+            const usesNumberOfReviews = type => type === 'slider' || type === 'marquee';
+            return usesNumberOfReviews(fromType) !== usesNumberOfReviews(toType);
         },
 
         fetchReviews() {
@@ -421,10 +448,7 @@ export default {
             this.template_meta.platform.push(platform);
           }
 
-          let that = this;
-          setTimeout(function() {
-            that.getUpdatedPostMetaWithReviews();
-          }, 500);
+          this.getUpdatedPostMetaWithReviews();
         },
 
         getPlatforms(){
@@ -603,26 +627,48 @@ export default {
         getUpdatedPostMetaWithReviews() {
             this.template_meta['previous_platforms'] = this.previous_platforms;
             this.loading = true;
+            this.pendingMetaRequests++;
+            // The sidebar stays editable while this runs, so an older response must not overwrite a newer choice.
+            const requestId = ++this.latestMetaRequestId;
             let templateId = this.$route.params.template_id;
+            const sentMetaJson = JSON.stringify(this.template_meta);
+            const sentMeta = JSON.parse(sentMetaJson);
 
             this.$post(`templates/meta/reviews/${templateId}/edit`,{
-                template_meta: JSON.stringify(this.template_meta)
+                template_meta: sentMetaJson
             }).then(response => {
+              if (requestId !== this.latestMetaRequestId) {
+                return;
+              }
               if(response && response.template_meta) {
                 if(response && response.image_settings.optimized_images === 'true') {
                   if(response.resize_data.length < response.filtered_reviews.length) {
                       this.saveReviewImages(templateId, response.template_meta['platform']);
                   }
                 }
+                // Edits that keep the same reviews (layout switches, column resets) send no request, so keep any setting changed after this one was sent.
+                const editedKeys = Object.keys(this.template_meta).filter(key => JSON.stringify(this.template_meta[key]) !== JSON.stringify(sentMeta[key]));
+                const editedValues = editedKeys.map(key => this.template_meta[key]);
                 this.formatData(response);
+                editedKeys.forEach((key, index) => {
+                  this.template_meta[key] = editedValues[index];
+                });
               }
               if(response.ai_summary_errors !== undefined) {
                 this.handleError(response.ai_summary_errors);
               }
             }).catch((errors) => {
-              this.handleError(errors);
+              if (requestId === this.latestMetaRequestId) {
+                this.handleError(errors);
+              }
             }).always(() => {
+                this.pendingMetaRequests--;
+                if (this.pendingMetaRequests > 0) {
+                  return;
+                }
                 this.loading = false;
+                // The response re-renders the reviews, so the slider/masonry must be built on the new DOM.
+                this.curTemplateType(this.template_meta.templateType);
             });
         },
 
@@ -649,6 +695,7 @@ export default {
                         this.post_types   = response.post_types;
                         this.categories   = response.categories;
                         this.elements     = response.elements;
+                        this.default_styles = response.default_styles || null;
                         this.errors       = response.errors;
                         this.infos       = response.infos;
                         this.can_enable_ai_summary = response.can_enable_ai_summary;
@@ -897,7 +944,11 @@ export default {
         'template_meta.templateType': {
             handler(val, oldTemplate) {
                 this.templateTypeValue = val;
-                this.curTemplateType(val);
+
+                // Tear down before the new layout renders: once the slides lose their class, Swiper can't clean them.
+                if (oldTemplate === 'slider' || oldTemplate === 'masonry') {
+                    this.destroy();
+                }
 
                 if((oldTemplate === 'badge' || oldTemplate === 'notification' || oldTemplate === 'slider') && (val === 'grid' || val === 'masonry')) {
                   if(this.template_meta.responsive_column_number){
@@ -912,8 +963,14 @@ export default {
                     this.template_meta.responsive_column_number.tablet = '12';
                   }
                 }
+
+                // Runs after the column changes above so the request carries them and the response can't revert them.
+                if (oldTemplate !== undefined && this.layoutNeedsNewReviews(oldTemplate, val)) {
+                    this.fetchReviews();
+                } else {
+                    this.curTemplateType(val);
+                }
             },
-            deep: true,
         },
         'template_meta.template': {
           handler(val, oldVal) {
@@ -937,28 +994,24 @@ export default {
               }
             }
           },
-          deep: true
         },
         'template_meta.responsive_column_number.desktop': {
           handler(val) {
             let template_type = this.template_meta.templateType;
             this.curTemplateType(template_type);
           },
-          deep: true
         },
         'template_meta.responsive_column_number.tablet': {
           handler(val) {
             let template_type = this.template_meta.templateType;
             this.curTemplateType(template_type);
           },
-          deep: true
         },
         'template_meta.responsive_column_number.mobile': {
           handler(val) {
             let template_type = this.template_meta.templateType;
             this.curTemplateType(template_type);
           },
-          deep: true
         },
         'template_meta.carousel_settings': {
           handler(val) {
@@ -969,6 +1022,15 @@ export default {
         },
     },
     computed: {
+      // The -rtl.css mirrors these rules with the editor layout, so the side is swapped to keep the chosen corner.
+      wpsrNotificationPositionClass() {
+        if (this.template_meta.templateType !== 'notification' || !this.template_meta.notification_settings || !this.template_meta.notification_settings.notification_position) {
+          return '';
+        }
+        const wpsrPosition = this.template_meta.notification_settings.notification_position;
+        const wpsrSide = document.documentElement.dir === 'rtl' ? wpsrPosition.replace(/left|right/, side => side === 'left' ? 'right' : 'left') : wpsrPosition;
+        return 'wpsr-' + wpsrSide;
+      },
       css() {
         if(this.style) {
           if(this.styleTag) {
@@ -1052,6 +1114,8 @@ export default {
         if (this._handleDeviceCallback) {
             this.$off('handleDeviceResponsive', this._handleDeviceCallback);
         }
+        clearTimeout(this.layoutInitTimer);
+        this.destroy();
     }
 }
 </script>

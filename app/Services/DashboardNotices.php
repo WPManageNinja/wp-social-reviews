@@ -2,6 +2,9 @@
 
 namespace WPSocialReviews\App\Services;
 
+use WPSocialReviews\App\Services\Platforms\Feeds\Youtube\YoutubeFeed;
+use WPSocialReviews\App\Services\Platforms\PlatformErrorManager;
+use WPSocialReviews\App\Services\Platforms\Reviews\GoogleMyBusiness;
 use WPSocialReviews\Framework\Support\Arr;
 
 if (!defined('ABSPATH')) {
@@ -22,10 +25,8 @@ class DashboardNotices
     private $option_name = 'wpsr_statuses';
 
     /**
-     * Build a tracked, affiliate-aware upgrade URL for a given placement.
-     *
-     * Affiliate handling stays last: the wpsocialreviews/link filter is allowed to
-     * replace the destination entirely, so it must see the finished tracked URL.
+     * Build a tracked, affiliate-aware upgrade URL for a placement. Affiliate handling
+     * runs last because the wpsocialreviews/link filter may replace the whole URL.
      *
      * @param string $content Placement, from UpgradeUrl::PLACEMENT_* or featureLock().
      * @param array|null $activeOffer Live promo, when one is running.
@@ -36,8 +37,7 @@ class DashboardNotices
         $args = [];
 
         if (!empty($activeOffer)) {
-            // Promos belong in utm_id. utm_campaign stays upgrade_pro so that
-            // "what we asked for" and "which promo was running" stay separable.
+            // Promos go in utm_id, so utm_campaign stays separable from the promo.
             $args['id'] = Arr::get($activeOffer, 'id', '');
 
             $discountCode = Arr::get($activeOffer, 'discount_code', '');
@@ -133,14 +133,19 @@ class DashboardNotices
         }
 
         if($notice_type === 'hide_pro_upgrade_notice' && $value === '1'){
-            // Store the version it was dismissed for so the notice can reappear
-            // on the next framework-upgrade cycle (see maybeDisplayProUpdateNotice).
+            // Store the dismissed version so the notice returns on the next upgrade cycle.
             $statuses['hide_pro_upgrade_notice'] = defined('WPSOCIALREVIEWS_PRO_MIN_VERSION') ? WPSOCIALREVIEWS_PRO_MIN_VERSION : '1';
             update_option($this->option_name, $statuses, false);
         }
 
         if($notice_type === 'hide_newsletter' && $value === '1'){
             $statuses['hide_newsletter'] = '1';
+            update_option($this->option_name, $statuses, false);
+        }
+
+        if($notice_type === 'google_reconnect_remind_me' && $value === '1'){
+            $statuses = is_array($statuses) ? $statuses : [];
+            $statuses['google_reconnect_remind_me'] = time();
             update_option($this->option_name, $statuses, false);
         }
     }
@@ -220,6 +225,52 @@ class DashboardNotices
     }
 
 
+    /**
+     * Platforms ('google', 'youtube') still on the previous OAuth app. Empty when snoozed or while the
+     * Pro update notice or a platform error is showing; the connection modals keep their own warning.
+     *
+     * @return string[]
+     */
+    public function getGoogleReconnectPlatforms()
+    {
+        if (!current_user_can('manage_options')) {
+            return [];
+        }
+
+        if ($this->isReconnectSnoozed()) {
+            return [];
+        }
+
+        if ($this->maybeDisplayProUpdateNotice() || !empty((new PlatformErrorManager())->getAdminErrors())) {
+            return [];
+        }
+
+        $platforms = [];
+
+        if (GoogleMyBusiness::usesPreviousAuthApp()) {
+            $platforms[] = 'google';
+        }
+
+        if (YoutubeFeed::usesPreviousAuthApp()) {
+            $platforms[] = 'youtube';
+        }
+
+        return $platforms;
+    }
+
+    /**
+     * "Remind me later" on the reconnect card snoozes every row for 10 days, add-on rows included.
+     *
+     * @return bool
+     */
+    public function isReconnectSnoozed()
+    {
+        $statuses = get_option($this->option_name, []);
+        $snoozedAt = (int) Arr::get(is_array($statuses) ? $statuses : [], 'google_reconnect_remind_me', 0);
+
+        return $snoozedAt && time() < strtotime('+10 days', $snoozedAt);
+    }
+
     public function maybeDisplayNewsletter()
     {
         if ( !current_user_can('manage_options') || $this->isLocalhost()) {
@@ -241,8 +292,6 @@ class DashboardNotices
     }
 
     /**
-     * Get current active offer
-     *
      * @return array|null
      */
     public function getActiveOffer()
@@ -260,8 +309,6 @@ class DashboardNotices
     }
 
     /**
-     * Check if offer is currently active
-     *
      * @param array $offer
      * @param int $now
      * @return bool
@@ -276,12 +323,8 @@ class DashboardNotices
     }
 
     /**
-     * Get all offers configuration
-     *
-     * An offer no longer carries its own URL. It contributes an `id` (emitted as
-     * utm_id) and an optional `discount_code`; the destination and the rest of the
-     * tracking vocabulary are assembled by UpgradeUrl so that a promo can never
-     * overwrite utm_campaign or drop the placement.
+     * An offer contributes an `id` (utm_id) and an optional `discount_code`. UpgradeUrl
+     * builds the rest, so a promo can't overwrite utm_campaign or drop the placement.
      *
      * @return array
      */
@@ -350,15 +393,8 @@ class DashboardNotices
     }
 
     /**
-     * Apply partner affiliate attribution to an outbound Pro/upgrade URL.
-     *
-     *   add_filter('wpsocialreviews/link', function ($args) {
-     *       $args['affiliate'] = 'my_partner_id';
-     *       return $args;
-     *   });
-     *
-     * The affiliate id is appended as a `ref` query argument. Partners that need
-     * a completely different destination can set `$args['url']` instead.
+     * Apply partner affiliate attribution via the wpsocialreviews/link filter.
+     * `affiliate` is appended as `ref`; setting `url` replaces the destination.
      *
      * @param string $url Default Pro purchase/upgrade URL.
      * @return string
@@ -381,8 +417,6 @@ class DashboardNotices
     }
 
     /**
-     * Get upgrade button configuration
-     *
      * @return array
      */
     public function getUpgradeButtonConfig()
@@ -417,18 +451,9 @@ class DashboardNotices
     }
 
     /**
-     * Give every locked feature in the extensions tree its own tracked URL.
-     *
-     * The tree is keyed [platform][feature], which is exactly the pair the upgrade
-     * modal already receives as props, so each leaf can carry a URL naming the
-     * precise feature the user just hit. This is the signal the UTM spec exists
-     * for: which locked feature actually drives a purchase.
-     *
-     * Naming rules applied here:
-     *  - the "general" bucket is not a platform, so its features are not prefixed
-     *    ("filters" -> feature_lock_filters, not feature_lock_general_filters)
-     *  - "general.default" is the unnamed catch-all popup -> feature_lock_general
-     *  - a "_feed" platform suffix is dropped to avoid feature_lock_facebook_feed_video_feed
+     * Give every locked feature in the [platform][feature] tree its own tracked URL.
+     * "general" features aren't prefixed, "general.default" is feature_lock_general,
+     * and a "_feed" platform suffix is dropped.
      *
      * @param array $config
      * @param array|null $activeOffer
@@ -462,8 +487,6 @@ class DashboardNotices
     }
 
     /**
-     * Get extensions popup configuration for a feature
-     *
      * @return array
      */
     public function getSpecificFeaturePopupConfig()
@@ -490,8 +513,6 @@ class DashboardNotices
     }
 
     /**
-     * Get default extensions configuration by feature
-     *
      * @return array
      */
     private function getDefaultExtensionsConfig()
@@ -688,8 +709,6 @@ class DashboardNotices
     }
 
     /**
-     * Get platform promotion configuration
-     *
      * @param string $platform
      * @return array
      */
@@ -702,8 +721,7 @@ class DashboardNotices
             return $basePromotion;
         }
 
-        // Each review platform is a distinct locked feature, so it gets its own
-        // placement rather than sharing one generic upgrade link.
+        // Each review platform is its own locked feature, with its own placement.
         $platformSlug = Arr::get($basePromotion, 'platform', $platform);
         $basePromotion['pro_purchase_url'] = $this->buildProUrl(
             UpgradeUrl::featureLock($platformSlug, 'reviews'),
@@ -721,8 +739,6 @@ class DashboardNotices
     }
 
     /**
-     * Get all platform promotions
-     *
      * @return array
      */
     public function getAllPlatformPromotions()
@@ -732,7 +748,6 @@ class DashboardNotices
             return [];
         }
 
-        // Ensure platforms are unique and sorted
         $promotions = [];
         foreach ($platforms as $platform) {
             $promotions[$platform] = $this->getPlatformPromotion($platform);
@@ -742,8 +757,6 @@ class DashboardNotices
     }
 
     /**
-     * Get base platform promotion data
-     *
      * @return array
      */
     private function getBasePlatformPromotionData()
@@ -843,8 +856,6 @@ class DashboardNotices
     }
 
     /**
-     * Get reviews feature list
-     *
      * @return array
      */
     private function getReviewsFeatureList()

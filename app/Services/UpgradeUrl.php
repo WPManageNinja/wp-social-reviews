@@ -9,20 +9,15 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Builds outbound "Upgrade to Pro" URLs against the shared WPManageNinja UTM
- * specification, so every in-plugin upgrade and license link reports the same
- * vocabulary and each one is attributable to the spot it was clicked from.
- *
- * The vocabulary is fixed. Callers pick a placement, and a campaign when it is
- * not a plain same-plugin upgrade. Nothing else is free text.
+ * Builds "Upgrade to Pro" URLs to the shared WPManageNinja UTM spec. The vocabulary
+ * is fixed: callers pick a placement, and a campaign when it isn't a plain upgrade.
  *
  * @since 4.3.0
  */
 class UpgradeUrl
 {
     /**
-     * Our slug in the shared cross-plugin vocabulary. Never the wp.org slug and
-     * never a display name.
+     * Our slug in the shared cross-plugin vocabulary, not the wp.org slug.
      */
     const SOURCE = 'wp-social-ninja';
 
@@ -37,9 +32,8 @@ class UpgradeUrl
     const CAMPAIGN_LICENSE_RENEW = 'license_renew';
 
     /**
-     * Normalise an identifier into the snake_case the spec requires. Platform keys
-     * reach us verbatim from stored config ("booking.com"), so they cannot be
-     * trusted to already be well formed.
+     * Normalise an identifier to snake_case. Platform keys come verbatim from stored
+     * config ("booking.com").
      *
      * @param string $value
      * @return string
@@ -53,8 +47,7 @@ class UpgradeUrl
     }
 
     /**
-     * Placement for a Pro feature the user just tried to use. This is the signal
-     * the spec exists for: which locked feature actually drives a purchase.
+     * Placement for a Pro feature the user just tried to use.
      *
      * @param string $feature
      * @param string $platform Optional namespace, e.g. "reviews" or "instagram".
@@ -85,10 +78,8 @@ class UpgradeUrl
     }
 
     /**
-     * Build a tracked upgrade URL.
-     *
-     * $content is required on purpose: an upgrade link that does not say where it
-     * was clicked teaches us nothing, so there is no way to build one by accident.
+     * Build a tracked upgrade URL. $content is required so every link says where it
+     * was clicked.
      *
      * @param string $content Placement. A PLACEMENT_* constant, featureLock() or settings().
      * @param array  $args    Optional:
@@ -102,7 +93,7 @@ class UpgradeUrl
     {
         $params = array_merge([
             'utm_source'   => self::SOURCE,
-            // Free vs Pro install: acquisition vs renewal. The spec turns on this.
+            // Free vs Pro install: acquisition vs renewal.
             'utm_medium'   => defined('WPSOCIALREVIEWS_PRO') ? 'pro_plugin' : 'free_plugin',
             'utm_campaign' => Arr::get($args, 'campaign', self::CAMPAIGN_UPGRADE_PRO),
             'utm_content'  => $content,

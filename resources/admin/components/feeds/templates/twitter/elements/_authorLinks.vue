@@ -1,7 +1,7 @@
 <template>
     <div class="wpsr-tweet-author-links" v-if="feed.user">
         <!-- user name -->
-        <a v-if="showAuthor === 'true'" target="_blank" :href="'https://twitter.com/'+feed.user.username" class="wpsr-tweet-author-name">
+        <a v-if="showAuthor === 'true'" target="_blank" :href="'https://twitter.com/'+feed.user.username" class="wpsr-tweet-author-name" dir="auto">
             <span>{{ feed.user.name }}</span>
         </a>
         <!-- is verified -->
@@ -13,7 +13,7 @@
         </span>
         <div :class="layout !== 'standard' ? 'wpsr-tweet-author-username-time' : ''">
             <!-- user name -->
-            <a v-if="showUserName === 'true'" target="_blank" :href="'https://twitter.com/'+feed.user.username" class="wpsr-tweet-user-name"> @{{ feed.user.username }}</a>
+            <a v-if="showUserName === 'true'" target="_blank" :href="'https://twitter.com/'+feed.user.username" class="wpsr-tweet-user-name" dir="auto"> @{{ feed.user.username }}</a>
             <!-- date -->
             <a v-if="showDate === 'true'" target="_blank" :href="'https://twitter.com/'+feed.user.username+'/status/'+feed.id" class="wpsr-tweet-time">
                {{ wpsrDateFormat(feed.created_at) }}

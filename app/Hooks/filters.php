@@ -3,12 +3,8 @@
 defined('ABSPATH') or die;
 
 /**
- * All registered filter's handlers should be in app\Hooks\Handlers,
- * addFilter is similar to add_filter and addCustomFlter is just a
- * wrapper over add_filter which will add a prefix to the hook name
- * using the plugin slug to make it unique in all wordpress plugins,
- * ex: $app->addCustomFilter('foo', ['FooHandler', 'handleFoo']) is
- * equivalent to add_filter('slug-foo', ['FooHandler', 'handleFoo']).
+ * Handlers live in app/Hooks/Handlers. addCustomFilter() is add_filter()
+ * with the hook name prefixed by the plugin slug.
  */
 
 /**
@@ -16,8 +12,6 @@ defined('ABSPATH') or die;
  */
 
 add_filter('cron_schedules', function ($schedules) {
-    // Adds custom schedules to the existing schedules.
-
     if (!isset($schedules['5min'])) {
         $schedules['5min'] = array(
             'display'  => __('5 min', 'wp-social-reviews'),
@@ -169,7 +163,3 @@ add_filter('plugin_row_meta', function ($meta, $plugin_file){
     }
     return (array)$meta;
 }, 10, 2);
-// shortpixel plugin replace the IG cdn urls - we will add this filter by user feedback
-//add_filter('shortpixel/ai/customRules', function($regexItems){
-//    return [];
-//});

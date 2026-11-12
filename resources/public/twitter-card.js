@@ -20,15 +20,14 @@ export default {
     wpsrTweetLinkRetriever(el, index) {
         let urls = [];
         el.find('.wpsr-has-card-url').each(function () {
-            //urls.push($(this).attr('data-cardurl'));
             if (!$(this).hasClass('wpsr-tc-active')) {
                 urls.push({url: $(this).attr('data-cardurl'), id:$(this).attr('data-id')});
             }
         });
         return urls;
     },
-    // Only http(s) URLs may reach an href/src. Anything else — javascript:,
-    // data:, a relative path — resolves to a non-http protocol and is dropped.
+    // Only http(s) URLs may reach an href/src. javascript:, data: and any other
+    // scheme are dropped; relative paths resolve against the page and pass.
     wpsrSafeUrl(url) {
         if (typeof url !== 'string' || url === '') {
             return '';
@@ -69,7 +68,7 @@ export default {
                 let desIndicator = (twitter_card['twitter:description'] && twitter_card['twitter:description'].length >= 100 ) ? '...' : '';
 
                 if (( (twitter_card['twitter:card'] === 'summary_large_image' || twitter_card['twitter:card'] === 'summary')  ) || ( twitter_card['twitter:card'] === 'player' && active_card_video )) {
-                    // activate imagesLoaded to set loadmore button on the bottom
+                    // Re-lay out masonry once images load, so load more stays at the bottom.
                     let templateId = $('.wpsr-twitter-feed-wrapper').data("template-id");
                     let gridId = $('#wpsr-twitter-tweet-' + templateId);
                     let templateType = gridId.data('template-type');
@@ -89,12 +88,9 @@ export default {
                     }
                     let domainUrl = (typeof link !== 'undefined') ? link.replace(/^https?\:\/\//i, "").split('/')[0] : '';
 
-                    // Card fields are scraped from third-party pages, so every value
-                    // below is attacker-controlled. Build the card with DOM APIs
-                    // rather than concatenating into an HTML string: attributes set
-                    // via .attr()/.css() and text set via .text() are never parsed
-                    // as markup, so a quote in a title, image URL or alt text cannot
-                    // break out of its context.
+                    // Card fields are scraped from third-party pages, so every value is
+                    // attacker-controlled. Build the card with DOM APIs: .attr()/.css() and
+                    // .text() are never parsed as markup, so a quote cannot break out of its context.
                     let $card = $('<a>', {
                         'class': 'wpsr-twitter-card wpsr-tc-type-' + twitter_card['twitter:card'],
                         target: '_blank'
@@ -124,9 +120,8 @@ export default {
             }
             $self.removeClass('wpsr-has-card-url');
             $(this).addClass('wpsr-tc-active');
-            // remove the url from the tweet content — match on the href property
-            // instead of interpolating the URL into a jQuery selector string,
-            // which a quote or bracket in the URL would otherwise corrupt.
+            // Remove the url from the tweet text. Match on the href property instead of
+            // interpolating the URL into a jQuery selector, which a quote or bracket would corrupt.
             $self.find('.wpsr-tweet-text').find('a.wpsr-link-tweet').filter(function () {
                 return $(this).attr('href') === link;
             }).hide();
@@ -152,7 +147,7 @@ export default {
                     // JSON content type; when it does, data is already parsed.
                     if (typeof data === 'string') {
                         // A leading '<' or an early <meta> means something printed
-                        // markup ahead of the JSON — not a response we can parse.
+                        // markup ahead of the JSON, which we can't parse.
                         if (data.substring(0, 1) === '<' || data.substring(0, 200).indexOf('<meta') !== -1) {
                             return;
                         }

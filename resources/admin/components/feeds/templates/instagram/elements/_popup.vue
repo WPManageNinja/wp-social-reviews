@@ -53,18 +53,18 @@
                             <img v-else-if="feed.user_avatar  && feed.user_avatar.length" :src="feed.user_avatar">
                             <img v-else :src="assets_url + '/images/template/review-template/placeholder-image.png'" />
                         </a>
-                        <div class="wpsr-feed-popup-user-name" v-if="feed.username && settings.popup_settings.display_username === 'true'">
+                        <div class="wpsr-feed-popup-user-name" dir="auto" v-if="feed.username && settings.popup_settings.display_username === 'true'">
                             <a :href="'https://www.instagram.com/'+feed.username" target="_blank" :title="feed.username">{{feed.username}}</a>
                         </div>
                     </div>
                     <div class="wpsr-feed-popup-user-info" v-if="settings.source_settings.feed_type === 'hashtag_feed'">
-                      <p class="wpsr-feed-popup-user-name" v-html="formatText(settings.source_settings.hash_tags)"></p>
+                      <p class="wpsr-feed-popup-user-name" dir="auto" v-html="formatText(settings.source_settings.hash_tags)"></p>
                     </div>
                     <div class="wpsr-feed-popup-comments-wrapper">
                       <div class="wpsr-feed-popup-comments-wrapper-inner">
                           <div class="wpsr-feed-popup-comment" v-if="feed.caption">
                               <div class="wpsr-feed-popup-comment-inner">
-                                  <div class="wpsr-feed-popup-comment-text" v-if="settings.popup_settings.display_caption === 'true'">
+                                  <div class="wpsr-feed-popup-comment-text" dir="auto" v-if="settings.popup_settings.display_caption === 'true'">
                                       <a v-if="feed.username" :href="'https://www.instagram.com/'+feed.username" target="_blank" :title="feed.username">{{feed.username}}</a>
                                       <p v-html="formatText(feed.caption)"></p>
                                   </div>
@@ -75,7 +75,7 @@
                           </div>
                           <div class="wpsr-feed-popup-comment" v-for="(comment, index) in feed.comments" :key="index" v-if="feed.comments">
                             <div class="wpsr-feed-popup-comment-inner">
-                                <div class="wpsr-feed-popup-comment-text">
+                                <div class="wpsr-feed-popup-comment-text" dir="auto">
                                     <a :href="'https://www.instagram.com/'+comment.username" target="_blank" :title="comment.username">{{comment.username}}</a>
                                     <p v-html="formatText(comment.text)"></p>
                                 </div>
@@ -87,7 +87,7 @@
                       </div>
                     </div>
                     <div class="wpsr-feed-popup-statistics-date" v-if="settings.popup_settings.display_date === 'true' && feed.timestamp">
-                        <span v-if="typeof feed.like_count !== 'undefined'">{{ numberWithCommas(feed.like_count) }} {{ ' ' }} {{ $t('Likes') }}</span>
+                        <span dir="auto" v-if="typeof feed.like_count !== 'undefined'">{{ numberWithCommas(feed.like_count) }} {{ ' ' }} {{ $t('Likes') }}</span>
                         <a :href="feed.permalink" target="_blank">
                             <time :datetime="feed.timestamp" :title="feed.timestamp | wpsrDateFormat('MMM DD YY','time_from_now')">{{ ' ' }} {{ feed.timestamp | wpsrDateFormat('MMM DD YY','time_from_now') }}
                             </time>

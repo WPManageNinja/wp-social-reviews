@@ -1,12 +1,6 @@
 <template>
     <div class="wpsr-onboarding-wrapper">
-        <!-- Show onboarding flow if not completed -->
-<!--        <Onboard v-if="showOnboarding" @completed="onOnboardingCompleted" />-->
-
         <Onboard v-if="showOnboarding"/>
-
-        <!-- Default to onboarding if no specific state -->
-<!--        <Onboard v-else @completed="onOnboardingCompleted" />-->
     </div>
 </template>
 
@@ -27,7 +21,7 @@ export default {
     data() {
         return {
             showOnboarding: true,
-            debug: true // Enable debug mode
+            debug: true
         }
     },
     watch: {
@@ -42,12 +36,6 @@ export default {
         jQuery('.update-nag, #wpbody-content > .updated, #wpbody-content > .error').remove();
     },
     methods: {
-        // onOnboardingCompleted(route) {
-        //     // Handle onboarding completion
-        //     this.showOnboarding = false;
-        //     // Emit event for parent components
-        //    this.$emit('completed', route);
-        // },
         showOnboardingFlow() {
             this.showOnboarding = true;
         },

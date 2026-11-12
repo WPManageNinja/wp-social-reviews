@@ -74,8 +74,8 @@
                   :label="`${source.title || source.name} (ID: ${source.form_id || source.id})`"
                   :value="source.id"
                 >
-                  <span style="float: left">{{ source.title || source.name }}</span>
-                  <span style="float: right; color: #8492a6; font-size: 13px">Source ID: {{ source.form_id || source.id }}</span>
+                  <span style="float: inline-start">{{ source.title || source.name }}</span>
+                  <span style="float: inline-end; color: #8492a6; font-size: 13px">Source ID: {{ source.form_id || source.id }}</span>
                 </el-option>
               </el-select>
             </div>
@@ -104,7 +104,7 @@
             <h3 class="wpsr-heading-text">
               {{ $t('CSV Header Structure') }}
             </h3>
-            <el-button type="primary" size="small" class="wpsr_primary_btn" style="float: right" @click="download">
+            <el-button type="primary" size="small" class="wpsr_primary_btn" style="float: inline-end" @click="download">
               <el-icon><Download /></el-icon>
               {{ $t('Download Sample CSV') }}
             </el-button>

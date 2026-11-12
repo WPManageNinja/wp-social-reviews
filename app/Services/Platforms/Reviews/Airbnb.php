@@ -22,8 +22,6 @@ class Airbnb extends BaseReview
     private $remoteBaseUrlV3 = 'https://www.airbnb.com/api/v3';
     private $curUrl = 'https://www.airbnb.com';
     private $placeId = null;
-//    private $businessName;
-//    private $businessType;
 
     public function __construct()
     {
@@ -34,93 +32,6 @@ class Airbnb extends BaseReview
         );
         (new ReviewImageOptimizationHandler($this->platform))->registerHooks();
     }
-
-//    public function searchBusiness($settings)
-//    {
-//        $this->businessName = $settings['business_name'];
-//        $this->businessType = $settings['business_type'];
-//        $downloadUrl = $this->businessName;
-//        $downloadUrl = strtok($downloadUrl, '?');
-//        $viaUrl      = filter_var($downloadUrl, FILTER_VALIDATE_URL);
-//
-//        if($viaUrl) {
-//            $this->businessType = '';
-//            $this->businessName = '';
-//        } else {
-//            $downloadUrl = '';
-//        }
-//
-//        if(!$viaUrl && !empty($this->businessType) && !empty($this->businessName)) {
-//            if (empty($this->businessType)) {
-//                throw new \Exception(__('Please select business type field!', 'wp-social-reviews'));
-//            }
-//
-//            if (empty($this->businessName)) {
-//                throw new \Exception(__('Business name field should not be empty!', 'wp-social-reviews'));
-//            }
-//
-//            if (filter_var($this->businessName, FILTER_VALIDATE_URL)) {
-//                throw new \Exception(__('Please enter a valid business name!', 'wp-social-reviews'));
-//            }
-//
-//            $businessInfo = [];
-//            if ($this->businessType === 'rooms') {
-//                $businessInfo = (new AirbnbHelper())->getRoomsBusinessDetails($this->businessName);
-//            } else {
-//                $businessInfo = (new AirbnbHelper())->getExperienceBusinessDetails($this->businessName);
-//            }
-//
-//            //collected data
-//            if (Arr::get($businessInfo, 'data.status') || Arr::get($businessInfo, 'message')) {
-//                throw new \Exception(
-//                    __(Arr::get($businessInfo, 'message'), 'wp-social-reviews')
-//                );
-//            }
-//
-//            if (!empty($businessInfo)) {
-//                $downloadUrl = $businessInfo['business_url'];
-//            }
-//
-//            if (empty($downloadUrl)) {
-//                throw new \Exception(
-//                    __('We don\'t find this business in the search results! Please try with business url!!', 'wp-social-reviews')
-//                );
-//            }
-//
-//            if (strcmp($this->businessName, $businessInfo['business_name'])) {
-//                throw new \Exception(
-//                    __('We don\'t find this business in the search results! Please try with business url!!', 'wp-social-reviews')
-//                );
-//            }
-//        }
-//
-//        if ($viaUrl && empty($downloadUrl)) {
-//            if (empty($this->businessType)) {
-//                throw new \Exception(__('This field should not be empty!!', 'wp-social-reviews'));
-//            }
-//        }
-//
-//        if ($viaUrl && !filter_var($downloadUrl, FILTER_VALIDATE_URL)) {
-//            throw new \Exception(__('Please enter a valid ur!', 'wp-social-reviews'));
-//        }
-//
-//        $data = $this->verifyCredential($downloadUrl);
-//
-//        if ($viaUrl) {
-//            $businessInfo = $data;
-//        }
-//
-//        $businessInfo = $this->saveBusinessInfo($businessInfo);
-//
-//        if($data['total_fetched_reviews'] > 0) {
-//            update_option('wpsr_reviews_airbnb_business_info', $businessInfo, 'no');
-//        }
-//
-//        $businessInfo['total_fetched_reviews'] = $data['total_fetched_reviews'];
-//
-//        return $businessInfo;
-//    }
-
 
     public function handleCredentialSave($credentials = [])
     {
@@ -148,7 +59,6 @@ class Airbnb extends BaseReview
             if (Arr::get($businessInfo, 'total_fetched_reviews') && Arr::get($businessInfo, 'total_fetched_reviews') > 0) {
                 unset($businessInfo['total_fetched_reviews']);
 
-                // save caches when auto sync is on
                 $apiSettings = get_option('wpsr_'. $this->platform .'_global_settings');
                 if(Arr::get($apiSettings, 'global_settings.auto_syncing') === 'true'){
                     $this->saveCache();
@@ -195,7 +105,6 @@ class Airbnb extends BaseReview
             );
         }
         $this->curUrl = $downloadUrl;
-        //start: find api key and place id
         $businessUrl = $this->curUrl;
 
         $pattern = "/\/(\d+)\/?$/";
@@ -252,12 +161,10 @@ class Airbnb extends BaseReview
             $api_locale_string = substr($html_content, $position - 20, 200);
             $find_api_config   = '"api_config":{"key":"';
             $position          = strpos($api_locale_string, $find_api_config);
-            //find api key
             $tempendstring = substr($api_locale_string, $position, 100);
             $end           = strpos($tempendstring, '","baseUrl"');
             $key           = substr($api_locale_string, $position + 21, $end - 21);
 
-            //find locale
             $find_api_config = '"locale":"';
             $locale_pos      = strpos($api_locale_string, $find_api_config);
             $locale          = substr($api_locale_string, $locale_pos + 10, 2);
@@ -292,7 +199,6 @@ class Airbnb extends BaseReview
 
         $response = $this->safeAirbnbRemoteGet($fetchUrl);
 
-        //end: find airbnb reviews
         if (is_wp_error($response)) {
             throw new \Exception(esc_html($response->get_error_message()));
         }
@@ -307,8 +213,6 @@ class Airbnb extends BaseReview
             $this->saveApiSettings([
                 'api_key'       => $key,
                 'place_id'      => $this->placeId,
-//                'business_name' => $this->businessName,
-//                'business_type' => $this->businessType,
                 'url_value'     => $businessUrl
             ]);
             $this->syncRemoteReviews($data['reviews']);
@@ -338,7 +242,6 @@ class Airbnb extends BaseReview
         $services = strpos($businessUrl, '/services/') !== false;
         $rooms = strpos($businessUrl, '/rooms/') !== false;
 
-        // Get configuration from filters
         $cookieHeader = apply_filters('wpsocialreviews/airbnb_cookie_header', '');
         $apiKey = apply_filters('wpsocialreviews/airbnb_api_key', '');
 
@@ -356,7 +259,7 @@ class Airbnb extends BaseReview
         }
 
         $totalLimit      = apply_filters('wpsocialreviews/airbnb_reviews_limit_end_point', 5);
-        $perRequestLimit = 20; // Reviews per request
+        $perRequestLimit = 20;
         $allReviews = [];
         $offset = 0;
         $maxAvailableReviews = null;
@@ -432,13 +335,12 @@ class Airbnb extends BaseReview
 
             if ($experiences || $services) {
                 $reviews = Arr::get($data, 'data.node.reviewsSearch.edges', []);
-                // Get total available reviews count for experiences
                 if ($maxAvailableReviews === null) {
                     $maxAvailableReviews = Arr::get($data, 'data.node.reviewsSearch.pageInfo.totalCount', 0);
                 }
             } else {
                 $reviews = Arr::get($data, 'data.presentation.stayProductDetailPage.reviews.reviews', []);
-                // Authoritative total, and it rides the request we already made: no extra hash to break.
+                // Authoritative total from the request already made, so no extra hash to break.
                 if ($reviewsCountFromMeta === null) {
                     $metaCount = Arr::get($data, 'data.presentation.stayProductDetailPage.reviews.metadata.reviewsCount');
                     if ($metaCount !== null) {
@@ -451,18 +353,17 @@ class Airbnb extends BaseReview
             }
 
             if (empty($reviews)) {
-                break; // No more reviews available
+                break;
             }
 
             $allReviews = array_merge($allReviews, $reviews);
             $offset += count($reviews);
 
-            // Stop if we've reached the maximum available reviews
             if ($maxAvailableReviews && count($allReviews) >= $maxAvailableReviews) {
                 break;
             }
 
-            // Stop if we got fewer reviews than requested (indicates end of data)
+            // A short page means the end of the data.
             if (count($reviews) < $currentLimit) {
                 break;
             }
@@ -472,7 +373,6 @@ class Airbnb extends BaseReview
             }
         }
 
-        // Trim to actual available reviews if we somehow got more
         if ($maxAvailableReviews && count($allReviews) > $maxAvailableReviews) {
             $allReviews = array_slice($allReviews, 0, $maxAvailableReviews);
         }
@@ -543,10 +443,9 @@ class Airbnb extends BaseReview
 
     private function getBusinessDetailsFromGraphQL($nodeId, $headers)
     {
-        // Ensure demandStayListingId is base64 encoded (API expects encoded form)
         $demandStayListingId = base64_encode("DemandStayListing:{$this->placeId}");
 
-        // Generate a p3ImpressionId if none is available — API often expects a non-empty string here
+        // The API often rejects an empty p3ImpressionId.
         $p3ImpressionId = apply_filters('wpsocialreviews/airbnb_p3_impression_id', null);
         if (empty($p3ImpressionId)) {
             $p3ImpressionId = 'p3_' . time() . '_' . substr(md5(uniqid('', true)), 0, 12);
@@ -568,8 +467,8 @@ class Airbnb extends BaseReview
                 return [];
             }
 
-            // Fallback: built-in variables, version-locked to one query version, so a newer hash is rejected.
-            // Note: adults should be string "1" not integer, and null values are accepted
+            // Fallback: built-in variables locked to one query version, so a newer hash is rejected.
+            // adults must be the string "1", not an integer.
             $pdpSectionsRequest = [
                 'adults' => '1',
                 'amenityFilters' => null,
@@ -626,7 +525,6 @@ class Airbnb extends BaseReview
             ];
         }
 
-        // Build the request URL with query parameters (GET request like the API)
         $queryParams = [
             'operationName' => 'StaysPdpSections',
             'locale' => 'en',
@@ -643,19 +541,15 @@ class Airbnb extends BaseReview
         $requestUrl = add_query_arg($queryParams, $this->remoteBaseUrlV3 . '/StaysPdpSections/' . $businessInfoApiSecretKey);
         $data = $this->makeGraphQLGetRequest($requestUrl, $headers);
 
-        // Extract sharingConfig from the API response
         $sharingConfig = Arr::get($data, 'data.presentation.stayProductDetailPage.sections.metadata.sharingConfig', []);
 
-        // Validate and return the sharingConfig if it has the correct structure
         if (!empty($sharingConfig) && is_array($sharingConfig) && isset($sharingConfig['__typename']) && $sharingConfig['__typename'] === 'PdpSharingConfig') {
             // A pasted payload could carry its own listing id in a field we don't rewrite.
             if (!$this->sharingConfigMatchesPlaceId($sharingConfig)) {
                 return [];
             }
 
-            // The host's actual listing title lives in the title section, not in
-            // sharingConfig.title (which is a generated "Home in {location}" label).
-            // Attach it so saveBusinessInfo() can prefer it over the generic label.
+            // saveBusinessInfo() prefers the host's title over sharingConfig.title.
             $listingTitle = $this->extractListingTitle($data);
             if (!empty($listingTitle)) {
                 $sharingConfig['listingTitle'] = $listingTitle;
@@ -782,12 +676,8 @@ class Airbnb extends BaseReview
     }
 
     /**
-     * Extract the host's actual listing title from the PDP title section.
-     *
-     * Airbnb's sharingConfig.title is a generated SEO/share label (e.g.
-     * "Home in Gloucestershire · ★4.95 · 2 bedrooms"), which is identical across
-     * many of a host's listings. The custom, human-readable title the host set
-     * lives in the TITLE_DEFAULT section instead.
+     * Extract the host's own listing title from the TITLE_DEFAULT section. sharingConfig.title
+     * is a generated label ("Home in Gloucestershire · ★4.95 · 2 bedrooms"), shared by many listings.
      *
      * @param array $data Decoded StaysPdpSections GraphQL response.
      * @return string The listing title, or '' when unavailable.
@@ -858,7 +748,7 @@ class Airbnb extends BaseReview
 
     private function extractReviewData($review)
     {
-        // GraphQL experiences format (edges structure)
+        // GraphQL experiences format (edges)
         if (isset($review['node']['review'])) {
             return $this->extractExperiencesData($review['node']['review']);
         }
@@ -923,13 +813,11 @@ class Airbnb extends BaseReview
             $placeId                          = $this->placeId;
             $businessInfo['place_id']         = $placeId;
 
-            // Handle GraphQL sharingConfig format (rooms)
+            // GraphQL sharingConfig format (rooms)
             if (isset($data['__typename']) && $data['__typename'] === 'PdpSharingConfig') {
                 $previous = Arr::get($infos, $placeId, []);
 
-                // Prefer the host's actual listing title when available; otherwise
-                // fall back to the generated sharingConfig.title label, taking the
-                // segment before the " · " delimiter.
+                // Fall back to the generated label's first " · " segment.
                 $name = Arr::get($data, 'listingTitle');
                 if (empty($name)) {
                     // Cast guards against a null title (PHP 8.1+ explode() deprecation).
@@ -960,7 +848,7 @@ class Airbnb extends BaseReview
                 $businessInfo['average_rating']   = null;
                 $businessInfo['total_rating']     = Arr::get($data, 'totalCount');
             } else {
-                // Handle existing format
+                // Legacy format
                 $businessInfo['name']             = Arr::get($data, 'business_name');
                 $businessInfo['average_rating']   = Arr::get($data, 'average_rating');
                 $businessInfo['total_rating']     = Arr::get($data, 'total_rating');
@@ -1041,8 +929,7 @@ class Airbnb extends BaseReview
         if(empty($str)) return null;
         $str = (string) $str;
 
-        // Every pattern below looks for a separator, so a bare integer such as "123"
-        // reached the else branch and was rejected as unparseable.
+        // The patterns below all need a separator, so a bare integer is handled here.
         if (preg_match('/^\d+$/', $str)) {
             return (int) $str;
         }
@@ -1068,9 +955,6 @@ class Airbnb extends BaseReview
         $apiKey       = $settings['api_key'];
         $placeId      = $settings['place_id'];
         $businessUrl  = $settings['url_value'];
-//        $businessName = Arr::get($settings, 'business_name');
-//        $businessType = Arr::get($settings, 'business_type');
-
         $apiSettings  = $this->getApiSettings();
 
         if(isset($apiSettings['data']) && !$apiSettings['data']) {
@@ -1081,8 +965,6 @@ class Airbnb extends BaseReview
             $apiSettings[$placeId]['api_key']       = $apiKey;
             $apiSettings[$placeId]['place_id']      = $placeId;
             $apiSettings[$placeId]['url_value']     = $businessUrl;
-//            $apiSettings[$placeId]['business_name'] = $businessName;
-//            $apiSettings[$placeId]['business_type'] = $businessType;
         }
         return update_option($this->optionKey, $apiSettings, 'no');
     }

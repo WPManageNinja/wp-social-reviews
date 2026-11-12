@@ -10,11 +10,7 @@
           <MinusIcon v-else/>
         </span>
       </template>
-      <div 
-        class="wpsn-platforms-list" 
-        v-loading="platformSelectorLoading" 
-        element-loading-text=""
-      >
+      <div class="wpsn-platforms-list">
         <div class="wpsn-platforms-wrapper">
           <p class="wpsn-platform-header-title">{{ $t('Select Platforms') }}</p>
           <div class="wpsn-platform-card-wrapper">
@@ -63,12 +59,13 @@
         <div class="wpsr_editor_edit_item-group">
           <div class="wpsr-editor-edit-item-field" v-if="template_meta.templateType !== 'notification'">
             <transition name="fade">
-              <ImageSelect v-model="template_meta.templateType" :options="templateTypes" :headerTitle="$t('Layout Type')" :loading="templateTypeLoading"/>
+              <ImageSelect v-model="layoutTypeSelection" :options="templateTypes" :headerTitle="$t('Layout Type')"/>
             </transition>
           </div>
           <div v-if="template_meta.templateType === 'badge'" class="wpsr-editor-edit-item-field">
             <transition name="fade">
-              <ImageSelect v-if="badge_skins" :showSeeMoreButton="false" :loading="badgeSkinLoading" v-model="template_meta.badge_settings.template" :options="badge_skins"/>
+              <!-- showSeeMoreButton left at its default (true); ImageSelect auto-hides "See All" once badge_skins fits in the trigger row -->
+              <ImageSelect v-if="badge_skins" v-model="template_meta.badge_settings.template" :options="badge_skins"/>
             </transition>
           </div>
           <div v-if="template_meta.templateType !== 'badge'" class="wpsr-editor-edit-item-field">
@@ -76,12 +73,13 @@
               <ImageSelect v-if="available_grid_skins.testimonial_skins && available_grid_skins.reviews_skins"  v-model="template_meta.template" :options="template_meta.platform && template_meta.platform.includes('testimonial') ? available_grid_skins.testimonial_skins : available_grid_skins.reviews_skins"/>
             </transition>
           </div>
-          <div class="wpsr-editor-edit-item-field" v-if="(template_meta.templateType !== 'slider' && template_meta.templateType !== 'badge')">
+          <div class="wpsr-editor-edit-item-field" v-if="(template_meta.templateType !== 'slider' && template_meta.templateType !== 'badge' && template_meta.templateType !== 'marquee') && !isFeatureGridLayout">
             <div class="wpsr-filters-row">
               <span class="wpsr-editor-sidebar-section-title wpsr-label-small">Layout Styling</span>
             </div>
           </div>
           <EditorGroup
+              v-if="!isFeatureGridLayout"
               :fieldsMaps="layout_settings"
               :modelValue="template_meta"
               @input="onLayoutSettingsInput"
@@ -106,11 +104,7 @@
       <EditorGroup
           :fieldsMaps="badge_settings"
           :modelValue="template_meta.badge_settings"
-          @input="(val) => {
-              badgeSkinLoading = true;
-              template_meta.badge_settings = val;
-              $emit('fetchReviews');
-          }"
+          @input="onBadgeSettingsInput"
       />
     </el-collapse-item>
 
@@ -182,7 +176,7 @@
               <span>{{$t('Filters by Minimum Rating')}} <ProCrownIcon v-if="!has_pro" /></span>
             </span>
             <div class="wpsr-editor-inside-right">
-              <el-select v-model="template_meta.starFilterVal" placeholder="Select" size="small" class="wpsr-text-input">
+              <el-select v-model="template_meta.starFilterVal" @change="throttledFetchReviews" placeholder="Select" size="small" class="wpsr-text-input">
                 <el-option v-for="item in extendStarFilters()" :key="item.value" :label="item.label" :value="item.value" :disabled="item.pro" />
               </el-select>
             </div>
@@ -922,7 +916,26 @@
       />
     </el-collapse-item>
 
-    <el-collapse-item name="9" v-if="template_meta.templateType != 'slider'">
+    <el-collapse-item name="13" v-if="template_meta.templateType === 'marquee'">
+      <template #title="{ isActive}">
+        <span class="wpsr-editor-title-row">
+          <ChatEditorAccordionsIconPack icon-key="carousel" class="wpsr-editor-icon" width="20" height="20"/>
+          <span class="wpsr-editor-title-text wpsr-heading-text wpsr-input-field-label"> {{ $t('Marquee') }}</span>
+        </span>
+        <span class="wpsr-custom-collapse-arrow">
+          <PlusIcon v-if="!isActive" />
+          <MinusIcon v-else/>
+        </span>
+      </template>
+      <EditorGroup
+          :fieldsMaps="marquee_settings"
+          v-model="template_meta.marquee_settings"
+          :modelValue="template_meta.marquee_settings"
+          @input="handleMarqueeSettingsUpdate"
+      />
+    </el-collapse-item>
+
+    <el-collapse-item name="9" v-if="template_meta.templateType != 'slider' && template_meta.templateType !== 'marquee'">
       <template #title="{ isActive}">
         <span class="wpsr-editor-title-row">
           <PaginationIcon class="wpsr-editor-icon" />
@@ -1454,6 +1467,26 @@ export default {
           key: 'badge2',
           title: 'Badge2',
           img: this.assets_url + '/images/template/review-template/badge2.png',
+        },
+        {
+          key: 'badge3',
+          title: 'Badge3',
+          img: this.assets_url + '/images/template/review-template/badge3.png',
+        },
+        {
+          key: 'badge4',
+          title: 'Badge4',
+          img: this.assets_url + '/images/template/review-template/badge4.png',
+        },
+        {
+          key: 'badge5',
+          title: 'Badge5',
+          img: this.assets_url + '/images/template/review-template/badge5.png',
+        },
+        {
+          key: 'badge6',
+          title: 'Badge6',
+          img: this.assets_url + '/images/template/review-template/badge6.png',
         }
       ],
       //filters options
@@ -1659,7 +1692,9 @@ export default {
           fieldKey: 'custom_title',
           type: 'text',
           title: this.$t('Custom Title'),
-          placeholder: this.$t('Rating')
+          placeholder: this.$t('Rating'),
+          // Only the classic skins draw a title; avatar-stack skins don't.
+          condition: { key: 'template', operator: 'includes', selector: ['badge1', 'badge2'] },
         },
         {
           fieldKey: 'custom_num_of_reviews_text',
@@ -1757,6 +1792,35 @@ export default {
             'selector': ['page', 'custom_url']
           },
         },
+      ],
+      marquee_settings: [
+        {
+          fieldKey: 'speed',
+          type: 'select',
+          title: this.$t('Scroll Speed'),
+          options: [
+            {
+              value: 20,
+              label: this.$t('Slow')
+            },
+            {
+              value: 35,
+              label: this.$t('Normal')
+            },
+            {
+              value: 60,
+              label: this.$t('Fast')
+            }
+          ]
+        },
+        {
+          fieldKey: 'card_width',
+          type: 'number',
+          title: this.$t('Card Width (px) :'),
+          min: 240,
+          max: 600,
+          flex: true
+        }
       ],
       carousel_settings: [
         {
@@ -1994,12 +2058,8 @@ export default {
         ]
       },
       isUpdating: false,
-      lastEmittedValue: null,
       device: 'desktop',
       activeDevice: 'dashicons-desktop',
-      platformSelectorLoading: false,
-      badgeSkinLoading: false,
-      templateTypeLoading: false,
       // Filled from Fluent Player's media list, see fetchFluentPlayerMedia().
       fluentPlayerMedias: [],
     }
@@ -2112,6 +2172,9 @@ export default {
       Object.assign(this.template_meta, updatedValue);
     },
     
+    handleMarqueeSettingsUpdate(newMarqueeSettings) {
+      this.$emit('update:template_meta', { ...this.template_meta, marquee_settings: newMarqueeSettings });
+    },
     handleCarouselSettingsUpdate(newCarouselSettings) {
       // Properly update only the carousel_settings property
       // Create a proper update object that only modifies carousel_settings
@@ -2123,8 +2186,6 @@ export default {
     },
     
     togglePlatform(value) {
-      this.platformSelectorLoading = true;
-      
       const idx = this.template_meta.platform.indexOf(value);
       if (idx === -1) {
         this.template_meta.platform.push(value);
@@ -2132,6 +2193,11 @@ export default {
         this.template_meta.platform.splice(idx, 1);
       }
       this.throttledFetchReviews();
+    },
+
+    onBadgeSettingsInput(val) {
+      this.template_meta.badge_settings = val;
+      this.$emit('fetchReviews');
     },
 
     handleDevice(val, activeDevice) {
@@ -2186,6 +2252,18 @@ export default {
           img: this.assets_url + '/images/template/global-template/slider.png',
         },
         {
+          key: 'slider:score_slider',
+          title: this.$t('Score Slider'),
+          pro: !this.has_pro,
+          img: this.assets_url + '/images/template/global-template/score-slider.png',
+        },
+        {
+          key: 'marquee',
+          title: this.$t('Marquee'),
+          pro: !this.has_pro,
+          img: this.assets_url + '/images/template/global-template/marquee.png',
+        },
+        {
           key: 'masonry',
           title: 'Masonry',
           pro: !this.has_pro,
@@ -2196,15 +2274,49 @@ export default {
           title: 'Badge',
           pro: !this.has_pro,
           img: this.assets_url + '/images/template/global-template/badge.png',
+        },
+        {
+          key: 'grid:feature_grid',
+          title: this.$t('Feature Grid'),
+          pro: !this.has_pro,
+          img: this.assets_url + '/images/template/global-template/feature-grid.png',
         }
       ];
 
-      // If the currently selected platforms include 'testimonial', hide the badge option
+      // Testimonials have no badge and no business summary header.
       if (this.template_meta && this.template_meta.platform && this.template_meta.platform.includes('testimonial')) {
-        return types.filter(t => t.key !== 'badge');
+        return types.filter(t => t.key !== 'badge' && t.key !== 'slider:score_slider');
       }
 
       return types;
+    },
+    // Layout Type tiles are "templateType" or "templateType:layout_style"; the two keys are stored separately.
+    layoutTypeSelection: {
+      get() {
+        const layoutStyle = this.template_meta.layout_style;
+
+        return layoutStyle && layoutStyle !== 'default'
+          ? this.template_meta.templateType + ':' + layoutStyle
+          : this.template_meta.templateType;
+      },
+      set(value) {
+        if (!value) {
+          return;
+        }
+
+        const [templateType, layoutStyle] = value.split(':');
+        this.template_meta.templateType = templateType;
+        this.template_meta.layout_style = layoutStyle || 'default';
+
+        // The summary column is the header, and only header Template 1 can stack into a column.
+        if (layoutStyle === 'score_slider') {
+          this.template_meta.show_header = 'true';
+          this.template_meta.header_template = 'template1';
+        }
+      }
+    },
+    isFeatureGridLayout() {
+      return this.template_meta.templateType === 'grid' && this.template_meta.layout_style === 'feature_grid';
     },
     header_templates_options() {
       const platforms = this.template_meta.platform || [];
@@ -2221,7 +2333,7 @@ export default {
       const shouldShowTemplate2 = platforms.length > 0 &&
           platforms.every(platform => this.template2EligiblePlatforms.includes(platform));
 
-      if (shouldShowTemplate2) {
+      if (shouldShowTemplate2 && this.template_meta.layout_style !== 'score_slider') {
         baseTemplates.push({
           value: 'template2',
           label: this.$t('Template 2'),
@@ -2264,29 +2376,6 @@ export default {
       },
       immediate: true
     },
-    template_meta: {
-      handler(newVal) {
-        if (newVal && !this.isUpdating) {
-          const newValueStr = JSON.stringify(newVal);
-          const currentValueStr = JSON.stringify(this.lastEmittedValue);
-
-          if (newValueStr !== currentValueStr) {
-            this.lastEmittedValue = JSON.parse(JSON.stringify(newVal));
-          }
-        }
-      },
-      deep: true,
-      immediate: true
-    },
-    'template_meta.templateType': {
-      handler(newVal, oldVal) {
-        // Set loading state when template type changes
-        if (newVal !== oldVal && oldVal !== undefined) {
-          this.templateTypeLoading = true;
-          this.$emit('fetchReviews');
-        }
-      }
-    },
     'template_meta.platform': {
       handler(newPlatforms) {
         // Check if Template2 is currently selected
@@ -2301,19 +2390,6 @@ export default {
           if (!shouldShowTemplate2) {
             this.template_meta.header_template = 'template1';
           }
-        }
-      },
-      deep: true
-    },
-    all_reviews: {
-      handler(newReviews, oldReviews) {
-        // Stop loading when reviews data is updated after API call completes
-        if ((this.platformSelectorLoading || this.badgeSkinLoading || this.templateTypeLoading) && newReviews && newReviews !== oldReviews) {
-          this.$nextTick(() => {
-            this.platformSelectorLoading = false;
-            this.badgeSkinLoading = false;
-            this.templateTypeLoading = false;
-          });
         }
       },
       deep: true

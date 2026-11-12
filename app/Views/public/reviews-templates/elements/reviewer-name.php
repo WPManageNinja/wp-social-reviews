@@ -6,7 +6,7 @@ $wpsr_show_verified_badge = ($enable_verified_badge && $enable_verified_badge !=
 $wpsr_verified_badge_text = $verified_badge_tooltip_text ?: 'Verified Customer';
 ?>
 <<?php echo esc_attr($tag); ?> <?php Helper::printInternalString(implode(' ', $attrs)); ?>>
-    <span class="wpsr-reviewer-name"><?php echo esc_html($reviewer_name); ?></span>
+    <span class="wpsr-reviewer-name" dir="auto"><?php echo esc_html($reviewer_name); ?></span>
     <?php if ($wpsr_show_verified_badge) { ?>
         <span class="wpsr-verified-review wpsr-tooltip"
             aria-label="<?php echo esc_attr($wpsr_verified_badge_text); ?>"

@@ -20,7 +20,6 @@ class NotificationsController extends Controller
     }
 
     /**
-     *
      * Get all templates from posts table.
      *
      * @param $request
@@ -53,7 +52,6 @@ class NotificationsController extends Controller
     }
 
     /**
-     *
      * Create single template on posts table and save template meta by post id on post meta table
      *
      * @param $request
@@ -95,7 +93,6 @@ class NotificationsController extends Controller
     }
 
     /**
-     *
      * Duplicate single template on posts table and save template meta by post id on post meta table
      *
      * @param $request
@@ -108,7 +105,6 @@ class NotificationsController extends Controller
     public function duplicate(Request $request, Post $post)
     {
         $ids = (array) $request->get('ids', []);
-        // sanitize ids as integers
         $ids = array_map('intval', $ids);
 
         if(empty($ids)) {
@@ -182,7 +178,6 @@ class NotificationsController extends Controller
                 ];
             }
 
-            // validate status registered post statuses
             $allowed_statuses = ['publish','draft','pending','private','trash'];
             if (!in_array($status, $allowed_statuses, true)) {
                 $status = 'draft';
@@ -225,7 +220,6 @@ class NotificationsController extends Controller
     }
 
     /**
-     *
      * Delete template and meta from posts, post meta table
      * @param $request
      * @param $post

@@ -61,14 +61,13 @@ class OnboardingController extends Controller
                 'subscribe_to_newsletter'    => 'sanitize_text_field',
                 'share_data'    => 'sanitize_text_field',
                 'template_id'      => 'intval',
-                //  defined nested keys using dot notation
+                // Nested keys use dot notation
                 'template.name'             => 'sanitize_text_field',
                 'template.type'             => 'sanitize_text_field',
             ];
 
             $data = wpsr_backend_sanitizer($data, $sanitizeMap);
 
-            // Validate required fields
             $requiredFields = ['platform_types', 'platform_name', 'template'];
             foreach ($requiredFields as $field) {
                 if (empty($data[$field])) {
@@ -80,7 +79,6 @@ class OnboardingController extends Controller
                 }
             }
 
-            // Validate platform-specific data
             $platformType = Arr::get($data, 'platform_types');
             
             if ($platformType === 'reviews' && empty($data['review_platforms'])) {
@@ -104,7 +102,6 @@ class OnboardingController extends Controller
                 ];
             }
 
-            // Save onboarding data
             $success = $this->onboardingService->saveOnboardingData($data, $templateId);
 
             if ($success) {

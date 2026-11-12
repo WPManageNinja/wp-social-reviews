@@ -1,5 +1,5 @@
 <template>
-    <p class="wpsr-tweet-text" v-html="twitterTextValidate(feed, feed.text, feed.entities && feed.entities.urls ? feed.entities.urls : [])" v-if="feed_settings && feed_settings.advance_settings.tweet_text === 'true'">
+    <p class="wpsr-tweet-text" dir="auto" v-html="twitterTextValidate(feed, feed.text, feed.entities && feed.entities.urls ? feed.entities.urls : [])" v-if="feed_settings && feed_settings.advance_settings.tweet_text === 'true'">
     </p>
 
 </template>

@@ -1,5 +1,5 @@
 <template>
-    <div class="wpsr-review-content" v-if="!isAiSummary && isReviewerText === 'true' && reviewerText && reviewerText.length">
+    <div class="wpsr-review-content" dir="auto" v-if="!isAiSummary && isReviewerText === 'true' && reviewerText && reviewerText.length">
         <p v-if="reviewerText && contentType === 'excerpt'" class="wpsr_add_read_more wpsr_show_less_content"
         v-html="$addReadMoreBtn(reviewerText, contentLength, contentLanguage)">
         </p>
@@ -17,7 +17,7 @@
           :platformName="review ? review.platform_name : ''"
       />
     </div>
-    <div class="wpsr-review-content" v-else-if="isAiSummary && isReviewerText === 'true' && reviewerText && reviewerText.length">
+    <div class="wpsr-review-content" dir="auto" v-else-if="isAiSummary && isReviewerText === 'true' && reviewerText && reviewerText.length">
         <p class="animated-reviewer-text" :class="isAiReadmoreEnabled ? 'wpsr_add_read_more wpsr_show_less_content' : 'wpsr-review-full-content'">
             <span v-if="isTextTypingAnimationEnabled">{{ animatedText }}</span>
             <span v-else>{{ displayText }}</span>

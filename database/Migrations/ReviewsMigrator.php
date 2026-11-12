@@ -88,7 +88,6 @@ class ReviewsMigrator
     {
         global $wpdb;
 
-        // Safely escape table name
         $table = esc_sql($table);
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Required for migration to check existing indexes
@@ -127,7 +126,7 @@ class ReviewsMigrator
             }
         }
 
-        // idx_rating_time leads on rating too, so drop the duplicate -- but only once it is really there.
+        // idx_rating_time leads on rating too, so drop the duplicate once it exists.
         if (in_array('idx_rating', $wpsr_present) && in_array('idx_rating_time', $wpsr_present)) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange
             $wpdb->query($wpdb->prepare("ALTER TABLE %i DROP INDEX %i", $table, 'idx_rating'));

@@ -9,7 +9,7 @@
     </div>
 
     <!-- Table Content -->
-    <div v-else-if="total_items && has_pro" class="wpsr-page-section">
+    <div v-else-if="(total_items || lastFetchFiltered) && has_pro" class="wpsr-page-section">
       <!-- Header Section -->
       <div class="wpsr-table-header">
         <div class="wpsr-header-left">
@@ -56,68 +56,69 @@
         </div>
         <div class="wpsr-controls-right">
           <div class="wpsr-controls-bulk-actions">
-            <el-select class="wpsr-select-field-primary" v-model="bulkAction" :placeholder="$t('Bulk Action')" size="default" style="width: 160px;">
-              <el-option :label="$t('Bulk Actions')" value="">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><Plus /></el-icon>
-                  <span>{{ $t('Bulk Actions') }}</span>
-                </span>
-              </el-option>
-              <el-option :label="$t('Approve')" value="enable">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><View /></el-icon>
-                  <span>{{ $t('Approve') }}</span>
-                </span>
-              </el-option>
-              <el-option :label="$t('Disapprove')" value="disable">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><Hide /></el-icon>
-                  <span>{{ $t('Disapprove') }}</span>
-                </span>
-              </el-option>
-              <el-option :label="$t('Mark as Spam')" value="mark-spam">
+            <div class="wpsr-bulk-action-group">
+              <el-select class="wpsr-select-field-primary" v-model="bulkAction" :placeholder="$t('Bulk Action')" size="default" style="width: 160px;">
+                <el-option :label="$t('Bulk Actions')" value="">
                   <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><WarningFilled /></el-icon>
-                    <span>{{ $t('Mark as Spam') }}</span>
+                    <el-icon><Plus /></el-icon>
+                    <span>{{ $t('Bulk Actions') }}</span>
                   </span>
-              </el-option>
-              <el-option :label="$t('Not Spam')" value="not-spam">
+                </el-option>
+                <el-option :label="$t('Approve')" value="enable">
                   <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><CircleCheck /></el-icon>
-                    <span>{{ $t('Not Spam') }}</span>
+                    <el-icon><View /></el-icon>
+                    <span>{{ $t('Approve') }}</span>
                   </span>
-              </el-option>
-              <el-option :label="$t('Delete')" value="delete">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><Delete /></el-icon>
-                  <span>{{ $t('Delete') }}</span>
-                </span>
-              </el-option>
-              <el-option :label="$t('Duplicate')" value="duplicate">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><DocumentCopy /></el-icon>
-                  <span>{{ $t('Duplicate') }}</span>
-                </span>
-              </el-option>
-              <el-option :label="$t('Assign Category')" value="category">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><PriceTag /></el-icon>
-                  <span>{{ $t('Assign Category') }}</span>
-                </span>
-              </el-option>
-            </el-select>
-            <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
-            <el-button v-if="canManageCategories" @click="show_manage_categories_modal = true">
+                </el-option>
+                <el-option :label="$t('Disapprove')" value="disable">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><Hide /></el-icon>
+                    <span>{{ $t('Disapprove') }}</span>
+                  </span>
+                </el-option>
+                <el-option :label="$t('Mark as Spam')" value="mark-spam">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><WarningFilled /></el-icon>
+                      <span>{{ $t('Mark as Spam') }}</span>
+                    </span>
+                </el-option>
+                <el-option :label="$t('Not Spam')" value="not-spam">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><CircleCheck /></el-icon>
+                      <span>{{ $t('Not Spam') }}</span>
+                    </span>
+                </el-option>
+                <el-option :label="$t('Delete')" value="delete">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><Delete /></el-icon>
+                    <span>{{ $t('Delete') }}</span>
+                  </span>
+                </el-option>
+                <el-option :label="$t('Duplicate')" value="duplicate">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><DocumentCopy /></el-icon>
+                    <span>{{ $t('Duplicate') }}</span>
+                  </span>
+                </el-option>
+                <el-option :label="$t('Assign Category')" value="category">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><PriceTag /></el-icon>
+                    <span>{{ $t('Assign Category') }}</span>
+                  </span>
+                </el-option>
+              </el-select>
+              <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
+            </div>
+            <el-button v-if="canManageCategories" class="wpsr-manage-categories-btn" @click="show_manage_categories_modal = true">
               <el-icon class="wpsr-mr-5"><PriceTag /></el-icon>
               {{ $t('Manage Categories') }}
             </el-button>
           </div>
           <el-input
-              class="wpsr-input-default"
+              class="wpsr-input-default wpsr-controls-search"
               v-model="search_string"
               placeholder="Search..."
               size="default"
-              style="width: 200px;"
               @keyup.enter="getItems()"
               @clear="handleClear"
               clearable>
@@ -132,6 +133,7 @@
         <el-table
             class="wpsr-templates-table"
             :data="items"
+            :empty-text="$t('No testimonials match these filters.')"
             @sort-change="handleTableSort"
             @selection-change="handleSelectionChange"
         >
@@ -157,7 +159,7 @@
 
           <el-table-column :label="$t('Testimonial')" min-width="200">
             <template #default="scope">
-              <strong class="wpsr-item-title">{{ scope.row.review_title }}</strong>
+              <strong class="wpsr-item-title" dir="auto">{{ scope.row.review_title }}</strong>
               <ReviewContentModal
                   :content="scope.row.reviewer_text"
                   :title="scope.row.review_title"
@@ -176,7 +178,7 @@
                 <img class="wpsr-image-cell wpsr-mr-10" v-else :src="assets_url+'/images/template/review-template/placeholder-image.png'"
                      height="80" width="80"/>
                 <div class="wpsr-item-group wpsr-d-flex wpsr-flex-column">
-                  <strong class="wpsr-item-title wpsr-text-ellipsis">{{ scope.row.reviewer_name }}</strong>
+                  <strong class="wpsr-item-title wpsr-text-ellipsis" dir="auto">{{ scope.row.reviewer_name }}</strong>
                   <span class="wpsr-text-content wpsr-text-ellipsis">{{ scope.row.fields.author_position }}</span>
                 </div>
               </div>
@@ -315,7 +317,7 @@
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="!loading && has_pro && !total_items" class="wpsr-page-section">
+    <div v-else-if="!loading && has_pro && !total_items && !lastFetchFiltered" class="wpsr-page-section">
       <div class="wpsr-empty-state">
         <div class="wpsr-empty-content">
           <span class="wpsr-empty-state-icon">

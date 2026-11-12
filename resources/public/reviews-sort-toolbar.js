@@ -1,5 +1,5 @@
 /**
- * Frontend review search + sort + rating toolbar. The pro markup is a sibling BEFORE the cards container, so
+ * Frontend review search, sort and rating toolbar. Pro renders it as a sibling before the cards container, so
  * replacing that container never destroys these controls.
  */
 
@@ -64,7 +64,7 @@ jQuery(document).ready(function () {
     });
 
     // Template 2's star breakdown rows act as a second control for the same rating filter the toolbar owns.
-    // The PHP only marks a row clickable when the toolbar is actually active, so no extra gate is needed here.
+    // PHP only marks a row clickable when the toolbar is active, so no extra gate is needed here.
     jQuery(document).on('click', '.wpsr-clickable-rating-bar', function () {
         handleRatingRowClick(jQuery(this));
     });
@@ -307,7 +307,7 @@ function applyFeedQuery($wrap, useTypedSearch) {
             window.wpsrNotificationApi.resyncFeed(templateId);
         }
 
-        // Count the cards that landed: `total` is the full COUNT, which the visitor may never reach.
+        // Count the cards that landed: `total` is the full count, which the visitor may never reach.
         const shown = isSlider
             ? $feeds.children('.swiper-slide').length
             : $feeds.children().not('.wpsr-reviews-empty-state').length;
@@ -319,7 +319,7 @@ function applyFeedQuery($wrap, useTypedSearch) {
             return;
         }
 
-        // The old cards are still on screen, so put the controls back to the APPLIED query.
+        // The old cards are still on screen, so put the controls back to the applied query.
         state.order = state.appliedOrder;
         state.rating = state.appliedRating;
         // The term reverts in state only; the typed text stays exactly as it is, caret included.

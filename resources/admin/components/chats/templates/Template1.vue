@@ -1,7 +1,7 @@
 <template>
     <div :style="cssVars" class="wpsr-fm-chat-wrapper"
          :class="[
-              configs.settings.chat_bubble_position ? 'wpsr-fm-bubble-position-'+configs.settings.chat_bubble_position : '',
+              wpsrBubblePositionClass,
               templateConfigs.template ? 'wpsr-fm-chat-'+templateConfigs.template : '',
               configs.layout_type === 'icons' ? 'wpsr-chat-icons-layout' : ''
           ]"
@@ -44,7 +44,7 @@
                       <path d="M3.426 2.024l.094.083L8 6.586l4.48-4.479a1 1 0 011.497 1.32l-.083.095L9.414 8l4.48 4.478a1 1 0 01-1.32 1.498l-.094-.083L8 9.413l-4.48 4.48a1 1 0 01-1.497-1.32l.083-.095L6.585 8 2.106 3.522a1 1 0 011.32-1.498z"></path>
                     </svg>
                 </span>
-               <span>{{ templateConfigs.chat_bubble.cb_button_text }}</span>
+               <span dir="auto">{{ templateConfigs.chat_bubble.cb_button_text }}</span>
             </a>
         </div>
     </div>
@@ -189,6 +189,16 @@
         computed: {
             templateConfigs() {
                 return this.configs[this.configs.template];
+            },
+            // The -rtl.css mirrors these rules with the editor layout, so the side is swapped to keep the chosen corner.
+            wpsrBubblePositionClass() {
+                const wpsrPosition = this.configs.settings.chat_bubble_position;
+                if (!wpsrPosition) {
+                    return '';
+                }
+                const wpsrIsRtl = document.documentElement.dir === 'rtl';
+                const wpsrSide = wpsrIsRtl ? wpsrPosition.replace(/left|right/, side => side === 'left' ? 'right' : 'left') : wpsrPosition;
+                return 'wpsr-fm-bubble-position-' + wpsrSide;
             },
             cssVars() {
                 return {

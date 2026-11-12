@@ -4,7 +4,7 @@ Tags: Customer Reviews, Google Reviews, Social Reviews, Social Feeds,  Instagram
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.4.0
+Stable tag: 4.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,7 +20,7 @@ Add Facebook feeds, Instagram feeds, TikTok feeds, Facebook reviews, WhatsApp Ch
 
 👉 Join Our Community: [WP Social Ninja Community](https://community.wpmanageninja.com/portal/space/wp-social-ninja/home)
 
-[youtube https://www.youtube.com/watch?v=da87i4ZR6OU]
+[youtube https://www.youtube.com/watch?v=EMJIzrtPhsU]
 
 =  🔥WP Social Ninja - A Comprehensive Social Media Plugin =
 
@@ -256,6 +256,7 @@ Are you curious about something or stuck on a feature? Our excellent support cre
 **[FluentCRM – Email Marketing, Newsletter, Email Automation and CRM Plugin](https://wordpress.org/plugins/fluent-crm/)**
 
 **[Ninja Tables – Best WP DataTables Plugin for WordPress](https://wordpress.org/plugins/ninja-tables/)**
+
 == Installation ==
 This section describes how to install and get the plugin working.
 Install from WordPress Admin Panel:
@@ -334,6 +335,37 @@ If you like this plugin, please give us [5 stars](https://wordpress.org/plugins/
 8. Make templates your own way, and all will look perfect on any screen
 
 == Changelog ==
+
+4.5.0 ( Date: November 11, 2026 )
+- Added Feature Grid, Score Slider, and Marquee review layouts, plus Review Spotlight and Rating Pulse notification popups. (Pro)
+- Added Badges 3 to 6: an avatar stack, a score strip, and circle and rounded-square stickers. (Pro)
+- Added List layout, Author Card and Author Bar templates, an Inline header layout, and Color Scheme presets for Instagram feeds.
+- Added WordPress AI (WordPress 7.0+) as an AI review summary provider, and updated the model list with the latest models. (Pro)
+- Added Reset All to the Style tab of the Reviews, Facebook, Instagram, TikTok, Twitter, and YouTube editors. (Pro)
+- Added Booking.com connection by hotel ID. Booking.com now imports reviews in every language. (Pro)
+- Added a "Scheduled for" label to upcoming YouTube live streams. (Pro)
+- Added right-to-left (RTL) support for Arabic, Hebrew, Persian, and other RTL languages, on the front end and in the admin.
+- Enabled the Instagram Follow button, header counts, post date, random post order, and caption trimming for free users.
+- Improved Instagram connections to renew access tokens automatically before they expire.
+- Improved Google and Facebook syncing to load every page up to the review limit and keep older saved reviews.
+- Improved the chat widget to load about 37% faster without jQuery.
+- Improved notification popups to pause in hidden tabs, remember dismissals, respect reduced motion, and work with the keyboard.
+- Improved the editors: faster Layout Type switching, a preview that keeps every setting, and a mobile Number of Posts that follows desktop.
+- Improved the badge Style tab to show only relevant controls, and added Quality Label, More Reviews Count, and Header Band controls. (Pro)
+- Improved Set Up Review Hub for WooCommerce and FluentCart to use the Polaris skin. (Pro)
+- Fixed a fatal error in AI review summaries when a provider retires the selected model. (Pro)
+- Fixed issues identified during the internal security audit.
+- Fixed review templates slowing down pages with many reviews.
+- Fixed custom source names and logos in grid templates and badges.
+- Fixed Instagram masonry post heights, Classic Grid caption links, and the placeholder header avatar.
+- Fixed Facebook feed grid cards losing rounded corners and shadows with No Gap.
+- Fixed uneven photo widths in Facebook posts with two photos.
+- Fixed badge styles not applying in some cases, and the badge printing its template ID without Pro.
+- Fixed duplicated reviews losing their categories.
+- Fixed image optimization affecting images from other platforms.
+- Fixed custom styles clashing when several widgets share a page. (Pro)
+- Fixed admin dark mode colors, missing translations, scroll position, and a settings page crash.
+- Fixed plugin data cleanup failing on uninstall when some tables are missing.
 
 4.4.0 ( Date: August 26, 2026 )
 - Added a new frontend visitor toolbar for review feeds, allowing visitors to search, sort, and filter reviews by rating. (Pro)

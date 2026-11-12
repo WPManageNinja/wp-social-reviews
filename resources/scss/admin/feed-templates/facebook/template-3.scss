@@ -16,6 +16,22 @@
     }
   }
 
+  .wpsr-column-gap-no_gap {
+    .wpsr-fb-card-item {
+      border: none;
+      box-shadow: none;
+      border-radius: 0;
+
+      .wpsr-fb-feed-inner {
+        border-radius: 0;
+      }
+    }
+
+    .wpsr-fb-card-content {
+      border-radius: 0;
+    }
+  }
+
   .wpsr-fb-feed-content-wrapper {
     overflow: hidden;
 

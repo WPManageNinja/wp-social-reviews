@@ -56,7 +56,7 @@
                 <SidebarToggleButton :minimized="wpsrSidebarMinimized" @toggle="toggleEditorSidebar" />
                 <el-aside class="wpsr-editor-sidebar">
                   <SidebarResizeHandle :width="wpsrSidebarWidth" :min="wpsrSidebarMinWidth" :max="wpsrSidebarMaxWidth" @resize-start="startSidebarResize" @resize-step="stepSidebarResize" />
-                  <UpgradeApp v-if="!has_pro" />
+                  <UpgradeApp v-if="!has_pro && !hide_pro_features" />
                   <el-tabs v-model="activeTab" class="wpsr-element-tab-wrapper">
                     <el-tab-pane label="General" name="general" class="wpsr-element-tab-item">
                       <el-collapse accordion v-model="activeNames">
@@ -83,7 +83,7 @@
                         />
                     </el-tab-pane>
 
-                    <el-tab-pane name="style" class="wpsr-element-tab-item">
+                    <el-tab-pane name="style" class="wpsr-element-tab-item" v-if="has_pro || !hide_pro_features">
                       <template #label>
                         <span class="wpsr-tab-label-with-icon">
                           Style
@@ -92,6 +92,7 @@
                       </template>
                       <el-collapse accordion v-model="activeNames">
                         <div class="wpsr-styling-divider"/>
+                        <StyleResetButton :styles_config="feedConfig.styles_config" :default_styles="default_styles"/>
                         <InstagramStyleEditor
                             v-if="feedConfig.styles_config"
                             :feed_config="feedConfig.styles_config"
@@ -129,6 +130,7 @@ import ResponsiveBar from '../../core-ui/editor/ResponsiveBar';
 import EditorViewInfoBar from '../../core-ui/editor/EditorViewInfoBar';
 import {helperStyle} from "../../../mixins/helperStyle";
 import InstagramStyleEditor from "./editor-ui/InstagramStyleEditor";
+import StyleResetButton from "../../core-ui/editor/StyleResetButton.vue";
 import ShoppableModal from "../../pieces/ShoppableModal";
 import Errors from "../../../errors/Errors";
 import UpgradeToProButton from '../../views/advertise/UpgradeToProButton';
@@ -157,6 +159,7 @@ export default {
     components: {
       DemoTemplateAlert,
       InstagramStyleEditor,
+      StyleResetButton,
       InstagramFeedConnection,
       EditorHeader,
       Template1,
@@ -189,6 +192,8 @@ export default {
                 'template2' : markRaw(Template2),
                 'template3' : markRaw(Template3),
                 'template4' : markRaw(Template4),
+                'template5' : markRaw(Template2),
+                'template6' : markRaw(Template1),
             },
             videos: false,
             layoutType: '',
@@ -199,7 +204,6 @@ export default {
             style: null,
             elements: [],
             styleConfig: null,
-            //shoppableal options
             show_shoppable_popup: false,
             selectedFeed: null,
             shoppable_fields: {...fields},
@@ -260,7 +264,6 @@ export default {
         }
       },
 
-      //add feed to shoppable
       addShoppableTemplateSettings() {
         let template_id = this.$route.params.template_id;
         this.saving = true;
@@ -275,7 +278,6 @@ export default {
             this.getFeedSettings('instagram');
           }
         }).catch((errors) => {
-          //this.handleError(errors);
           this.errors.record(errors.responseJSON);
         }).always(() => {
           this.saving = false;
@@ -339,19 +341,13 @@ export default {
       },
 
       setupEventListeners() {
-        // Create a callback function for the event
         this.handleDeviceCallback = (val, activeDevice) => {
           this.handleDevice(val, activeDevice);
         };
 
-        // Use the event bus in Vue 3 compatible way
         if (this.$root.$on) {
-          // Vue 2 style event bus
           this.$root.$on('handleDeviceResponsive', this.handleDeviceCallback);
         } else {
-          // Vue 3 - use a global event bus or emitter library
-          // If you have a global event bus like mitt, use it here
-          // For example: this.$eventBus.on('handleDeviceResponsive', this.handleDeviceCallback);
           window.addEventListener('handleDeviceResponsive', this.handleDeviceCallback);
         }
       },
@@ -359,11 +355,8 @@ export default {
       cleanupEventListeners() {
         if (this.handleDeviceCallback) {
           if (this.$root.$off) {
-            // Vue 2 style
             this.$root.$off('handleDeviceResponsive', this.handleDeviceCallback);
           } else {
-            // Vue 3 style
-            // If using a global event bus: this.$eventBus.off('handleDeviceResponsive', this.handleDeviceCallback);
             window.removeEventListener('handleDeviceResponsive', this.handleDeviceCallback);
           }
         }
@@ -382,7 +375,6 @@ export default {
         const urlParams = new URLSearchParams(queryString);
         configuration = urlParams.get('configuration');
         
-        // Extract Instagram-specific parameters
         let platform = urlParams.get('platform');
         let credentials_type = urlParams.get('credentialsType');
         let oauth_token = platform === 'google' ? urlParams.get('code') : urlParams.get('access_token');
@@ -396,7 +388,6 @@ export default {
                 const hashParams = new URLSearchParams(hashQuery);
                 configuration = hashParams.get('configuration');
                 
-                // Also check hash params for Instagram parameters
                 if (!oauth_token && !auth_code) {
                     platform = hashParams.get('platform');
                     oauth_token = hashParams.get('access_token');
@@ -410,12 +401,9 @@ export default {
         if(configuration && platform === 'instagram'){
             this.$router.replace({ name: this.$route.name, params: this.$route.params });
 
-            // Switch to connection tab and open modal
             this.activeTab = 'connection';
 
-            // Use nextTick to ensure the connection component is rendered
             this.$nextTick(() => {
-                // Find the InstagramFeedConnection component and trigger modal
                 const connectionComponent = this.$refs.instagramConnection;
                 if (connectionComponent) {
                     connectionComponent.instagramSettingModal = true;
@@ -423,13 +411,10 @@ export default {
                     connectionComponent.credentialsType = credentials_type;
                     connectionComponent.expiresIn = expires_in;
                     
-                    // Also trigger the businessAccountsModal if it's a business account
                     if (credentials_type === 'business') {
-                        // Wait a bit more for the Instagram component to be fully rendered
                         setTimeout(() => {
                             const instagramComponent = connectionComponent.$refs.instagramConfig;
                             if (instagramComponent) {
-                                // Wait for business accounts to be loaded
                                 const checkBusinessAccounts = () => {
                                     if (instagramComponent.businessAccounts && Object.keys(instagramComponent.businessAccounts).length > 0) {
                                         instagramComponent.businessAccountsModal = true;
@@ -450,7 +435,6 @@ export default {
     watch: {
         'loading': {
           handler(val) {
-            // Only show popup on initial load, not on subsequent loads
             if (val && !this.isInitialLoad) {
               this.showWelcomePopup = true;
               this.isInitialLoad = true;
@@ -479,16 +463,6 @@ export default {
           },
           deep: true
         },
-        // 'feedConfig.feed_settings.filters.total_posts_number': {
-        //   handler(val) {
-        //     if (val && this.isEditing) {
-        //       console.log(newVal, oldVal);
-        //       return;
-        //       this.editEditorSettings('instagram');
-        //     }
-        //   },
-        //   deep: true
-        // },
         'feedConfig.feed_settings.layout_type': {
             handler(val) {
                 this.layoutType = val;
@@ -514,16 +488,6 @@ export default {
           },
           deep: true
         },
-        // 'feedConfig.feed_settings.source_settings.account_ids': {
-        //   handler(newVal, oldVal) {
-        //     console.log('account_ids changed in parent:', newVal);
-        //     if (newVal && oldVal && JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
-        //       // Account IDs have changed, may need to refresh data
-        //       this.editEditorSettings('instagram');
-        //     }
-        //   },
-        //   deep: true
-        // }
     },
 
     mounted() {
@@ -531,10 +495,8 @@ export default {
         this.getFeedSettings('instagram');
         this.setupEventListeners();
 
-        // Show welcome popup if onboarding query param is present
         this.checkAndEditorWelcomePopup();
 
-        // Handle configuration parameter to open connection modal
         this.handleConfigurationParameter();
 
         setTimeout(function() {

@@ -1,9 +1,6 @@
 /**
- * Shared review-category behaviour for the listings that show categories:
- * AllReviews.vue, AllTestimonials.vue and CustomSourceView.vue.
- *
- * Expects the host to provide (all do, via tableMixin): `selectedItems`,
- * `bulkAction` and `getItems()`.
+ * Category behaviour for AllReviews, AllTestimonials and CustomSourceView.
+ * The host provides `selectedItems`, `bulkAction` and `getItems()` via tableMixin.
  */
 export const reviewCategoryMixin = {
     data() {
@@ -21,10 +18,8 @@ export const reviewCategoryMixin = {
         }
     },
     computed: {
-        // Renaming/deleting a category is global (it touches rows on both screens),
-        // so the server's CategoryManagementPolicy requires BOTH capabilities. Mirror
-        // that here so a single-capability user is never shown a Manage Categories
-        // control whose rename/delete would deterministically 403.
+        // Rename/delete is global, so CategoryManagementPolicy needs both capabilities.
+        // Mirror it so a single-capability user never sees a control that would 403.
         canManageCategories() {
             return this.hasPermission('wpsn_full_access')
                 || (this.hasPermission('wpsn_manage_reviews') && this.hasPermission('wpsn_manage_testimonials'));
@@ -38,8 +33,7 @@ export const reviewCategoryMixin = {
                 this.categories = response.categories || [];
                 this.categoriesLoaded = true;
             }).catch(errors => {
-                // Surface it instead of swallowing: a silent empty list invites
-                // duplicate categories and looks like lost data.
+                // A silent empty list invites duplicate categories and looks like lost data.
                 this.categoriesLoadError = true;
                 this.handleError(errors);
             }).always(() => {
@@ -51,8 +45,7 @@ export const reviewCategoryMixin = {
         },
         applyBulkCategory(payload) {
             this.applyingBulkCategory = true;
-            // Snapshot the rows the request actually applied to, so the response can
-            // clear the selection only if the user has not changed it meanwhile.
+            // Clear the selection afterwards only if the user hasn't changed it meanwhile.
             const submittedIds = this.selectedItems.map(item => item.id || item.ID);
             this.$put(`${this.categoryRoutePrefix}/bulk-category`, {
                 ids: submittedIds,
@@ -73,7 +66,6 @@ export const reviewCategoryMixin = {
                 this.applyingBulkCategory = false;
             });
         },
-        // True when both arrays hold the same review ids, order-independent.
         isSameIdSet(a, b) {
             if (a.length !== b.length) {
                 return false;

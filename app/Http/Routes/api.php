@@ -38,6 +38,7 @@ $router->prefix('platforms')->withPolicy('PlatformPolicy')->group(function ($rou
         $router->post('/configs/consume', [ReviewsConfigsController::class, 'consume']);
         $router->delete('/configs', [ReviewsConfigsController::class, 'delete']);
         $router->post('/', [ReviewsConfigsController::class, 'saveReviews']);
+        $router->get('/search', [ReviewsConfigsController::class, 'searchBusiness']);
         $router->post('/configs/manually-sync-reviews', [ReviewsConfigsController::class, 'manuallySyncReviews']);
     });
 
@@ -55,8 +56,8 @@ $router->prefix('platforms')->withPolicy('DashboardNoticesPolicy')->group(functi
     $router->post('/dashboard-notices', [PlatformController::class, 'updateDashboardNotices']);
 });
 
-// Mounted under both prefixes, but the scope comes from the route (not a client
-// `type`/`filter`/`{id}`), so each prefix gets its own scoped entry point.
+// Scope comes from the route, not from client `type`/`filter`/`{id}`, so each
+// prefix gets its own scoped entry point.
 $router->prefix('reviews')->withPolicy('ReviewPolicy')->group(function ($router) {
     $router->get('/', [RecommendationsController::class, 'index']);
     $router->post('/', [RecommendationsController::class, 'create']);
@@ -76,15 +77,13 @@ $router->prefix('testimonials')->withPolicy('TestimonialPolicy')->group(function
     $router->put('/spam', [RecommendationsController::class, 'spamTestimonialReviews']);
 });
 
-// The two prefixes sit behind different capabilities, and `ids` comes from the
-// client, so each gets the handler that scopes writes to its own screen's rows.
-// Read stays per-screen too: both screens need the shared vocabulary.
+// `ids` comes from the client, so each prefix gets a handler that scopes writes
+// to its own screen's rows.
 $wpsr_category_routes = function ($bulkCategoryMethod) {
     return function ($router) use ($bulkCategoryMethod) {
         $router->put('/bulk-category', [RecommendationsController::class, $bulkCategoryMethod]);
 
-        // No POST: categories are created by assigning them, never on their own.
-        // See the CategoriesController docblock.
+        // No POST: categories are only created by assigning them.
         $router->prefix('categories')->group(function ($router) {
             $router->get('/', [CategoriesController::class, 'index']);
         });
@@ -94,10 +93,8 @@ $wpsr_category_routes = function ($bulkCategoryMethod) {
 $router->prefix('reviews')->withPolicy('ReviewPolicy')->group($wpsr_category_routes('bulkCategory'));
 $router->prefix('testimonials')->withPolicy('TestimonialPolicy')->group($wpsr_category_routes('bulkTestimonialCategory'));
 
-// Rename and delete are global — one shared vocabulary, and a delete detaches the
-// category from rows on both screens — so they demand both capabilities rather than
-// either one, via CategoryManagementPolicy. Kept under both prefixes only so each
-// screen's manage-categories modal keeps its existing URL.
+// Rename and delete affect both screens, so CategoryManagementPolicy requires both
+// capabilities. Mounted under both prefixes so each screen's modal keeps its URL.
 $wpsr_category_management_routes = function ($router) {
     $router->prefix('categories')->group(function ($router) {
         $router->put('/{id}', [CategoriesController::class, 'update'])->int('id');
@@ -128,7 +125,6 @@ $router->prefix('settings')->withPolicy('SettingsPolicy')->group(function ($rout
     $router->delete('/reset-images', [SettingsController::class, 'resetData']);
     $router->delete('/reset-error-log', [SettingsController::class, 'resetErrorLog']);
     $router->delete('/delete-all-data', [SettingsController::class, 'deleteAllData']);
-    // $router->delete('/delete-platform-data', 'SettingsController@deletePlatformData');
 });
 
 $router->prefix('chat-widgets')->withPolicy('WidgetsPolicy')->group(function ($router) {
@@ -178,7 +174,6 @@ $router->prefix('templates')->withPolicy('TemplatePolicy')->group(function ($rou
     $router->post('/', [TemplatesController::class, 'create']);
     $router->post('/duplicate', [TemplatesController::class, 'duplicate']);
     $router->delete('/', [TemplatesController::class, 'delete']);
-    // $router->put('/status-update', 'TemplatesController@statusUpdate');
 
     $router->put('/title/{id}', [TemplatesController::class, 'updateTitle'])->int('id');
 

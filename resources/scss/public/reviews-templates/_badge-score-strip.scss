@@ -1,0 +1,45 @@
+.wpsr-badge-score-strip {
+	.wpsr-reviews-badge-btn,
+	.wpsr-reviews-badge-html {
+		background-color: #f7f8fa;
+		border: 1px solid #e5e7eb;
+		box-shadow: none;
+		border-radius: 16px;
+		padding: 14px 20px;
+		&:hover,
+		&:focus {
+			// Longhand border-color alone can't win: the base rule's `border: none` on
+			// hover resets border-style too, so the pill's outline needs the full shorthand.
+			box-shadow: none;
+			border: 1px solid #d8dbe2;
+		}
+	}
+	.wpsr-reviews-badge-btn:focus-visible {
+		outline: 2px solid #111;
+		outline-offset: 3px;
+	}
+	.wpsr-reviews-badge-wrapper-inner {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 8px 12px;
+	}
+	.wpsr-score-strip-quality {
+		font-size: 14px;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: #1a1a1a;
+	}
+	.wpsr-score-strip-summary {
+		font-size: 14px;
+		font-weight: 600;
+		color: #1a1a1a;
+	}
+	.wpsr-badge-platform-icon {
+		width: 24px;
+		height: 24px;
+		object-fit: contain;
+	}
+}

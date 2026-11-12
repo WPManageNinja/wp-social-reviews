@@ -416,7 +416,7 @@
         &.display-form,
         &.is-disabled{
           background-color: var(--wpsr-menu-active-bg, #F5F7FA);
-          border-color: var(--wpsr-menu-active-bg, #EEE9FB);
+          border-color: var(--wpsr-menu-active-bg, #F5F7FA);
           color: var(--wpsr-secondary-link, #99A0AE);
         }
       }
@@ -557,7 +557,7 @@
       content: '';
       flex: 1;
       height: 1px;
-      background-color: var(--wpsr-border-color, #E2E4E9);
+      background-color: var(--wpsr-primary-border, #E1E4EA);
     }
     span{
       padding: 0 10px;
@@ -811,6 +811,47 @@
     }
   }
 }
+.wpsr-booking-hotel-option{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  img{
+    border-radius: 4px;
+    object-fit: cover;
+    flex: 0 0 32px;
+  }
+  small{
+    color: var(--wpsr-primary-text, #525866);
+  }
+}
+.wpsr-booking-hotel-id-switch{
+  margin: 10px 0 0;
+}
+.wpsr-booking-hotel-id-steps{
+  margin: 8px 0 12px;
+  padding: 14px;
+  color: var(--wpsr-primary-text, #525866);
+  background-color: var(--wpsr-warning-secondary-bg, #FFF1EB);
+  border-radius: 12px;
+  .wpsr-booking-hotel-id-steps-title{
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    color: var(--wpsr-heading-text, #0E121B);
+  }
+  ol{
+    margin: 0 0 0 18px;
+    padding: 0;
+    list-style: decimal;
+  }
+  li{
+    margin-bottom: 4px;
+    &:last-child{
+      margin-bottom: 0;
+    }
+  }
+}
 .el-button.wpsr-login-with-ig-btn{
   margin-top: 0;
   background: #f09433;
@@ -847,7 +888,7 @@
   margin: 8px 0 0;
   font-size: 12px;
   line-height: 1.5;
-  color: var(--wpsr-body-regular-color, #6B7280);
+  color: var(--wpsr-primary-text, #525866);
 }
 .el-button.wpsr-login-with-facebook{
   margin-top: 0;
@@ -1009,5 +1050,56 @@
         }
       }
     }
+  }
+}.wpsr-legacy-choice-modal {
+  .wpsr-legacy-choice-note {
+    margin: 0 0 16px;
+    font-size: 14px;
+    line-height: 22px;
+    color: var(--wpsr-primary-text, #525866);
+  }
+  .wpsr-legacy-choice-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    .el-radio {
+      display: flex;
+      align-items: flex-start;
+      height: auto;
+      width: 100%;
+      margin: 0;
+      padding: 12px 14px;
+      border: 1px solid var(--wpsr-border-color, #E2E4E9);
+      border-radius: 8px;
+      white-space: normal;
+      &.is-checked {
+        border-color: var(--wpsr-primary-btn-bg, #4A1FB8);
+      }
+      .el-radio__label {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding-left: 10px;
+      }
+    }
+  }
+  .wpsr-legacy-choice-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--wpsr-heading-text, #0E121B);
+    em {
+      margin-left: 6px;
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 400;
+      color: var(--wpsr-primary-btn-bg, #4A1FB8);
+    }
+  }
+  .wpsr-legacy-choice-meta {
+    font-size: 12px;
+    line-height: 18px;
+    word-break: break-all;
+    color: var(--wpsr-primary-text, #525866);
   }
 }

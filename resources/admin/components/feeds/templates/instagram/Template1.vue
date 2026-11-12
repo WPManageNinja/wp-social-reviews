@@ -4,7 +4,7 @@
             <ErrorCard :error_message = "configs.dynamic.error_message"/>
         </div>
         
-        <div :class="'wpsr-ig-feed-template-'+$route.params.template_id" class="wpsr-ig-feed-wrapper wpsr-instagram-slider-activate wpsr-instagram-masonry-activate wpsr-ig-feed-template1">
+        <div :class="'wpsr-ig-feed-template-'+$route.params.template_id+' wpsr-ig-feed-'+configs.feed_settings.template+' wpsr-ig-scheme-'+(configs.feed_settings.color_scheme || 'light')+(configs.feed_settings.layout_type === 'list' ? ' wpsr-instagram-list-activate' : '')+(configs.feed_settings.layout_type === 'masonry' ? ' wpsr-instagram-masonry-activate' : '')" class="wpsr-ig-feed-wrapper wpsr-instagram-slider-activate wpsr-ig-feed-template1">
             <div class="wpsr-container">
                 <Header
                     v-if="configs.dynamic && configs.dynamic.header"
@@ -50,6 +50,7 @@
                                       </div>
                                     </div>
                                     <Media :feed="feed" :settings="configs.feed_settings" :image_settings="image_settings" :id="'wpsr-video-play-'+index"/>
+                                    <Author v-if="configs.feed_settings.template === 'template6'" :feed="feed" :avatar="configs.dynamic && configs.dynamic.header ? configs.dynamic.header.user_avatar : ''" :show-date="configs.feed_settings.post_settings.display_date !== 'false'"/>
                                     <div class="wpsr-ig-post-info" v-if="Object.keys(feed).length > 6">
                                         <a v-if="configs.feed_settings.post_settings.display_mode !== 'popup' && feed.shoppable_options && feed.shoppable_options.show_shoppable && feed.shoppable_options.url_settings.text.length"
                                            class="wpsr-shoppable-button" type="button" :href="feed.shoppable_options.url_settings.url"
@@ -59,6 +60,8 @@
                                         </a>
 
                                         <Statistics v-if="has_pro && !(configs.feed_settings.post_settings.display_mode !== 'popup' && feed.shoppable_options && feed.shoppable_options.show_shoppable)" :feed="feed" :settings="configs.feed_settings"/>
+
+                                        <span class="wpsr-ig-post-date" v-if="feed.timestamp && configs.feed_settings.post_settings.display_date !== 'false' && ['template5', 'template6'].indexOf(configs.feed_settings.template) === -1">{{ timeAgo(feed.timestamp) }}</span>
 
                                         <Caption v-if="!(configs.feed_settings.post_settings.display_mode !== 'popup' && feed.shoppable_options && feed.shoppable_options.show_shoppable)" :feed="feed" :settings="configs.feed_settings"/>
 
@@ -115,6 +118,7 @@
 import Media from './elements/_media';
 import Statistics from './elements/_statistics';
 import Caption from './elements/_caption';
+import Author from './elements/_author.vue';
 import Header from './elements/_header';
 import Popup from './elements/_popup';
 import Footer from './elements/_footer';
@@ -128,6 +132,7 @@ export default {
     props: ['configs','image_settings'],
     mixins: [popupMixin, igMixin],
     components: {
+        Author,
         Media,
         Statistics,
         Caption,

@@ -1,6 +1,5 @@
 <template>
   <div class="wpsr-device-manager">
-    <!-- Responsive Bar UI -->
     <div v-if="type !== 'dropdown'" class="wpsr-responsive-bar-wrapper" :class="{'wpsr-sticky-bar': scrolled}" :device=activeDeviceName>
       <span class="wpsr-responsive-bar-item wpsr-desktop-icon" @click.native="handleDevice('desktop','dashicons-desktop')">
         <el-tooltip class="item" effect="dark" content="Desktop" placement="bottom">
@@ -21,7 +20,6 @@
       </span>
     </div>
     <span class="wpsr-dropdown-device-manager">
-        <!-- Dropdown UI -->
         <el-dropdown trigger="click" v-if="type === 'dropdown'" @visible-change="handleDropdownVisibility" ref="dropdown" @command="handleCommand" :hide-on-click="false" :teleported="false">
           <span class="item el-dropdown-link">
             <DeviceIcon :shouldSetFillExplicitly="true" :type="activeDeviceName === 'dashicons-desktop' ? 'desktop' : (activeDeviceName === 'dashicons-tablet' ? 'tablet' : 'mobile')" :iconStyle="{cursor: 'pointer'}" :active="true" />
@@ -83,50 +81,34 @@ export default {
     }
   },
   methods: {
-    /**
-     * Handle scroll events for sticky bar
-     */
     handleScroll() {
       this.scrolled = window.scrollY > 0;
     },
     
-    /**
-     * Handle dropdown visibility changes
-     */
     handleDropdownVisibility(visible) {
       this.dropdownVisible = visible;
     },
     
-    /**
-     * Handle dropdown command selection
-     */
     handleCommand(command) {
       const deviceName = this.mapDeviceCommand(command);
       this.handleDevice(command, deviceName);
       
-      // Close only the dropdown
       if (this.$refs.dropdown) {
         this.$refs.dropdown.handleClose();
       }
     },
     
-    /**
-     * Main device switching handler
-     */
     handleDevice(deviceType, activeDevice) {
       this.switchDevice(deviceType, activeDevice);
       
-      // Update local state
       this.currentDevice = deviceType;
       this.activeDeviceName = activeDevice;
       
-      // Emit events to parent components
       this.$emit('handleDevice', deviceType, activeDevice);
       this.$emit('handleDeviceResponsive', deviceType, activeDevice);
     },
 
     /**
-     * Handle device switching with all the necessary DOM manipulations
      * @param {string} deviceType - The device type (desktop, tablet, mobile)
      * @param {string} activeDeviceName - The active device icon name
      */
@@ -134,18 +116,14 @@ export default {
       this.currentDevice = deviceType;
       this.activeDeviceName = activeDeviceName;
 
-      // Update jQuery classes for device switching
       this.updateDeviceClasses(deviceType);
       
-      // Update viewport classes
       this.updateViewportClasses(deviceType);
       
-      // Emit global event for other components
       this.emitGlobalDeviceEvent(deviceType, activeDeviceName);
     },
 
     /**
-     * Update container classes based on device type
      * @param {string} deviceType - The device type
      */
     updateDeviceClasses(deviceType) {
@@ -153,16 +131,13 @@ export default {
         const jQuery = window.jQuery;
         const container = jQuery('.wpsr_social_review_admin .el-container');
         
-        // Remove all device classes
         container.removeClass('is-desktop-active is-mobile-active is-tablet-active');
         
-        // Add current device class
         container.addClass(`is-${deviceType}-active`);
       }
     },
 
     /**
-     * Update viewport classes based on device type
      * @param {string} deviceType - The device type
      */
     updateViewportClasses(deviceType) {
@@ -179,7 +154,6 @@ export default {
     },
 
     /**
-     * Emit global event for device change
      * @param {string} deviceType - The device type
      * @param {string} activeDeviceName - The active device icon name
      */
@@ -189,9 +163,6 @@ export default {
       }
     },
 
-    /**
-     * Initialize device state on component mount
-     */
     initializeDeviceState() {
       if (window.jQuery) {
         const jQuery = window.jQuery;
@@ -206,18 +177,12 @@ export default {
       }
     },
 
-    /**
-     * Initialize global event bus
-     */
     initializeGlobalEventBus() {
       if (!window.WPSocialReviewsAdmin && window.Vue) {
         window.WPSocialReviewsAdmin = new window.Vue();
       }
     },
 
-    /**
-     * Get device map for command mapping
-     */
     getDeviceMap() {
       return {
         'desktop': 'dashicons-desktop',
@@ -227,7 +192,6 @@ export default {
     },
 
     /**
-     * Map device command to device name
      * @param {string} command - The device command
      * @returns {string} The mapped device name
      */

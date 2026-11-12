@@ -11,6 +11,7 @@ use WPSocialReviews\App\Services\GlobalSettings;
 use WPSocialReviews\App\Services\Platforms\PlatformManager;
 use WPSocialReviews\App\Hooks\Handlers\UninstallHandler;
 use WPSocialReviews\App\Services\DataProtector;
+use WPSocialReviews\App\Services\Helper as GlobalHelper;
 use WPSocialReviews\App\Services\PermissionManager;
 
 class SettingsController extends Controller
@@ -26,6 +27,7 @@ class SettingsController extends Controller
         'license'          => ['wpsn_license_settings'],
         'delete_all_data'  => ['wpsn_full_access'],
         'qr_codes'         => ['wpsn_manage_qr_codes'],
+        'error_log'        => ['wpsn_manage_platforms'],
     ];
 
     /**
@@ -332,6 +334,14 @@ class SettingsController extends Controller
             unset($advanceSettings['qr_codes']);
         }
 
+        // The admin app only ever needs to know a key is on file, so it gets the
+        // mask. saveAdvanceSettings() reads the mask back as "leave it alone".
+        if (is_array($advanceSettings)) {
+            $advanceSettings['ai_api_key'] = GlobalHelper::maskApiKey(
+                $protector->maybe_decrypt(Arr::get($advanceSettings, 'ai_api_key', ''))
+            );
+        }
+
         return [
             'message'           => 'success',
             'advance_settings'  => $advanceSettings,
@@ -341,6 +351,50 @@ class SettingsController extends Controller
 
     public function getAISummarizerAPISettingsOptions(){
         return (new GlobalSettings())->getAISummarizerAPISettingsOptions();
+    }
+
+    /**
+     * Whether a posted ai_platform matches one this build offers.
+     *
+     * Compared case-insensitively to agree with the settings screen, whose own
+     * matcher folds case: a platform the screen shows as selected must not then be
+     * rejected on save.
+     */
+    protected function isKnownAiPlatform($platform)
+    {
+        $options = $this->getAISummarizerAPISettingsOptions();
+        $candidate = strtolower(trim((string) $platform));
+
+        foreach (Arr::get($options, 'ai_platforms', []) as $entry) {
+            if (strtolower(trim((string) Arr::get($entry, 'value', ''))) === $candidate) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether the catalogue marks a model of the given platform as retired.
+     */
+    protected function isRetiredAiModel($platform, $model)
+    {
+        $options = $this->getAISummarizerAPISettingsOptions();
+        $candidate = strtolower(trim((string) $platform));
+
+        foreach (Arr::get($options, 'ai_platforms', []) as $entry) {
+            if (strtolower(trim((string) Arr::get($entry, 'value', ''))) !== $candidate) {
+                continue;
+            }
+
+            foreach (Arr::get($entry, 'models', []) as $listed) {
+                if (Arr::get($listed, 'value') === $model) {
+                    return Arr::get($listed, 'status') === 'retired';
+                }
+            }
+        }
+
+        return false;
     }
 
     public function saveAdvanceSettings(Request $request, DataProtector $protector)
@@ -398,6 +452,50 @@ class SettingsController extends Controller
 
         $settings = get_option('wpsr_global_settings', []);
 
+        // Reject a platform this build cannot serve, but let the stored one through
+        // untouched: the Advance and Feeds screens round-trip it, and a value a
+        // filter stopped registering must not block their unrelated saves.
+        $storedPlatform = Arr::get($settings, 'global_settings.advance_settings.ai_platform', '');
+        $incomingPlatform = Arr::get($advanceSettings, 'ai_platform', '');
+
+        if (
+            !empty($incomingPlatform)
+            && $incomingPlatform !== $storedPlatform
+            && !$this->isKnownAiPlatform($incomingPlatform)
+        ) {
+            return $this->sendError([
+                'message' => __('The selected AI platform is not available.', 'wp-social-reviews')
+            ], 422);
+        }
+
+        // Same rule for a model the catalogue marks retired: the stored one may round-trip, a new pick may not.
+        $storedModel = Arr::get($settings, 'global_settings.advance_settings.selected_model', '');
+        $incomingModel = Arr::get($advanceSettings, 'selected_model', '');
+
+        if (
+            !empty($incomingModel)
+            && $incomingModel !== $storedModel
+            && $this->isRetiredAiModel($incomingPlatform, $incomingModel)
+        ) {
+            return $this->sendError([
+                'message' => __('The selected AI model has been retired by its provider. Please choose another model.', 'wp-social-reviews')
+            ], 422);
+        }
+
+        // Resolve the key before it can reach the option: the field carries a mask
+        // on every screen that posts advance_settings, and only this screen ever
+        // sends a real key. An empty field still clears the stored key.
+        $storedApiKey = Arr::get($settings, 'global_settings.advance_settings.ai_api_key', '');
+        $incomingApiKey = Arr::get($advanceSettings, 'ai_api_key', '');
+
+        if (empty($incomingApiKey)) {
+            $advanceSettings['ai_api_key'] = '';
+        } elseif (GlobalHelper::isMaskedApiKey($incomingApiKey)) {
+            $advanceSettings['ai_api_key'] = $storedApiKey;
+        } else {
+            $advanceSettings['ai_api_key'] = $protector->encrypt($incomingApiKey);
+        }
+
         $oldOptimizeImageFormat = Arr::get($settings, 'global_settings.advance_settings.optimize_image_format', '');
         $newOptimizeImageFormat = Arr::get($advanceSettings, 'optimize_image_format');
 
@@ -416,10 +514,6 @@ class SettingsController extends Controller
             }
         }
 
-        // Only encrypt if the API key is provided and not empty
-        if (!empty($advanceSettings['ai_api_key'])) {
-            $settings['global_settings']['advance_settings']['ai_api_key'] = $protector->maybe_encrypt($advanceSettings['ai_api_key']);
-        }
         $globalSettings = (new GlobalSettings())->formatGlobalSettings($settings);
         update_option('wpsr_global_settings', $globalSettings);
 
@@ -468,6 +562,12 @@ class SettingsController extends Controller
 
     public function resetErrorLog(Request $request)
     {
+        // SettingsPolicy::resetErrorLog() gates this route by name. Repeated here so a
+        // rename of this method cannot silently drop it back to the group gate.
+        if ($denied = $this->denyUnlessScreenAllowed('error_log')) {
+            return $denied;
+        }
+
         delete_option('wpsr_errors');
         return [
             'message'   =>  __('Reset Error Logs successfully!', 'wp-social-reviews')

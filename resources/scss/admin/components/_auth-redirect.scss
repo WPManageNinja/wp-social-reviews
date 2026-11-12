@@ -5,7 +5,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  // Above dialogs (.el-overlay, 100100 in _full_screen.scss), below poppers and notifications (999999).
+  z-index: 100200;
+  // Teleported outside #wpsocialreviewsapp, which sets the admin font.
+  font-family: 'Inter', sans-serif;
 }
 
 .wpsr-auth-redirect-modal {

@@ -4,12 +4,12 @@
             <img :src="templateConfigs.chat_header.picture" width="172" height="172" alt="">
         </div>
         <div class="wpsr-fm-group-details">
-            <h3 v-if="templateConfigs.chat_header.name" :style="{color:configs.styles.header_title_color}">{{templateConfigs.chat_header.name}}</h3>
-            <p class="wpsr-fm-caption" v-if="templateConfigs.chat_header.caption"
+            <h3 v-if="templateConfigs.chat_header.name" dir="auto" :style="{color:configs.styles.header_title_color}">{{templateConfigs.chat_header.name}}</h3>
+            <p class="wpsr-fm-caption" dir="auto" v-if="templateConfigs.chat_header.caption"
                :style="{color:configs.styles.header_caption_color}">
                 {{templateConfigs.chat_header.caption}}
             </p>
-            <p class="wpsr-fm-offline-caption" v-if="configs.settings.caption_when_offline && showOfflineMessage"
+            <p class="wpsr-fm-offline-caption" dir="auto" v-if="configs.settings.caption_when_offline && showOfflineMessage"
                :style="{color:configs.styles.header_caption_color}">
                 {{configs.settings.caption_when_offline}}
             </p>

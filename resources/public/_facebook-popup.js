@@ -195,7 +195,7 @@ export default {
                         `<div class="wpsr-feed-popup-comment">
                             <div class="wpsr-feed-popup-comment-inner">
                                 ${additionalSettings.feed_type !== 'event_feed' ?
-                                    `<div class="wpsr-feed-popup-comment-text">
+                                    `<div class="wpsr-feed-popup-comment-text" dir="auto">
                                         ${this.renderMessage()}
                                         ${additionalSettings.feed_type !== 'album_feed' ? this.renderName() : ''}
                                     </div>` : ``
@@ -208,7 +208,7 @@ export default {
                   ${currentPopupSettings.display_comments === 'true' && currentFeed.comments && currentFeed.comments.data ? Object.keys(currentFeed.comments.data).map(function (key) {
                         return `<div class="wpsr-feed-popup-comment">
                             <div class="wpsr-feed-popup-comment-inner wpsr-feed-popup-comment-list">
-                                <div class="wpsr-feed-popup-comment-text wpsr-feed-popup-comment-item">
+                                <div class="wpsr-feed-popup-comment-text wpsr-feed-popup-comment-item" dir="auto">
                                     ${currentPopupSettings.display_comments_user_picture === 'true' && !optimizedImages && currentFeed.comments.data[key].from.picture ?
                                         `<img class="wpsr-feed-popup-comment-user-avatar" src="${escapeHtmlAttr(currentFeed.comments.data[key].from.picture.data.url)}" alt="${escapeHtmlAttr(currentFeed.comments.data[key].from.name)}">` : ``
                                     }
@@ -324,7 +324,7 @@ export default {
         let id = currentFeed.from ? currentFeed.from.id : '';
 
         return currentPopupSettings.display_username === 'true' ?
-            `<div class="wpsr-feed-popup-user-name">
+            `<div class="wpsr-feed-popup-user-name" dir="auto">
                 <a href="https://www.facebook.com/${id}" target="_blank" title="${user_name}">${user_name}</a>
               </div>` : '';
     },
@@ -354,7 +354,7 @@ export default {
         return `
             <div class="wpsr-feed-popup-user-info wpsr-feed-popup-event-info">     
                 <div class="wpsr-feed-popup-group">
-                    <div class="wpsr-feed-popup-user-name">
+                    <div class="wpsr-feed-popup-user-name" dir="auto">
                         <a href="https://www.facebook.com/${currentFeed.id}" target="_blank" title="${currentFeed.name}">${currentFeed.name}</a>
                     </div>
                 </div>
@@ -397,7 +397,7 @@ export default {
                 </div>`
             }
             ${currentPopupSettings.display_caption === 'true' && `
-                <div class="wpsr-feed-popup-description-text">
+                <div class="wpsr-feed-popup-description-text" dir="auto">
                   <p>${currentFeed.description}</p>
                 </div>`
             }

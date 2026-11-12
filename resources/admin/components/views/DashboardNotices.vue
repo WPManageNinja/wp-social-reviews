@@ -1,5 +1,37 @@
 <template>
   <div>
+    <div class="wpsr_dashboard_notice" v-if="showGoogleReconnect || reconnectNotices.length">
+      <div class="wpsr_review_notice">
+        <div class="wpsr_review_notice-aside"></div>
+        <h3>{{ reconnectNotices.length ? $t('Reconnect your accounts') : $t('Please reconnect your Google account') }}</h3>
+        <p v-if="reconnectNotices.length">{{ $t('Some connected accounts use an older authorization app. Reconnect each one below to keep it updating.') }}</p>
+        <div class="wpsr-reconnect-rows">
+          <div class="wpsr-reconnect-row" v-for="(notice, index) in reconnectNotices" :key="'wpsr-reconnect-notice-' + index">
+            <p>
+              <strong v-if="notice.label">{{ notice.label }}:</strong>
+              {{ notice.message }}
+            </p>
+            <p v-if="notice.path"><strong>{{ notice.path }}</strong></p>
+          </div>
+          <div class="wpsr-reconnect-row" v-if="showGoogleReconnect && googleReconnectList.includes('google')">
+            <p>
+              <strong>{{ $t('Google Reviews:') }}</strong> {{ $t("We've upgraded the secure connection WP Social Ninja uses for Google Reviews. Your current connection still works, but it uses our previous authorization app, which we'll retire soon. Reconnect once to switch to the new app and keep your reviews updating. It takes less than a minute, and your templates and settings stay as they are.") }}
+            </p>
+            <p><strong>{{ $t('Go to Platforms → Google → Connect More Account → Connect Google Business Profile, and sign in with the same Google account.') }}</strong></p>
+          </div>
+          <div class="wpsr-reconnect-row" v-if="showGoogleReconnect && googleReconnectList.includes('youtube')">
+            <p>
+              <strong>{{ $t('YouTube:') }}</strong> {{ $t("We've upgraded the secure connection WP Social Ninja uses for YouTube. Your current connection still works, but it uses our previous authorization app, which we'll retire soon. Reconnect once to switch to the new app and keep your videos updating. It takes less than a minute, and your templates and settings stay as they are.") }}
+            </p>
+            <p><strong>{{ $t('Go to Platforms → YouTube → Connect new account → OAuth 2.0 → Connect YouTube Channel, and sign in with the same Google account.') }}</strong></p>
+          </div>
+        </div>
+        <div class="wpsr_review_notice_actions">
+          <el-button class="wpsr_default_btn" @click="snoozeReconnect">{{ $t('Remind me later') }}</el-button>
+        </div>
+      </div>
+    </div>
+
     <div class="wpsr_dashboard_notice" v-if="showNotice && !displayProUpdateNotice">
       <div id="wpsr_review_notices" class="wpsr_review_notice">
         <div class="wpsr_review_notice-aside"></div>
@@ -74,7 +106,7 @@
     <!-- Notices injected by add-ons via the `wpsocialreviews/dashboard_notices` filter -->
     <div
       class="wpsr_dashboard_notice"
-      v-for="(notice, index) in localCustomNotices"
+      v-for="(notice, index) in otherCustomNotices"
       :key="'wpsr-custom-notice-' + index"
     >
       <div class="wpsr_review_notice" :class="'wpsr_notice_' + (notice.type || 'warning')">
@@ -91,7 +123,7 @@
           >{{ action.label }}</a>
         </div>
       </div>
-      <a class="wpsr_hide_pro_upgrade_notice" v-if="notice.dismissible !== false" @click="dismissCustomNotice(index)">
+      <a class="wpsr_hide_pro_upgrade_notice" v-if="notice.dismissible !== false" @click="dismissCustomNotice(notice)">
         <el-icon><Close /></el-icon>
       </a>
     </div>
@@ -101,7 +133,7 @@
 <script type="text/babel">
 export default {
   name: 'DashboardNotices',
-  props: ['displayNotice', 'displayOptInNotice', 'displayProUpdateNotice', 'displayNewsletter', 'userData', 'customNotices'],
+  props: ['displayNotice', 'displayOptInNotice', 'displayProUpdateNotice', 'displayNewsletter', 'userData', 'customNotices', 'googleReconnectPlatforms'],
   data() {
     return {
       showNotice: this.displayNotice,
@@ -111,13 +143,28 @@ export default {
       showNewsletter: this.displayNewsletter,
       admin_url: this.appVars.admin_url,
       message: '',
-      localCustomNotices: Array.isArray(this.customNotices) ? [...this.customNotices] : []
+      localCustomNotices: Array.isArray(this.customNotices) ? [...this.customNotices] : [],
+      googleReconnectList: Array.isArray(this.googleReconnectPlatforms) ? [...this.googleReconnectPlatforms] : []
     }
   },
+  computed: {
+    showGoogleReconnect(){
+      return this.googleReconnectList.length > 0 && this.$route.name === 'platforms';
+    },
+    // Add-on notices with `group: 'reconnect'` become rows of the reconnect card (Platforms page only); an optional `path` renders in bold.
+    reconnectNotices(){
+      if (this.$route.name !== 'platforms') {
+        return [];
+      }
+      return this.localCustomNotices.filter(notice => notice && notice.group === 'reconnect');
+    },
+    otherCustomNotices(){
+      return this.localCustomNotices.filter(notice => !notice || notice.group !== 'reconnect');
+    },
+  },
   methods: {
-    // Build a safe, structured list of action links for a custom notice.
-    // Add-ons supply `notice.actions: [{ label, url, target }]` instead of HTML,
-    // so links render via bound <a> tags (no v-html) with validated URLs.
+    // Add-ons pass `actions: [{ label, url, target }]`, not HTML, so links render
+    // as bound <a> tags (no v-html) with validated URLs.
     noticeActions(notice){
         if (!notice || !Array.isArray(notice.actions)) return [];
         return notice.actions
@@ -144,8 +191,15 @@ export default {
         // ...and scheme-less relative paths; reject any other scheme.
         return !/^[a-z0-9+\-.]+:/i.test(value);
     },
-    dismissCustomNotice(index){
-        this.localCustomNotices.splice(index, 1);
+    dismissCustomNotice(notice){
+        const wpsrIndex = this.localCustomNotices.indexOf(notice);
+        if (wpsrIndex !== -1) {
+            this.localCustomNotices.splice(wpsrIndex, 1);
+        }
+    },
+    snoozeReconnect(){
+        this.localCustomNotices = this.otherCustomNotices;
+        this.updateStatus('google_reconnect_remind_me', '1');
     },
     updateStatus(notice_type, value){
         let args = {
@@ -160,6 +214,7 @@ export default {
             this.showOptInNotice = response.data.displayOptInNotice;
             this.showProUpdateNotice = response.data.displayProUpdateNotice;
             this.showNewsletter = response.data.displayNewsletter;
+            this.googleReconnectList = Array.isArray(response.data.googleReconnectPlatforms) ? response.data.googleReconnectPlatforms : [];
           }
         }).catch((errors) => {
           this.handleError(errors);

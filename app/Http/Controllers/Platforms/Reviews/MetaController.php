@@ -5,6 +5,7 @@ namespace WPSocialReviews\App\Http\Controllers\Platforms\Reviews;
 use WPSocialReviews\App\App;
 use WPSocialReviews\App\Http\Controllers\Controller;
 use WPSocialReviews\App\Services\GlobalSettings;
+use WPSocialReviews\App\Services\PermissionManager;
 use WPSocialReviews\App\Services\Platforms\PlatformManager;
 use WPSocialReviews\Framework\Http\Request\Request;
 use WPSocialReviews\App\Models\Review;
@@ -21,8 +22,7 @@ class MetaController extends Controller
 {
     public function index($templateId, $isFirstRound = false)
     {
-        // Same guard as update(): this endpoint persists resolved category ids back
-        // into the config, so it must not accept an arbitrary post id either.
+        // Guarded like update(): this endpoint writes resolved category ids to the config.
         $templateDetails = $this->getTemplatePost($templateId);
 
         if (!$templateDetails) {
@@ -31,13 +31,19 @@ class MetaController extends Controller
             ], 404);
         }
 
+        if (!PermissionManager::currentUserCanManagePostType($templateDetails->post_type)) {
+            return $this->sendError([
+                'message' => __('You are not allowed to update this item', 'wp-social-reviews')
+            ], 403);
+        }
+
         $templateId = $templateDetails->ID;
 
         $reviewConfig = new ReviewConfig();
         $feed_template_style_meta = get_post_meta($templateId, '_wpsr_template_styles_config', true);
 
         $formattedMeta = Helper::getTemplateMetaByTemplateId($templateId);
-        // Add flag for editor initial load to limit reviews to 10
+        // Caps the editor preview to the first load-more batch.
         $formattedMeta['is_editor_initial_load'] = true;
         $reviewsData = Helper::getReviewsDataByTemplateId($templateId, $formattedMeta);
 
@@ -45,8 +51,7 @@ class MetaController extends Controller
         $allBusinessInfo    = Helper::getBusinessInfoByPlatforms($currentPlatforms);
 		$categories         = Review::getCategories();
 
-        // The filter is stored by id, so the editor's names come back from those ids and
-        // a category renamed since the last save shows under its current name.
+        // The filter is stored by id, so a renamed category shows under its current name.
         $storedCategoryIds = Arr::get($formattedMeta, 'selectedCategoryIds', []);
         if (!empty($storedCategoryIds)) {
             $formattedMeta['selectedCategories'] = ReviewCategory::namesForIds($storedCategoryIds);
@@ -78,19 +83,14 @@ class MetaController extends Controller
 
 
         $imageSize = Arr::get($formattedMeta, 'resolution', 'full');
-        $filtered_reviews = Helper::mediaUrlManage('reviews', $resizedImages, $advanceSettings, $imageSize, $filtered_reviews, $optimized_image); // hardcode 'reviews' denotes its a platform
+        $filtered_reviews = Helper::mediaUrlManage('reviews', $resizedImages, $advanceSettings, $imageSize, $filtered_reviews, $optimized_image);
 
-        // Use the enhanced business info that includes rating breakdown
         $selectedBusinesses = Arr::get($formattedMeta, 'selectedBusinesses', []);
         $business_info = Helper::getSelectedBusinessInfoByPlatforms($currentPlatforms, $selectedBusinesses);
         
-        // Fallback to formatted business info if the enhanced version doesn't have required data
         if (empty($business_info) || !isset($business_info['platforms'])) {
             $business_info = Review::formatBusinessInfo($reviewsData);
         }
-        
-        // Add custom business info if custom platform exists
-        //$business_info = Helper::addCustomBusinessInfo($business_info, $formattedMeta);
 
         $needsImmediateUpdate = false;
         $proAvailable = defined('WPSOCIALREVIEWS_PRO');
@@ -101,23 +101,22 @@ class MetaController extends Controller
         ){
             $isAIConfigured = \WPSocialReviewsPro\App\Services\AI\AIReviewSummarizerHelper::isAIModelAndApikeySet();
             
-            // Also check if AI summarizer is globally enabled
-            $advanceSettings = (new GlobalSettings())->getGlobalSettings('advance_settings');
-            $isGloballyEnabled = Arr::get($advanceSettings, 'ai_review_summarizer_enabled', 'false') === 'true';
-            
+            // Not $advanceSettings: that holds the image settings this response returns.
+            $globalAdvanceSettings = (new GlobalSettings())->getGlobalSettings('advance_settings');
+            $isGloballyEnabled = Arr::get($globalAdvanceSettings, 'ai_review_summarizer_enabled', 'false') === 'true';
+
             $canEnableAISummary = $isAIConfigured && $isGloballyEnabled;
             $AISummaryData = \WPSocialReviewsPro\App\Services\AI\AIReviewSummarizerHelper::shouldIncludeAISummary($filtered_reviews, $templateId, $formattedMeta, $isFirstRound);
 
             $filtered_reviews = Arr::get($AISummaryData, 'filtered_reviews');
             $aiSummaryError = Arr::get($AISummaryData, 'aiSummaryError', '');
             $infos = Arr::get($AISummaryData, 'infos', []);
-            // if this is not set to false it will trigger an immediate edit request by the frontend.
+            // When true, the frontend fires an immediate edit request.
             $needsImmediateUpdate = Arr::get($AISummaryData, 'needsImmediateUpdate', false);
         }
 
         $allReviews = Arr::get($reviewsData, 'all_reviews', []);
 
-        //check if template is created from onboarding
         if (Arr::get($formattedMeta, 'feed_settings.created_from_onboarding')) {
             OnboardingHelper::applyOnboardingSettings($templateId,'reviews', $formattedMeta, $business_info, $filtered_reviews, $allReviews);
         }
@@ -134,6 +133,7 @@ class MetaController extends Controller
             'all_business_info'  => $allBusinessInfo,
 	        'categories'         => $categories,
             'elements'           => $reviewConfig->getStyleElement(),
+            'default_styles'     => $reviewConfig->formatStylesConfig([], $templateId),
             'errors'             => Arr::get($reviewsData, 'errors'),
             'resized_images'     => $resizedImages,
             'image_settings'     => $advanceSettings,
@@ -142,8 +142,7 @@ class MetaController extends Controller
             'review_forms'       => $this->getReviewFormsList(),
         ];
 
-        // Always include all_reviews for initial load so frontend has all data needed
-        // for include/exclude functionality and proper load more state management
+        // Include/exclude pickers need the full review list.
         $filterByTitle = Arr::get($formattedMeta, 'filterByTitle', 'all');
         if ($filterByTitle === 'include' || $filterByTitle === 'exclude') {
             $data['all_reviews'] = $allReviews;
@@ -191,7 +190,6 @@ class MetaController extends Controller
         ) {
             $isAIConfigured = \WPSocialReviewsPro\App\Services\AI\AIReviewSummarizerHelper::isAIModelAndApikeySet();
             
-            // Also check if AI summarizer is globally enabled
             $advanceSettings = (new GlobalSettings())->getGlobalSettings('advance_settings');
             $isGloballyEnabled = Arr::get($advanceSettings, 'ai_review_summarizer_enabled', 'false') === 'true';
             
@@ -216,12 +214,9 @@ class MetaController extends Controller
     }
 
     /**
-     * Post types this controller is allowed to read from and write to.
-     *
-     * Without this guard the meta endpoints accept any post ID, and neither
-     * wp_update_post() nor update_post_meta() performs a capability check of
-     * its own, so a low-privilege capability holder could overwrite arbitrary
-     * pages, posts or products.
+     * The only post types these endpoints may touch. wp_update_post() and
+     * update_post_meta() don't check capabilities, so without this any wpsn_*
+     * capability holder could overwrite arbitrary posts.
      */
     const ALLOWED_POST_TYPES = ['wp_social_reviews', 'wpsr_reviews_notify'];
 
@@ -247,6 +242,12 @@ class MetaController extends Controller
             return $this->sendError([
                 'message' => __('Template not found.', 'wp-social-reviews')
             ], 404);
+        }
+
+        if (!PermissionManager::currentUserCanManagePostType($templateDetails->post_type)) {
+            return $this->sendError([
+                'message' => __('You are not allowed to update this item', 'wp-social-reviews')
+            ], 403);
         }
 
         $templateId = $templateDetails->ID;
@@ -285,7 +286,6 @@ class MetaController extends Controller
             $templateMeta['notification_settings']['url'] = $url;
         }
 
-        // Remove template from onboarding sessions since it's now been edited
         if (Arr::get($templateMeta, 'feed_settings.created_from_onboarding')) {
             OnboardingHelper::removeFromOnboardingSessions($templateId);
         }
@@ -298,13 +298,16 @@ class MetaController extends Controller
                 $menuOrder = $formattedMeta['notification_settings']['notification_priority'];
                 $db = App::getInstance('db');
 
-                // post_type is re-asserted here: this bypasses wp_update_post(), so it
-                // must not rely on the caller's guard alone.
+                // Re-assert post_type: this bypasses wp_update_post().
                 $db->table('posts')->where('ID', $templateId)
                     ->whereIn('post_type', self::ALLOWED_POST_TYPES)
                     ->update([
                         'menu_order' => absint($menuOrder)
                     ]);
+
+                // The raw update skips the post cache, so wp_update_post() below would
+                // merge from the stale copy and undo it.
+                clean_post_cache($templateId);
             }
         } else {
             unset($formattedMeta['notification_settings']);
@@ -340,18 +343,9 @@ class MetaController extends Controller
     }
 
     /**
-     * Pins a config that still carries only category names to the resolved ids, once.
-     *
-     * A name resolves to an id only while it matches a category, so this has to happen
-     * before a rename, not after.
-     */
-    /**
      * Drops the category ids the editor echoes back, so the submitted names decide the
-     * filter.
-     *
-     * Every request-driven path must call this before querying or saving: ids are
-     * authoritative in `filteredReviewsQuery()`, so echoed-back ones would keep filtering
-     * on the previous selection after the user picks a different category.
+     * filter. Call before querying or saving: ids win in `filteredReviewsQuery()`, so
+     * stale ones would keep filtering on the previous selection.
      */
     private function stripClientCategoryIds($templateMeta)
     {
@@ -362,10 +356,13 @@ class MetaController extends Controller
         return $templateMeta;
     }
 
+    /**
+     * Pins a config that still carries only category names to the resolved ids, once.
+     * A name only resolves while it matches a category, so this must run before a rename.
+     */
     private function persistCategoryFilterIds($templateId, $categoryIds)
     {
-        // Decoded as an object: an assoc decode turns every empty object in the config
-        // into an empty array, and re-encoding would persist that shape change.
+        // Decode as an object: an assoc decode turns empty objects into arrays on re-encode.
         $stored = json_decode(get_post_meta($templateId, '_wpsr_template_config', true));
 
         if (!is_object($stored) || !empty($stored->selectedCategoryIds)) {
@@ -380,8 +377,7 @@ class MetaController extends Controller
             return;
         }
 
-        // update_post_meta() unslashes what it is given, so slash first or the JSON's own
-        // escape sequences are stripped and the config stops parsing.
+        // update_post_meta() unslashes its input, which would break the JSON escapes.
         update_post_meta($templateId, '_wpsr_template_config', wp_slash($encoded));
     }
 
@@ -403,6 +399,12 @@ class MetaController extends Controller
             return $this->sendError([
                 'message' => __('Template not found.', 'wp-social-reviews')
             ], 404);
+        }
+
+        if (!PermissionManager::currentUserCanManagePostType($templateDetails->post_type)) {
+            return $this->sendError([
+                'message' => __('You are not allowed to update this item', 'wp-social-reviews')
+            ], 403);
         }
 
         $templateId = $templateDetails->ID;
@@ -458,17 +460,10 @@ class MetaController extends Controller
             $all_reviews = [];
         }
 
-        $filterByTitle = Arr::get($templateMeta, 'filterByTitle', 'all');
-        if ($filterByTitle === 'include' || $filterByTitle === 'exclude') {
-            $data['all_reviews'] = $all_reviews;
-        }
-
         $imageSize = Arr::get($templateMeta, 'resolution', 'full');
-        $filtered_reviews = Helper::mediaUrlManage('reviews', $resizedImages, $advanceSettings, $imageSize, $filtered_reviews, $optimized_image); // hardcode 'reviews' denotes its a platform
+        $filtered_reviews = Helper::mediaUrlManage('reviews', $resizedImages, $advanceSettings, $imageSize, $filtered_reviews, $optimized_image);
 
         $business_info = Review::formatBusinessInfo($reviewsData);
-        // Add custom business info if custom platform exists
-       // $business_info = Helper::addCustomBusinessInfo($business_info, $templateMeta);
 
         $errors = [];
         $forceRegenerate = Arr::get($templateMeta, 'ai_summary.force_regenerate', false);
@@ -493,7 +488,6 @@ class MetaController extends Controller
             'message'            => 'success',
             'template_id'        => $templateId,
             'filtered_reviews'   => $filtered_reviews,
-            'all_reviews'        => $all_reviews,
             'business_info'      => $business_info,
             'template_details'   => $templateDetails,
             'template_meta'      => $templateMeta,
@@ -501,6 +495,12 @@ class MetaController extends Controller
             'resize_data'        => $resizedImages,
             'errors'             => $errors
         ];
+
+        // Only the Include/Exclude review pickers read the full list; the editor keeps the last one it got.
+        $filterByTitle = Arr::get($templateMeta, 'filterByTitle', 'all');
+        if ($filterByTitle === 'include' || $filterByTitle === 'exclude') {
+            $data['all_reviews'] = $all_reviews;
+        }
 
         if(isset($aiSummaryError) && $aiSummaryError){
             $data['ai_summary_errors'] = $aiSummaryError;
@@ -540,6 +540,12 @@ class MetaController extends Controller
             ], 404);
         }
 
+        if (!PermissionManager::currentUserCanManagePostType($templateDetails->post_type)) {
+            return $this->sendError([
+                'message' => __('You are not allowed to update this item', 'wp-social-reviews')
+            ], 403);
+        }
+
         $templateId = $templateDetails->ID;
 
         $page = (int) $request->get('page', 1);
@@ -553,35 +559,26 @@ class MetaController extends Controller
         $templateMeta = $this->stripClientCategoryIds($templateMeta);
         $currentPlatforms = Arr::get($templateMeta, 'platform', []);
 
-        // Get responsive paginate value
         $paginateNumber = Arr::get($templateMeta, 'paginate_number');
         $fallbackPaginate = (int) Arr::get($templateMeta, 'paginate', 6);
         $paginate = wp_is_mobile() ? (int) Arr::get($paginateNumber, 'mobile', $fallbackPaginate) : (int) Arr::get($paginateNumber, 'desktop', $fallbackPaginate);
 
-        // Create a copy of templateMeta without limits to get total count
         $templateMetaForTotal = $templateMeta;
-        $templateMetaForTotal['is_editor_initial_load'] = false; // Disable initial load limiting
+        $templateMetaForTotal['is_editor_initial_load'] = false;
 
-        // Get all filtered reviews to calculate total (without any limits)
         $totalReviews = Review::filteredReviewsQuery($currentPlatforms, $templateMetaForTotal)->count();
 
-        // For now, let's use a simple approach to get load more working
-        // We'll assume the initial load was equal to paginate value
+        // Assumes the initial load showed exactly $paginate reviews.
         $initialLoadCount = $paginate;
 
-        // Calculate offset for this page
-        // Frontend sends page=2 for first load more, page=3 for second load more, etc.
-        // So we need to adjust: page=2 means skip initial reviews only
-        // page=3 means skip initial + first load more batch, etc.
+        // The first load-more request is page=2.
         $offset = $initialLoadCount + (($page - 2) * $paginate);
 
-        // Get the specific batch for this page (also without limits, then apply our own)
         $reviews = Review::filteredReviewsQuery($currentPlatforms, $templateMetaForTotal)
                         ->offset($offset)
                         ->limit($paginate)
                         ->get();
 
-        // Handle image optimization
         $advanceSettings = Helper::getImageSettings('reviews');
         $optimized_image = Arr::get($advanceSettings, 'optimized_images', 'false');
 
@@ -592,11 +589,8 @@ class MetaController extends Controller
             $reviews = Helper::mediaUrlManage('reviews', $resizedImages, $advanceSettings, $imageSize, $reviews, $optimized_image);
         }
 
-        // Handle reviewer name formatting
         $reviews = Helper::handleReviewerName($reviews, $templateMeta);
 
-        // Calculate pagination info
-        // Check if there are more reviews after the current batch
         $totalLoadedSoFar = $offset + count($reviews);
         $hasMore = $totalLoadedSoFar < $totalReviews;
 
@@ -606,37 +600,29 @@ class MetaController extends Controller
             'has_more' => $hasMore,
             'current_page' => $page,
             'total_reviews' => $totalReviews,
-//            'debug_info' => [
-//                'offset' => $offset,
-//                'paginate' => $paginate,
-//                'initial_load_count' => $initialLoadCount,
-//                'total_loaded_so_far' => $totalLoadedSoFar,
-//                'reviews_in_this_batch' => count($reviews)
-//            ]
         ]);
     }
 
     /**
-     * Sanitizes the raw template meta data from a request.
-     *
      * @param array $templateMeta The raw, decoded template meta array.
-     * @return array The fully sanitized template meta array.
+     * @return array
      */
     private function sanitizeTemplateMeta($templateMeta)
     {
-        // Handle all complex style arrays separately ---
         $styleArraysToSanitize = ['styles_config', 'responsive_styles'];
         foreach ($styleArraysToSanitize as $styleKey) {
             if (isset($templateMeta[$styleKey]) && is_array($templateMeta[$styleKey])) {
                 $templateMeta[$styleKey] = wpsr_sanitize_styles_config($templateMeta[$styleKey]);
             }
         }
-        //  Define the main sanitize map for all other keys
         $sanitizeMap = [
             // --- Top-Level Settings ---
             'platformType'                      => 'sanitize_text_field',
             'template'                          => 'sanitize_text_field',
             'templateType'                      => 'sanitize_text_field',
+            'layout_style'                      => 'sanitize_key',
+            'marquee_settings.speed'            => 'intval',
+            'marquee_settings.card_width'       => 'intval',
             'column'                            => 'sanitize_text_field',
             'responsive_column_number.desktop'    => 'sanitize_text_field',
             'responsive_column_number.tablet'     => 'sanitize_text_field',
@@ -792,7 +778,6 @@ class MetaController extends Controller
             'selectedCategoryIds'                       => 'wpsr_array_map_absint',
         ];
 
-        // Run the main recursive sanitizer on the rest of the data ---
         $templateMeta = wpsr_backend_sanitizer($templateMeta, $sanitizeMap);
         return $templateMeta;
     }

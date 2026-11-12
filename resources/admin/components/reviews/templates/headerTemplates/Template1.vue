@@ -7,7 +7,7 @@
           <div v-if="hasMultipleBusinesses" class="wpsr-business-info-paltforms wpsr-template-1-platforms">
             <div v-for="(platform, index ) in filteredPlatforms" :key="index" class="wpsr-template-1-platform-item">
               <img v-if="platform.logo && platform.logo !== ''" :src="platform.logo" alt="">
-              <div v-else-if="shouldShowPlatformIcon(platform)">
+              <div v-else-if="shouldShowPlatformIcon(platform) && get_platform_icon(platform.platform_name, 'small')">
                 <img :src="get_platform_icon(platform.platform_name, 'small')" :alt="platform.platform_name">
               </div>
             </div>
@@ -18,7 +18,7 @@
 
           <div v-else class="wpsr-business-info-logo wpsr-template-1-logo">
             <img v-if="businessInfo.logo && businessInfo.platform_name !== 'custom'" :src="businessInfo.logo" alt="">
-            <img v-else-if="shouldShowSinglePlatformIcon && businessInfo.platform_name !== 'custom'" :src="get_platform_icon(businessInfo.platform_name, 'default')" :alt="businessInfo.platform_name">
+            <img v-else-if="shouldShowSinglePlatformIcon && businessInfo.platform_name !== 'custom' && get_platform_icon(businessInfo.platform_name, 'default')" :src="get_platform_icon(businessInfo.platform_name, 'default')" :alt="businessInfo.platform_name">
             <span v-if="shouldShowTitle" class="wpsr-business-title wpsr-template-1-title">
               {{ headerTitle }}
             </span>

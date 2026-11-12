@@ -298,14 +298,14 @@
                         <el-select v-model="settings.general.target_platform" size="small" class="wpsr-text-input">
                           <el-option value="native_form" :label="$t('Native Form (Generic)')" />
                           <el-option value="testimonial" :label="$t('Testimonial')" />
-                          <el-option value="fluent-cart" :label="$t('Fluent Cart Product')" :disabled="!appVars.hasFluentCart" />
+                          <el-option value="fluent-cart" :label="$t('FluentCart Product')" :disabled="!appVars.hasFluentCart" />
                           <el-option value="woocommerce" :label="$t('WooCommerce Product')" :disabled="!appVars.hasWooCommerce" />
                         </el-select>
                       </div>
                     </div>
                     <div class="wpsr-filters-row">
                       <p v-if="settings.general.target_platform === 'fluent-cart' && !appVars.hasFluentCart" style="color: #e6a23c; font-size: 12px; margin: 4px 0 0;">
-                        {{ $t('Fluent Cart is not active. Reviews will fall back to generic mode until reactivated.') }}
+                        {{ $t('FluentCart is not active. Reviews will fall back to generic mode until reactivated.') }}
                       </p>
                       <p v-else-if="settings.general.target_platform === 'woocommerce' && !appVars.hasWooCommerce" style="color: #e6a23c; font-size: 12px; margin: 4px 0 0;">
                         {{ $t('WooCommerce is not active. Reviews will fall back to generic mode until reactivated.') }}

@@ -27,33 +27,35 @@
       <div class="wpsr-table-controls">
         <div class="wpsr-controls-left">
           <div class="wpsr-controls-bulk-actions">
-            <el-select class="wpsr-select-field-primary" v-model="bulkAction" placeholder="Bulk Action" size="default" style="width: 160px;">
-              <el-option label="Bulk Actions" value="">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><Plus /></el-icon>
-                  <span>Bulk Actions</span>
-                </span>
-              </el-option>
-              <el-option :label="$t('Activate')" value="activate">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><CircleCheck /></el-icon>
-                  <span>{{$t('Activate')}}</span>
-                </span>
-              </el-option>
-              <el-option :label="$t('Deactivate')" value="deactivate">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><CircleClose /></el-icon>
-                  <span>{{$t('Deactivate')}}</span>
-                </span>
-              </el-option>
-              <el-option :label="$t('Delete')" value="delete">
-                <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                  <el-icon><Delete /></el-icon>
-                  <span>{{$t('Delete')}}</span>
-                </span>
-              </el-option>
-            </el-select>
-            <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
+            <div class="wpsr-bulk-action-group">
+              <el-select class="wpsr-select-field-primary" v-model="bulkAction" placeholder="Bulk Action" size="default" style="width: 160px;">
+                <el-option label="Bulk Actions" value="">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><Plus /></el-icon>
+                    <span>Bulk Actions</span>
+                  </span>
+                </el-option>
+                <el-option :label="$t('Activate')" value="activate">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><CircleCheck /></el-icon>
+                    <span>{{$t('Activate')}}</span>
+                  </span>
+                </el-option>
+                <el-option :label="$t('Deactivate')" value="deactivate">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><CircleClose /></el-icon>
+                    <span>{{$t('Deactivate')}}</span>
+                  </span>
+                </el-option>
+                <el-option :label="$t('Delete')" value="delete">
+                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                    <el-icon><Delete /></el-icon>
+                    <span>{{$t('Delete')}}</span>
+                  </span>
+                </el-option>
+              </el-select>
+              <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
+            </div>
           </div>
         </div>
         <div class="wpsr-controls-right">
@@ -91,7 +93,7 @@
             <template #default="scope">
               <div class="wpsr-item-group wpsr-d-flex wpsr-flex-align-center">
                 <div @click.prevent="editForm(scope.row)" class="wpsr-item-editable wpsr-item-title wpsr-d-flex wpsr-flex-align-center">
-                  {{ scope.row.title }}
+                  <span dir="auto">{{ scope.row.title }}</span>
                   <el-icon class="wpsr-ml-5 wpsr-display-on-hover"><Edit /></el-icon>
                 </div>
               </div>

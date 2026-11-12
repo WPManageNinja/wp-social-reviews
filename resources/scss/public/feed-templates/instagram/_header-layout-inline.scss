@@ -1,0 +1,19 @@
+// Inline also carries the minimal layout class. The username and counts share one row; the full
+// name and bio, when switched on, take their own lines below.
+.wpsr-ig-header.wpsr-ig-header-layout-inline .wpsr-ig-header-inner .wpsr-ig-header-info{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  @media screen and (max-width: 767px) {
+    justify-content: center;
+  }
+  .wpsr-ig-header-statistics{
+    padding-top: 0;
+  }
+  .wpsr-ig-header-fullname,
+  .wpsr-ig-header-description{
+    flex-basis: 100%;
+    margin-top: 0;
+  }
+}

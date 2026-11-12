@@ -141,7 +141,7 @@
             :disabled="!captchaSettings.is_configured || isCaptchaBusy"
             :loading="captchaClearing"
             @click="clearCaptchaSettings"
-            style="margin-right: 12px;"
+            style="margin-inline-end: 12px;"
           >
             {{ $t('Disconnect') }}
           </el-button>

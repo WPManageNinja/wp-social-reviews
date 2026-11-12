@@ -35,7 +35,6 @@ abstract class BaseFeed
     {
         add_filter('wpsocialreviews/available_valid_feed_platforms', array($this, 'pushValidPlatform'));
 
-        //handle verification credentials
         add_action('wpsocialreviews/verify_credential_' . $this->platform, array($this, 'handleCredential'));
         add_action('wpsocialreviews/get_verification_configs_' . $this->platform, array($this, 'getVerificationConfigs'));
         add_action('wpsocialreviews/clear_verification_configs_' . $this->platform, array($this, 'clearVerificationConfigs'));
@@ -48,17 +47,14 @@ abstract class BaseFeed
 
 
 
-        //handle editor meta
         add_action('wpsocialreviews/get_editor_settings_' . $this->platform, array($this, 'getEditorSettings'));
         add_action('wpsocialreviews/edit_editor_settings_' . $this->platform, array($this, 'editEditorSettings'), 10, 2);
         add_action('wpsocialreviews/update_editor_settings_' . $this->platform, array($this, 'updateEditorSettings'), 10, 2);
 
-        //handle advance settings
         add_action('wpsocialreviews/save_advance_settings_' . $this->platform, array($this, 'saveAdvanceSettings'));
         add_action('wpsocialreviews/get_advance_settings_' . $this->platform, array($this, 'getAdvanceSettings'));
         add_action('wpsocialreviews/clear_cache_' . $this->platform, array($this, 'clearCache'));
 
-        //handle cron job
         add_action('wpsr_' . $this->platform . '_feed_update', array($this, 'doCronEvent'));
     }
 
@@ -148,8 +144,6 @@ abstract class BaseFeed
 
     public function formatPlatformGlobalSettings($settings = [])
     {
-//        $protector = new DataProtector();
-
         $expiration = 60*60*6;
         if($this->platform === 'youtube'){
             $expiration *= 12;
@@ -164,28 +158,6 @@ abstract class BaseFeed
                 'is_enabled_platform' => (bool) (new PlatformManager())->isActivePlatform($this->platform)
             ],
         ];
-
-//        if ($this->platform === 'tiktok') {
-//            $redirectUri = rest_url('wpsocialreviews/tiktok_callback');
-//            $redirectUri = 'https://gutendev.com/wp-json/wpsocialreviews/tiktok_callback';
-//
-//            $enableApp = Arr::get($settings, 'app_settings.enable_app', 'false');
-//            $clientId = Arr::get($settings, 'app_settings.client_id', '');
-//            $clientSecret = Arr::get($settings, 'app_settings.client_secret', '');
-//
-//            if($enableApp === 'true' && (empty($clientId) || empty($clientSecret) || empty($redirectUri))) {
-//                wp_send_json_error([
-//                    'message' => __('Please provide Client Key and Client Secret Key.', 'wp-social-reviews'),
-//                ], 423);
-//            }
-//
-//            $configs['app_settings'] =  [
-//                'enable_app'    => $enableApp,
-//                'client_id'     => !empty($clientId) ? $protector->encrypt($clientId) : '',
-//                'client_secret' => !empty($clientSecret) ? $protector->encrypt($clientSecret) : '',
-//                'redirect_uri'  => $redirectUri,
-//            ];
-//        }
 
         return $configs;
     }

@@ -3,6 +3,7 @@
 namespace WPSocialReviews\App\Http\Controllers\Platforms\Feeds;
 
 use WPSocialReviews\App\Http\Controllers\Controller;
+use WPSocialReviews\App\Services\PermissionManager;
 use WPSocialReviews\Framework\Http\Request\Request;
 
 class MetaController extends Controller
@@ -19,6 +20,12 @@ class MetaController extends Controller
             return $this->sendError([
                 'message' => __('Template not found.', 'wp-social-reviews')
             ], 404);
+        }
+
+        if (!PermissionManager::currentUserCanManagePostType($templateDetails->post_type)) {
+            return $this->sendError([
+                'message' => __('You are not allowed to update this item', 'wp-social-reviews')
+            ], 403);
         }
 
         $platform = sanitize_key($request->get('platform'));
@@ -40,6 +47,12 @@ class MetaController extends Controller
             ], 404);
         }
 
+        if (!PermissionManager::currentUserCanManagePostType($templateDetails->post_type)) {
+            return $this->sendError([
+                'message' => __('You are not allowed to update this item', 'wp-social-reviews')
+            ], 403);
+        }
+
         $platform = sanitize_key($request->get('platform'));
         $settings = $this->decodeJsonParam($request->get('settings'));
 
@@ -58,6 +71,12 @@ class MetaController extends Controller
             return $this->sendError([
                 'message' => __('Template not found.', 'wp-social-reviews')
             ], 404);
+        }
+
+        if (!PermissionManager::currentUserCanManagePostType($templateDetails->post_type)) {
+            return $this->sendError([
+                'message' => __('You are not allowed to update this item', 'wp-social-reviews')
+            ], 403);
         }
 
         $platform = sanitize_key($request->get('platform'));

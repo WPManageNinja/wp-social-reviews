@@ -10,6 +10,8 @@ if (!defined('ABSPATH')) {
 
 class Helper
 {
+    const API_KEY_MASK_PREFIX = '****';
+
     static $loadedTemplates = [];
 
     public static function getAccessPermission()
@@ -73,10 +75,8 @@ class Helper
     }
 
     /**
-     * Issue a single Facebook Graph GET request and return the raw response paired
-     * with its JSON-decoded body. Centralises the transport shared by the managed-pages
-     * and feed pagination loops (timeout, wp_error handling, body decoding) so each
-     * caller only keeps its own error-reporting contract.
+     * One Facebook Graph GET, returning the raw response and its decoded body.
+     * Shared by the managed-pages and feed pagination loops.
      *
      * @param string $url      Fully-formed Graph endpoint (including access token / paging cursor).
      * @param string $platform Optional platform slug (e.g. 'facebook', 'facebook_feed'). When given,
@@ -102,10 +102,8 @@ class Helper
     }
 
     /**
-     * Fetch every Facebook page (account) the user manages for the given access token,
-     * resolving pagination. Shared by the Facebook feed (free) and Facebook reviews (pro),
-     * which both exchange a user access token for the managed pages list — only their
-     * downstream formatting and storage differ.
+     * Fetch every Facebook page the user manages for an access token, following pagination.
+     * Shared by the Facebook feed (free) and Facebook reviews (Pro).
      *
      * @param string $accessToken Facebook user access token.
      * @param int    $limit       Pages requested per Graph call.
@@ -129,9 +127,8 @@ class Helper
         $nextUrl   = null;
         $isFirst   = true;
 
-        // Hard ceiling on pagination so a large account or a repeating `next` cursor can never
-        // make the connect/consume request hang or grow $pages without bound. 20 requests at the
-        // 500-page default covers ~10k managed pages — far beyond any real account.
+        // Cap so a huge account or a repeating `next` cursor can't hang the request.
+        // 20 requests at 500 per page covers ~10k pages.
         $maxRequests = 20;
         $requests    = 0;
 
@@ -177,8 +174,7 @@ class Helper
                 }
             }
 
-            // Defense-in-depth: only follow the paging cursor when it stays on Facebook's Graph
-            // host, so a manipulated `paging.next` can never redirect the loop to another host.
+            // Only follow a paging cursor that stays on the Graph host.
             $nextUrl = Arr::get($accounts, 'paging.next');
             if ($nextUrl && strtolower((string) wp_parse_url($nextUrl, PHP_URL_HOST)) !== 'graph.facebook.com') {
                 $nextUrl = null;
@@ -192,8 +188,7 @@ class Helper
     }
 
     /**
-     * Get allowed HTML tags for wp_kses sanitization
-     * This defines what HTML is safe to display in review content
+     * Allowed HTML tags for wp_kses in review content.
      *
      * @return array Allowed HTML tags and their attributes
      */
@@ -211,19 +206,17 @@ class Helper
             'ul'     => [],
             'ol'     => [],
             'li'     => [],
-            // Span for Read More/Less buttons and other inline elements
             'span'   => [
                 'class'      => [],
                 'aria-label' => [],
                 'tabindex'   => [],
             ],
-            // Links with safe attributes only
             'a'      => [
                 'href'   => [],
                 'target' => [],
                 'rel'    => [],
             ],
-            // Images for emojis and other safe images
+            // Emoji images.
             'img'    => [
                 'src'       => [],
                 'alt'       => [],
@@ -233,14 +226,12 @@ class Helper
             ],
         );
 
-        // Explicitly remove any event handlers and dangerous attributes
         return apply_filters('wpsocialreviews/allowed_html_tags', $allowed_tags);
     }
 
 
     /**
-     * Sanitize for DISPLAY - context aware
-     * This is the main method to use in templates
+     * Sanitize text for display in templates.
      */
     public static function sanitizeText($text, $allow_html = false)
     {
@@ -249,11 +240,9 @@ class Helper
         }
 
         if ($allow_html) {
-            // Allow minimal safe HTML
             $allowed_tags = static::allowedHtmlTags();
             $text = wp_kses($text, $allowed_tags);
         } else {
-            // Strip all HTML and escape
             $text = wp_strip_all_tags($text);
             $text = esc_html($text);
         }
@@ -262,8 +251,7 @@ class Helper
     }
 
     /**
-     * Sanitize user-generated content for STORAGE
-     * Use this when saving data from API/external sources
+     * Sanitize API/external content before storage.
      */
     public static function sanitizeForStorage($text)
     {
@@ -271,12 +259,10 @@ class Helper
             return '';
         }
 
-        // Remove obvious dangerous content before storage
         $text = static::removeObfuscatedScripts($text);
         $text = static::removeEventHandlers($text);
         $text = static::removeDangerousProtocols($text);
 
-        // Use strict allowed tags for social content
         $allowed_tags = static::allowedHtmlTags();
         $text = wp_kses($text, $allowed_tags);
 
@@ -284,11 +270,10 @@ class Helper
     }
 
     /**
-     * Remove obfuscated script tags like <scr<script>ipt>
+     * Strip embedding and form tags (iframe, object, style, form, svg, ...).
      */
     public static function removeObfuscatedScripts($text)
     {
-        // Remove other dangerous tags
         $dangerous_tags = [
             'iframe', 'object', 'embed', 'applet', 'meta',
             'link', 'style', 'form', 'input', 'button',
@@ -303,17 +288,14 @@ class Helper
     }
 
     /**
-     * Remove ALL event handlers (onclick, onmouseover, onerror, etc.)
+     * Remove inline event handler attributes (onclick, onerror, ...).
      */
     public static function removeEventHandlers($text)
     {
-        // Remove event handlers with double quotes
         $text = preg_replace('/\s*on\w+\s*=\s*"[^"]*"/i', '', $text);
-        // Remove event handlers with single quotes
         $text = preg_replace('/\s*on\w+\s*=\s*\'[^\']*\'/i', '', $text);
-        // Remove event handlers without quotes
         $text = preg_replace('/\s*on\w+\s*=\s*[^\s>]+/i', '', $text);
-        // Remove with spaces (on mouse over = "...")
+        // Spaced variants ("on mouse over = ...").
         $text = preg_replace('/\s*on\s+\w+\s*=\s*"[^"]*"/i', '', $text);
         $text = preg_replace('/\s*on\s+\w+\s*=\s*\'[^\']*\'/i', '', $text);
 
@@ -321,7 +303,7 @@ class Helper
     }
 
     /**
-     * Remove dangerous protocols (javascript:, data:, vbscript:)
+     * Remove dangerous protocols (javascript:, data:, vbscript:, file:)
      */
     public static function removeDangerousProtocols($text)
     {
@@ -345,15 +327,14 @@ class Helper
             $number /= 1000;
         }
 
-        // Rounding happens after the unit is chosen, so a value just under the next
-        // threshold rounds back up to 1000 ("999,999" became "1,000K"). Carry it.
+        // Rounding can push a value back up to 1000 ("999,999" -> "1,000K"). Carry it.
         if (round($number, 1) >= 1000 && $i < $last) {
             $number /= 1000;
             $i++;
         }
 
         $formatted = number_format($number, 1);
-        // Trim trailing zero after decimal (e.g. "2.0" → "2") but keep meaningful decimals (e.g. "1.6")
+        // "2.0" -> "2", "1.6" stays.
         $formatted = rtrim(rtrim($formatted, '0'), '.');
 
         return $formatted . $units[$i];
@@ -377,7 +358,7 @@ class Helper
     }
 
     public static function shortcodeAllowedPlatforms(){
-        return [
+        return apply_filters('wpsocialreviews/shortcode_allowed_platforms', [
             'reviews',
             'twitter',
             'youtube',
@@ -386,12 +367,10 @@ class Helper
             'tiktok',
             'facebook_feed',
             'testimonial'
-        ];
+        ]);
     }
 
     /**
-     * Get total count of published templates
-     *
      * @return int
      */
     public static function getTemplateCount()
@@ -440,8 +419,6 @@ class Helper
     }
 
     /**
-     * Get all pages list
-     *
      * @return array
      * @since 1.1.0
      */
@@ -468,7 +445,7 @@ class Helper
         $postTypes = !empty($postType) ? [$postType] : static::getPostTypes(false);
         $results = [];
 
-        // Resolve specific posts by ID (for pre-selected label display)
+        // Resolve pre-selected IDs so their labels can be shown.
         if (!empty($includeIds) && empty($search) && $page === 1) {
             $query = new \WP_Query([
                 'post_type'      => $postTypes,
@@ -562,7 +539,6 @@ class Helper
 
         foreach ($matches as $shortcode) {
             if (count($shortcode) >= 2 && $tag === $shortcode[2]) {
-                // Replace braces with empty string.
                 $parsedCode = str_replace(['[', ']', '&#91;', '&#93;'], '', $shortcode[0]);
 
                 $result = shortcode_parse_atts($parsedCode);
@@ -580,34 +556,29 @@ class Helper
     {
         global $post;
 
-        // hiding on desktop device
         $hide_on_desktop = Arr::get($settings, 'hide_on_desktop');
         if(!wp_is_mobile() && $hide_on_desktop === 'true'){
             return false;
         }
 
-        // hiding on mobile device
         $hide_on_mobile = Arr::get($settings, 'hide_on_mobile');
         if($hide_on_mobile === 'true' && wp_is_mobile()){
             return false;
         }
 
-        // let's check by post type
         $postTypes = Arr::get($settings, 'post_types');
         $pageList = Arr::get($settings, 'page_list', []);
         $chat_lang = Arr::get($settings, 'chat_lang', '');
 
-        // Treat 'all' the same as '' (no language filter)
         if ($chat_lang === 'all') {
             $chat_lang = '';
         }
 
-        // Treat empty page_list as "everywhere"
+        // An empty page_list means "everywhere".
         if (empty($pageList)) {
             $pageList = ['-1'];
         }
 
-        // An empty page_list is normalised to ['-1'] above, so "everywhere" is matched below.
         if(!empty($post) && !empty($postTypes)) {
             if($postTypes && in_array($post->post_type, $postTypes) && $chat_lang && $chat_lang === get_locale()){
                 return true;
@@ -628,7 +599,6 @@ class Helper
                     $page_id = $post->ID;
                 }
 
-                // Validate if the config is valid for the current request
                 if((in_array($page_id, $pageList) || in_array('-1', $pageList)) && $chat_lang && $chat_lang === get_locale()){
                     return true;
                 }
@@ -645,16 +615,13 @@ class Helper
 
         global $wpdb;
 
-        // Create a cache key for this specific table and column check
         $cache_key = 'wpsr_has_column_' . md5( $table_name . '_' . $column_name );
 
-        // Try to get the result from cache first
         $cached_result = wp_cache_get( $cache_key, 'wpsr_column_checks' );
         if ( $cached_result !== false ) {
             return $cached_result;
         }
 
-        // Validate DB_NAME is defined and safe
         $db_name = defined( 'DB_NAME' ) ? DB_NAME : '';
         if ( empty( $db_name )) {
             return false;
@@ -670,7 +637,6 @@ class Helper
 
         $result = ! empty( $column_exists );
 
-        // Cache the result for 1 hour (3600 seconds)
         wp_cache_set( $cache_key, $result, 'wpsr_column_checks', 3600 );
 
         return $result;
@@ -741,7 +707,7 @@ class Helper
 
         $htaccessFile = $root . DIRECTORY_SEPARATOR . '.htaccess';
         
-        // Replace only if .htaccess exists and contains only "deny from all"
+        // A bare "deny from all" .htaccess is replaced with the stub.
         if (file_exists($htaccessFile)) {
             $content = trim(file_get_contents($htaccessFile));
             if (strtolower($content) === 'deny from all') {
@@ -749,10 +715,9 @@ class Helper
             }
         }
     
-        // Create .htaccess if it doesn't exist (either newly or just deleted)
         if (!file_exists($htaccessFile)) {
             @file_put_contents(
-                $root. '/.htaccess', // Intentionally using $root to ensure the .htaccess is created in the correct directory, so do not replace with $htaccessFile as it may point to an unintended path
+                $root. '/.htaccess',
                 file_get_contents(__DIR__ . '/Libs/Stubs/htaccess.stub')
             );
         }
@@ -785,7 +750,7 @@ class Helper
      */
     public static function safeUnserialize($data)
     {
-        if (is_serialized($data)) { // Don't attempt to unserialize data that wasn't serialized going in.
+        if (is_serialized($data)) {
             return @unserialize(trim($data), ['allowed_classes' => false]);
         }
 
@@ -793,14 +758,8 @@ class Helper
     }
 
     /**
-     * Normalize text for robust matching:
-     * - Trim whitespace
-     * - Unicode normalize (NFKD) when intl is available
-     * - Transliterate to ASCII when possible
-     * - Lowercase with multibyte support
-     * - Handle hashtags and mentions
-     *
-     * This improves matching of "fancy" unicode text like 𝕾𝖍𝖚𝖓𝖆𝖗.
+     * Normalize text for matching: NFKD, ASCII transliteration and lowercase, so
+     * stylized unicode like 𝕾𝖍𝖚𝖓𝖆𝖗 matches plain text.
      *
      * @param string $text
      * @return string
@@ -809,30 +768,25 @@ class Helper
     {
         $text = trim((string) $text);
 
-        // Normalize hashtags and mentions to match the processed format
-        // The feed processing converts # to HASHTAG and @ to MENTION
+        // Feed processing stores # as HASHTAG and @ as MENTION.
         $text = str_replace(array('#', '@'), array('HASHTAG', 'MENTION'), $text);
 
-        // Normalize Unicode to NFKD if intl Normalizer is available
         if (class_exists('Normalizer')) {
             $text = \Normalizer::normalize($text, \Normalizer::FORM_KD);
         }
 
-        // Try to transliterate to ASCII for better matching of stylized characters
         if (function_exists('transliterator_transliterate')) {
             $transliterated = transliterator_transliterate('Any-Latin; Latin-ASCII', $text);
             if ($transliterated !== null) {
                 $text = $transliterated;
             }
         } else {
-            // Fallback to iconv if available
             $converted = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
             if ($converted !== false) {
                 $text = $converted;
             }
         }
 
-        // Lowercase with multibyte support
         if (function_exists('mb_strtolower')) {
             $text = mb_strtolower($text, 'UTF-8');
         } else {
@@ -840,6 +794,34 @@ class Helper
         }
 
         return $text;
+    }
+
+    /**
+     * Display form of a stored API key. Only the last four characters survive.
+     *
+     * @param string $plainKey Decrypted key.
+     * @return string Masked key, or an empty string when nothing is stored.
+     */
+    public static function maskApiKey($plainKey)
+    {
+        $plainKey = is_string($plainKey) ? $plainKey : '';
+
+        if ($plainKey === '') {
+            return '';
+        }
+
+        return self::API_KEY_MASK_PREFIX . substr($plainKey, -4);
+    }
+
+    /**
+     * Whether an incoming value is a mask we handed out, i.e. the key is unchanged.
+     *
+     * @param mixed $value Value posted back by the admin app.
+     * @return bool
+     */
+    public static function isMaskedApiKey($value)
+    {
+        return is_string($value) && strpos($value, self::API_KEY_MASK_PREFIX) === 0;
     }
 
 }

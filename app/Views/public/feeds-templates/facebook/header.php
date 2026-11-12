@@ -73,14 +73,14 @@ echo '<div class="wpsr-container">';
                     <div class="wpsr-fb-feed-user-info">
                         <?php if(Arr::get($header, 'name') && $wpsr_header_settings['display_page_name'] === 'true'){ ?>
                         <div class="wpsr-fb-feed-user-info-name-wrapper">
-                            <a class="wpsr-fb-feed-user-info-name" rel="nofollow" href="<?php echo esc_url($header['link']); ?>" title="<?php echo esc_attr($header['name']); ?>" target="_blank">
+                            <a class="wpsr-fb-feed-user-info-name" dir="auto" rel="nofollow" href="<?php echo esc_url($header['link']); ?>" title="<?php echo esc_attr($header['name']); ?>" target="_blank">
                                 <?php echo esc_html($header['name']); ?>
                             </a>
                         </div>
                         <?php } ?>
 
                         <?php if(Arr::get($header, 'about') && $wpsr_header_settings['display_description'] === 'true'){ ?>
-                            <div class="wpsr-fb-feed-user-info-description">
+                            <div class="wpsr-fb-feed-user-info-description" dir="auto">
                                 <p><?php echo esc_html($header['about']); ?></p>
                             </div>
                         <?php } ?>
@@ -90,7 +90,7 @@ echo '<div class="wpsr-container">';
                             <span>
                                 <?php
                                 $wpsr_people_like_this = Arr::get($translations, 'people_like_this') ?: __('likes', 'wp-social-reviews');
-                                echo esc_html( GlobalHelper::shortNumberFormat( Arr::get($header, 'fan_count') ) . ' ' . $wpsr_people_like_this );
+                                echo '<bdi>' . esc_html( GlobalHelper::shortNumberFormat( Arr::get($header, 'fan_count') ) . ' ' . $wpsr_people_like_this ) . '</bdi>';
 
                                 ?>
                             </span>
@@ -100,7 +100,7 @@ echo '<div class="wpsr-container">';
                             <span>
                                 <?php
                                 $wpsr_followers_label = Arr::get($translations, 'followers') ?: __('followers', 'wp-social-reviews');
-                                echo esc_html(GlobalHelper::shortNumberFormat(Arr::get($header, 'followers_count'))).' '.esc_html($wpsr_followers_label);
+                                echo '<bdi>' . esc_html(GlobalHelper::shortNumberFormat(Arr::get($header, 'followers_count'))).' '.esc_html($wpsr_followers_label) . '</bdi>';
                                 ?>
                             </span>
                             <?php } ?>

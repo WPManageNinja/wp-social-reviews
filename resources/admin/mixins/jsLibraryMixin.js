@@ -4,6 +4,7 @@ export const jsLibraryMixin = {
     data() {
         return {
             carousel: null,
+            carouselInitTimer: null,
             wpsrMasonry: null,
         }
     },
@@ -19,13 +20,13 @@ export const jsLibraryMixin = {
                 '.wpsr-twitter-all-tweets'
             ];
             
+            // Only the elements Swiper writes to; the container's swiper-container class is Vue-bound.
+            const swiperOwnedSelector = '.swiper-wrapper, .swiper-slide, .swiper-pagination, .swiper-pagination-bullet, .swiper-button-next, .swiper-button-prev';
+
             containerSelectors.forEach(selector => {
                 const container = document.querySelector(selector);
                 if (container) {
-                    // Remove attributes/classes from all descendant elements
-                    const descendants = container.querySelectorAll('*');
-                    descendants.forEach(el => {
-                        el.classList.remove('swiper-container');
+                    container.querySelectorAll(swiperOwnedSelector).forEach(el => {
                         el.removeAttribute('role');
                         el.removeAttribute('aria-label');
                         el.removeAttribute('style');
@@ -34,10 +35,17 @@ export const jsLibraryMixin = {
             });
         },
         destroy() {
+            // A pending init would otherwise build a second Swiper that this.carousel never tracks.
+            clearTimeout(this.carouselInitTimer);
+            this.carouselInitTimer = null;
+
             if (this.carousel !== null) {
                 this.carousel.destroy(true, true);
                 this.carousel = null;
             }
+            // observer:true makes Swiper re-read its slides once Vue swaps their class, so its own cleanup misses them.
+            (this.wpsrCarouselSlideEls || []).forEach(el => el.removeAttribute('style'));
+            this.wpsrCarouselSlideEls = [];
 
             if (this.wpsrMasonry !== null) {
                 this.wpsrMasonry.destroy();
@@ -64,8 +72,9 @@ export const jsLibraryMixin = {
 
             let options = carouselOptions(carouselSettings);
 
-            // Use a longer timeout to ensure DOM is fully rendered
-            setTimeout(() => {
+            // A macrotask runs after Vue's pending DOM patch; updateAutoHeight below covers images still loading.
+            this.carouselInitTimer = setTimeout(() => {
+                this.carouselInitTimer = null;
                 const swiperContainer = document.querySelector('.swiper-container');
                 if (swiperContainer) {
                     // Ensure container has proper structure before initializing
@@ -75,6 +84,7 @@ export const jsLibraryMixin = {
                         ensureSwiperHeight();
                         
                         this.carousel = new Swiper('.swiper-container', options);
+                        this.wpsrCarouselSlideEls = Array.from(slides);
                         
                         // Force height recalculation after initialization
                         if (this.carousel && this.carousel.autoHeight) {
@@ -87,7 +97,7 @@ export const jsLibraryMixin = {
                     }
                 }
                 this.loading = false;
-            }, 150);
+            }, 0);
         },
         activeMasonry(containerClass, feedWrapperClass) {
             if (!this.has_pro) {
@@ -101,6 +111,8 @@ export const jsLibraryMixin = {
             if (this.carousel !== null) {
                 this.carousel.destroy(true, true);
                 this.carousel = null;
+                (this.wpsrCarouselSlideEls || []).forEach(el => el.removeAttribute('style'));
+                this.wpsrCarouselSlideEls = [];
                 this.cleanSwiperStyles();
             }
             

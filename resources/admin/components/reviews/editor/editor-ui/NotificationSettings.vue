@@ -17,16 +17,90 @@ export default {
   components: {
     EditorGroup
   },
+  watch: {
+    // Picking Review Spotlight snapshots source_display/display_custom_text and switches them to
+    // its look; switching back to Rotating Card restores the snapshot. Fires only on an actual
+    // selection, so opening an existing saved config never overwrites what the user chose.
+    'template_meta.notification_settings.template'(newVal, oldVal) {
+      if (newVal === oldVal) {
+        return;
+      }
+      if (newVal === 'notification2') {
+        this.previousSourceDisplay = this.template_meta.notification_settings.source_display;
+        this.previousDisplayCustomText = this.template_meta.notification_settings.display_custom_text;
+        this.template_meta.notification_settings.source_display = 'logo_text';
+        this.template_meta.notification_settings.display_custom_text = 'false';
+        this.$emit('on-change');
+      } else if (oldVal === 'notification2') {
+        this.template_meta.notification_settings.source_display = this.previousSourceDisplay || 'logo';
+        this.template_meta.notification_settings.display_custom_text = this.previousDisplayCustomText || 'true';
+        this.$emit('on-change');
+      }
+    }
+  },
   data() {
     return {
+      // Set by the watcher above; null until the first switch into Spotlight.
+      previousSourceDisplay: null,
+      previousDisplayCustomText: null,
       notification_settings: [
+        {
+          fieldKey: 'template',
+          type: 'select',
+          title: this.$t('Notification Style'),
+          options: [
+            {
+              value: 'notification1',
+              label: this.$t('Rotating Card'),
+            },
+            {
+              value: 'notification2',
+              label: this.$t('Review Spotlight'),
+            },
+            {
+              value: 'notification3',
+              label: this.$t('Rating Pulse'),
+            }
+          ]
+        },
+        {
+          fieldKey: 'source_display',
+          type: 'select',
+          title: this.$t('Source Display'),
+          tooltip: true,
+          tooltipText: this.$t('How the review source is shown in Review Spotlight: a bare logo, matching Rotating Card, or the logo plus the platform name.'),
+          options: [
+            {
+              value: 'logo',
+              label: this.$t('Logo only'),
+            },
+            {
+              value: 'logo_text',
+              label: this.$t('Logo + platform name'),
+            }
+          ],
+          condition: { key: 'template', selector: 'notification2' }
+        },
+        {
+          fieldKey: 'display_custom_text',
+          type: 'switch',
+          title: this.$t('Display Custom Notification Title'),
+          active_value: 'true',
+          inactive_value: 'false',
+          // Rating Pulse shows the aggregate score, not a per-review custom line.
+          condition: { key: 'template', operator: 'includes', selector: ['notification1', 'notification2'] }
+        },
         {
           fieldKey: 'custom_notification_text',
           type: 'text',
           title: this.$t('Custom Notification Title'),
           placeholder: this.$t('Just left us a {review_rating} star review'),
           tooltip: true,
-          tooltipText: this.$t('You can use this {review_rating} shortcode to show dynamic value in a text. Ex: Just left us a {review_rating} star review.')
+          tooltipText: this.$t('You can use this {review_rating} shortcode to show dynamic value in a text. Ex: Just left us a {review_rating} star review.'),
+          condition: [
+            { key: 'display_custom_text', selector: 'true' },
+            { key: 'template', operator: 'includes', selector: ['notification1', 'notification2'] }
+          ]
         },
         {
           fieldKey: 'notification_position',
@@ -171,7 +245,9 @@ export default {
           type: 'switch',
           title: this.$t('Display Date'),
           active_value: 'true',
-          inactive_value: 'false'
+          inactive_value: 'false',
+          // Rating Pulse has no per-review timestamp to show.
+          condition: { key: 'template', operator: 'includes', selector: ['notification1', 'notification2'] }
         },
         {
           fieldKey: 'initial_delay',

@@ -46,6 +46,7 @@
                 v-model="review.reviewer_url"
                 size="small">
             </el-input>
+            <error-view :errors="errors" :field="'review.reviewer_url'" />
           </el-form-item>
           <el-form-item>
             <template #label>
@@ -62,6 +63,7 @@
               </h3>
             </template>
             <photo-uploader enable_clear="yes" design_mode="horizontal" v-model="review.reviewer_img"/>
+            <error-view :errors="errors" :field="'review.reviewer_img'" />
           </el-form-item>
         </div>
 
@@ -123,6 +125,7 @@
               </h3>
             </template>
             <photo-uploader enable_clear="yes" design_mode="horizontal" v-model="review.fields.author_website_logo"/>
+            <error-view :errors="errors" :field="'review.fields.author_website_logo'" />
           </el-form-item>
           <el-form-item>
             <template #label>
@@ -144,6 +147,7 @@
                 v-model="review.fields.author_website_url"
                 size="small">
             </el-input>
+            <error-view :errors="errors" :field="'review.fields.author_website_url'" />
           </el-form-item>
         </div>
 

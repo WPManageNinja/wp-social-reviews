@@ -3,7 +3,7 @@
         <div
             class="wpsr_editor_edit_item"
             :class="{ 'wpsr_editor_edit_item--hidden': typeof field.condition !== 'undefined' && !add_condition(field) }"
-            v-for="(field, key) in fieldsMaps" :key="key" >
+            v-for="(field, key) in visibleFields" :key="key" >
             <editor-element
                     v-if="field.responsive && (typeof field.condition === 'undefined' || (add_condition(field)))"
                     :title="field.title"
@@ -58,22 +58,8 @@ export default {
             default: false
         },
         /**
-         * Controls dropdown teleportation behavior in EditorElement.
-         *
-         * Element Plus (Vue 3) Issue:
-         * When using el-select inside el-popover, the dropdown options can cause the popover
-         * to close unexpectedly. This happens because Element Plus teleports the dropdown
-         * options to the document body by default, which breaks the popover's click detection.
-         *
-         * Version Differences:
-         * - Vue 2 + Element UI: Popover stays open with trigger="manual" and v-model
-         * - Vue 3 + Element Plus: More challenging due to stricter popper/focus management
-         *
-         * Solution:
-         * - Set false when using dropdowns inside popovers to disable teleportation
-         * - Set true (default) for normal dropdown behavior elsewhere
-         *
-         * @see https://element-plus.org/en-US/component/select.html#select-attributes (teleported prop)
+         * Pass false inside a popover. A teleported el-select dropdown breaks the
+         * popover's click detection and closes it.
          */
         isTypograpy: {
             type: Boolean,
@@ -85,10 +71,7 @@ export default {
         return {
             device: 'desktop',
             activeDevice: 'dashicons-desktop',
-            isMobileValueChanged: false,
-            userInteraction: false,
-            hasUserGivenValue: false,
-            totalPostsNumberInteraction: false,
+            countMobileFollowsDesktop: null,
             internalValue: null,
             isUpdating: false,
             lastEmittedValue: null
@@ -99,6 +82,22 @@ export default {
     },
     created() {
         this.initializeValue();
+    },
+    computed: {
+        // Pro-locked fields and options are flagged disabled (fields, options) or pro (image options).
+        visibleFields() {
+            if (!this.hide_pro_features) {
+                return this.fieldsMaps;
+            }
+
+            const isLocked = item => !!item && (item.disabled === true || item.pro === true);
+
+            return this.fieldsMaps
+                .filter(field => !isLocked(field))
+                .map(field => Array.isArray(field.options)
+                    ? { ...field, options: field.options.filter(option => !isLocked(option)) }
+                    : field);
+        }
     },
     methods: {
         initializeValue() {
@@ -113,7 +112,6 @@ export default {
         getFieldValue(fieldKey, isResponsive = false) {
             if (!fieldKey) return null;
 
-            // Ensure internalValue is initialized
             if (!this.internalValue) {
                 this.internalValue = {};
             }
@@ -137,10 +135,8 @@ export default {
                 return value;
             }
 
-            // Get the value from internalValue
             const value = this.internalValue[fieldKey];
 
-            // For select/dropdown fields
             if (typeof value === 'object' && value !== null) {
                 if ('value' in value) {
                     return value.value;
@@ -148,21 +144,29 @@ export default {
                 return value;
             }
 
-            // For wp_editor fields, ensure we return the content
             if (this.fieldsMaps.find(field => field.fieldKey === fieldKey && field.type === 'wp_editor')) {
                 return value !== undefined ? value : '';
             }
 
             return value !== undefined ? value : '';
         },
-        handleValueUpdate(fieldKey, newValue, isResponsive = false) {
+        handleValueUpdate(fieldKey, newValue, isResponsive = false, trackCountEdit = true) {
             if (this.isUpdating || !fieldKey) return;
 
             this.isUpdating = true;
 
-            // Ensure internalValue is initialized
             if (!this.internalValue) {
                 this.internalValue = {};
+            }
+
+            if (trackCountEdit && isResponsive && fieldKey === this.countFieldKey()) {
+                const count = this.internalValue[fieldKey] || {};
+                if (this.device === 'mobile') {
+                    this.countMobileFollowsDesktop = false;
+                } else if (this.countMobileFollowsDesktop === null) {
+                    // Saved settings always carry a mobile count, so only one that still matches desktop is treated as unset.
+                    this.countMobileFollowsDesktop = String(count.mobile) === String(count.desktop);
+                }
             }
 
             const updatedValue = JSON.parse(JSON.stringify(this.internalValue || {}));
@@ -176,7 +180,6 @@ export default {
                     [this.device]: newValue
                 };
             } else {
-                // Handle different types of values
                 if (typeof newValue === 'object' && newValue !== null) {
                     if ('value' in newValue) {
                         updatedValue[fieldKey] = newValue.value;
@@ -184,7 +187,6 @@ export default {
                         updatedValue[fieldKey] = newValue;
                     }
                 } else {
-                    // For wp_editor fields, ensure we store the content
                     if (this.fieldsMaps.find(field => field.fieldKey === fieldKey && field.type === 'wp_editor')) {
                         updatedValue[fieldKey] = newValue || '';
                     } else {
@@ -193,10 +195,8 @@ export default {
                 }
             }
 
-            // Update internal value immediately
             this.internalValue = updatedValue;
 
-            // Only emit update:modelValue for v-model compatibility
             this.$emit('update:modelValue', updatedValue);
 
             setTimeout(() => {
@@ -204,7 +204,6 @@ export default {
             }, 0);
         },
         handleInputChange(fieldKey, newValue, isResponsive = false) {
-            // Only update the internal value without emitting
             if (!this.internalValue) {
                 this.internalValue = {};
             }
@@ -218,7 +217,6 @@ export default {
                     [this.device]: newValue
                 };
             } else {
-                // Handle different types of values
                 if (typeof newValue === 'object' && newValue !== null) {
                     if ('value' in newValue) {
                         this.internalValue[fieldKey] = newValue.value;
@@ -230,46 +228,28 @@ export default {
                 }
             }
 
-            // Emit input event for v-model
             this.$emit('input', this.internalValue);
         },
         handleFieldChange() {
             this.$emit('on-change');
         },
-        handleDesktopMobileValue(val, fieldsMaps) {
-          if (!fieldsMaps) return;
+        countFieldKey() {
+          const field = (this.fieldsMaps || []).find(item => item.fieldKey === 'totalReviewsNumber' || item.fieldKey === 'total_posts_number');
+          return field ? field.fieldKey : null;
+        },
+        handleDesktopMobileValue(val) {
+          const key = this.countFieldKey();
+          if (!key) return;
 
-          const key = fieldsMaps.some(field => field.fieldKey === 'totalReviewsNumber')
-              ? 'totalReviewsNumber'
-              : 'total_posts_number';
-
-
-          let totalPostsNumberObject = fieldsMaps.find((obj) => {
-            return obj.fieldKey === key;
-          });
-
-          // stop activate tablet input field for total posts number or total Reviews Number
-          if(val === 'tablet' && totalPostsNumberObject !== undefined && totalPostsNumberObject.fieldKey === key) {
+          // These counts have no tablet value, so tablet falls back to desktop.
+          if (val === 'tablet') {
             this.device = 'desktop';
             this.activeDevice  = 'dashicons-desktop';
           }
 
-          if (val === 'mobile' && totalPostsNumberObject) {
-            if (this.hasUserGivenValue === true) return;
-            if (this.isMobileValueChanged === false && this.userInteraction === true) {
-              // Ensure the property exists before accessing it
-              if (this.value && this.value[key]) {
-                if (this.value[key].desktop !== undefined) {
-                  this.value[key].mobile = this.value[key].desktop;
-                }
-              }
-            }
-          }
-        },
-        checkStatus() {
-          let mobileValue = this.value && this.value.total_posts_number && this.value.total_posts_number.mobile;
-          if(mobileValue && mobileValue !== 0){
-            this.hasUserGivenValue = true;
+          const count = this.internalValue && this.internalValue[key];
+          if (val === 'mobile' && this.countMobileFollowsDesktop === true && count && count.desktop !== undefined && String(count.mobile) !== String(count.desktop)) {
+            this.handleValueUpdate(key, count.desktop, true, false);
           }
         },
         add_condition(field) {
@@ -349,25 +329,15 @@ export default {
         },
     },
     mounted() {
-        // In Vue 3, we need to use a different approach for global events
-        // If you have a global event bus, use that instead
         if (this.$root) {
             this.$root.$on && this.$root.$on('handleDeviceResponsive', (val, activeDevice) => {
                 this.handleDevice(val, activeDevice);
             });
-
-            this.$root.$on && this.$root.$on('totalPostsNumberInteraction', (val) => {
-                this.totalPostsNumberInteraction = val;
-            });
         }
-
-        this.checkStatus();
     },
     beforeUnmount() {
-        // Clean up event listeners in Vue 3
         if (this.$root && this.$root.$off) {
             this.$root.$off('handleDeviceResponsive');
-            this.$root.$off('totalPostsNumberInteraction');
         }
     },
     watch: {
@@ -388,29 +358,15 @@ export default {
         },
         internalValue: {
             handler(newVal) {
-                if (newVal && JSON.stringify(newVal) !== JSON.stringify(this.value)) {
+                if (newVal && JSON.stringify(newVal) !== JSON.stringify(this.modelValue)) {
                     this.$emit('input', newVal);
-                }
-            },
-            deep: true
-        },
-        'internalValue.total_posts_number.desktop': {
-            handler: function (newVal, oldVal) {
-                this.userInteraction = true;
-            },
-            deep: true
-        },
-        'internalValue.total_posts_number.mobile': {
-            handler: function (val) {
-                if (this.totalPostsNumberInteraction) {
-                    this.isMobileValueChanged = true;
                 }
             },
             deep: true
         },
         'device': {
             handler: function (val) {
-                this.handleDesktopMobileValue(val, this.fieldsMaps);
+                this.handleDesktopMobileValue(val);
             },
             deep: true
         }

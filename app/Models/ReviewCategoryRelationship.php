@@ -5,11 +5,8 @@ namespace WPSocialReviews\App\Models;
 use WPSocialReviews\Database\Migrations\ReviewCategoriesMigrator;
 
 /**
- * Pivot table behind Review::categories() / ReviewCategory::reviews().
- *
- * Per-review work goes through the relation (`$review->categories()->sync()`).
- * What lives here are the set-based operations spanning many reviews at once,
- * which a relation would turn into one query per review.
+ * Pivot behind Review::categories() / ReviewCategory::reviews(). Per-review work goes
+ * through the relation; this holds set-based operations across many reviews.
  */
 class ReviewCategoryRelationship extends Model
 {
@@ -34,9 +31,8 @@ class ReviewCategoryRelationship extends Model
     const BATCH_SIZE = 500;
 
     /**
-     * Drops every category link for the given reviews. Call this wherever reviews
-     * are deleted: those are query-builder mass deletes, so no model event fires
-     * and nothing else clears these rows.
+     * Drops every category link for the given reviews. Call it wherever reviews are
+     * deleted: those are mass deletes, so no model event clears these rows.
      */
     public static function deleteForReviews(array $reviewIds)
     {
@@ -45,9 +41,8 @@ class ReviewCategoryRelationship extends Model
             return;
         }
 
-        // Reachable from cron (platform sync → Review::trashReview()), which never
-        // runs the migration — that only happens when the plugin's admin page
-        // renders. Nothing to unlink if the table was never created.
+        // Reachable from cron, but the migration only runs on the admin page,
+        // so the table may not exist yet.
         if (!ReviewCategoriesMigrator::tablesExist()) {
             return;
         }
@@ -75,10 +70,47 @@ class ReviewCategoryRelationship extends Model
                 $rows[] = ['review_id' => $reviewId, 'category_id' => $categoryId];
             }
 
-            // The unique (review_id, category_id) key makes this the dedupe
-            // mechanism: re-attaching an existing link is a no-op.
+            // The unique (review_id, category_id) key makes re-attaching a no-op.
             static::query()->insertOrIgnore($rows);
         }
+    }
+
+    /**
+     * Attaches arbitrary (review, category) pairs, for the duplicate action.
+     * Callers must scope review_id and confirm category_id exists first.
+     *
+     * @param array $pairs Rows of ['review_id' => int, 'category_id' => int].
+     * @return int Links actually created.
+     */
+    public static function bulkAttachPairs(array $pairs)
+    {
+        $rows = [];
+        foreach ($pairs as $pair) {
+            $reviewId = isset($pair['review_id']) ? (int) $pair['review_id'] : 0;
+            $categoryId = isset($pair['category_id']) ? (int) $pair['category_id'] : 0;
+
+            if (!$reviewId || !$categoryId) {
+                continue;
+            }
+
+            // Keyed so a pair repeated in the input costs no statement space.
+            $rows[$reviewId . ':' . $categoryId] = [
+                'review_id'   => $reviewId,
+                'category_id' => $categoryId
+            ];
+        }
+
+        if (empty($rows)) {
+            return 0;
+        }
+
+        $attached = 0;
+        foreach (array_chunk(array_values($rows), static::BATCH_SIZE) as $chunk) {
+            // Same unique-key dedupe as bulkAttach(): an existing link is a no-op.
+            $attached += (int) static::query()->insertOrIgnore($chunk);
+        }
+
+        return $attached;
     }
 
     /**

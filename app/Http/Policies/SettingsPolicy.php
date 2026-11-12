@@ -4,6 +4,11 @@ namespace WPSocialReviews\App\Http\Policies;
 
 use WPSocialReviews\Framework\Http\Request\Request;
 
+/**
+ * Method names here are matched against SettingsController actions: one named after an
+ * action gates that route alone and verifyRequest never runs for it. Only add one when
+ * a route's owning capability really differs from the group's.
+ */
 class SettingsPolicy extends BasePolicy
 {
     /**
@@ -22,4 +27,12 @@ class SettingsPolicy extends BasePolicy
             || $this->currentUserCan('wpsn_manage_qr_codes');
     }
 
+    /**
+     * Gates SettingsController::resetErrorLog. The error log lives on the Platforms
+     * screen, so it uses that screen's capability.
+     */
+    public function resetErrorLog(Request $request)
+    {
+        return $this->currentUserCan('wpsn_manage_platforms');
+    }
 }

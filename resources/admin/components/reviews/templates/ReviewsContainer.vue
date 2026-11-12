@@ -4,7 +4,9 @@
       template_meta.show_header === 'true' && !template_meta.platform.includes('testimonial') ? 'wpsr-fixed-height' : '',
       template_meta.equal_height === 'true' && template_meta.contentType === 'excerpt' ? 'wpsr-has-equal-height' : '',
       template_meta.contentType === 'content_in_scrollbar' ? 'wpsr-reviews-content-length-deactive' : '',
-      'wpsr-reviews-template-'+template_meta.template
+      'wpsr-reviews-template-'+template_meta.template,
+      has_pro && template_meta.templateType === 'grid' && template_meta.layout_style === 'feature_grid' ? 'wpsr-reviews-layout-style-feature_grid' : '',
+      marqueePaused ? 'wpsr-marquee-paused' : ''
     ]"
        :style="'max-width:' +template_meta.template_width"
   >
@@ -19,6 +21,7 @@
       <InfoCard :info="info"/>
     </div>
     <BusinessInfo v-if="businessInfo && reviews && template_meta && !template_meta.platform.includes('testimonial')"
+        :class="template_meta.layout_style === 'score_slider' ? 'wpsr-business-info-wrapper' : ''"
         :businessInfo="businessInfo"
         :reviews="reviews"
         :metaStyles="template_meta"
@@ -26,20 +29,36 @@
         :activeFilterData="currentFilter"
         @rating-filter="handleRatingFilter"
     />
-    <!-- Just before the feed container, the same place the frontend header view prints the real one. -->
+    <!-- Where the frontend header view prints the real toolbar. -->
     <VisitorToolbarPreview v-if="showVisitorToolbarPreview" :template_meta="template_meta" />
     <div :class="[template_meta.templateType === 'slider' && has_pro ? 'wpsr-reviews-slider-wrapper-inner' : '']">
       <div class="wpsr-active-masonry-layout wpsr-reviews-slider" :data-column="template_meta?.responsive_column_number?.desktop || 1" :class="template_meta.templateType === 'slider' && has_pro ? 'swiper-container' : (template_meta.show_header === 'true' && !template_meta.platform.includes('testimonial') ? 'wpsr-row' : '')" :style="'height:' +template_meta.template_height">
+          <template v-if="isMarqueePreview">
+            <div v-for="(row, rowIndex) in marqueeRows" :key="'marquee-row-' + rowIndex"
+                 class="wpsr-marquee-row wpsr-marquee-ready" :data-direction="rowIndex ? 'right' : 'left'">
+              <div class="wpsr-marquee-track" :style="marqueeTrackStyle(row)">
+                <component
+                    v-for="copy in marqueeCopies(row)"
+                    :key="'marquee-copy-' + copy"
+                    :aria-hidden="copy > 1 ? 'true' : null"
+                    :is="templates[template_meta.template]"
+                    v-bind="skinProps"
+                    :reviews="row"
+                    @expandContent="expandContent"
+                />
+              </div>
+            </div>
+            <button type="button" class="wpsr-marquee-toggle" :aria-pressed="marqueePaused ? 'true' : 'false'"
+                    :aria-label="marqueePaused ? $t('Play scrolling reviews') : $t('Pause scrolling reviews')"
+                    @click="marqueePaused = !marqueePaused">
+              <i :class="marqueePaused ? 'icon-play' : 'icon-pause'" aria-hidden="true"></i>
+            </button>
+          </template>
           <component
+              v-else
               :is="templates[template_meta.template]"
-              :template="template_meta.template"
-              :template_meta="template_meta"
+              v-bind="skinProps"
               :reviews="filteredReviews"
-              :image_settings="image_settings"
-              :businessInfo="businessInfo"
-              :average_rating="businessInfo.average_rating"
-              :total_rating="businessInfo.total_rating"
-              :reviewsWrapperClasses="reviewsWrapperClasses"
               @expandContent="expandContent"
           />
           <div v-if="has_pro && template_meta?.notification_settings?.display_read_all_reviews_btn === 'true' && Object.keys(businessInfo).length && template_meta.templateType === 'notification'"
@@ -110,8 +129,9 @@ export default {
         'testimonial1' : markRaw(Testimonial1),
         'testimonial2' : markRaw(Testimonial2),
       },
-      currentFilter: null, // Store current filter/sort settings
-      filteredReviews: []
+      currentFilter: null,
+      filteredReviews: [],
+      marqueePaused: false
     }
   },
   mounted() {
@@ -130,15 +150,37 @@ export default {
 
       return [this.template_meta.templateType === 'slider' && this.has_pro ? 'swiper-wrapper wpsr-ai-summary-enabled-slider' : (this.template_meta.show_header === 'true' ? 'wpsr-review-fixed-height-wrap' : 'wpsr-row')];
     },
+    skinProps() {
+      return {
+        template: this.template_meta.template,
+        template_meta: this.template_meta,
+        image_settings: this.image_settings,
+        businessInfo: this.businessInfo,
+        average_rating: this.businessInfo.average_rating,
+        total_rating: this.businessInfo.total_rating,
+        reviewsWrapperClasses: this.reviewsWrapperClasses
+      };
+    },
+    isMarqueePreview() {
+      return this.has_pro && this.template_meta.templateType === 'marquee';
+    },
+    // Same split as Helper::marqueeRows(): alternating reviews, one row under four.
+    marqueeRows() {
+      const reviews = this.filteredReviews || [];
+      if (reviews.length < 4) {
+        return [reviews];
+      }
+      return [reviews.filter((review, index) => index % 2 === 0), reviews.filter((review, index) => index % 2 === 1)];
+    },
     shouldShowLoadMore() {
       const shouldShow = this.template_meta &&
              this.hasMoreReviews &&
              this.template_meta.templateType !== 'slider' &&
+             this.template_meta.templateType !== 'marquee' &&
              this.reviews && this.reviews.length > 0;
       return shouldShow;
     },
-    // Exactly when the real bar would render on the frontend, so the preview never promises a control the
-    // visitor will not get.
+    // Same condition as the frontend bar, so the preview never shows a control visitors won't get.
     showVisitorToolbarPreview() {
       return wpsrToolbarActive(this.template_meta, this.has_pro);
     }
@@ -164,65 +206,48 @@ export default {
     VisitorToolbarPreview
   },
   methods: {
+    marqueeCardWidth() {
+      return parseInt(this.template_meta?.marquee_settings?.card_width, 10) || 360;
+    },
+    // Copies of the row so half the track is at least a preview row wide (assumed 1200px) and the loop never shows a gap.
+    marqueeCopies(row) {
+      const setWidth = Math.max(1, row.length) * (this.marqueeCardWidth() + 20);
+      return Math.max(1, Math.ceil(1200 / setWidth)) * 2;
+    },
+    marqueeTrackStyle(row) {
+      const pxPerSecond = parseInt(this.template_meta?.marquee_settings?.speed, 10) || 35;
+      const halfWidth = row.length * (this.marqueeCardWidth() + 20) * (this.marqueeCopies(row) / 2);
+      return {
+        '--wpsr-marquee-card-width': this.marqueeCardWidth() + 'px',
+        '--wpsr-marquee-duration': (halfWidth / pxPerSecond).toFixed(2) + 's'
+      };
+    },
     expandContent(val) {
       this.$emit('contentExpand',true);
     },
 
     handleRatingFilter(filterData) {
-      // Handle clear filter
       if (filterData.filterType === 'clear') {
         this.resetFilters();
         this.$emit('rating-filter', filterData);
         return;
       }
 
-      // Store the current filter
       this.currentFilter = filterData;
 
-      // Apply the filter and emit to parent
       this.applyFiltersAndSort();
       this.$emit('rating-filter', filterData);
     },
 
     /**
-     * Reviews Filtering and Sorting System
-     *
-     * This component handles the filtering and sorting of reviews.
-     * The architecture is designed to be extensible for future sorting features.
-     *
-     * Current Features:
-     * - Rating-based filtering (click on progress bars in header templates)
-     * - Clear filter functionality
-     * - Visual feedback for active filters
-     *
-     * Future Extensions:
-     * - Add sorting by: newest, oldest, highest rating, lowest rating, most helpful
-     * - Add multiple filter combinations
-     * - Add search/text filtering
-     *
-     * Event Flow:
-     * Template2 -> BusinessInfo -> ReviewsContainer -> ReviewsView
-     *
-     * Filter Data Structure:
-     * {
-     *   type: 'star'|'booking'|'clear',
-     *   minRating: number,
-     *   maxRating: number,
-     *   filterType: 'rating'|'sort'|'clear'
-     * }
+     * filterData: { type: 'star'|'booking'|'clear', minRating, maxRating, filterType: 'rating'|'sort'|'clear' }
      */
     applyFiltersAndSort() {
       let filtered = [...(this.reviews || [])];
 
-      // Apply rating filter if exists
       if (this.currentFilter && this.currentFilter.filterType === 'rating') {
         filtered = this.filterByRating(filtered, this.currentFilter);
       }
-
-      // Future: Apply sorting here when implemented
-      // if (this.currentFilter && this.currentFilter.filterType === 'sort') {
-      //   filtered = this.sortReviews(filtered, this.currentFilter);
-      // }
 
       this.filteredReviews = filtered;
     },
@@ -232,16 +257,13 @@ export default {
         const rating = parseFloat(review.rating || 0);
 
         if (filterData.type === 'booking') {
-          // For booking.com, use point ranges
           return rating >= filterData.minRating && rating <= filterData.maxRating;
         } else {
-          // For star ratings, exact match or range
           return rating >= filterData.minRating && rating <= filterData.maxRating;
         }
       });
     },
 
-    // Future sorting method - ready for implementation
     sortReviews(reviews, sortData) {
       const sorted = [...reviews];
 
@@ -266,7 +288,6 @@ export default {
       this.filteredReviews = [...(this.reviews || [])];
     },
 
-    // Future method for handling sort events
     handleSort(sortData) {
       this.currentFilter = sortData;
       this.applyFiltersAndSort();
@@ -279,7 +300,7 @@ export default {
       if (this.loadMoreLoading || !this.shouldShowLoadMore || this.template_meta.pagination_type === 'load_more') return;
 
       const scrollPosition = window.scrollY + window.innerHeight;
-      const bottomOffset = document.documentElement.offsetHeight - 100; // triggers 100px before bottom
+      const bottomOffset = document.documentElement.offsetHeight - 100;
 
       if (scrollPosition >= bottomOffset) {
         this.handleLoadMore();
@@ -291,10 +312,8 @@ export default {
     reviews: {
       immediate: true,
       handler(newReviews) {
-        // Initialize filtered reviews with all reviews
         this.filteredReviews = [...(newReviews || [])];
 
-        // Re-apply current filters if they exist
         if (this.currentFilter) {
           this.applyFiltersAndSort();
         }

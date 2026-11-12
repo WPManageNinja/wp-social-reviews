@@ -12,7 +12,7 @@
         </div>
         <div class="wpsr-fm-greeting-msg">
             <h3 v-if="templateConfigs.platform === 'whatsapp' && templateConfigs.chat_header.name">{{ templateConfigs.chat_header.name }}</h3>
-            <div v-if="templateConfigs.chat_body" class="wpsr-fm-msg-text" v-html="templateConfigs.chat_body.greeting_msg"></div>
+            <div v-if="templateConfigs.chat_body" class="wpsr-fm-msg-text" dir="auto" v-html="templateConfigs.chat_body.greeting_msg"></div>
         </div>
     </div>
 </template>

@@ -1,0 +1,13 @@
+// User text carries dir="auto" so mixed-language content keeps its word order. match-parent keeps the card's own
+// alignment instead of the text's start side (Chromium only knows the prefixed form); :where() lets templates win.
+:where(.wpsr_content [dir="auto"], .wpsr-fm-chat-wrapper [dir="auto"], .wpsr-review-form [dir="auto"],
+  .wpsr-reviews-notification-card-wrapper [dir="auto"]) {
+  text-align: -webkit-match-parent;
+  text-align: match-parent;
+}
+
+// The icon font only ships left/right glyphs; prev/next sit mirrored in RTL, so their arrows must turn too.
+.rtl :is(.wpsr-notification-nav, .wpsr-prev-btn, .wpsr-next-btn) [class^="icon-angle-"] {
+  display: inline-block; // a transform does nothing on a plain inline box
+  transform: scaleX(-1);
+}

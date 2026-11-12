@@ -19,14 +19,9 @@
   }
 }
 
-.wpsr_template_images_row {
-  flex-wrap: nowrap !important;
-  overflow-x: auto;
-}
-
 .wpsr_template_label{
   text-align: start;
-  padding: 0px 6px;
+  padding: 0 0 0 6px;
 }
 
 .wpsr_element_box{
@@ -36,12 +31,12 @@
     display: flex;
     overflow: hidden;
     .wpsr_template_images_row{
-        display: flex;
-        justify-content: flex-start;
-        flex-direction: row;
-        align-items: center;
-        gap: 3px;
-        flex-wrap: wrap;
+        display: grid;
+        grid-auto-flow: column;
+        // Capped so a picker with fewer options than the row holds keeps compact cards.
+        grid-auto-columns: minmax(0, 120px);
+        grid-template-rows: auto auto;
+        column-gap: 3px;
         width: 100%;
         box-sizing: border-box;
         overflow: hidden;
@@ -50,9 +45,20 @@
 }
 
 .wpsr_template_image_without_padding{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   height: 81px;
+  max-width: 120px;
   border-radius: var(--wpsr-radius-sm, 4px);
   border: 1.5px solid transparent;
+
+  img{
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
 }
 
 .wpsr_template_demo_image_wrapper{
@@ -96,6 +102,32 @@
       display: flex;
       align-items: center;
     }
+  }
+}
+
+// Thumbnails and labels differ in height. Subgrid gives every card in a row the same image row and label row.
+.wpsr_template_images_row,
+.wpsr_editor_selections {
+  // A leaving card must keep the transition's display: none, so it is left out here.
+  > .wpsr_template_demo_image_wrapper:not(.fade-move-leave-active) {
+    display: grid;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+    row-gap: 6px;
+
+    > .wpsr_template_label {
+      align-self: start;
+    }
+  }
+}
+
+// Preview columns can be narrower than an image, so the card content must shrink instead of overflowing into the next card.
+.wpsr_template_images_row > .wpsr_template_demo_image_wrapper:not(.fade-move-leave-active) {
+  grid-template-columns: minmax(0, 1fr);
+
+  > .wpsr_template_label > span:not(.wpsr_label_icon) {
+    min-width: 0;
+    overflow-wrap: break-word;
   }
 }
 

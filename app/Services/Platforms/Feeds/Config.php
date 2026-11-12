@@ -295,7 +295,7 @@ class Config
         }
 
         $header_layout = Arr::get($settings, 'header_settings.header_layout', 'classic');
-        if (!in_array($header_layout, array('classic', 'minimal'), true)) {
+        if (!in_array($header_layout, array('classic', 'minimal', 'inline'), true)) {
             $header_layout = 'classic';
         }
 
@@ -312,6 +312,7 @@ class Config
                     'mobile'   => Arr::get($settings, 'responsive_column_number.mobile', '12')
                 ),
                 'column_gaps'   => Arr::get($settings,'column_gaps', 'default'),
+                'color_scheme'  => InstagramHelper::sanitizeColorScheme(Arr::get($settings,'color_scheme', 'light')),
                 'enable_style'  => 'true',
 
                 'source_settings' => array(
@@ -362,6 +363,7 @@ class Config
                     'display_comments_counter' => Arr::get($settings,'post_settings.display_comments_counter', 'true'),
                     'display_caption'          => Arr::get($settings,'post_settings.display_caption', 'true'),
                     'trim_caption_words'       => (int) Arr::get($settings,'post_settings.trim_caption_words', 15),
+                    'display_date'             => Arr::get($settings,'post_settings.display_date', 'true') === 'false' ? 'false' : 'true',
                 ),
 
                 'popup_settings' => array (

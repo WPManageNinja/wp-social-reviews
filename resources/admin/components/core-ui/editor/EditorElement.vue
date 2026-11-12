@@ -365,7 +365,7 @@
           <el-checkbox v-model="localValue" @change="$emit('on-change')">
             <h3 class="wpsr-sub-heading">{{ field.label }}</h3>
           </el-checkbox>
-          <el-tooltip style="margin-left: 10px" v-if="field.checkboxTooltip" class="item" effect="dark" placement="right-start">
+          <el-tooltip style="margin-inline-start: 10px" v-if="field.checkboxTooltip" class="item" effect="dark" placement="right-start">
             <template #content><div v-html="field.checkboxTooltipText"></div></template>
             <el-icon><InfoFilled /></el-icon>
           </el-tooltip>
@@ -528,14 +528,6 @@ export default {
                     type: 'error',
                     offset: 80
                 });
-            }
-            if (this.activeDevice === 'dashicons-smartphone'){
-                let field = this.field;
-                if (field.fieldKey === 'total_posts_number'){
-                    if (this.$root && this.$root.$emit) {
-                        this.$root.$emit('totalPostsNumberInteraction', true);
-                    }
-                }
             }
             this.localValue = val;
             this.$emit('update:sync_value', val);

@@ -29,7 +29,7 @@ class WPSR_Fl_Twitter_Module extends FLBuilderModule {
 
         $this->add_css(
             'wp_social_ninja_tw',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_tw.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_tw' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );

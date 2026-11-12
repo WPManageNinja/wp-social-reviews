@@ -1,7 +1,6 @@
 /**
- * Shared tests for a testimonial video URL.
- *
- * Mirrored by the Pro TestimonialVideo service, which renders the front end.
+ * Shared tests for a testimonial video URL. Mirrored by Pro's TestimonialVideo service,
+ * which renders the front end.
  */
 
 const WPSR_VIDEO_FILE_PATTERN = /\.(mp4|webm|ogv|ogg|mov|m4v)(\?|#|$)/i;
@@ -77,9 +76,7 @@ function hostIn(host, hosts) {
 }
 
 /**
- * Build a player URL for a provider link, so the editor can show the real video.
- *
- * Only the YouTube and Vimeo shapes the front end embeds; the rest get a link.
+ * Build a YouTube or Vimeo player URL, so the editor can show the real video.
  *
  * @param {string} url
  * @returns {string} '' when no embed URL can be built for this URL

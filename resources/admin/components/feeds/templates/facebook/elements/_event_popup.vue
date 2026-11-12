@@ -2,7 +2,7 @@
   <div>
     <div class="wpsr-feed-popup-user-info wpsr-feed-popup-event-info">
       <div class="wpsr-feed-popup-group">
-        <div class="wpsr-feed-popup-user-name" v-if="settings.popup_settings.display_username === 'true'">
+        <div class="wpsr-feed-popup-user-name" dir="auto" v-if="settings.popup_settings.display_username === 'true'">
           <a :href="'https://www.facebook.com/events/'+feed.id" target="_blank" :title="feed.name">{{ feed.name }}</a>
         </div>
       </div>
@@ -42,7 +42,7 @@
       </div>
     </div>
 
-    <div class="wpsr-feed-popup-description-text" v-if="settings.popup_settings.display_caption === 'true'">
+    <div class="wpsr-feed-popup-description-text" dir="auto" v-if="settings.popup_settings.display_caption === 'true'">
       <p v-if="feed.description" v-html="facebookTextValidate(feed.description)"></p>
     </div>
 

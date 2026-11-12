@@ -29,39 +29,41 @@
         <div class="wpsr-table-controls">
           <div class="wpsr-controls-left">
             <div class="wpsr-controls-bulk-actions">
-              <el-select class="wpsr-select-field-primary" v-model="bulkAction" placeholder="Bulk Action" size="default" style="width: 160px;">
-                <el-option label="Bulk Actions" value="">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><Plus /></el-icon>
-                    <span>Bulk Actions</span>
-                  </span>
-                </el-option>
-                <el-option label="Enable" value="publish">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><View /></el-icon>
-                    <span>Enable</span>
-                  </span>
-                </el-option>
-                <el-option label="Disable" value="draft">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><Hide /></el-icon>
-                    <span>Disable</span>
-                  </span>
-                </el-option>
-                <el-option label="Delete" value="delete">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><Delete /></el-icon>
-                    <span>Delete</span>
-                  </span>
-                </el-option>
-                <el-option label="Duplicate" value="duplicate">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><DocumentCopy /></el-icon>
-                    <span>Duplicate</span>
-                  </span>
-                </el-option>
-              </el-select>
-              <el-button @click="applyBulkAction" :disabled="!selectedItems.length">Apply</el-button>
+              <div class="wpsr-bulk-action-group">
+                <el-select class="wpsr-select-field-primary" v-model="bulkAction" placeholder="Bulk Action" size="default" style="width: 160px;">
+                  <el-option label="Bulk Actions" value="">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><Plus /></el-icon>
+                      <span>Bulk Actions</span>
+                    </span>
+                  </el-option>
+                  <el-option label="Enable" value="publish">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><View /></el-icon>
+                      <span>Enable</span>
+                    </span>
+                  </el-option>
+                  <el-option label="Disable" value="draft">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><Hide /></el-icon>
+                      <span>Disable</span>
+                    </span>
+                  </el-option>
+                  <el-option label="Delete" value="delete">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><Delete /></el-icon>
+                      <span>Delete</span>
+                    </span>
+                  </el-option>
+                  <el-option label="Duplicate" value="duplicate">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><DocumentCopy /></el-icon>
+                      <span>Duplicate</span>
+                    </span>
+                  </el-option>
+                </el-select>
+                <el-button @click="applyBulkAction" :disabled="!selectedItems.length">Apply</el-button>
+              </div>
             </div>
           </div>
           <div class="wpsr-controls-right">
@@ -107,7 +109,7 @@
               <template #default="scope" >
                 <div class="wpsr-item-title-cell wpsr-item-editable" @click.prevent="handleRowAction('edit', scope.row)">
                   <strong class="wpsr-item-title wpsr-d-flex wpsr-flex-align-center">
-                    {{ $trimWords(scope.row.post_title, 3, true) }}
+                    <span dir="auto">{{ $trimWords(scope.row.post_title, 3, true) }}</span>
                     <el-icon class="wpsr-ml-5 wpsr-display-on-hover"><Edit /></el-icon>
                   </strong>
                 </div>

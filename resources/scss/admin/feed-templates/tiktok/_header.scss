@@ -105,6 +105,9 @@
               padding: 0;
               strong{
                 margin-right: 3px;
+                // The item is dir="auto"; logical sides keep the gap after the number in either direction.
+                margin-inline-start: 0;
+                margin-inline-end: 3px;
               }
             }
           }

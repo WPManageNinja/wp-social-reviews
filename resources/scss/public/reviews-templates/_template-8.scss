@@ -55,13 +55,6 @@
       z-index: 2;
     }
   
-    //.wpsr-review-header{
-    //  display: flex;
-    //  flex-direction: column;
-    //  align-items: center;
-    //  width: 100%;
-    //  text-align: center;
-    //}
     .wpsr-reviewer-image{
       .wpsr-reviewer-image-url{
         display: block;
@@ -115,7 +108,6 @@
     .wpsr-reviews-on-hover{
       text-align: inherit;
       opacity: 0;
-      //display: none;
       visibility: hidden;
       background-color: #fff;
       box-shadow: 0 0 57px 0 rgba(0, 0, 0, 0.05);
@@ -145,7 +137,6 @@
         background: rgba(72, 70, 70, 0.1);
       }
       .wpsr-review-content{
-        //overflow-y: scroll;
         height: 100%;
         .wpsr-ai-review-summary-list,
         .wpsr_show_more_content{
@@ -157,20 +148,6 @@
           scrollbar-width: thin;
         }
   
-        //&.wpsr-review-active-rm{
-        //  overflow-y: initial;
-        //  height: auto;
-        //  p{
-        //    overflow: hidden !important;
-        //  }
-        //  &.active{
-        //    overflow-y: scroll;
-        //    height: 100%;
-        //    p{
-        //      overflow: initial !important;
-        //    }
-        //  }
-        //}
       }
       .wpsr-review-platform{
         margin-top: 5px;

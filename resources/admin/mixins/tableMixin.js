@@ -16,11 +16,14 @@ export const tableMixin = {
             feed_items: [],
             deletingItem: {},
             duplicatingItem: false,
+            creatingItem: false,
             feedPlatforms: ["twitter", "youtube", "instagram", "facebook_feed", "tiktok"],
             connectedPlatformSections: [],
             validPlatforms: [],
             filter_value: null,
             total_items: 0,
+            // total_items counts filtered rows, so a list page needs this to tell "no match" from "no items at all".
+            lastFetchFiltered: false,
             order_by: '',
             endpoint: '',
             statusFilter: this.$route.query.status || 'all',
@@ -86,6 +89,9 @@ export const tableMixin = {
             this.show_delete_modal = true;
         },
         addNewItem(arg) {
+            if (this.creatingItem) {
+                return;
+            }
             let platform, channels;
             if (typeof arg === 'object') {
                 platform = arg.platform;
@@ -102,6 +108,7 @@ export const tableMixin = {
             if (channels) {
                 payload.channels = channels;
             }
+            this.creatingItem = true;
             this.$post(this.endpoint, payload).then(response => {
                 if ( response ) {
                     if (response.template_id) {
@@ -126,11 +133,14 @@ export const tableMixin = {
             }).catch(errors => {
                 this.handleError(errors);
             }).always(() => {
-
+                this.creatingItem = false;
             });
         },
         getItems(){
             this.loading = true;
+            const wpsrIsFiltered = (!!this.statusFilter && this.statusFilter !== 'all')
+                || !!this.search_string
+                || (!!this.filter_value && this.filter_value !== 'all');
             this.$get(this.endpoint, {
                 per_page: this.per_page,
                 page: this.page_number,
@@ -147,6 +157,7 @@ export const tableMixin = {
                         this.feed_items = response.feed_items;
                         this.total =  response.items.total;
                         this.total_items = response.total_items;
+                        this.lastFetchFiltered = wpsrIsFiltered;
 
                         if (response.connected_platform_sections) {
                             this.connectedPlatformSections = response.connected_platform_sections;

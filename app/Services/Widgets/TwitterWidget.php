@@ -343,6 +343,7 @@ class TwitterWidget extends Widget_Base {
                 'size_units' => ['px', 'em', '%'],
                 'selectors' => [
                     '{{WRAPPER}} .wpsr-twitter-feed-header .wpsr-twitter-user-info-wrapper .wpsr-twitter-user-info .wpsr-twitter-user-statistics .wpsr-twitter-user-statistics-item' => 'margin-right: {{SIZE}}{{UNIT}};',
+                    'body.rtl {{WRAPPER}} .wpsr-twitter-feed-header .wpsr-twitter-user-info-wrapper .wpsr-twitter-user-info .wpsr-twitter-user-statistics .wpsr-twitter-user-statistics-item' => 'margin-right: 0; margin-left: {{SIZE}}{{UNIT}};',
                 ],
             ]
         );
@@ -586,6 +587,7 @@ class TwitterWidget extends Widget_Base {
                 'size_units' => ['px', 'em', '%'],
                 'selectors' => [
                     '{{WRAPPER}} .wpsr-twitter-tweet .wpsr-twitter-author-tweet .wpsr-tweet-author-info .wpsr-tweet-author-links a.wpsr-tweet-time' => 'padding-left: {{SIZE}}{{UNIT}};',
+                    'body.rtl {{WRAPPER}} .wpsr-twitter-tweet .wpsr-twitter-author-tweet .wpsr-tweet-author-info .wpsr-tweet-author-links a.wpsr-tweet-time' => 'padding-left: 0; padding-right: {{SIZE}}{{UNIT}};',
                     '{{WRAPPER}} .wpsr-twitter-tweet .wpsr-twitter-author-tweet .wpsr-tweet-author-info .wpsr-tweet-author-links a.wpsr-tweet-time:before' => 'left: calc({{SIZE}}{{UNIT}}/2);',
                 ],
             ]
@@ -800,6 +802,7 @@ class TwitterWidget extends Widget_Base {
                 'size_units' => ['px', 'em', '%'],
                 'selectors' => [
                     '{{WRAPPER}} .wpsr-twitter-tweet .wpsr-twitter-author-tweet .wpsr-tweet-actions a' => 'margin-right: {{SIZE}}{{UNIT}};',
+                    'body.rtl {{WRAPPER}} .wpsr-twitter-tweet .wpsr-twitter-author-tweet .wpsr-tweet-actions a' => 'margin-right: 0; margin-left: {{SIZE}}{{UNIT}};',
                 ],
             ]
         );

@@ -64,6 +64,7 @@
                       </template>
                       <el-collapse accordion v-model="activeNames">
                         <div class="wpsr-styling-divider"/>
+                        <StyleResetButton :styles_config="feedConfig.styles_config" :default_styles="default_styles"/>
                         <TwitterStyleEditor
                             v-if="feedConfig.styles_config"
                             :feed_config="feedConfig.styles_config"
@@ -90,6 +91,7 @@ import Template2 from './../templates/twitter/Template2';
 import EditorHeader from "../../pieces/EditorHeader";
 import TwitterFeedEditor from './editor-ui/TwitterFeedEditor';
 import TwitterStyleEditor from './editor-ui/TwitterStyleEditor';
+import StyleResetButton from "../../core-ui/editor/StyleResetButton.vue";
 import ResponsiveBar from '../../core-ui/editor/ResponsiveBar';
 import EditorViewInfoBar from '../../core-ui/editor/EditorViewInfoBar';
 import {helperStyle} from "../../../mixins/helperStyle";
@@ -117,6 +119,7 @@ export default {
         Template2,
         TwitterFeedEditor,
         TwitterStyleEditor,
+        StyleResetButton,
         ResponsiveBar,
         EditorViewInfoBar,
         UpgradeToProButton,

@@ -28,7 +28,7 @@ class WPSR_Fl_Reviews_Module extends FLBuilderModule {
 
         $this->add_css(
             'wp_social_ninja_reviews',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_reviews.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_reviews' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );

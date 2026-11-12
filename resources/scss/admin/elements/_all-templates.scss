@@ -74,13 +74,29 @@
   // Controls Section
   .wpsr-table-controls {
     display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
     justify-content: space-between;
     align-items: center;
+    > .wpsr-d-flex {
+      flex-wrap: wrap;
+      gap: 12px;
+    }
     padding: 16px 20px;
     background-color: var(--wpsr-primary-bg, #FFFFFF);
     border-bottom: 1px solid var(--wpsr-primary-border);
     border-radius: 12px 12px 0 0;
     .wpsr-controls-bulk-actions{
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      .wpsr-bulk-action-group{
+        display: flex;
+        align-items: center;
+        &:not(:last-child){
+          margin-inline-end: 12px;
+        }
+      }
       .el-select__wrapper{
         border-radius: 8px 0 0 8px;
         border-right: none;
@@ -107,6 +123,10 @@
           color: var(--wpsr-secondary-link-hover, #0E121B);
           outline: none;
         }
+        &.wpsr-manage-categories-btn{
+          margin-left: 0;
+          border-radius: var(--wpsr-radius-md, 8px);
+        }
       }
     }
 
@@ -114,6 +134,7 @@
       display: flex;
       gap: 12px;
       align-items: center;
+      flex-shrink: 0;
 
       .wpsr_status_tabs {
         .wpsr_segmented_control {
@@ -145,10 +166,30 @@
       }
     }
 
+    // Basis 0 with a min-content floor: the filter and search shrink first, and the group
+    // moves under the tabs only when even their minimum widths do not fit.
     .wpsr-controls-right {
       display: flex;
       gap: 12px;
       align-items: center;
+      justify-content: flex-end;
+      flex: 1 1 0;
+      min-width: min-content;
+      .wpsr-controls-filter{
+        flex: 0 1 220px;
+        min-width: 120px;
+        .el-select{
+          width: 100%;
+        }
+        // The select has the v-if, so the wrapper stays when there are no platforms.
+        &:empty{
+          display: none;
+        }
+      }
+      .wpsr-controls-search{
+        flex: 0 1 200px;
+        min-width: 110px;
+      }
       .wpsr-input-default{
         height: auto;
         .el-input__wrapper{
@@ -422,6 +463,11 @@
 
   // Responsive Design
   @media screen and (max-width: 767px) {
+    .wpsr-table-controls .wpsr-controls-right {
+      flex-wrap: wrap;
+      justify-content: flex-start;
+    }
+
     .wpsr-table-header {
       flex-direction: column;
       gap: 16px;
@@ -574,7 +620,6 @@
   position: relative;
   .wpsr-text-modal-content {
     display: inline;
-    margin-right: 5px;
     p{
       margin: 0;
       padding: 0;
@@ -582,6 +627,8 @@
     }
   }
   .wpsr-read-more {
+    // The gap sits on the link: the text is its own dir="auto" run, so a margin on it lands at its start, not here.
+    margin-inline-start: 5px;
     color: var(--wpsr-primary-btn-bg, #5525D9);
     text-decoration: none;
     cursor: pointer;

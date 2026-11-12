@@ -1,6 +1,9 @@
 @import "channels";
+// The bubble corner is a user setting, so positioning stays physical in RTL. cssnano sorts declarations and a marker
+// moves with the next one, so put /*!rtl:ignore*/ right before its declaration and a begin/end marker last in a block.
 .wpsr-fm-chat-wrapper{
     position: fixed;
+    /*!rtl:ignore*/
     right: 20px;
     bottom: 25px;
     z-index: 9999;
@@ -133,6 +136,7 @@
     &.wpsr-multiplatform-chat{
       .wpsr-fm-chat-box-display{
         z-index: 999;
+        /*!rtl:begin:ignore*/
       }
     }
     &.wpsr-multiplatform-chat.wpsr-chat-whatsapp{
@@ -302,6 +306,7 @@
         right: 20px;
         top: 185px;
         bottom: auto;
+        /*!rtl:end:ignore*/
       }
     }
     &.wpsr_pro_active{
@@ -361,6 +366,7 @@
       transition: 0.5s;
       width: 360px;
       position: fixed;
+      /*!rtl:ignore*/
       right: 30px;
       bottom: 0;
       top: auto;
@@ -704,6 +710,7 @@
       display: block;
       position: relative;
       //z-index: 999999;
+      /*!rtl:ignore*/
       right: 10px;
       .wpsr-fm-bubble-btn{
         background-color: #0084ff;
@@ -824,7 +831,9 @@
       position: absolute;
       z-index: 1;
       top: 15px;
+      /*!rtl:ignore*/
       right: 70px;
+      /*!rtl:begin:ignore*/
       &:after{
         content: "";
         position: absolute;
@@ -834,6 +843,7 @@
         border-width: 5px;
         border-style: solid;
         border-color: transparent transparent transparent black;
+        /*!rtl:end:ignore*/
       }
     }
     &:last-child{
@@ -928,6 +938,7 @@
   .wpsr-channel-icon,
   .wpsr-channels-icons{
     position: fixed;
+    /*!rtl:ignore*/
     right: 30px;
     bottom: -200px;
     top: auto;

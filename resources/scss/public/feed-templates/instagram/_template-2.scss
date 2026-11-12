@@ -1,4 +1,9 @@
 .wpsr-ig-feed-template2{
+  // Posts drop their margin here, so the default gap needs a row gap matching the 30px gutter.
+  .wpsr-column-gap-default [class*="wpsr-col"],
+  &.wpsr-column-gap-default [class*="wpsr-col"]{
+    margin-bottom: 30px;
+  }
   //background-color: #f1f1f1;
   .wpsr-instagram-masonry-activate{
     .wpsr-ig-post{

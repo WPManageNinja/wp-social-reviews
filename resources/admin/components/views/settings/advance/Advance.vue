@@ -193,10 +193,6 @@ export default {
           value: 'webp'
         },
       ],
-      available_ai_platforms:[],
-      open_ai_supported_models: [],
-      open_router_supported_models: [],
-      deepseek_supported_models: [],
     }
   },
 
@@ -222,10 +218,6 @@ export default {
           .then(response => {
             if (response) {
               this.advance_settings = response.advance_settings;
-              this.available_ai_platforms = response.ai_summarizer_settings_options.available_ai_platforms;
-              this.open_ai_supported_models = response.ai_summarizer_settings_options.open_ai_supported_models;
-              this.open_router_supported_models = response.ai_summarizer_settings_options.open_router_supported_models;
-              this.deepseek_supported_models = response.ai_summarizer_settings_options.deepseek_supported_models;
             }
           }).catch(error => {
             this.handleError(error);

@@ -8,17 +8,13 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-/**
- * Service class for handling review approval logic
- */
 class ReviewApprovalService
 {
     /**
-     * Determine if a review should be auto-approved based on publish mode and conditional rules
+     * Approval status for a new review: 1 approved, 0 pending, 2 spam.
      */
     public static function determineReviewApproval($reviewData, $reviewPublishMode = null, $conditionalRules = null)
     {
-        // If not provided, get from global settings
         if ($reviewPublishMode === null || $conditionalRules === null) {
             $globalReviewSettings = get_option('wpsr_global_settings', []);
             $globalSettingsService = new GlobalSettings();
@@ -30,21 +26,21 @@ class ReviewApprovalService
 
         switch ($reviewPublishMode) {
             case 'auto':
-                return 1; // Auto-approve all reviews
+                return 1;
 
             case 'manually':
-                return 0; // Send all reviews to moderation
+                return 0;
 
             case 'conditional':
                 return static::evaluateConditionalRules($reviewData, $conditionalRules);
 
             default:
-                return 1; // Default to auto-approve for backward compatibility
+                return 1;
         }
     }
 
     /**
-     * Evaluate conditional rules to determine review approval
+     * Same return values as determineReviewApproval().
      */
     public static function evaluateConditionalRules($reviewData, $conditionalRules)
     {
@@ -53,13 +49,11 @@ class ReviewApprovalService
         $reviewTitle = Arr::get($reviewData, 'review_title', '');
         $fullReviewText = trim($reviewText . ' ' . $reviewTitle);
 
-        // Check minimum rating
         $minRating = Arr::get($conditionalRules, 'min_rating', 3);
         if ($rating < $minRating) {
-            return 0; // Send to moderation
+            return 0;
         }
 
-        // Check blocked keywords
         $blockedKeywords = Arr::get($conditionalRules, 'blocked_keywords', '');
         if (!empty($blockedKeywords)) {
             $keywords = array_map('trim', explode(',', $blockedKeywords));
@@ -67,32 +61,21 @@ class ReviewApprovalService
 
             foreach ($keywords as $keyword) {
                 if (!empty($keyword) && strpos($lowerReviewText, strtolower($keyword)) !== false) {
-                    return 2; // Send to moderation
+                    return 2; // Blocked keyword: spam.
                 }
             }
         }
 
-        // Check minimum review length
         $minLength = Arr::get($conditionalRules, 'min_review_length', 0);
         if ($minLength && strlen($fullReviewText) < $minLength) {
-            return 0; // Send to moderation
+            return 0;
         }
 
-//        // Check verified purchase requirement (for WooCommerce)
-//        $requireVerifiedPurchase = Arr::get($conditionalRules, 'require_verified_purchase', 'false');
-//        if ($requireVerifiedPurchase === 'true') {
-//            $sourceId = Arr::get($reviewData, 'source_id', null);
-//            if (empty($sourceId)) {
-//                return 0; // Send to moderation if no source ID (product ID)
-//            }
-//        }
-
-        // All rules passed - approve the review
         return 1;
     }
 
     /**
-     * Get review approval status with global settings
+     * determineReviewApproval() with the global settings.
      */
     public static function getReviewApprovalStatus($reviewData)
     {

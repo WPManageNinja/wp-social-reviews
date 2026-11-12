@@ -21,10 +21,12 @@ $wpsr_data_attrs[] = $layout_type === 'carousel' && defined('WPSOCIALREVIEWS_PRO
 
 // wrapper classes
 $wpsr_classes   = array('wpsr-ig-feed-wrapper', 'wpsr-feed-wrap', 'wpsr_content');
-$wpsr_classes[] = 'wpsr-ig-feed-' . esc_attr($template) . '';
+$wpsr_classes[] = InstagramHelper::getTemplateClass($template);
 $wpsr_classes[] = 'wpsr-ig-feed-template-' . esc_attr($templateId) . '';
 $wpsr_classes[] = $layout_type === 'carousel' && defined('WPSOCIALREVIEWS_PRO') ? 'wpsr-instagram-slider-activate' : '';
 $wpsr_classes[] = $layout_type === 'masonry' ? 'wpsr-instagram-masonry-activate' : '';
+$wpsr_classes[] = $layout_type === 'list' ? 'wpsr-instagram-list-activate' : '';
+$wpsr_classes[] = InstagramHelper::getColorSchemeClass($feed_settings);
 $wpsr_desktop_column_number   = Arr::get($feed_settings, 'responsive_column_number.desktop');
 
 $wpsr_header_settings = $feed_settings['header_settings'];
@@ -43,7 +45,7 @@ echo '<div class="wpsr-container wpsr-insta-feed-' . esc_attr($templateId) . '">
 
             <div class="wpsr-ig-header-info">
                 <?php if ($wpsr_header_settings['display_username'] === 'true' && Arr::get($header, 'username')) { ?>
-                    <div class="wpsr-ig-header-name">
+                    <div class="wpsr-ig-header-name" dir="auto">
                         <a target="_blank"
                            rel="noopener noreferrer"
                            href="<?php echo esc_url('https://www.instagram.com/' . $header['username']); ?>"
@@ -61,12 +63,12 @@ echo '<div class="wpsr-container wpsr-insta-feed-' . esc_attr($templateId) . '">
                 do_action('wpsocialreviews/instagram_header_statistics', $header, $wpsr_header_settings, $translations);
                 ?>
                 <?php if (Arr::get($header, 'name') && $wpsr_header_settings['display_name'] === 'true') { ?>
-                    <h3 class="wpsr-ig-header-fullname">
+                    <h3 class="wpsr-ig-header-fullname" dir="auto">
                         <?php echo esc_html($header['name']); ?>
                     </h3>
                 <?php } ?>
                 <?php if ($wpsr_header_settings['display_description'] === 'true') { ?>
-                    <div class="wpsr-ig-header-description">
+                    <div class="wpsr-ig-header-description" dir="auto">
                         <?php if (!empty($wpsr_header_settings['custom_profile_bio_text'])) { ?>
                             <p> <?php echo wp_kses_post(nl2br($wpsr_header_settings['custom_profile_bio_text'])); ?></p>
                         <?php } ?>

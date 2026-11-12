@@ -178,6 +178,15 @@ class PermissionManager
 		return $permissions;
 	}
 
+	/**
+	 * Drops the memoised permission set. currentUserPermissions() caches per process,
+	 * so anything that switches the current user mid-process must call this.
+	 */
+	public static function refreshCurrentUserPermissions()
+	{
+		return self::currentUserPermissions(false);
+	}
+
 	public static function currentUserCan($permission)
 	{
 		if (current_user_can('manage_options')) {
@@ -186,19 +195,45 @@ class PermissionManager
 
 		$permissions = self::currentUserPermissions();
 
-		// Full access capability grants access to all plugin features
 		if (in_array('wpsn_full_access', $permissions)) {
 			return true;
 		}
 
-		// Check the exact requested capability
 		return in_array($permission, $permissions);
 	}
 
 	/**
-	 * True when the user may access the plugin admin at all — i.e. holds at least one
-	 * plugin capability (admins and full-access users included). For endpoints that
-	 * back shared, non-feature-specific UI, such as the global dashboard notices.
+	 * Each managed post type keeps the capability its own screen requires. Not filtered:
+	 * widening this map would let one screen's capability reach another screen's objects.
+	 */
+	public static function managedPostTypeCapabilities()
+	{
+		return [
+			'wp_social_reviews'   => 'wpsn_manage_templates',
+			'wpsr_reviews_notify' => 'wpsn_manage_notification_popup',
+			'wpsr_social_chats'   => 'wpsn_manage_chat_widgets',
+			'wpsr_custom_source'  => 'wpsn_full_access',
+		];
+	}
+
+	/**
+	 * True when the current user holds the capability owning this post type.
+	 * Unmanaged and empty post types are always refused.
+	 */
+	public static function currentUserCanManagePostType($postType)
+	{
+		$capabilities = self::managedPostTypeCapabilities();
+
+		if (!$postType || !isset($capabilities[$postType])) {
+			return false;
+		}
+
+		return self::currentUserCan($capabilities[$postType]);
+	}
+
+	/**
+	 * True when the user holds any plugin capability. For endpoints behind shared,
+	 * non-feature UI such as the global dashboard notices.
 	 */
 	public static function currentUserCanAny()
 	{

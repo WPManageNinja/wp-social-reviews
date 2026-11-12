@@ -21,14 +21,14 @@ if($template_meta['templateType'] === 'slider' && defined('WPSOCIALREVIEWS_PRO')
     echo '</div>';  // wpsr-reviews-slider-wrapper-inner end
 }
 
-do_action('wpsocialreviews/reviews_template_wrapper_end');
+do_action('wpsocialreviews/reviews_template_wrapper_end', $template_meta);
 
 // Get responsive paginate values
 $paginateNumber = Arr::get($template_meta, 'paginate_number', []);
 $fallbackPaginate = (int) Arr::get($template_meta, 'paginate', 6);
 $currentPaginate = wp_is_mobile() ? (int) Arr::get($paginateNumber, 'mobile', $fallbackPaginate) : (int) Arr::get($paginateNumber, 'desktop', $fallbackPaginate);
 
-if (($template_meta['templateType'] !== 'slider' && $template_meta['pagination_type'] === 'load_more') && ($totalReviews > $currentPaginate)) {
+if ((Helper::layoutHasLoadMore($template_meta['templateType']) && $template_meta['pagination_type'] === 'load_more') && ($totalReviews > $currentPaginate)) {
     // Pro only: the order/rating rendered with, so load-more continues it. Raw, escaped where printed below.
     $wpsr_sort_attributes = array();
     if (defined('WPSOCIALREVIEWS_PRO')) {

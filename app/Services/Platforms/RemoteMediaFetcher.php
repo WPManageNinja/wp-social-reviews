@@ -3,19 +3,9 @@
 namespace WPSocialReviews\App\Services\Platforms;
 
 /**
- * The single door for pulling a remote image into a local temp file.
- *
- * Nothing else may hand a stored URL to get_headers(), getimagesize() or
- * wp_get_image_editor(): those are plain PHP and bypass the WordPress HTTP
- * layer, so none of its address checks apply. download_url() is address-checked
- * but unbounded, so it is not a substitute either.
- *
- * Destination safety is wp_safe_remote_get()'s job, on the first request and on
- * every redirect it follows. It is not absolute: core validates the IPv4 result
- * of gethostbyname() and then reconnects, so a host that also answers AAAA, or
- * one that rebinds on a short TTL, can still be reached. What this class adds is
- * the part WordPress does not do at all: bounded download, and proof that the
- * bytes are an image before they are written anywhere.
+ * The only way to pull a remote image into a temp file. get_headers(), getimagesize() and
+ * wp_get_image_editor() skip the WP HTTP address checks, and download_url() is unbounded.
+ * This adds a size bound and proof that the bytes are an image before they are stored.
  */
 class RemoteMediaFetcher
 {
@@ -24,8 +14,7 @@ class RemoteMediaFetcher
     const MAX_REDIRECTS = 3;
 
     /**
-     * Formats wp_get_image_editor() can actually open. A response that is not
-     * one of these never reaches the uploads tree.
+     * Formats wp_get_image_editor() can open. Nothing else reaches the uploads tree.
      */
     const ALLOWED_TYPES = [
         IMAGETYPE_JPEG,
@@ -36,8 +25,7 @@ class RemoteMediaFetcher
     ];
 
     /**
-     * Size ceiling for one download, in bytes. Filterable so a site can raise or
-     * lower it; a non-positive value falls back to the default.
+     * Size ceiling for one download, in bytes. A non-positive filtered value falls back to the default.
      *
      * @return int
      */
@@ -49,8 +37,7 @@ class RemoteMediaFetcher
     }
 
     /**
-     * Per-request timeout, in seconds. Filterable so a site on a slow upstream
-     * can wait longer; a non-positive value falls back to the default.
+     * Per-request timeout, in seconds. A non-positive filtered value falls back to the default.
      *
      * @return int
      */
@@ -96,15 +83,15 @@ class RemoteMediaFetcher
 
         $maxBytes = self::maxBytes();
 
-        // wp_safe_remote_get sets reject_unsafe_urls, which also registers
-        // WP_Http::validate_redirects, so each hop is checked before it is taken.
+        // reject_unsafe_urls checks every redirect hop too. Core checks only the IPv4
+        // answer and then reconnects, so AAAA or short-TTL rebinding hosts can slip through.
         $response = wp_safe_remote_get($target, [
             'timeout'             => self::timeout(),
             'redirection'         => self::MAX_REDIRECTS,
             'stream'              => true,
             'filename'            => $tempFile,
-            // One byte over the ceiling: the transport truncates silently and
-            // still reports 200, so overflow is only visible as an oversized file.
+            // One byte over the ceiling: the transport truncates silently and still
+            // reports 200, so overflow only shows as an oversized file.
             'limit_response_size' => $maxBytes + 1,
             'user-agent'          => 'WordPress/' . get_bloginfo('version') . '; ' . get_bloginfo('url'),
         ]);
@@ -128,8 +115,7 @@ class RemoteMediaFetcher
     }
 
     /**
-     * Read the downloaded bytes, never the URL, and drop anything that is not
-     * a real image of an accepted type or is over the size ceiling.
+     * Check the downloaded bytes, never the URL. Drop anything oversized or not an accepted image.
      *
      * @param string $tempFile
      * @param int    $maxBytes

@@ -9,13 +9,9 @@ use WPSocialReviews\Framework\Http\Request\Request;
 class MetaController extends Controller
 {
     /**
-     * The only post type these endpoints may read from or write to.
-     *
-     * absint() casts the ID but does not validate what it points at. Downstream,
-     * SocialChat::updateSettings() runs a raw `menu_order` UPDATE and an
-     * update_post_meta() on whatever ID it is handed, and neither performs a
-     * capability check of its own — so without this guard a low-privilege
-     * wpsn_* capability holder could write to any post on the site.
+     * The only post type these endpoints may touch. SocialChat::updateSettings() writes
+     * to whatever ID it gets with no capability check, so without this guard any wpsn_*
+     * capability holder could write to any post.
      */
     const CHAT_POST_TYPE = 'wpsr_social_chats';
 
@@ -88,7 +84,7 @@ class MetaController extends Controller
             'layout_type'                       => 'sanitize_text_field',
             'menu_order'                        => 'intval',
 
-            // --- Boolean Keys (stored as strings) ---
+            // --- Booleans ---
             'created_from_onboarding'           => 'rest_sanitize_boolean',
 
             // --- Chat Button Settings ---
@@ -180,12 +176,10 @@ class MetaController extends Controller
             'day_list' => 'wpsr_array_map_sanitize_text_field',
         ];
 
-        // Sanitize channels array (complex structure)
         if (!empty($settings['channels']) && is_array($settings['channels'])) {
             $settings['channels'] = $this->sanitizeChannels($settings['channels']);
         }
 
-        // Run the main recursive sanitizer
         $settings = wpsr_backend_sanitizer($settings, $sanitizeMap);
 
         return $settings;

@@ -1,0 +1,180 @@
+// Feature Grid (stored as layout_style "feature_grid"): repeats a 4-card rhythm of one tall featured card,
+// two normal cards and one wide card. Shared by the public templates and the admin preview.
+// nth-child keeps the rhythm going for cards appended by Load more, with no JS.
+@import "layout-mixins";
+
+$wpsr-feature-grid-featured: ".wpsr-all-reviews > :nth-child(4n + 1) .wpsr-review-template";
+
+@mixin wpsr-feature-grid-quote {
+  content: "\61";
+  display: block;
+  flex-shrink: 0;
+  width: max-content;
+  font-family: "wp-social-reviews";
+  font-size: 26px;
+  line-height: 1;
+  margin-bottom: 10px;
+  color: var(--wpsr-feature-grid-quote-color, #a8bdf5);
+  transform: rotate(180deg);
+  speak: never;
+}
+
+.wpsr-reviews-layout-style-feature_grid {
+  container-type: inline-size;
+
+  .wpsr-all-reviews {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-flow: dense;
+    gap: 20px;
+    margin-left: 0;
+    margin-right: 0;
+
+    // The skins still print 12-column span classes; the grid owns the sizing here.
+    > [class*="wpsr-col-"] {
+      @include wpsr-stretch-card;
+      flex: none;
+      width: auto;
+      max-width: none;
+      padding-left: 0;
+      padding-right: 0;
+      margin-bottom: 0;
+    }
+
+    > :nth-child(4n + 1) {
+      grid-row: span 2;
+    }
+
+    > :nth-child(4n + 4) {
+      grid-column: span 2;
+    }
+
+    // Overrides the fixed equal-height inline style: the grid already equalises each row.
+    .wpsr-review-template {
+      height: auto !important;
+      margin-bottom: 0;
+    }
+
+    @include wpsr-stretched-skins;
+  }
+
+  #{$wpsr-feature-grid-featured} {
+    &::before {
+      @include wpsr-feature-grid-quote;
+    }
+
+    .wpsr-review-content,
+    .wpsr-review-content p {
+      font-size: 1.125em;
+      line-height: 1.55;
+    }
+  }
+
+  // grid5 already prints a quote watermark behind the text; scale that up instead of adding a second quote.
+  &.wpsr-reviews-template-grid5 #{$wpsr-feature-grid-featured} {
+    &::before {
+      content: none;
+    }
+
+    .wpsr-review-content::after {
+      font-size: 110px;
+      top: -40px;
+    }
+  }
+
+  // grid8 is a row flex card whose text only shows on hover; the quote goes above its centred author block.
+  &.wpsr-reviews-template-grid8 #{$wpsr-feature-grid-featured} {
+    &::before {
+      content: none;
+    }
+
+    .wpsr-review-info::before {
+      @include wpsr-feature-grid-quote;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+
+  // Platform logo sits top-left and the avatar top-centre, so the corner opposite the logo is free.
+  &.wpsr-reviews-template-grid1 #{$wpsr-feature-grid-featured}::before {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    margin: 0;
+  }
+
+  // Speech-bubble card: the quote belongs inside the bubble.
+  &.wpsr-reviews-template-grid4 #{$wpsr-feature-grid-featured} {
+    &::before {
+      content: none;
+    }
+
+    .wpsr-review-header::before {
+      @include wpsr-feature-grid-quote;
+    }
+  }
+
+  // Row-direction cards: the full-width margin forces the quote onto its own line.
+  &.wpsr-reviews-template-grid2,
+  &.wpsr-reviews-template-grid7,
+  &.wpsr-reviews-template-grid9 {
+    #{$wpsr-feature-grid-featured} {
+      flex-wrap: wrap;
+      align-content: flex-start;
+
+      &::before {
+        margin-right: 100%;
+      }
+    }
+  }
+
+  // The admin preview prints grid2's title and text straight into the wrapping row (the PHP view wraps
+  // them in a full-width footer), so a wide cell would pull the title up beside the author.
+  &.wpsr-reviews-template-grid2 .wpsr-review-template-two {
+    > .wpsr-review-title,
+    > span {
+      flex-basis: 100%;
+    }
+  }
+
+  &.wpsr-reviews-template-testimonial2 #{$wpsr-feature-grid-featured}::before {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  @container (max-width: 900px) {
+    .wpsr-all-reviews {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @container (max-width: 600px) {
+    .wpsr-all-reviews {
+      grid-template-columns: minmax(0, 1fr);
+
+      > :nth-child(4n + 1),
+      > :nth-child(4n + 4) {
+        grid-row: auto;
+        grid-column: auto;
+      }
+    }
+  }
+}
+
+// Already written for RTL, so the generated -rtl.css must not flip it back.
+/*!rtl:begin:ignore*/
+.rtl .wpsr-reviews-layout-style-feature_grid.wpsr-reviews-template-grid1 #{$wpsr-feature-grid-featured}::before {
+  right: auto;
+  left: 15px;
+}
+/*!rtl:end:ignore*/
+
+// grid10 has no card surface, so the cell shapes would be invisible. :where() keeps this at the skin's
+// own weight: it beats the skin's transparent default, and the Style tab's "Review box" still wins.
+:where(.wpsr-reviews-layout-style-feature_grid.wpsr-reviews-template-grid10) .wpsr-review-template.wpsr-review-template-ten {
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 0;
+}

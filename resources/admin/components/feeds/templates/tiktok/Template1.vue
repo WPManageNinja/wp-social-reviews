@@ -66,7 +66,7 @@
                                       :feed_settings="feedConfig.feed_settings.post_settings"
                                       :display_desc="true"
                                   />
-                                  <a class="wpsr-tiktok-feed-author-name" v-if="feedConfig.feed_settings.post_settings.display_author_name === 'true'" :href="feed.user.profile_url" target="_blank" rel="nofollow" >{{feed.user.name}}</a>
+                                  <a class="wpsr-tiktok-feed-author-name" dir="auto" v-if="feedConfig.feed_settings.post_settings.display_author_name === 'true'" :href="feed.user.profile_url" target="_blank" rel="nofollow" >{{feed.user.name}}</a>
                                 </div>
                             </div>
                         </div>

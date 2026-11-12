@@ -1,6 +1,0 @@
-.artifacts/
-browser/.build/
-browser/artifacts/
-e2e/artifacts/
-__pycache__/
-*.pyc

@@ -1,6 +1,6 @@
 <template>
   <div class="wpsr-review-content-modal-wrap">
-    <p class="wpsr-text-modal-content" v-html="truncatedContent"></p>
+    <p class="wpsr-text-modal-content" dir="auto" v-html="truncatedContent"></p>
     <a
         v-if="isTextTruncated"
         href="#"
@@ -27,14 +27,14 @@
         </div>
       </template>
       <div class="wpsr-review-content-modal-body">
-        <h3 v-if="title">{{title}}</h3>
-        <p v-if="content" v-html="content"></p>
+        <h3 v-if="title" dir="auto">{{title}}</h3>
+        <p v-if="content" dir="auto" v-html="content"></p>
       </div>
       <div class="wpsr-review-content-modal-footer">
         <div class="wpsr-reviewer-details">
           <img v-if="reviewerImg" :src="reviewerImg" :alt="reviewerName" class="wpsr-reviewer-img">
           <div class="wpsr-review-meta">
-            <h4 v-if="reviewerName" class="wpsr-reviewer-name">{{ reviewerName }}</h4>
+            <h4 v-if="reviewerName" class="wpsr-reviewer-name" dir="auto">{{ reviewerName }}</h4>
             <span class="wpsr-review-date">{{ wpsrDateFormat(date, 'DD MMM, YYYY') }}</span>
           </div>
         </div>

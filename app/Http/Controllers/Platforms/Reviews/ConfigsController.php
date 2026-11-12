@@ -9,6 +9,7 @@ use WPSocialReviews\Framework\Http\Request\Request;
 use WPSocialReviews\App\Http\Controllers\Controller;
 use WPSocialReviews\App\Services\Platforms\Feeds\CacheHandler;
 use WPSocialReviews\App\Services\Platforms\ReviewImageOptimizationHandler;
+use WPSocialReviews\App\Services\Platforms\Reviews\Helper as ReviewsHelper;
 use WPSocialReviews\Framework\Support\Arr;
 
 class ConfigsController extends Controller
@@ -17,7 +18,7 @@ class ConfigsController extends Controller
 
     public function __construct(Application $app)
     {
-        $this->app = $app;
+        parent::__construct($app);
     }
 
     public function index(Request $request)
@@ -31,19 +32,13 @@ class ConfigsController extends Controller
             'additional_info' => $additionalInfo
         ];
 
-        // Opt-in pagination: only applied when the caller sends per_page (e.g. the
-        // WooCommerce/FluentCart connected-products list, which can run into the
-        // thousands). Page/per_page are forwarded into the business_info_* filter
-        // so platforms that support it (see ProductReviewPlatform::getBusinessInfo())
-        // slice BEFORE enrichment runs, instead of enriching every connected
-        // product just to slice the response down afterwards. Platforms that
-        // don't send per_page keep getting the full list.
+        // Opt-in pagination for long lists (e.g. connected products). Page/per_page go to
+        // the business_info_* filter so platforms can slice before the costly enrichment.
         if ($request->has('per_page')) {
             $perPage = max(1, intval($request->get('per_page', 10)));
             $page    = max(1, intval($request->get('page', 1)));
 
-            // Cheap total count straight from the option — the enrichment loop
-            // (the expensive part) never touches anything beyond the current page.
+            // Count from the raw option; enrichment only runs for the current page.
             $rawBusinessInfo = get_option('wpsr_reviews_' . $platformName . '_business_info', []);
             $total = is_array($rawBusinessInfo) ? count($rawBusinessInfo) : 0;
 
@@ -88,11 +83,8 @@ class ConfigsController extends Controller
             ], 423);
         }
 
-        // Handlers are registered per-platform by review services with $authProvider set (see
-        // BaseReview::registerHooks). Google/Airbnb live in this repo; Facebook, Yelp, etc. are
-        // Pro-only and registered by wp-social-ninja-pro (e.g. FacebookBusiness, $authProvider
-        // = 'facebook'). A missing handler here means Pro is inactive for a Pro-only platform,
-        // not a wiring bug — the matching UI is gated behind has_pro.
+        // Handlers come from BaseReview::registerHooks. Pro-only platforms have none
+        // while Pro is inactive; their UI is gated behind has_pro.
         return $this->dispatchAction(
             'wpsocialreviews/prepare_review_auth_' . $wpsr_platform,
             [$wpsr_settings],
@@ -129,27 +121,61 @@ class ConfigsController extends Controller
     {
         $settings = $request->get('settings');
 
-        // map known keys to explicit sanitizers for this payload
         $sanitizeMap = [
             'api_key'      => 'sanitize_text_field',
-            'source_id'    => 'sanitize_text_field', // keep as string (IDs can be big)
+            'source_id'    => 'sanitize_text_field', // IDs can exceed int range
             'product_name' => 'sanitize_text_field',
             'count'        => 'intval',
             'platform'     => 'sanitize_text_field',
             'url_value'    => 'esc_url_raw',
             'credentialsType' => 'sanitize_text_field',
-            'language'     => 'sanitize_text_field'
+            'language'     => 'sanitize_text_field',
+            // booking.com: picked from the hotel search (see searchBusiness)
+            'hotel_id'       => 'intval',
+            'ufi'            => 'intval',
+            'hotel_name'     => 'sanitize_text_field',
+            'hotel_country'  => 'sanitize_text_field',
+            'hotel_location' => 'sanitize_text_field',
+            // Which saved property this hotel replaces, or "new" for none of them.
+            'legacy_choice'  => 'sanitize_text_field'
         ];
 
         $settings = wpsr_backend_sanitizer($settings, $sanitizeMap);
 
-        // Always sanitize platform used in action name (defense in depth)
         $platformForAction = '';
         if (isset($settings['platform'])) {
             $platformForAction = sanitize_text_field($settings['platform']);
         }
 
         $this->app->doCustomAction('verify_review_credential_' . $platformForAction, $settings);
+    }
+
+    /**
+     * Business search for platforms connected by name rather than URL/key (booking.com today).
+     * Handlers respond with JSON: { results: [...] }.
+     */
+    public function searchBusiness(Request $request)
+    {
+        $wpsr_sanitize_map = [
+            'platform' => 'sanitize_text_field',
+            'query'    => 'sanitize_text_field',
+            'language' => 'sanitize_text_field'
+        ];
+        $wpsr_request_data = $request->all();
+        $wpsr_settings = wpsr_backend_sanitizer($wpsr_request_data, $wpsr_sanitize_map);
+        $wpsr_platform = Arr::get($wpsr_settings, 'platform', '');
+
+        if (!$wpsr_platform) {
+            return $this->sendError([
+                'message' => __('Missing platform data.', 'wp-social-reviews')
+            ], 423);
+        }
+
+        return $this->dispatchAction(
+            'wpsocialreviews/search_review_business_' . $wpsr_platform,
+            [$wpsr_settings],
+            __('Business search is not available for this platform.', 'wp-social-reviews')
+        );
     }
 
     public function manuallySyncReviews(Request $request)
@@ -201,41 +227,33 @@ class ConfigsController extends Controller
         update_option($business_info_option_name, $businessInfo, 'no');
 
 	    (new CacheHandler($platform))->clearCacheByName($business_info_option_name.'_' . $sourceId);
-        //when remove user account, delete last used time
         (new PlatformData($platform))->deleteLastUsedTime($sourceId);
 
         if((is_array($settings) && count($settings) === 0) || (is_array($businessInfo) && count($businessInfo) === 0) || $sourceId === 'clear-locations') {
             delete_option($settings_option_name);
-            // delete_option($business_info_option_name);
             delete_option('last_fetched_tripadvisor_review_id');
             if ($platform === 'google') {
                 delete_option('wpsr_reviews_google_connected_accounts');
-                // delete locations list of google business
                 if($sourceId === 'clear-locations'){
                     delete_option('wpsr_reviews_google_locations_list');
                 }
             }
 
-            // delete pages list of facebook reviews
             if ($platform === 'facebook' && $sourceId === 'clear-locations') {
                 delete_option('wpsr_reviews_facebook_pages_list');
             }
 
-            // delete reviews by platform name
             if($sourceId === 'clear-locations'){
                 Review::where('platform_name', $platform)
                     ->delete();
             }
         }
 
-        // optmize data delete
-        (new ReviewImageOptimizationHandler([$platform]))->deleteBusinessMediaByUserName($platform, $sourceId);
-
-        // delete reviews by specific business id
-        if($sourceId !== 'clear-locations'){
-            Review::where('platform_name', $platform)
-                ->where('source_id', $sourceId)
-                ->delete();
+        if ($sourceId === 'clear-locations') {
+            (new ReviewImageOptimizationHandler([$platform]))->deleteBusinessMediaByUserName($platform, $sourceId);
+        } elseif ($platform !== 'fluent-cart') {
+            // FluentCart reviews come only from our forms and can't be re-fetched, so disconnect keeps them for a reconnect.
+            ReviewsHelper::deleteBusinessReviews($platform, $sourceId);
         }
 
         return [

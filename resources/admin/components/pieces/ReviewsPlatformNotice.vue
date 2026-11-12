@@ -24,17 +24,6 @@
           >
         </p>
     </div>
-
-    <div class="wpsr-alert wpsr-alert-warning wpsr-d-flex wpsr-mb-20" v-if="platFormName === 'booking.com'">
-      <InfoIcon color="var(--wpsr-icon-info-warning-color)"/>
-      <p>
-        <strong class="wpsr-d-flex">Notice: Cookie Configuration Required</strong>
-        Before pasting your business URL, you need to configure a cookie
-        filter in your website's theme or plugin settings. This step is
-        essential for the system to properly access and display your reviews.
-        <a class="wpsr_simple_btn" href="https://wpsocialninja.com/docs/booking-com-configuration-social-reviews-wp-social-ninja/" target="_blank">Setup Guide</a>
-      </p>
-    </div>
   </div>
 </template>
 <script type="text/babel">

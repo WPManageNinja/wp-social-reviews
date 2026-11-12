@@ -61,8 +61,8 @@ class Post extends Model
 
         $posts = $query->latest('ID')->paginate();
 
-        // getPlatformNames() below reads post meta per row. This ORM does no priming of
-        // its own the way WP_Query does, so warm the whole page in one statement first.
+        // getPlatformNames() reads meta per row and this ORM doesn't prime it like WP_Query,
+        // so warm the whole page in one query.
         $wpsr_post_ids = [];
         foreach ($posts as $post) {
             $wpsr_post_ids[] = (int) $post->ID;
@@ -75,7 +75,6 @@ class Post extends Model
             $platforms = $post->getPlatformNames();
             $social_wall_platform = Arr::get($platforms, 'social_wall_settings.platform', '');
 
-            // Simplified platform name assignment
             $post->platform_name = $social_wall_platform ?:
                 (is_array($platform = Arr::get($platforms, 'platform')) ? implode(', ', $platform) : Arr::get($platforms, 'feed_settings.platform'));
         }
@@ -192,7 +191,7 @@ class Post extends Model
         $encodedMeta = get_post_meta($postId, $metaKey, true);
 
         if (is_array($encodedMeta)) {
-            return $encodedMeta; // Return if already an array
+            return $encodedMeta;
         }
         return json_decode($encodedMeta, true);
     }

@@ -22,9 +22,8 @@ if (!defined('ABSPATH')) {
 class YoutubeFeed extends BaseFeed
 {
     /**
-     * Credential keys within wpsr_youtube_verification_configs that must be
-     * encrypted at rest. Unlike the DataProtector default (access/refresh
-     * token only), YouTube also persists api_key and the legacy access_code.
+     * Keys in wpsr_youtube_verification_configs encrypted at rest. Beyond the
+     * DataProtector default (access/refresh token), YouTube also stores api_key and access_code.
      */
     const TOKEN_CONFIG_KEYS = ['access_token', 'refresh_token', 'api_key', 'access_code'];
 
@@ -62,7 +61,6 @@ class YoutubeFeed extends BaseFeed
      */
     public function handleCredential($settings = array())
     {
-        // verify access token and API key
         try {
             $credentialsType = $settings['credentialsType'];
             $apiKey          = $settings['apiKey'];
@@ -89,7 +87,6 @@ class YoutubeFeed extends BaseFeed
             $configs  = $this->prepareVerificationConfigs($data, $url, $credentialsType, $apiKey, $accessCode);
             $settings = $this->saveVerificationConfigs($configs);
 
-            //$this->doCronEvent();
             wp_send_json_success([
                 'settings' => $settings,
                 'message'  => __('You are Successfully Verified', 'wp-social-reviews')
@@ -132,6 +129,7 @@ class YoutubeFeed extends BaseFeed
         }
 
         $configs = $this->prepareVerificationConfigs($data, $url, 'oauth2.0', '', '', Arr::get($token, 'created_at', time()));
+        $configs['auth_app'] = 'v2';
 
         return $this->saveVerificationConfigs($configs);
     }
@@ -274,7 +272,7 @@ class YoutubeFeed extends BaseFeed
     }
 
     /**
-     * get verified youtube configs data from wp options table
+     * Get the verified YouTube configs
      *
      * @return void
      * @since 1.2.5
@@ -283,6 +281,7 @@ class YoutubeFeed extends BaseFeed
     {
         $configs = (new DataProtector())->maybe_decrypt_tokens(get_option('wpsr_youtube_verification_configs'), self::TOKEN_CONFIG_KEYS);
         $configs['version'] = Arr::get($configs, 'version', '');
+        $configs['needs_reconnect'] = static::usesPreviousAuthApp();
 
         wp_send_json_success([
             'message'  => __('Youtube Successfully Connected!', 'wp-social-reviews'),
@@ -291,7 +290,22 @@ class YoutubeFeed extends BaseFeed
     }
 
     /**
-     * delete youtube configs data from wp options table
+     * Whether the OAuth connection still runs on the previous OAuth app.
+     *
+     * @return bool
+     */
+    public static function usesPreviousAuthApp()
+    {
+        $configs = (new DataProtector())->maybe_decrypt_tokens(get_option('wpsr_youtube_verification_configs', []), self::TOKEN_CONFIG_KEYS);
+
+        return is_array($configs)
+            && Arr::get($configs, 'credentials_type') === 'oauth2.0'
+            && !empty($configs['refresh_token'])
+            && Arr::get($configs, 'auth_app') !== 'v2';
+    }
+
+    /**
+     * Delete the YouTube configs
      *
      * @return void
      * @since 1.2.5
@@ -362,9 +376,7 @@ class YoutubeFeed extends BaseFeed
     }
 
     /**
-     * Handle YouTube Feed
-     *
-     * Make sure all data related to you tube settings are formatted with dynamic youtube feed data from api
+     * Format the YouTube template settings together with live feed data
      *
      * @return array
      * @since 1.2.5
@@ -396,7 +408,8 @@ class YoutubeFeed extends BaseFeed
             'settings'         => $settings,
             'image_settings'   => $image_settings,
             'template_details' => $templateDetails,
-            'elements'         => $youtubeConfig->getStyleElement()
+            'elements'         => $youtubeConfig->getStyleElement(),
+            'default_styles'   => $youtubeConfig->formatStylesConfig([], $postId)
         ], 200);
     }
 
@@ -447,7 +460,7 @@ class YoutubeFeed extends BaseFeed
     }
 
     /**
-     * Update template is settings is changed in editor
+     * Save the template settings from the editor
      *
      * @return void
      * @since 1.2.5
@@ -458,12 +471,11 @@ class YoutubeFeed extends BaseFeed
             (new \WPSocialReviewsPro\App\Services\TemplateCssHandler())->saveCss($settings, $postId);
         }
 
-        // Remove template from onboarding sessions since it's now been edited
         if (Arr::get($settings, 'feed_settings.created_from_onboarding')) {
             OnboardingHelper::removeFromOnboardingSessions($postId);
         }
 
-        // unset them for wpsr_template_config meta
+        // Runtime-only keys, not part of the saved _wpsr_template_config.
         $unsetKeys = ['dynamic', 'styles_config', 'styles', 'responsive_styles'];
         foreach ($unsetKeys as $key){
             if(Arr::get($settings, $key, false)){
@@ -480,7 +492,7 @@ class YoutubeFeed extends BaseFeed
 
     /**
      * Handle Api key or token
-     **
+     *
      * @return string|array
      * @since 1.2.5
      */
@@ -529,9 +541,7 @@ class YoutubeFeed extends BaseFeed
     }
 
     /**
-     * Handle YouTube Api Connection
-     *
-     * Collect youtube data from api
+     * Fetch the feed's videos from the YouTube API
      *
      * @param $apiSettings
      * @param $postId
@@ -569,7 +579,6 @@ class YoutubeFeed extends BaseFeed
             return $this->getSingleVideoFeeds($videoIds, $feedCacheName);
         }
 
-        //without single video feed we have now api url for fetching videos
         return $this->getYoutubeFeed($channelId, $playlistId, $feedType, $eventType, $searchTerm, $total, true);
     }
 
@@ -594,7 +603,6 @@ class YoutubeFeed extends BaseFeed
             return ['error_message' => $error];
         }
 
-        //we are storing video ids for using in videos api with comma separator
         $videoIds = $this->getVideoIds($feeds);
         $nextPageToken = Arr::get($feeds, 'nextPageToken', '');
 
@@ -623,7 +631,6 @@ class YoutubeFeed extends BaseFeed
             return ['error_message' => isset($errors[1]) ? $errors[1] : __('Problem in api key or access token setting!!', 'wp-social-reviews')];
         }
 
-        // unlisted videos remove
         $videoLists = $this->getPublishVideos($videoLists);
 
         $videoLists['nextPageToken'] = $nextPageToken;
@@ -632,7 +639,7 @@ class YoutubeFeed extends BaseFeed
     }
 
     /**
-     * Retrieve 'published' status videos from different statuses videos.
+     * Keep only public videos
      *
      * @return array
      * @throws \Exception
@@ -644,9 +651,8 @@ class YoutubeFeed extends BaseFeed
         $publicVideos = [];
         foreach($videos as $video)
         {
-            // Allow only 'public' videos through. The feed is fetched with the site
-            // owner's OAuth token, so 'private' and 'unlisted' videos come back in the
-            // API response and must not be rendered on the front end.
+            // The feed is fetched with the site owner's OAuth token, so private and
+            // unlisted videos come back too and must not reach the front end.
             $videoStatus = Arr::get($video, 'status.privacyStatus', '');
             if($videoStatus === 'public')
             {
@@ -660,6 +666,17 @@ class YoutubeFeed extends BaseFeed
     }
 
     /**
+     * The editor allows up to 200 videos; a site's own youtube_feeds_limit filter has the final
+     * word. Each page of 50 costs API quota, and a search page costs 100 units.
+     */
+    public function resolveFeedLimit($total, $feedType)
+    {
+        $total = min(absint($total), 200);
+
+        return max(1, absint(apply_filters('wpsocialreviews/youtube_feeds_limit', $total, $feedType)));
+    }
+
+    /**
      * Youtube Feeds Without Single Video
      *
      * @return array
@@ -668,13 +685,14 @@ class YoutubeFeed extends BaseFeed
      */
     public function getYoutubeFeed($channelId = '', $playlistId = '', $feedType = 'channel_feed', $eventType = '', $searchTerm = '', $total = 50, $hasCache = false)
     {
+        // Resolved before getApiDetails(): the count is part of the feed's cache name.
+        $total = $this->resolveFeedLimit($total, $feedType);
+
         $errorCacheName = 'yt_'.$feedType.'_'. $this->postId . '_error';
-        // Check if we have a cached error
+        // A cached error saves a repeat API call that would fail the same way.
         if($this->postId && $errorCacheName){
-            // Then check if we have a cached error
             $errorCache = $this->cacheHandler->getFeedCache($errorCacheName);
             if ($errorCache && isset($errorCache['error_message'])) {
-                // Return the cached error without making an API call
                 return $errorCache;
             }
         }
@@ -683,7 +701,6 @@ class YoutubeFeed extends BaseFeed
 
         if (isset($apiDetails['error_message'])) {
             if($this->postId){
-                // Store the error in cache to prevent repeated API calls
                 $this->cacheHandler->createCache($errorCacheName, $apiDetails);
             }
             return $apiDetails;
@@ -697,7 +714,6 @@ class YoutubeFeed extends BaseFeed
         }
 
         if ($youtubeFeedApiUrl) {
-            //add max results params in api from here in each call
             $videoLists = [];
             if($hasCache) {
                 $videoLists = $this->cacheHandler->getFeedCache($feedCacheName);
@@ -708,7 +724,6 @@ class YoutubeFeed extends BaseFeed
             }
 
             if (empty($videoLists)) {
-                $total = min($total, 200);
                 $pages = (int)($total/50);
                 $pages += (int)(($total%50) > 0);
 
@@ -725,7 +740,6 @@ class YoutubeFeed extends BaseFeed
                     $currPage++;
                 }
 
-                // Sanitize user-generated content before caching
                 $videoLists = $this->sanitizeFeedItems($videoLists);
 
                 $this->cacheHandler->createCache($feedCacheName, $videoLists);
@@ -772,9 +786,7 @@ class YoutubeFeed extends BaseFeed
         }
 
         $videoLists = [];
-        // Request 'status' so getPublishVideos() can drop private/unlisted videos; the
-        // single-video feed is fetched with the site owner's token and would otherwise
-        // expose non-public videos configured by id on a published template.
+        // 'status' lets getPublishVideos() drop private and unlisted videos.
         $parts      = 'id,snippet,status';
         $parts      = apply_filters('wpsocialreviews/youtube_api_parts', $parts, 'single_video');
 
@@ -784,7 +796,6 @@ class YoutubeFeed extends BaseFeed
             return ['error_message' => __('No videos found. Please make sure the provided input is correct and the content is publicly available on YouTube.', 'wp-social-reviews')];
         }
 
-        //No need to api call for this if data all ready exists in cache
         if (!$videoLists) {
             $youtubeApiKeyOrToken = $this->getApiKeyOrToken();
             if (isset($youtubeApiKeyOrToken['error_message'])) {
@@ -795,7 +806,6 @@ class YoutubeFeed extends BaseFeed
             $channelVideoApiUrl = $this->remoteFetchUrl . 'videos?part=' . $parts . '&id=' . $videoIds . '&';
             $videoLists         = $this->checkYoutubeCache($channelVideoApiUrl, $feedCacheName, 'single_video');
 
-            // Sanitize user-generated content
             $videoLists = $this->sanitizeFeedItems($videoLists);
         }
 
@@ -823,7 +833,6 @@ class YoutubeFeed extends BaseFeed
             return ['error_message' => __('Please enter Channel ID, Username or Handle to fetch videos!!', 'wp-social-reviews')];
         }
 
-        // Determine the identifier type and build appropriate parameters
         $channelApiParams = $this->determineChannelIdentifierType($channelIdentifier);
 
         if (isset($channelApiParams['error_message'])) {
@@ -855,27 +864,24 @@ class YoutubeFeed extends BaseFeed
     }
 
     /**
-     * Determine the type of channel identifier and return appropriate API parameters
+     * Map a channel identifier (handle, channel ID or username) to API parameters
      *
      * @param string $identifier
      * @return string|array Array with error message on invalid input
      */
     private function determineChannelIdentifierType($identifier)
     {
-        // Trim whitespace from the identifier
         $identifier = trim($identifier);
 
-        // Check if identifier is empty after trimming
         if (empty($identifier)) {
             return [
                 'error_message' => __('Channel identifier cannot be empty. Please enter a valid Channel ID, Username, or Handle', 'wp-social-reviews')
             ];
         }
 
-        // Handle validation for YouTube handles (starting with @)
+        // Handle, e.g. @name
         if (strpos($identifier, '@') === 0) {
             $handle = ltrim($identifier, '@');
-            // Validate: @ followed by 3–30 valid characters
             if (!preg_match('/^(?![_\-.·])[a-zA-Z0-9_\-\.·]{3,30}(?<![_\-.·])$/u', $handle)) {
                 return [
                     'error_message' => __('Invalid YouTube handle format. Handles should be 3-30 characters and contain only letters, numbers, underscores, and periods.', 'wp-social-reviews')
@@ -885,9 +891,8 @@ class YoutubeFeed extends BaseFeed
             return 'forHandle=' . $handle;
         }
 
-        // Channel ID validation (UC followed by 22 characters)
+        // Channel ID: UC followed by 22 characters
         if (strpos($identifier, 'UC') === 0) {
-            // Strict validation for channel ID format
             if (!preg_match('/^UC[a-zA-Z0-9_-]{22}$/', $identifier)) {
                 return [
                     'error_message' => __('Invalid Channel ID format. YouTube Channel IDs start with "UC" followed by 22 characters.', 'wp-social-reviews')
@@ -897,19 +902,18 @@ class YoutubeFeed extends BaseFeed
             return 'id=' . $identifier;
         }
 
-        // Username validation (3-30 characters, alphanumeric, underscores, periods, hyphens)
+        // Legacy username
         if (preg_match('/^[a-zA-Z0-9._-]{3,30}$/', $identifier)) {
             return 'forUsername=' . $identifier;
         }
 
-        // If we reach here, the identifier doesn't match any valid format
         return [
             'error_message' => __('Invalid channel identifier. Please enter a valid Channel ID, Username, or Handle', 'wp-social-reviews')
         ];
     }
 
     /**
-     * This function will set the API url and fetch the YouTube API Data
+     * Fetch YouTube API data
      *
      * @param string $fetchUrl
      * @param array $args
@@ -988,9 +992,7 @@ class YoutubeFeed extends BaseFeed
     }
 
     /**
-     * Handle Error
-     *
-     * Check if there any error in youtube api data
+     * Check the YouTube API data for an error
      *
      * @param array $feedData feed data
      *
@@ -1039,21 +1041,6 @@ class YoutubeFeed extends BaseFeed
             return $feedCache;
         }
 
-//        $errorCacheName = '';
-//        if($feedType){
-//            $errorCacheName = 'yt_'.$feedType.'_'. $this->postId . '_error';
-//        }
-//
-//        // Check if we have a cached error
-//        if($this->postId && $errorCacheName){
-//            // Then check if we have a cached error
-//            $errorCache = $this->cacheHandler->getFeedCache($errorCacheName);
-//            if ($errorCache && isset($errorCache['error_message'])) {
-//                // Return the cached error without making an API call
-//                return $errorCache;
-//            }
-//        }
-
         $youtubeApiKeyOrToken = $this->getApiKeyOrToken();
         if (isset($youtubeApiKeyOrToken['error_message'])) {
 	        return ['error_message' => $youtubeApiKeyOrToken['error_message']];
@@ -1080,8 +1067,7 @@ class YoutubeFeed extends BaseFeed
                 return ['error_message' => isset($wpsr_error_check_complete[1]) ? $wpsr_error_check_complete[1] : __('Problem in api key or access token setting!!', 'wp-social-reviews')];
             } elseif (!$this->cacheHandler->getFeedCache($cacheName)) {
                 if ($feedType === 'single_video') {
-                    // Fetched with the site owner's token, so private/unlisted videos come
-                    // back in the response — filter to public-only before caching or returning.
+                    // Filter before caching: the response includes private and unlisted videos.
                     $feedData = $this->getPublishVideos($feedData);
                 }
                 $this->cacheHandler->createCache($cacheName, $feedData);
@@ -1110,23 +1096,19 @@ class YoutubeFeed extends BaseFeed
             $playlistId = '';
             $num_position = strpos($optionName, '_num_');
 
-            //search term
             $search_term_position = strpos($optionName, '_search_term_');
             if ($search_term_position) {
                 $searchTerm = substr($optionName, $search_term_position + strlen('_search_term_'),
                     $num_position - ($search_term_position + strlen('_search_term_')));
             }
 
-            //find total
             $total = substr($optionName, $num_position + strlen('_num_'),
                 strlen($optionName) - ($num_position + strlen('_num_')));
 
-            //find id
             $id_position = strpos($optionName, '_id_');
             $id          = substr($optionName, $id_position + strlen('_id_'),
                 $num_position - ($id_position + strlen('_id_')));
 
-            //feed type
             $separator        = '_feed';
             $feed_position    = strpos($optionName, $separator) + strlen($separator);
             $initial_position = 0;
@@ -1180,12 +1162,10 @@ class YoutubeFeed extends BaseFeed
         }
 
         foreach ($videoLists['items'] as &$item) {
-            // Sanitize video title
             if (isset($item['snippet']['title'])) {
                 $item['snippet']['title'] = GlobalHelper::sanitizeForStorage($item['snippet']['title']);
             }
 
-            // Sanitize video description
             if (isset($item['snippet']['description'])) {
                 $item['snippet']['description'] = GlobalHelper::sanitizeForStorage($item['snippet']['description']);
             }

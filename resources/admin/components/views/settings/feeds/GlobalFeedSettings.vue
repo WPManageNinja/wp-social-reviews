@@ -124,10 +124,6 @@
           Sat: 'Saturday',
           Sun: 'Sunday'
         },
-        available_ai_platforms:[],
-        open_ai_supported_models: [],
-        open_router_supported_models: [],
-        deepseek_supported_models: [],
       }
     },
   

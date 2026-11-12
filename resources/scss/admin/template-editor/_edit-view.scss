@@ -248,7 +248,7 @@
           align-items: center;
           padding: 6px;
           &:hover{
-            background: var(--wpsr-primary-bg-hover, #F0F0F1);
+            background: var(--wpsr-secondary-bg, #F5F7FA);
           }
         }
         .wpsr-device-type-divider{
@@ -1278,7 +1278,7 @@
 
           border-radius: 8px;
           border: 0;
-          background: var(--Primary-50, #EEE9FB);
+          background: var(--wpsr-secondary-menu-active-bg, #EEE9FB);
           width: 100%;
         }
       }
@@ -2117,7 +2117,7 @@
 }
 
 .wpsr-upgrade-link {
-  color: var(--Primary-Active, #5525D9);
+  color: var(--wpsr-secondary-menu-active-text, #5525D9);
   font-size: 12px;
   font-style: normal;
   font-weight: 600;
@@ -2149,7 +2149,7 @@
     gap: 8px;
     align-self: stretch;
     margin: 8px 0;
-    border-radius: var(--radius-12, 12px);
+    border-radius: var(--wpsr-radius-lg, 12px);
     background: var(--wpsr-editor-notes-bg, #EBF1FF);
     /* regular-shadow/x-small */
     box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
@@ -2248,10 +2248,10 @@
   justify-content: center;
   align-items: center;
   gap: 2px;
-  border-radius: var(--radius-full, 999px);
-  background: var(--state-success-lighter, #EEFBF6);
+  border-radius: 999px;
+  background: #EEFBF6;
   box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
-  color: var(--state-success-base, #23A682);
+  color: var(--wpsr-icon-info-color, #23A682);
   font-size: 12px;
   font-style: normal;
   font-weight: 500;
@@ -2785,4 +2785,38 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.wpsr-style-reset-bar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px 10px 10px;
+  background-color: var(--wpsr-primary-bg, #FFFFFF);
+  border-bottom: 1px solid var(--wpsr-primary-border, #E1E4EA);
+  .wpsr-style-reset-bar-label{
+    font-size: 13px;
+    line-height: 20px;
+    color: var(--wpsr-secondary-link, #99A0AE);
+  }
+  .wpsr-settings-clear-btn{
+    padding: 4px 8px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 20px;
+    white-space: nowrap;
+    color: var(--wpsr-primary-text, #525866);
+    .el-icon{
+      margin-right: 6px;
+      color: inherit;
+    }
+    &:focus,
+    &:hover{
+      background: var(--wpsr-menu-active-bg, #F5F7FA);
+      color: var(--wpsr-secondary-menu-active-text, #5525D9);
+    }
+  }
 }

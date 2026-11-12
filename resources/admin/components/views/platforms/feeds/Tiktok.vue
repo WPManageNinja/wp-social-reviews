@@ -18,6 +18,14 @@
 <!--            Once you've configured your credentials, you'll be able to connect your TikTok account.-->
 <!--          </div>-->
 
+          <div class="wpsr-alert wpsr-alert-warning wpsr-d-flex wpsr-mb-20" v-if="needsReconnect">
+            <InfoIcon color="var(--wpsr-icon-info-warning-color)"/>
+            <p>
+              <strong>{{ $t('Notice') }}</strong>
+              {{ $t('We have moved Custom Feed for TikTok to a new TikTok app. Click Reconnect next to each marked account and sign in with the same TikTok account, otherwise its feed will stop updating. The account then shows as a new account. Select it in each TikTok template that uses the old account, then remove the old account.') }}
+            </p>
+          </div>
+
           <!-- start connected pages -->
           <div v-if="isConnected && Object.keys(connected_source_list).length">
             <div class="wpsr-user-accounts-heading">
@@ -59,6 +67,12 @@
                         <div class="wpsr-account-error-status">
                             <span><el-icon><InfoFilled /></el-icon>{{ $t('Encryption Error') }}</span>
                             <a href="#" @click.prevent="oAuthLogin(account)">Reconnect</a>
+                        </div>
+                      </div>
+                      <div v-else-if="account.needs_reconnect" class="wpsr-account-error-status-wrapper">
+                        <div class="wpsr-account-error-status">
+                            <span><el-icon><InfoFilled /></el-icon>{{ $t('Reconnect required') }}</span>
+                            <a href="#" @click.prevent="oAuthLogin(account)">{{ $t('Reconnect') }}</a>
                         </div>
                       </div>
                     </div>
@@ -157,10 +171,13 @@
 import Remove from '../../../core-ui/editor/RemoveConfirm';
 import CreateTemplateIcon from  '../../../pieces/icons/CreateTemplateIcon.vue';
 import AuthRedirectOverlay from '../../../core-ui/AuthRedirectOverlay.vue';
+import InfoIcon from '../../../pieces/icons/InfoIcon.vue';
 import AddOns from "./AddOns";
+import { wpsrSubmitAuthForm } from "../../../../utils";
 
 export default {
   props:['tiktokModal', 'access_token'],
+  emits: ['tiktok_settings', 'findEnabledPlatforms'],
   data(){
     return {
       loading: false,
@@ -188,7 +205,8 @@ export default {
     AddOns,
     Remove,
     CreateTemplateIcon,
-    AuthRedirectOverlay
+    AuthRedirectOverlay,
+    InfoIcon
   },
   methods: {
     oAuthLogin(account = {}) {
@@ -215,8 +233,8 @@ export default {
         flow:       'feed',
         return_url: this.admin_page_url,
       }).then(response => {
-        if (response && response.data && response.data.url) {
-          window.location.href = response.data.url;
+        if (response && response.data && response.data.action) {
+          wpsrSubmitAuthForm(response.data.action, response.data.fields);
         } else {
           this.tiktokAuthLoading = false;
         }
@@ -319,6 +337,9 @@ export default {
       set(newVal){
         this.$emit('tiktok_settings', newVal);
       }
+    },
+    needsReconnect() {
+      return Object.values(this.connected_source_list || {}).some(account => account && account.needs_reconnect);
     },
     getSettingsLink() {
       const currentUrl = window.location.href;

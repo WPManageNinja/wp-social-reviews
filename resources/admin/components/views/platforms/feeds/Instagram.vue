@@ -324,9 +324,11 @@ import InputPassword from "../../../core-ui/editor/InputPassword.vue";
 import CreateTemplateIcon from  '../../../pieces/icons/CreateTemplateIcon.vue';
 import AuthRedirectOverlay from '../../../core-ui/AuthRedirectOverlay.vue';
 import FacebookMarkIcon from '../../../pieces/icons/FacebookMarkIcon.vue';
+import { wpsrSubmitAuthForm } from "../../../../utils";
 
 export default {
   props: ['instagramModal', 'access_token', 'expires_in', 'credentials_type'],
+  emits: ['instagram_settings', 'findEnabledPlatforms', 'update:access_token'],
   data() {
     return {
       loading: false,
@@ -401,8 +403,8 @@ export default {
         flow:       this.credentialsType,
         return_url: this.admin_page_url,
       }).then(response => {
-        if (response && response.data && response.data.url) {
-          window.location.href = response.data.url;
+        if (response && response.data && response.data.action) {
+          wpsrSubmitAuthForm(response.data.action, response.data.fields);
         } else {
           this.instagramAuthLoading = false;
         }

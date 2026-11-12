@@ -3,6 +3,7 @@ export const templateMixin = {
         return {
             platform: '',
             image_settings: {},
+            default_styles: null,
             platform_short: '',
             image_format : this.appVars.image_format
         }
@@ -45,7 +46,7 @@ export const templateMixin = {
                             account_id = account_id.toString();
                             // let image_format = this.appVars.image_format
                             if(account_id === image_data_arrays.account_id) {
-                                let image = upload_url + '/'+ that.platform +'/' + account_id + '.' + this.image_format;
+                                let image = upload_url + '/'+ that.platform +'/' + account_id + '.' + that.image_format;
                                 jQuery(this).find('img').attr('src', image);
                             }
                         });
@@ -169,6 +170,7 @@ export const templateMixin = {
                     let updatedSettings = this.updateSelectedAccountBasedOnFeedType(response.data.settings);
                     this.feedConfig = updatedSettings;
                     this.elements = response.data.elements ? response.data.elements : null;
+                    this.default_styles = response.data.default_styles || null;
                     this.template_title = response.data.template_details && response.data.template_details.post_title;
                     this.counter = 0;
                     this.isEditing = false;

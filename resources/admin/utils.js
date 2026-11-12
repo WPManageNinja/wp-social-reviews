@@ -150,6 +150,34 @@ export function debounce(func, wait = 0, options = {}) {
     return debounced;
 }
 
+/**
+ * Opens the auth bridge connect page with a POST form, so auth_result_key and the
+ * challenge never appear in a URL (browser history, proxy/server logs).
+ *
+ * @param {string} action - Bridge connect URL (no query string)
+ * @param {Object} fields - Form fields returned by the prepare endpoint
+ */
+export function wpsrSubmitAuthForm(action, fields) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = action;
+    // The bridge decodes UTF-8; without this, non-UTF-8 admin pages would encode in blog_charset.
+    form.acceptCharset = 'UTF-8';
+    form.style.display = 'none';
+
+    Object.keys(fields || {}).forEach((name) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = fields[name] == null ? '' : String(fields[name]);
+        form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    // Call the prototype method: a field named "submit" would otherwise shadow form.submit.
+    HTMLFormElement.prototype.submit.call(form);
+}
+
 export function wpsrBuildAuthReturnUrl(routeName, authPlatform = '', fallbackUrl = '', templateId = '') {
     const wpsrAppendAuthPlatform = (url) => {
         if (!authPlatform) {

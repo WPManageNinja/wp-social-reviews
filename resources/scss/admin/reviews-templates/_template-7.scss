@@ -1,10 +1,3 @@
-//.wpsr-reviews-template-grid7{
-//  .wpsr-review-content{
-//    p{
-//      padding-top: 40px;
-//    }
-//  }
-//}
 .wpsr-review-template-seven{
   padding: 25px 20px;
   border-radius: 8px;
@@ -83,9 +76,7 @@
     }
     p{
       height: 100%;
-      //height: 70px !important;
       overflow: auto;
-      //overflow-y: hidden;
       padding-right: 10px;
       scrollbar-color: #8d8d8d #e0e0e0;
       scrollbar-width: thin;
@@ -100,16 +91,12 @@
 
     padding: 10px 10px 20px 10px;
     .wpsr_show_more_content{
-      //height: 100%;
-      //padding-top: 10px;
-      //overflow-y: scroll !important;
     }
   }
 
   .wpsr-review-content{
     text-align: inherit;
     opacity: 0;
-    //display: none;
     visibility: hidden;
     background-color: #fff;
     box-shadow: 0 0 57px 0 rgba(0, 0, 0, 0.05);

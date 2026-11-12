@@ -11,10 +11,8 @@ use WPSocialReviews\App\Services\GlobalSettings;
 class FacebookFeedTemplateHandler
 {
     /**
-     * Facebook templates the installed Pro release can actually render.
-     *
-     * Pro loads the view straight from the template key, so an unsupported key
-     * hits a missing file. Older Pro ships template2 only, hence the default.
+     * Facebook templates the installed Pro release can render. Pro loads the view
+     * straight from the key, and older Pro ships template2 only, hence the default.
      *
      * @return array
      **/
@@ -24,8 +22,7 @@ class FacebookFeedTemplateHandler
     }
 
     /**
-     * Advertising a template is not enough; without a renderer the caller
-     * would concatenate the unfiltered array and print the word "Array".
+     * Also needs a renderer, or the caller prints the unfiltered array as "Array".
      *
      * @param string $template
      * @return bool
@@ -38,9 +35,8 @@ class FacebookFeedTemplateHandler
     }
 
     /**
-     * The advertised templates this install will really render, decided by the
-     * same gate the public path uses. The admin app consumes this so JavaScript
-     * never has to rebuild part of the gate and drift away from PHP.
+     * Advertised templates this install will render, using the public path's gate.
+     * The admin app reads this so JavaScript doesn't rebuild the gate.
      *
      * @return array
      **/
@@ -58,21 +54,14 @@ class FacebookFeedTemplateHandler
     }
 
     /**
-     *
-     * Render parent opening div for the template item
-     *
      * @param $template_meta
-     *
      * @since 3.7.0
-     *
      **/
     public function renderTemplateItemWrapper($template_meta = []){
         $app = App::getInstance();
 
-        // Template 4's mosaic sizes its cells in CSS by :nth-child, so column classes would fight
-        // it. Gated the same way as the body renderer, or an older Pro mixes the two.
-        // Not memoised: the string compare short-circuits for every other template, and caching
-        // the Pro answer for the request made it survive changes to the filter behind it.
+        // Template 4's mosaic sizes cells by :nth-child, so column classes would fight it.
+        // Same gate as the body renderer, or an older Pro mixes the two. Not memoised.
         $wpsr_template = Arr::get($template_meta, 'template');
         if ($wpsr_template === 'template4' && self::canRenderProTemplate($wpsr_template)) {
             $app->view->render('public.feeds-templates.facebook.elements.item-parent-wrapper', array(
@@ -281,9 +270,8 @@ class FacebookFeedTemplateHandler
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified above
         $templateId = absint(Arr::get($_REQUEST, 'template_id'));
 
-        // The nonce is localized for logged-out visitors, so it authenticates nothing.
-        // Gate the dispatch on the template being publicly renderable, otherwise an
-        // anonymous request reaches the extension listener with an unowned template.
+        // The nonce is public, so it authenticates nothing. Only dispatch for a
+        // publicly renderable template.
         if (!(new ShortcodeHandler())->isPublicRenderableTemplate($templateId)) {
             wp_send_json_error(['message' => __('Invalid template.', 'wp-social-reviews')], 403);
         }

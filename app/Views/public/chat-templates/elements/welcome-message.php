@@ -20,7 +20,7 @@ use WPSocialReviews\App\Services\Helper;
     </div>
     <div class="wpsr-fm-greeting-msg">
         <?php if (Arr::get($templateSettings, 'chat_body.greeting_msg')) { ?>
-            <div class="wpsr-fm-msg-text">
+            <div class="wpsr-fm-msg-text" dir="auto">
                 <?php
                 $wpsr_allowed_tags = Helper::allowedHtmlTags();
                 echo wp_kses($templateSettings['chat_body']['greeting_msg'], $wpsr_allowed_tags);

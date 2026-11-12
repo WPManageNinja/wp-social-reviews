@@ -36,6 +36,7 @@
   --wpsr-menu-text-active: #0E121B;
   --wpsr-secondary-menu-active-bg: #EEE9FB;
   --wpsr-secondary-menu-active-text: #5525D9;
+  --wpsr-tab-indicator-bg: #8D6DE6;
 
   // ─── STAR / RATING ───────────────────── //
   --wpsr-star-color: #f7b80c;
@@ -44,13 +45,16 @@
   --wpsr-primary-border: #E1E4EA;
   --wpsr-selected-border: #5525D9;
   --wpsr-dark-default-border: #E1E4EA;
-  //--wpsr-secondary-border: ;
 
   // ─── RADIUS ──────────────────────────── //
   --wpsr-radius-sm: 4px;
   --wpsr-radius-intermediate: 6px;
   --wpsr-radius-md: 8px;
   --wpsr-radius-lg: 12px;
+
+  // ─── SHADOWS ─────────────────────────── //
+  --wpsr-shadow-light: rgba(10, 13, 20, 0.03);
+  --wpsr-shadow-soft: rgba(153, 160, 174, 0.16);
   // ─── SVG ──────────────────────────── //
   --wpsr-svg-primary-color: #525866;
   --wpsr-responsivebar-svg-active-color: #525866;

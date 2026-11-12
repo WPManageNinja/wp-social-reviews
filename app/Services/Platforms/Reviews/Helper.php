@@ -11,6 +11,7 @@ use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\App\Services\Helper as GlobalHelper;
 use WPSocialReviews\App\Services\GlobalSettings;
 use WPSocialReviews\App\Services\Platforms\MediaManager;
+use WPSocialReviews\App\Services\Platforms\ReviewImageOptimizationHandler;
 use WPSocialReviews\App\Services\Platforms\Feeds\CacheHandler;
 
 if (!defined('ABSPATH')) {
@@ -19,8 +20,14 @@ if (!defined('ABSPATH')) {
 
 class Helper
 {
+    private const ICON_DIR = 'assets/images/icon/';
+
     public static function getConnectedAccountsBusinessInfo($platforms)
     {
+        // Only the 'custom' aggregate fallback is memoized: it runs count()/avg() once per review
+        // otherwise. Options are not, so a source saved earlier in the request is seen.
+        static $customFallback = null;
+
         $business_info = [];
         if (!is_array($platforms)) {
             $platforms = [$platforms];
@@ -29,16 +36,14 @@ class Helper
         foreach ($platforms as $platform) {
             $infos = get_option('wpsr_reviews_' . $platform . '_business_info');
 
-            if (!empty($infos)) {
-                $business_info += get_option('wpsr_reviews_' . $platform . '_business_info');
-            } else {
-                //for custom or fluent forms platform
-                if ($platform === 'custom') {
+            if (!empty($infos) && is_array($infos)) {
+                $business_info += $infos;
+            } elseif ($platform === 'custom') {
+                if ($customFallback === null) {
                     $data = Review::getInternalBusinessInfo($platform);
-                    if (!empty($data) && is_array($data)) {
-                        $business_info += $data;
-                    }
+                    $customFallback = (!empty($data) && is_array($data)) ? $data : [];
                 }
+                $business_info += $customFallback;
             }
         }
         return $business_info;
@@ -50,7 +55,7 @@ class Helper
         $platform_name = Arr::get($businessInfo, $key . '.platform_name');
         $businessName = Arr::get($businessInfo, $key . '.name');
         if ($platform_name === 'fluent-cart') {
-            // FluentCart has no native review data to import; reviews only arrive later via a WPSR review form.
+            // FluentCart has nothing to import. Its reviews arrive later through a review form.
             return __('Product connected! It will start showing reviews once customers submit them through a review form.', 'wp-social-reviews');
         }
 
@@ -88,10 +93,8 @@ class Helper
             $filterByTitle = 'all';
         }
 
-        // The category filter is keyed by id so a rename cannot strand it; the names stay
-        // as the display copy and the fallback for the legacy `category` column. Stored
-        // ids win — after a rename the stored names are the old ones, and re-resolving
-        // them would throw the working reference away.
+        // Keyed by id so a rename can't strand the filter. Names are only the display copy
+        // and the fallback for the legacy `category` column, so stored ids always win.
         $selectedCategories  = Arr::get($settings, 'selectedCategories', []);
         $selectedCategoryIds = array_values(array_filter(array_map('intval', (array) Arr::get($settings, 'selectedCategoryIds', []))));
 
@@ -99,7 +102,7 @@ class Helper
             $selectedCategoryIds = ReviewCategory::idsForNames($selectedCategories);
         }
 
-        // support old minimum rating values 11/6
+        // Legacy minimum rating values 11 and 6.
         if ((Arr::get($settings, 'starFilterVal') === 11) || (!in_array('booking.com', $platform) && Arr::get($settings, 'starFilterVal') >= 6)) {
             $settings['starFilterVal'] = -1;
         }
@@ -111,7 +114,7 @@ class Helper
         $slides_to_scroll = Arr::get($carouselDefaults, 'slides_to_scroll', 3);
         $navigation       = Arr::get($carouselDefaults, 'navigation', 'dot');
 
-        //notification and badge old settings compatible for new version
+        // Map legacy notification and badge settings.
         $notification_settings = Arr::get($settings, 'notification_settings');
         if (!Arr::get($notification_settings, 'display_mode', 'false')) {
             $settings['notification_settings']['display_mode'] = (Arr::get($notification_settings, 'display_reviews_on_click') === 'true') ? 'popup' : 'none';
@@ -130,6 +133,7 @@ class Helper
             'platformType' => Arr::get($settings, 'platformType', 'single'),
             'template' => Arr::get($settings, 'template', $template),
             'templateType' => Arr::get($settings, 'templateType', 'grid'),
+            'layout_style' => Arr::get($settings, 'layout_style', 'default'),
             'column' => Arr::get($settings, 'column', '4'),
             'responsive_column_number' => array(
                 'desktop' => Arr::get($settings, 'responsive_column_number.desktop', Arr::get($settings, 'column', '4')),
@@ -188,6 +192,12 @@ class Helper
                 'navigation' => Arr::get($settings, 'carousel_settings.navigation', $navigation),
             ),
 
+            //marquee
+            'marquee_settings' => array(
+                'speed' => (int) Arr::get($settings, 'marquee_settings.speed', 35), // px per second
+                'card_width' => (int) Arr::get($settings, 'marquee_settings.card_width', 360),
+            ),
+
             //filters
             'totalReviewsVal' => (int) Arr::get($settings, 'totalReviewsVal', '50'),
             'totalReviewsNumber' => array(
@@ -201,7 +211,7 @@ class Helper
             'includes_inputs' => Arr::get($settings, 'includes_inputs', ''),
             'excludes_inputs' => Arr::get($settings, 'excludes_inputs', ''),
             'order' => Arr::get($settings, 'order', 'desc'),
-            // Lets visitors search, re-sort and rating-filter the feed. Off unless the owner turns it on.
+            // Visitor search, sort and rating filter.
             'enable_visitor_sorting' => Arr::get($settings, 'enable_visitor_sorting', 'false'),
             'hide_empty_reviews' => Arr::get($settings, 'hide_empty_reviews', false),
             'selectedBusinesses' => Arr::get($settings, 'selectedBusinesses', []),
@@ -272,11 +282,15 @@ class Helper
                 'display_date' => Arr::get($settings, 'notification_settings.display_date', 'true'),
                 // translators: {review_rating} is a placeholder for the star rating value
                 'custom_notification_text' => Arr::get($settings, 'notification_settings.custom_notification_text', __('Just left us a {review_rating} star review', 'wp-social-reviews')),
+                'display_custom_text' => Arr::get($settings, 'notification_settings.display_custom_text', 'true'),
                 'initial_delay' => (int) Arr::get($settings, 'notification_settings.initial_delay', 6000),
                 'notification_delay' => (int) Arr::get($settings, 'notification_settings.notification_delay', 5000),
                 'delay_for' => (int) Arr::get($settings, 'notification_settings.delay_for', 5000),
                 'display_read_all_reviews_btn' => Arr::get($settings, 'notification_settings.display_read_all_reviews_btn', 'false'),
                 'read_all_reviews_btn_url' => Arr::get($settings, 'notification_settings.read_all_reviews_btn_url', '#'),
+                // Review Spotlight only: "logo" matches the Rotating Card's compact row; "logo_text"
+                // spells out the platform name, spread to the row's far edge.
+                'source_display' => Arr::get($settings, 'notification_settings.source_display', 'logo'),
             ),
             'enable_schema' => Arr::get($settings, 'enable_schema', 'false'),
             'schema_settings' => array(
@@ -331,7 +345,6 @@ class Helper
     {
         $activePlatforms = apply_filters('wpsocialreviews/available_valid_reviews_platforms', []);
 
-        //add custom with platforms if custom reviews exists
         $isCustomReviewsExists = Review::where('platform_name', 'custom')
             ->count();
 
@@ -361,17 +374,6 @@ class Helper
             'scan_counter' => isset($scan_counter) ? $scan_counter : 0,
         ];
     }
-
-    //public static function addCustomBusinessInfo($business_info, $template_meta)
-//    {
-//        $platforms = Arr::get($business_info, 'platforms', []);
-//        if (!empty($platforms) && in_array('custom', array_column($platforms, 'platform_name'))) {
-//            $business_info['platforms']['custom']['url'] = Arr::get($template_meta, 'war_btn_source_custom_url', '');
-//            $business_info['total_business'] = count($platforms);
-//            $business_info['total_platforms'] = count($platforms);
-//        }
-//        return $business_info;
-//    }
 
     public static function getBusinessInfoByPlatforms($platforms, $calculateBreakdown = true)
     {
@@ -416,7 +418,7 @@ class Helper
                 $platform_name = Arr::get($business_info, 'platform_name');
             } else {
                 $total_platforms--;
-                // Still set platform_name even if URL is empty (for platforms like WooCommerce)
+                // WooCommerce has no URL but still needs its platform_name.
                 if (empty($platform_name)) {
                     $platform_name = Arr::get($business_info, 'platform_name');
                 }
@@ -443,7 +445,6 @@ class Helper
         }
 
         if ($calculateBreakdown) {
-            // Calculate star rating breakdown for all reviews
             $multi_business_info['rating_breakdown'] = static::calculateStarRatingBreakdown($platforms, $platform_urls);
         }
 
@@ -456,8 +457,8 @@ class Helper
 
     public static function getSelectedBusinessInfoByPlatforms($platforms, $selectedBusinesses)
     {
-        $cnt = 0; // Reset the count
-        // Only skip breakdown calculation if we have selected businesses to filter
+        $cnt = 0;
+        // With a selection, the breakdown is computed below for the selected businesses only.
         $shouldCalculateBreakdown = empty($selectedBusinesses);
         $multi_business_info = static::getBusinessInfoByPlatforms($platforms, $shouldCalculateBreakdown);
         $cnt = Arr::get($multi_business_info, 'total_business', 0);
@@ -466,8 +467,7 @@ class Helper
         $total_platforms = Arr::get($multi_business_info, 'total_platforms', 0);
 
         if (!empty($selectedBusinesses) && !empty($multi_business_info['platforms'])) {
-            // The loop below counts the selected businesses, so it must start from zero
-            // rather than from the all-business total read above.
+            // Recounted below for the selected businesses only.
             $cnt = 0;
             $multi_business_info['average_rating'] = 0;
             $multi_business_info['total_rating'] = 0;
@@ -495,7 +495,7 @@ class Helper
             $total_platforms = count(array_unique($allPlatforms));
             foreach ($multi_business_info['platforms'] as $businessId => $business) {
                 if (in_array($businessId, $selectedBusinesses)) {
-                    $cnt++; // Increment count for selected businesses
+                    $cnt++;
                     $average_rating = Arr::get($business, 'average_rating');
                     if ($average_rating) {
                         $platform_count++;
@@ -520,9 +520,7 @@ class Helper
                 }
             }
 
-            // Calculate rating breakdown for selected platforms only
             if (!empty($selectedPlatformNames)) {
-                // Filter business info for selected businesses
                 $selectedBusinessInfo = [];
                 foreach ($multi_business_info['platforms'] as $businessId => $business) {
                     if (in_array($businessId, $selectedBusinesses)) {
@@ -593,17 +591,15 @@ class Helper
 
     public static function convertToPercentage($value)
     {
-        // Extract the decimal part of the value
         $decimalPart = $value - floor($value);
 
-        // Convert the decimal part to a percentage
         $percentage = round($decimalPart * 100);
 
         return $percentage . '%';
     }
 
     /**
-     * Generate rating SVG icon based on rating value
+     * Star rating markup, five stars filled by CSS custom property.
      *
      * @param $rating
      *
@@ -615,11 +611,9 @@ class Helper
         $stars = '';
         $uniqueId = $templateId ? 'rating-' . $templateId : 'rating-default';
 
-        // Generate 5 stars
         for ($i = 0; $i < 5; $i++) {
             $fillPercentage = '0%';
 
-            // Calculate fill percentage for each star
             $score = $rating - $i;
             if ($score >= 1) {
                 $fillPercentage = '100%';
@@ -640,6 +634,70 @@ class Helper
         return $stars;
     }
 
+    /**
+     * Short quality word for a rating (Excellent/Great/Average/Poor/Bad); keep thresholds in sync
+     * with BadgeScoreStrip.vue.
+     *
+     * @param $rating
+     *
+     * @return string
+     */
+    public static function ratingQualityLabel($rating)
+    {
+        $rating = (float) $rating;
+
+        if ($rating <= 0) {
+            return '';
+        }
+
+        if ($rating >= 4.5) {
+            $label = __('Excellent', 'wp-social-reviews');
+        } elseif ($rating >= 3.9) {
+            $label = __('Great', 'wp-social-reviews');
+        } elseif ($rating >= 2.9) {
+            $label = __('Average', 'wp-social-reviews');
+        } elseif ($rating >= 2.1) {
+            $label = __('Poor', 'wp-social-reviews');
+        } else {
+            $label = __('Bad', 'wp-social-reviews');
+        }
+
+        return apply_filters('wpsocialreviews/rating_quality_label', $label, $rating);
+    }
+
+    /**
+     * Human-readable platform name for a visible "on {source}" label (e.g. notification2's
+     * "Logo + platform name" mode). Not PlatformManager::getPlatformOfficialName(): that one is
+     * built for admin error strings (always " Reviews"/" Feed" suffixed) and mis-cases
+     * AliExpress, WooCommerce and Fluent Forms.
+     *
+     * @param string $platform_name
+     * @param string $fallbackName A custom source's own name, used only for platform_name 'custom'.
+     * @return string
+     */
+    public static function platformDisplayName($platform_name, $fallbackName = '')
+    {
+        $labels = [
+            'google'       => __('Google', 'wp-social-reviews'),
+            'facebook'     => __('Facebook', 'wp-social-reviews'),
+            'airbnb'       => __('Airbnb', 'wp-social-reviews'),
+            'yelp'         => __('Yelp', 'wp-social-reviews'),
+            'tripadvisor'  => __('Tripadvisor', 'wp-social-reviews'),
+            'amazon'       => __('Amazon', 'wp-social-reviews'),
+            'aliexpress'   => __('AliExpress', 'wp-social-reviews'),
+            'booking.com'  => __('Booking.com', 'wp-social-reviews'),
+            'woocommerce'  => __('WooCommerce', 'wp-social-reviews'),
+            'fluent-cart'  => __('FluentCart', 'wp-social-reviews'),
+            'fluent_forms' => __('Fluent Forms', 'wp-social-reviews'),
+            'testimonial'  => __('Testimonial', 'wp-social-reviews'),
+            'custom'       => $fallbackName ?: __('Custom', 'wp-social-reviews'),
+        ];
+
+        $label = Arr::get($labels, $platform_name, $platform_name ? ucfirst((string) $platform_name) : '');
+
+        return apply_filters('wpsocialreviews/platform_display_name', $label, $platform_name);
+    }
+
     public static function platformIcon($platform_name = '', $size = '')
     {
         $customLogo = static::getCustomPlatformLogo($platform_name);
@@ -654,10 +712,62 @@ class Helper
             return '';
         }
 
-        return apply_filters(
-            'wpsocialreviews/' . $platform_name . '_reviews_platform_icon',
-            WPSOCIALREVIEWS_URL . 'assets/images/icon/icon-' . $platform_name . $img_size . '.png'
-        );
+        if (!preg_match('/^[A-Za-z0-9._-]+$/', (string) $platform_name)) {
+            return '';
+        }
+
+        $iconFile = 'icon-' . $platform_name . $img_size . '.png';
+        $defaultIcon = WPSOCIALREVIEWS_URL . self::ICON_DIR . $iconFile;
+
+        $icon = apply_filters('wpsocialreviews/' . $platform_name . '_reviews_platform_icon', $defaultIcon);
+
+        // A source with no bundled icon (a custom source with no logo) has no file to show.
+        if ($icon === $defaultIcon && !static::bundledIconExists($iconFile)) {
+            return '';
+        }
+
+        return $icon;
+    }
+
+    /**
+     * The label the user gave a custom source, or '' when the platform is not one.
+     */
+    public static function getCustomSourceLabel($platform_name)
+    {
+        $validPlatforms = get_option('wpsr_available_valid_platforms', []);
+
+        if (empty($platform_name) || !is_array($validPlatforms) || !isset($validPlatforms[$platform_name])) {
+            return '';
+        }
+
+        return is_string($validPlatforms[$platform_name]) ? $validPlatforms[$platform_name] : '';
+    }
+
+    protected static function bundledIconExists($iconFile)
+    {
+        static $found = [];
+
+        if (!isset($found[$iconFile])) {
+            $found[$iconFile] = file_exists(WPSOCIALREVIEWS_DIR . self::ICON_DIR . $iconFile);
+        }
+
+        return $found[$iconFile];
+    }
+
+    /**
+     * File names of the bundled platform icons, or null when the folder cannot be read.
+     */
+    public static function getBundledPlatformIcons()
+    {
+        // scandir(), not glob(): a "[" in the site path would break a glob pattern.
+        $files = @scandir(WPSOCIALREVIEWS_DIR . self::ICON_DIR);
+        if (!$files) {
+            return null;
+        }
+
+        $icons = array_values(preg_grep('/^icon-.+\.png$/', $files));
+
+        return $icons ? $icons : null;
     }
 
     public static function removeSpecialChars($text)
@@ -702,13 +812,47 @@ class Helper
         return isset($legacy[$order]) ? $legacy[$order] : $order;
     }
 
+    // Wrapper class for a Pro layout style. Empty without Pro or for a style its layout doesn't support,
+    // so a downgraded site falls back to the plain layout.
+    public static function layoutStyleClass($template_meta)
+    {
+        if (!defined('WPSOCIALREVIEWS_PRO')) {
+            return '';
+        }
+
+        $supportedStyles = [
+            'grid'   => ['feature_grid'],
+            'slider' => ['score_slider'],
+        ];
+
+        $templateType = Arr::get($template_meta, 'templateType', 'grid');
+        $layoutStyle  = Arr::get($template_meta, 'layout_style', 'default');
+
+        if (empty($supportedStyles[$templateType]) || !in_array($layoutStyle, $supportedStyles[$templateType], true)) {
+            return '';
+        }
+
+        // Without the header there is no summary column; the plain slider is the right fallback.
+        if ($layoutStyle === 'score_slider' && Arr::get($template_meta, 'show_header') !== 'true') {
+            return '';
+        }
+
+        return 'wpsr-reviews-layout-style-' . $layoutStyle;
+    }
+
+    // Slider and Marquee show every review at once, so they never paginate.
+    public static function layoutHasLoadMore($templateType)
+    {
+        return !in_array($templateType, ['slider', 'marquee'], true);
+    }
+
     // booking.com stores 1-10 ratings, which the 1-5 star dropdown cannot describe.
     public static function supportsVisitorSorting($platforms)
     {
         return !in_array('booking.com', (array) $platforms, true);
     }
 
-    // Will a sort toolbar render on this feed? Pro decides; asked before the header view runs.
+    // Whether the sort toolbar renders on this feed. Pro decides, before the header view runs.
     public static function visitorSortToolbarEnabled($template_meta, $templateId, $templateType, $platforms)
     {
         if (!defined('WPSOCIALREVIEWS_PRO') || !static::supportsVisitorSorting($platforms)) {
@@ -719,7 +863,7 @@ class Helper
             $template_meta, $templateId, $templateType, $platforms);
     }
 
-    // Per-render seed so every re-fetch of a random feed repeats the same shuffle; 0 on every other feed.
+    // Per-render seed so re-fetches of a random feed repeat the same shuffle. 0 on other feeds.
     public static function randomFeedSeed($template_meta)
     {
         if (static::resolveOrderKey(Arr::get($template_meta, 'order', 'desc')) !== 'random'
@@ -738,10 +882,8 @@ class Helper
             return '';
         }
 
-        // Drop invalid byte sequences first, or they survive the fallback paths
-        // below and reach the caller as a string that is not valid UTF-8. The
-        // substitution character is then removed rather than searched for, so the
-        // characters the visitor did type can still match.
+        // Drop invalid bytes first, or they survive the fallbacks below. The substitution
+        // character is removed, not searched for, so the typed characters can still match.
         if (function_exists('wp_check_invalid_utf8')) {
             $term = str_replace("\xEF\xBF\xBD", '', wp_check_invalid_utf8((string) $term, true));
         }
@@ -809,7 +951,7 @@ class Helper
         return empty($kept) ? [$term] : $kept;
     }
 
-    // The order filteredReviewsQuery() will apply: a sortMap() key, or 'random' (never accepted from a client).
+    // The order filteredReviewsQuery() applies: a sortMap() key, or 'random' (never from a client).
     public static function resolveOrderKey($order)
     {
         if ($order === 'random') {
@@ -824,12 +966,9 @@ class Helper
     /**
      * The tags wp_kses() may keep in the visitor sort toolbar.
      *
-     * The toolbar comes from a filter, so a callback added by other code decides its markup. This bounds what
-     * that markup may be: no script, no event handlers, no javascript: URLs, whatever the callback returns.
-     *
-     * Every data-* attribute is listed one by one because wp_kses() has no wildcard for them, and an attribute
-     * left out here is dropped silently — which for these means the toolbar JS stops reading it. Filterable, so
-     * an extension that legitimately needs another tag can add it instead of having its markup stripped.
+     * The toolbar markup comes from a filter, so this bounds it: no script, event handlers or javascript: URLs.
+     * wp_kses() has no data-* wildcard, so each one is listed. A missing one is dropped silently and the
+     * toolbar JS stops seeing it.
      *
      * @return array
      */
@@ -903,10 +1042,9 @@ class Helper
     /**
      * May this caller ask the reviews feed endpoint for another page right now?
      *
-     * A budget guard, not a security control. Read-then-write is not atomic, so it undercounts under concurrency.
-     *
-     * Two windows, both must pass: the short one allows normal use, the long one stops a caller who keeps going.
-     * Every number is filterable, and returning 0 for a limit or a window drops that budget.
+     * A budget guard, not a security control. Read-then-write isn't atomic, so it undercounts under concurrency.
+     * Both windows must pass: the short one allows normal use, the long one stops a caller who keeps going.
+     * Returning 0 from a limit or window filter drops that budget.
      *
      * @param bool $wpsr_is_search Whether this request carries a search term.
      *
@@ -948,7 +1086,7 @@ class Helper
                 continue;
             }
 
-            // Transients, so a site with a persistent object cache never touches the database for this.
+            // Transients, so a persistent object cache keeps this out of the database.
             $wpsr_key   = 'wpsr_rl_' . $wpsr_scope . $wpsr_budget['slot'] . '_' . md5($wpsr_caller);
             $wpsr_count = (int) get_transient($wpsr_key);
 
@@ -970,8 +1108,8 @@ class Helper
     /**
      * Who is asking.
      *
-     * REMOTE_ADDR, which behind a CDN is the proxy's, so every visitor shares one bucket. Forwarded-for headers
-     * are client-set without a proxy, so trusting one is the owner's call and only where a proxy overwrites it:
+     * REMOTE_ADDR, which behind a CDN is the proxy's, so all visitors share one bucket. Forwarded-for headers
+     * are client-set unless a proxy overwrites them, so trusting one is the owner's call:
      *
      *     add_filter('wpsocialreviews/visitor_rate_client_ip_header', fn() => 'HTTP_CF_CONNECTING_IP');
      *
@@ -989,7 +1127,7 @@ class Helper
             $wpsr_forwarded = explode(',', sanitize_text_field(wp_unslash($_SERVER[$wpsr_header])));
             $wpsr_candidate = trim($wpsr_forwarded[0]);
 
-            // Junk in the header is a spoof or a misconfig; fall through, or it is a fresh bucket per request.
+            // Junk in the header would be a fresh bucket per request, so fall through.
             if (filter_var($wpsr_candidate, FILTER_VALIDATE_IP)) {
                 $wpsr_ip = $wpsr_candidate;
             }
@@ -1001,7 +1139,7 @@ class Helper
 
         $wpsr_ip = self::visitorRateIpNetwork($wpsr_ip);
 
-        // Logged-in visitors get their own bucket, so one office behind a single address does not share a limit.
+        // Logged-in visitors get their own bucket, so an office behind one address doesn't share a limit.
         $wpsr_user_id = get_current_user_id();
 
         if ($wpsr_user_id) {
@@ -1190,8 +1328,7 @@ class Helper
     /**
      * Uppercase first character of a name, followed by a period.
      *
-     * Cuts by character rather than byte, or a name like "Élodie" loses half of
-     * its first character and renders as a broken sequence.
+     * Cuts by character, not byte, so "Élodie" keeps its whole first character.
      *
      * @param string $name
      *
@@ -1227,7 +1364,6 @@ class Helper
         if (empty($reviews)) {
             return false;
         }
-        // Handle Collection objects (from ORM)
         if ($reviews instanceof Collection) {
             foreach ($reviews as $review) {
                 $reviewImages = Arr::get($review, 'fields.review_images', []);
@@ -1295,7 +1431,6 @@ class Helper
             return static::getDefaultRatingBreakdown();
         }
 
-        // Group source IDs by platform
         $platformSources = [];
         $needsCustomAll = false;
 
@@ -1314,7 +1449,6 @@ class Helper
             $platformSources[$platformName][] = $sourceId;
         }
 
-        // Build a single optimized query using raw SQL with GROUP BY for counting
         global $wpdb;
         $table_name = $wpdb->prefix . 'wpsr_reviews';
 
@@ -1328,7 +1462,6 @@ class Helper
         ];
         $totalReviews = 0;
 
-        // Build conditions for non-custom platforms (single query with OR conditions)
         $conditions = [];
         $values = [];
 
@@ -1349,19 +1482,15 @@ class Helper
             $values = array_merge($values, $uniqueIds);
         }
 
-        // Add custom platform condition if needed
         if ($needsCustomAll) {
             $conditions[] = "(platform_name = %s)";
             $values[] = 'custom';
         }
 
         if (!empty($conditions)) {
-            // Build the WHERE clause with placeholders
             $whereClause = implode(' OR ', $conditions);
 
-            // Single aggregated query to count ratings grouped by star value
-            // Table name is safe (uses $wpdb->prefix which is trusted)
-            // All placeholders in $whereClause are matched with values in $values array
+            // $whereClause holds only %s placeholders, matched one-to-one by $values.
             // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- $whereClause contains only %s placeholders that are properly escaped by $wpdb->prepare() with matching $values
             $query = $wpdb->prepare(
                 "SELECT rating, COUNT(*) as count 
@@ -1391,7 +1520,6 @@ class Helper
             return static::getDefaultRatingBreakdown();
         }
 
-        // Build the breakdown array in the required format
         $breakdown = [];
         for ($star = 5; $star >= 0; $star--) {
             $count = $counts[(string) $star];
@@ -1450,17 +1578,14 @@ class Helper
 
         $totalReviews = count($reviews);
 
-        // Count reviews by star rating
         foreach ($reviews as $review) {
             $rating = isset($review['rating']) ? (int) $review['rating'] : 0;
 
-            // Ensure rating is between 0-5
             if ($rating >= 0 && $rating <= 5) {
                 $counts[(string) $rating]++;
             }
         }
 
-        // Build the breakdown array in the required format
         $breakdown = [];
         for ($star = 5; $star >= 0; $star--) {
             $count = $counts[(string) $star];
@@ -1501,24 +1626,21 @@ class Helper
 
         $totalReviews = count($reviews);
 
-        // Count reviews by star rating (convert booking 10-point to 5-star)
         foreach ($reviews as $review) {
             $rating = isset($review['rating']) ? (float) $review['rating'] : 0;
 
-            // Convert booking.com 10-point scale to 5-star scale
+            // booking.com rates out of 10.
             if ($rating > 5) {
-                $rating = $rating / 2; // Convert 10-point to 5-point scale
+                $rating = $rating / 2;
             }
 
             $starRating = round($rating);
 
-            // Ensure rating is between 0-5
             if ($starRating >= 0 && $starRating <= 5) {
                 $counts[(string) $starRating]++;
             }
         }
 
-        // Build the breakdown array in the required format
         $breakdown = [];
         for ($star = 5; $star >= 0; $star--) {
             $count = $counts[(string) $star];
@@ -1581,9 +1703,10 @@ class Helper
      */
     public static function getCustomPlatformLogo($platform_name, $source_id = null)
     {
-        $validPlatforms = get_option('wpsr_available_valid_platforms', []);
-
-        if (!in_array($platform_name, array_keys($validPlatforms))) {
+        // isCustomReviewPlatform() special-cases the literal 'custom' platform (which never
+        // appears in wpsr_available_valid_platforms itself — that option only tracks other
+        // named custom platforms), so every custom-source review is recognised here too.
+        if (!static::isCustomReviewPlatform($platform_name)) {
             return ['logo' => '', 'name' => ''];
         }
 
@@ -1593,7 +1716,6 @@ class Helper
             return ['logo' => '', 'name' => ''];
         }
 
-        // If source_id is provided, try to get logo for specific source
         if ($source_id && isset($businessInfo[$source_id])) {
             return [
                 'logo' => Arr::get($businessInfo, $source_id . '.logo', ''),
@@ -1601,17 +1723,44 @@ class Helper
             ];
         }
 
-        // Fallback: get first available logo from any source
+        // Fall back to the first source with a logo or a configured label: a custom source set up
+        // with only a name (no logo image) previously fell through this and returned nothing.
         foreach ($businessInfo as $info) {
             $logo = Arr::get($info, 'logo', '');
-            if (!empty($logo)) {
+            $label = Arr::get($info, 'platform_label', '');
+            if (!empty($logo) || !empty($label)) {
                 return [
                     'logo' => $logo,
-                    'name' => Arr::get($info, 'platform_label', $platform_name)
+                    'name' => $label ?: $platform_name
                 ];
             }
         }
 
         return ['logo' => '', 'name' => ''];
+    }
+
+    /**
+     * Drops one connected business's reviews and the images optimized for them, leaving its
+     * settings alone. Deleting the connection is ConfigsController::delete(); this is the part
+     * reused when the rows are replaced rather than removed.
+     *
+     * @param string $platform
+     * @param string $sourceId
+     * @return int rows deleted
+     */
+    public static function deleteBusinessReviews($platform, $sourceId)
+    {
+        $platform = (string) $platform;
+        $sourceId = (string) $sourceId;
+        if (!$platform || !$sourceId) {
+            return 0;
+        }
+
+        (new ReviewImageOptimizationHandler($platform))
+            ->deleteBusinessMediaByUserName($platform, $sourceId);
+
+        return (int) Review::where('platform_name', $platform)
+            ->where('source_id', $sourceId)
+            ->delete();
     }
 }

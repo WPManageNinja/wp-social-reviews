@@ -21,6 +21,7 @@
 @import "elements/dark-mode";
 @import "elements/photo-upload";
 @import "elements/video-upload";
+@import "elements/rtl";
 
 @import "template-editor/edit-view";
 @import "template-editor/docs";
@@ -53,10 +54,16 @@
 @import "reviews-templates/template-8";
 @import "reviews-templates/template-9";
 @import "reviews-templates/template-10";
+@import "../public/reviews-templates/layout-feature-grid";
+@import "../public/reviews-templates/layout-score-slider";
+@import "../public/reviews-templates/layout-marquee";
 @import "reviews-templates/header-templates/header-template";
 @import "reviews-templates/header-templates/header-template2";
 @import "reviews-templates/badge";
 @import "reviews-templates/badge-1";
+@import "../public/reviews-templates/badge-avatar-stack";
+@import "../public/reviews-templates/badge-score-strip";
+@import "../public/reviews-templates/badge-sticker";
 @import "reviews-templates/notification";
 
 @import "testimonial-templates/template-1";
@@ -84,6 +91,7 @@
 @import "feed-templates/instagram/template-2";
 @import "feed-templates/instagram/template-3";
 @import "feed-templates/instagram/template-4";
+@import "feed-templates/instagram/color-schemes";
 
 
 @import "feed-templates/facebook/template-1";
@@ -102,3 +110,6 @@
 @import "feed-templates/tiktok/template-3";
 @import "feed-templates/tiktok/template-4";
 @import "feed-templates/tiktok/responsive";
+// Element Plus is imported here, not from JS, so rtlcss can mirror it. Last, so it keeps winning ties as it did when injected.
+// No .css extension: Sass inlines it; a plain CSS @import after other rules is dropped by css-loader.
+@import "element-plus/dist/index";

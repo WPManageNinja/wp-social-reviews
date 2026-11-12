@@ -14,6 +14,13 @@
       </template>
       <div class="wpsr-connection-modal-body" :class="!isConnected ? 'wpsr-gap-0' : ''">
       <div v-loading="loading" element-loading-text="Please wait.">
+            <div class="wpsr-alert wpsr-alert-warning wpsr-d-flex wpsr-mb-20" v-if="isConnected && config.needs_reconnect">
+              <InfoIcon color="var(--wpsr-icon-info-warning-color)"/>
+              <p>
+                <strong>{{ $t('Notice') }}</strong>
+                {{ $t('This YouTube connection uses our previous authorization app, which we will retire soon. Click Connect new account → OAuth 2.0 → Connect YouTube Channel and sign in with the same Google account to switch. Your templates and settings stay as they are.') }}
+              </p>
+            </div>
             <div v-if="(isConnected && credentialsType === 'oauth2.0')
                 || ( isConnected && credentialsType === 'manually_connect')
                 || (isConnected && credentialsType === 'api_key')
@@ -115,40 +122,6 @@
                     </div>
                   </div>
                 </el-tab-pane>
-<!--                <el-tab-pane name="manually_connect">-->
-<!--                  <template #label>-->
-<!--                    <span class="wpsr-connections-tabs-label">-->
-<!--                       <el-icon size="18"><Key /></el-icon>-->
-<!--                      <div class="wpsr-connections-tabs-label-group">-->
-<!--                        <span>Account Manually</span>-->
-<!--                        <p>Connect via Token</p>-->
-<!--                      </div>-->
-<!--                    </span>-->
-<!--                  </template>-->
-<!--                  <div class="wpsr-accounts-connect-wrapper">-->
-<!--                    <div class="wpsr-connection-modal-input-wrapper">-->
-<!--                      <div class="wpsr-connection-modal-input-heading-wrapper">-->
-<!--                        <h4 class="wpsr-connection-modal-input-heading">-->
-<!--                          {{ $t('Access Token') }}-->
-<!--                          <el-tooltip-->
-<!--                              :raw-content="true"-->
-<!--                              effect="dark"-->
-<!--                              placement="right-start"-->
-<!--                              :content="$t('Please enter a valid Access Token.')"-->
-<!--                          >-->
-<!--                            <el-icon size="18" color="var(&#45;&#45;wpsr-icon-info-secondary-color)"><InfoFilled /></el-icon>-->
-<!--                          </el-tooltip>-->
-<!--                        </h4>-->
-<!--                      </div>-->
-<!--                      <InputPassword-->
-<!--                          id="access_token"-->
-<!--                          v-model="accessToken"-->
-<!--                          placeholder="Enter a valid access token"-->
-<!--                          @keyup.enter.native="saveVerificationConfigs"-->
-<!--                      />-->
-<!--                    </div>-->
-<!--                  </div>-->
-<!--                </el-tab-pane>-->
               </el-tabs>
             </div>
 
@@ -205,9 +178,10 @@ import AuthRedirectOverlay from '../../../core-ui/AuthRedirectOverlay';
 import Remove from '../../../core-ui/editor/RemoveConfirm';
 import InputPassword from '../../../core-ui/editor/InputPassword';
 import ShieldCheckLineIcon from "../../../pieces/icons/ShieldCheckLineIcon.vue";
+import InfoIcon from "../../../pieces/icons/InfoIcon.vue";
 import {ElNotification} from "element-plus";
 import CreateTemplateIcon from "../../../pieces/icons/CreateTemplateIcon.vue";
-import { wpsrBuildAuthReturnUrl as buildWpsrAuthReturnUrl } from "../../../../utils";
+import { wpsrBuildAuthReturnUrl as buildWpsrAuthReturnUrl, wpsrSubmitAuthForm } from "../../../../utils";
 
 export default {
     data(){
@@ -231,6 +205,7 @@ export default {
     },
     components:{
         AuthRedirectOverlay,
+        InfoIcon,
         CreateTemplateIcon,
         ShieldCheckLineIcon,
         Remove,
@@ -247,6 +222,7 @@ export default {
             default: null
         }
     },
+    emits: ['youtube_settings', 'findEnabledPlatforms'],
     methods: {
       getDisableState() {
         if (this.credentialsType === 'api_key') {
@@ -273,8 +249,8 @@ export default {
                 return_url: this.wpsrBuildAuthReturnUrl('edit-youtube-template', 'youtube'),
                 source: 'YouTube'
             }).then(response => {
-                if (response && response.data && response.data.url) {
-                    window.open(response.data.url, '_self');
+                if (response && response.data && response.data.action) {
+                    wpsrSubmitAuthForm(response.data.action, response.data.fields);
                 } else {
                     this.googleAuthLoading = false;
                 }
@@ -327,9 +303,6 @@ export default {
               .then(response => {
                   if(response.data) {
                       this.config = response.data.settings;
-                      // if(response.data.settings && response.data.settings.credentials_type !== undefined){
-                      //     this.credentialsType = response.data.settings.credentials_type;
-                      // }
 
                       this.oauthAccessToken = false;
                       this.oauthAccessCode = false;
@@ -402,7 +375,6 @@ export default {
                             template_id: response.template_id
                           }
                       })
-                      // close modal after successful template creation
                       this.youtube_modal = false;
                   }
               }).catch(error => {

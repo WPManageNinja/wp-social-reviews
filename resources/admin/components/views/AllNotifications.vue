@@ -117,7 +117,7 @@
               <template #default="scope" >
                 <div class="wpsr-item-title-cell wpsr-item-editable" @click.prevent="handleRowAction('edit', scope.row)">
                   <strong class="wpsr-item-title wpsr-d-flex wpsr-flex-align-center">
-                    {{ $trimWords(scope.row.post_title, 3, true) }}
+                    <span dir="auto">{{ $trimWords(scope.row.post_title, 3, true) }}</span>
                     <el-icon class="wpsr-ml-5 wpsr-display-on-hover"><Edit /></el-icon>
                   </strong>
                 </div>

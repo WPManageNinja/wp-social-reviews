@@ -1,0 +1,20 @@
+// Fixes rtlcss can't infer. This file is mirrored too, so write the LTR intent (see public elements/_rtl.scss).
+
+// User text carries dir="auto"; match-parent keeps the cell's alignment instead of the text's start side.
+// Chromium only knows the prefixed form; :where() lets any local rule win.
+:where(.wpsr_social_review_admin [dir="auto"], .el-overlay [dir="auto"]) {
+  text-align: -webkit-match-parent;
+  text-align: match-parent;
+}
+
+// Preview popups: the icon font only ships left/right glyphs and prev/next sit mirrored, so their arrows turn too.
+.rtl :is(.wpsr-prev-btn, .wpsr-next-btn) [class^="icon-angle-"] {
+  display: inline-block; // a transform does nothing on a plain inline box
+  transform: scaleX(-1);
+}
+
+// Dates are formatted in English ("09 Nov, 2026"); isolate them like <bdi> so RTL bidi doesn't reorder the parts.
+.wpsr-table-wrapper .wpsr-date,
+.wpsr-review-content-modal .wpsr-review-date {
+  unicode-bidi: plaintext;
+}

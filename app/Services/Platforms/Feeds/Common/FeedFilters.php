@@ -17,7 +17,7 @@ class FeedFilters
     private $platform;
 
     /**
-     * getTimestamp feed time handler
+     * Timestamp of a feed item
      *
      * @param array $feed
      * @param string|null $feed_type
@@ -35,7 +35,6 @@ class FeedFilters
         } elseif ($this->platform === 'instagram') {
             $date = Arr::get($feed, 'timestamp', null);
         } elseif ($this->platform === 'facebook_feed') {
-            // For event feeds, use start_time instead of created_time
             if ($feed_type === 'event_feed') {
                 $date = Arr::get($feed, 'start_time', null);
             } else {
@@ -54,7 +53,7 @@ class FeedFilters
     }
 
     /**
-     * filterFeedResponse filter the feed response
+     * Sort, filter and trim a feed response per the template's filter settings
      *
      * @param string $platform platform slug
      * @param array $feed_settings feed settings holding the filters
@@ -80,8 +79,7 @@ class FeedFilters
                 $globalSettings = $imageHandlerObj->getGlobalSettings();
                 if(Arr::get($globalSettings, 'optimized_images') === 'true') {
                     $resizedImages = $imageHandlerObj->getResizeNeededImageLists($feeds,  $feed_settings);
-                    // Some feed types (e.g. youtube single video) return an empty string
-                    // as header, so only decorate it when there is an actual header array.
+                    // Some feed types (e.g. youtube single video) send '' as the header.
                     if (is_array($header) && !empty($header)) {
                         $account_to_show = Arr::get($feed_settings, 'header_settings.account_to_show');
                         $header['account_id'] = $account_to_show;
@@ -96,13 +94,10 @@ class FeedFilters
                 $header = [];
             }
 
-            //filter by date
             $postOrder = Arr::get($filterSettings, 'post_order', 'ascending');
-            // Run sorting for ascending/descending as before, and also for the facebook_event_default option
             if (in_array($postOrder, ['ascending', 'descending', 'facebook_event_default'])) {
-                $multiply = ($postOrder === 'ascending') ? -1 : 1; // only meaningful for ascending/descending
+                $multiply = ($postOrder === 'ascending') ? -1 : 1;
                 usort($feeds, function ($m1, $m2) use ($multiply, $feed_type, $postOrder) {
-                    // Handle boolean values or invalid data
                     $timestamp1 = is_bool($m1) ? null : $this->getTimestamp($m1, $feed_type);
                     $timestamp2 = is_bool($m2) ? null : $this->getTimestamp($m2, $feed_type);
 
@@ -110,14 +105,11 @@ class FeedFilters
                         return apply_filters('wpsocialreviews/facebook_event_feed_sorting', $timestamp1, $timestamp2);
                     }
 
-                    // If both have dates
-                    // ascending means newest data come first
-                    // descending means oldest data come first
+                    // "ascending" puts the newest first, "descending" the oldest.
                     if ($timestamp1 !== null && $timestamp2 !== null) {
                         if($timestamp1 === $timestamp2) {
                             return 0;
                         }
-                        // Don't change ascending or descending order. Its already handled by newest and oldest.
                         if($timestamp1 < $timestamp2) {
                             return -1 * $multiply;
                         }
@@ -125,24 +117,21 @@ class FeedFilters
                         return 1 * $multiply;
                     }
 
-                    // If m2 has no date, consider it as more recent
+                    // An undated item counts as the more recent one.
                     if ($timestamp1 !== null) {
                         return $multiply;
                     }
 
-                    // If m1 has no date, consider it as more recent
                     if ($timestamp2 !== null) {
                         return -$multiply;
                     }
 
-                    // Neither have dates
                     return 0;
                 });
             }
 
             $map = [];
             if ($this->platform === 'instagram') {
-                //filter by popularity
                 if (($filterSettings['post_order'] === 'most_popular' || $filterSettings['post_order'] === 'least_popular')) {
                     $feeds = apply_filters('wpsocialreviews/instagram_feeds_by_popularity', $feeds,
                         $filterSettings['post_order']);
@@ -158,7 +147,6 @@ class FeedFilters
             }
 
             if ($this->platform === 'youtube') {
-                //filter by popularity
                 if (($filterSettings['post_order'] === 'most_popular' || $filterSettings['post_order'] === 'least_popular')) {
                     $feeds = apply_filters('wpsocialreviews/youtube_feeds_by_popularity', $feeds,
                         $filterSettings['post_order']);
@@ -166,7 +154,6 @@ class FeedFilters
             }
 
             if ($this->platform === 'twitter') {
-                //filter by popularity
                 if (($filterSettings['post_order'] === 'most_popular' || $filterSettings['post_order'] === 'least_popular')) {
                     $feeds = apply_filters('wpsocialreviews/twitter_feeds_by_popularity', $feeds,
                         $filterSettings['post_order']);
@@ -174,21 +161,18 @@ class FeedFilters
             }
 
             if ($this->platform === 'facebook_feed') {
-                //filter by popularity
                 if (in_array($filterSettings['post_order'], ['most_popular', 'least_popular'])) {
                     $feeds = apply_filters('wpsocialreviews/facebook_feeds_by_popularity', $feeds, $filterSettings['post_order']);
                 }
 
-                // Filter feeds by privacy, shared posts, and display type in a single loop
                 $feeds = array_filter($feeds, function ($feed) use ($filterSettings) {
 
-                    // 1. Only public posts
+                    // Only public posts.
                     $privacy = Arr::get($feed, 'privacy.value', 'EVERYONE');
                     if ($privacy !== 'EVERYONE') {
                         return false;
                     }
 
-                    // 2. Hide shared posts if required
                     if (Arr::get($filterSettings, 'hide_shared_posts') === true) {
                         $type = Arr::get($feed, 'attachments.data.0.type');
                         if ($type === 'native_templates') {
@@ -196,7 +180,6 @@ class FeedFilters
                         }
                     }
 
-                    // 3. Filter by display type
                     $display_posts = Arr::get($filterSettings, 'display_posts', []);
                     if (!empty($display_posts) && is_array($display_posts) && !in_array('all', $display_posts)) {
                         $type = Arr::get($feed, 'attachments.data.0.type');
@@ -210,30 +193,31 @@ class FeedFilters
                         }
                     }
 
-                    return true; // Keep this feed
+                    return true;
                 });
             }
 
             if ($this->platform === 'tiktok') {
-                //filter by popularity
                 if (($filterSettings['post_order'] === 'most_viewed' || $filterSettings['post_order'] === 'most_liked')) {
                     $feeds = apply_filters('wpsocialreviews/tiktok_feeds_by_popularity', $feeds,
                         $filterSettings['post_order']);
                 }
             }
 
-            //filter by randomly
             if ($filterSettings['post_order'] === 'random') {
-                $feeds = apply_filters('wpsocialreviews/feeds_by_random', $feeds);
+                // Pro shuffles through this filter; without Pro, core shuffles Instagram feeds only.
+                if (defined('WPSOCIALREVIEWS_PRO')) {
+                    $feeds = apply_filters('wpsocialreviews/feeds_by_random', $feeds);
+                } elseif ($this->platform === 'instagram') {
+                    $feeds = $this->shuffleFeeds($feeds);
+                }
             }
 
             $totalPosts = Arr::get($filterSettings, 'total_posts_number');
             $numOfPosts = wp_is_mobile() ? Arr::get($totalPosts, 'mobile') : Arr::get($totalPosts, 'desktop');
 
-            // Detect device type and override query if needed
             $numOfPosts = apply_filters('wpsocialreviews/responsive_post_count', $numOfPosts, $totalPosts);
 
-            //we have to get include or exclude feeds from here
             $includesWords = [];
             $excludesWords = [];
             $hidePostIds   = [];
@@ -393,11 +377,10 @@ class FeedFilters
                 // Use decoded text for filtering so fancy unicode can match
                 $filter_text = urldecode($post_caption);
 
-                //end of 1st filter: Numbers Of Posts To Display
                 $hasIncludeWord = false;
                 $hasExcludeWord = false;
                 if (!empty($includesWords)) {
-                    // If Pro is active, let Pro's filter handle; otherwise fallback to local matching
+                    // Pro does the word matching. Without Pro every post passes.
                     $hasIncludeWord = apply_filters('wpsocialreviews/include_or_exclude_feed', true, $includesWords, $filter_text);
 
                     if(!empty($text_title)) {
@@ -483,7 +466,6 @@ class FeedFilters
                 if ($isOk) {
                     if ($this->platform === 'instagram' && !$hasHidePost) {
                         $post_type = Arr::get($filterSettings, 'post_type');
-                        // 3rd filter: start of filters for Types Of Posts
                         if ($post_type === 'all') {
                             $filterResponse[] = $feed;
                         } elseif (isset($feed['media_type']) && ($feed['media_type'] === "IMAGE" || $feed['media_type'] === 'CAROUSEL_ALBUM') && $feed['media_name'] !== "VIDEO" && $post_type === 'images') {
@@ -532,7 +514,6 @@ class FeedFilters
                 continue;
             }
 
-            // Safe mb_stripos with fallback to stripos
             $position = function_exists('mb_stripos')
                 ? mb_stripos($haystack, $normalizedWord, 0, 'UTF-8')
                 : stripos($haystack, $normalizedWord, 0);
@@ -542,5 +523,28 @@ class FeedFilters
             }
         }
         return false;
+    }
+
+    /**
+     * Shuffle feeds, keeping their keys.
+     *
+     * @param array $feeds
+     * @return array
+     */
+    private function shuffleFeeds($feeds)
+    {
+        if (!is_array($feeds) || count($feeds) < 2) {
+            return $feeds;
+        }
+
+        $keys = array_keys($feeds);
+        shuffle($keys);
+
+        $shuffled = array();
+        foreach ($keys as $key) {
+            $shuffled[$key] = $feeds[$key];
+        }
+
+        return $shuffled;
     }
 }

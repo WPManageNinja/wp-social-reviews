@@ -16,7 +16,7 @@ defined('ABSPATH') or die;
 <div class="wpsr-tweet-content" <?php Helper::printInternalString($twitter_card_data_attrs);?>>
     <!--    tweet text-->
     <?php if (isset($template_meta['advance_settings']) && $template_meta['advance_settings']['tweet_text'] === 'true') { ?>
-        <p class="wpsr-tweet-text">
+        <p class="wpsr-tweet-text" dir="auto">
             <?php echo wp_kses_post(TwitterHelper::replaceTweetUrls($feed)); ?>
         </p>
     <?php } ?>

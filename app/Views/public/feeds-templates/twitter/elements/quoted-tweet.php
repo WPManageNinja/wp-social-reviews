@@ -29,7 +29,7 @@ defined('ABSPATH') or die;
             <div class="wpsr-tweet-author-username-time">
                 <?php
                 /**
-                 * tweet_author_info hook.
+                 * tweet_author_username and tweet_time hooks.
                  *
                  * @hooked wpsr_render_tweet_time_html 10
                  * @hooked wpsr_render_tweet_author_username_html 10

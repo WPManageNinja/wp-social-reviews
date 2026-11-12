@@ -31,7 +31,7 @@
               <img :src="account.avatar_url" :alt="account.display_name"/>
             </a>
             <div class="wpsr-feed-popup-group">
-              <div class="wpsr-feed-popup-user-name" v-if="settings.popup_settings.display_username === 'true'">
+              <div class="wpsr-feed-popup-user-name" dir="auto" v-if="settings.popup_settings.display_username === 'true'">
                 <a :href="account.profile_deep_link" target="_blank" :title="account.display_name">{{ account.display_name }}</a>
               </div>
               <div class="wpsr-feed-popup-date" v-if="settings.popup_settings.display_date === 'true' && feed.created_at">
@@ -43,7 +43,7 @@
             <div class="wpsr-feed-popup-comments-wrapper-inner">
               <div class="wpsr-feed-popup-comment" v-if="feed.text">
                 <div class="wpsr-feed-popup-comment-inner">
-                  <div class="wpsr-feed-popup-comment-text" v-if="settings.popup_settings.display_caption === 'true'">
+                  <div class="wpsr-feed-popup-comment-text" dir="auto" v-if="settings.popup_settings.display_caption === 'true'">
                     <p v-if="feed.text" v-html="tiktokTextValidate(feed.text)"></p>
                   </div>
                 </div>

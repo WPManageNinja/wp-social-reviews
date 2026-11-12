@@ -9,7 +9,7 @@
     />
 
     <div class="wpsr-platforms-wrapper-inner">
-      <!-- New tab navigation with proper icons -->
+      <!-- Tab navigation -->
       <div class="wpsr-platform-tabs">
           <div class="wpsr-tab-buttons">
         <button
@@ -82,8 +82,7 @@
       <div v-if="isEditorMode || !isLoading" class="wpsr-all-platforms">
 
 
-      <!-- social feeds - wrap with v-show -->
-      <!-- Add this new section for search results -->
+      <!-- Social feeds -->
       <div class="wpsr-platforms-group" v-if="(activeTab === 'all' || activeTab === 'feeds') && filteredSocialFeeds.length">
         <el-row>
           <el-col :span="24">
@@ -199,7 +198,7 @@
 
       
 
-      <!-- social chats - wrap with v-show -->
+      <!-- Social chats -->
       <div class="wpsr-platforms-group" v-if="shouldShowChatWidget">
         <el-row>
             <el-col :span="24">
@@ -275,17 +274,15 @@ export default {
     },
     data() {
       return {
-        // Add a loading state
         isLoading: true,
         activeTab: 'all',
         templateId: null,
         searchQuery: '',
-        activeSearchQuery: '', // The actual search term used for filtering
-        showSearch: false, // Add search visibility state
+        activeSearchQuery: '',
+        showSearch: false,
         showScreenOptions: false,
         updatingScreenOptions: false,
         updateTimeout: null,
-        //feed modal settings
         showTwitterFeedModal: false,
         showFacebookFeedModal: false,
         showTiktokFeedModal: false,
@@ -305,7 +302,6 @@ export default {
         credentialsType : 'oauth',
         platform_type: '',
 
-        // Social feeds configuration
         socialFeeds: [
           { id: 'instagram', name: 'Instagram', icon: 'icon-instagram.png', modalKey: 'instagramSettingModal' },
           { id: 'facebook_feed', name: 'Facebook', icon: 'icon-facebook-small.png', modalKey: 'showFacebookFeedModal' },
@@ -313,8 +309,7 @@ export default {
           { id: 'tiktok', name: 'TikTok', icon: 'icon-tiktok.png', modalKey: 'showTiktokFeedModal' },
           { id: 'twitter', name: 'X (Twitter)', icon: 'icon-twitter.png', modalKey: 'showTwitterFeedModal' },
         ],
-        // Screen options - Source of truth for enabled/disabled platforms
-        // This state is passed to ScreenOptionsDrawer and updated via events
+        // Source of truth for platform visibility. ScreenOptionsDrawer updates it via events.
         screenOptions: {
           feeds: {
             instagram: true,
@@ -332,7 +327,7 @@ export default {
             aliexpress: true,
             facebook: true,
             woocommerce: true,
-            trustpilot: true,
+            ...(this.appVars.tp_slug && this.appVars.tp_slug !== '_not_defined_yet_' ? { [this.appVars.tp_slug]: true } : {}),
             'booking.com': true,
             'fluent-cart': true,
             custom_sources: true
@@ -346,10 +341,8 @@ export default {
       }
     },
     computed: {
-      // Platform filtering
       filteredPlatforms() {
         if (!this.activeSearchQuery) {
-          // Filter by enabled state in screenOptions.reviews
           return this.platforms.filter(platform =>
               this.screenOptions.reviews[platform.platform]
           );
@@ -364,7 +357,6 @@ export default {
 
       filteredSocialFeeds() {
         if (!this.activeSearchQuery) {
-          // Filter by enabled state in screenOptions.feeds
           return this.socialFeeds.filter(feed => {
             const platformKey = feed.id;
             return this.screenOptions.feeds[platformKey];
@@ -380,32 +372,26 @@ export default {
       },
 
       hasReviewsToShow() {
-        // Show feeds tab if any feeds are enabled in screen options, regardless of search
         return Object.values(this.screenOptions.reviews).some(enabled => enabled);
       },
 
-      // Visibility helpers
       showChatWidget() {
         return this.screenOptions.chats.allinone;
       },
 
       shouldShowChatWidget() {
-        // First check if chat widget is enabled
         if (!this.showChatWidget) {
           return false;
         }
 
-        // Check if we're on the right tab
         if (!(this.activeTab === 'all' || this.activeTab === 'chats')) {
           return false;
         }
 
-        // If there's no active search, show the chat widget
         if (!this.activeSearchQuery) {
           return true;
         }
 
-        // If there's a search, only show if it matches chat-related terms
         const searchTerm = this.activeSearchQuery.toLowerCase();
         return searchTerm.includes('chat') ||
                searchTerm.includes('social') ||
@@ -414,23 +400,19 @@ export default {
       },
 
       hasFeedsToShow() {
-        // Show feeds tab if any feeds are enabled in screen options, regardless of search
         return Object.values(this.screenOptions.feeds).some(enabled => enabled);
       },
 
-      // Check if we're in editor mode (when templateId exists or route name contains 'edit')
       isEditorMode() {
         return !!this.templateId || (this.$route && this.$route.name && this.$route.name.includes('edit'));
       },
     },
 
     methods: {
-      // Tab and UI methods
       changeTab(tabName) {
         this.isLoading = true;
         this.activeTab = tabName;
 
-        // Simulate loading time and hide loader after a short delay
         setTimeout(() => {
           this.isLoading = false;
         }, 300);
@@ -453,10 +435,9 @@ export default {
       },
       updatePlatformsStatuses(newOptions) {
 
-        this.screenOptions = newOptions; // Update local state first
+        this.screenOptions = newOptions;
         this.updatingScreenOptions = true;
 
-        // Prepare the payload with the correct structure
         const payload = {
           statuses: {
             feeds: { ...newOptions.feeds },
@@ -465,46 +446,42 @@ export default {
           }
         };
 
-        // Clear any existing timeout
         if (this.updateTimeout) {
           clearTimeout(this.updateTimeout);
         }
 
-        // Set a new timeout to debounce the API call
         this.updateTimeout = setTimeout(() => {
           this.$post('platforms/update-statuses', payload)
               .then(response => {
                 if (response) {}
-                this.updatingScreenOptions = false; // Set updating to false on success
+                this.updatingScreenOptions = false;
               })
               .catch(error => {
                 this.handleError(error);
-                this.updatingScreenOptions = false; // Set updating to false on error
+                this.updatingScreenOptions = false;
               });
-        }, 300); // 300ms debounce
+        }, 300);
       },
       fetchPlatformStatuses() {
         this.updatingScreenOptions = true;
-        this.isLoading = true; // Ensure loading is true at start
+        this.isLoading = true;
         this.$get('platforms/get-statuses')
             .then(response => {
               if (response && response.statuses) {
-                // Get platform statuses from response or use empty objects
                 const platformsStatuses = response.statuses.platforms_statuses || {
                   feeds: {},
                   reviews: {},
                   chats: {}
                 };
 
-                // Temporarily disable the watch by setting updatingScreenOptions
+                // Keeps the screenOptions watcher from saving this load back.
                 this.updatingScreenOptions = true;
 
-                // Merge with our default values to ensure all platforms have values
                 this.screenOptions = {
                   feeds: {
                     instagram: true,
                     youtube: true,
-                    facebook_feed: true,  // Ensure facebook_feed is included
+                    facebook_feed: true,
                     twitter: true,
                     tiktok: true,
                     ...platformsStatuses.feeds
@@ -519,7 +496,7 @@ export default {
                     'booking.com': true,
                     facebook: true,
                     woocommerce: true,
-                    trustpilot: true,
+                    ...(this.appVars.tp_slug && this.appVars.tp_slug !== '_not_defined_yet_' ? { [this.appVars.tp_slug]: true } : {}),
                     'fluent-cart': true,
                     custom_sources: true,
                     ...platformsStatuses.reviews
@@ -530,13 +507,10 @@ export default {
                   }
                 };
 
-                // Use setTimeout to ensure the watch doesn't trigger immediately
+                // Unpause only after the watcher has seen this change.
                 setTimeout(() => {
-                  // Mark initial load as complete AFTER setting screenOptions
                   this.initialLoadComplete = true;
-                  // Re-enable the watch
                   this.updatingScreenOptions = false;
-                  // Set loading to false to show the content
                   this.isLoading = false;
                 }, 100);
               } else {
@@ -586,24 +560,21 @@ export default {
         this.activeSearchQuery = '';
       },
       handleSearchInput() {
-        // Auto-show search when typing (but don't filter until Enter is pressed)
+        // Show the search box while typing; filtering waits for Enter.
         if (this.searchQuery && !this.showSearch) {
           this.showSearch = true;
         }
 
-        // Clear active search if input is empty
         if (!this.searchQuery.trim()) {
           this.activeSearchQuery = '';
         }
       },
       handleSearchEnter() {
         if (!this.searchQuery.trim()) {
-          // Clear search if empty
           this.activeSearchQuery = '';
           return;
         }
 
-        // Set the active search query to trigger filtering
         this.activeSearchQuery = this.searchQuery.trim();
       },
       toggleSearch() {
@@ -780,9 +751,8 @@ export default {
         };
       },
       wpsrClearConsumedConfiguration() {
-        // Reset the one-shot auth trigger once the reviews child has applied it,
-        // so switching tabs (which destroys/re-mounts the v-if'd child) does not
-        // reopen the connection modal.
+        // Reset the one-shot trigger, or re-mounting the v-if'd child on a tab
+        // switch reopens the connection modal.
         this.configurationInfo = {};
       },
       wpsrConsumeAuthResult(flowId, payload, authPlatform) {
@@ -871,7 +841,6 @@ export default {
         this.platFormName = platform;
         if (platform === 'facebook_feed') {
           this.showFacebookFeedModal = true;
-          // this.expiresIn = expires_in;
         } else if ( platform === 'tiktok'){
           this.showTiktokFeedModal = true;
         }
@@ -893,16 +862,13 @@ export default {
           }
           window.history.pushState({}, null, this.admin_page_url + '#/');
         } else {
-          // Navigate to edit template route when templateId is found
           const page = this.urlParams.get('page');
           
-          // Build the target URL to match the exact format needed
           const baseUrl = window.location.origin + window.location.pathname;
           const queryParams = new URLSearchParams({
             page: page
           });
           
-          // Hash route parameters - these go directly in the hash part
           const hashQueryParams = new URLSearchParams({
             configuration: 'true',
             platform: platform,
@@ -911,7 +877,6 @@ export default {
             expires_in: expires_in
           });
 
-          // check platform is feed or reviews
           this.platform_type = ['instagram', 'facebook_feed', 'tiktok'].includes(platform) ? 'feeds' : 'reviews';
           
           let targetUrl = '';
@@ -922,10 +887,9 @@ export default {
             targetUrl = `${baseUrl}?${queryParams.toString()}#/edit-${this.handlePlatformName(platform)}-template/${templateId}?${hashQueryParams.toString()}`;
           }
           
-          // Force URL update using replaceState
           window.history.replaceState({}, '', targetUrl);
           
-          // Force page reload to ensure navigation works
+          // Full reload so the edit route picks up the params.
           setTimeout(() => {
             window.location.href = targetUrl;
           }, 100);
@@ -949,17 +913,14 @@ export default {
     watch: {
       screenOptions: {
         handler(newVal, oldVal) {
-          // Skip the initial watch trigger that happens on component creation
           if (!this.initialLoadComplete) {
             return;
           }
 
-          // Skip if we're currently updating from an API call
           if (this.updatingScreenOptions) {
             return;
           }
 
-          // Debounce updates to prevent multiple rapid API calls
           if (this.updateTimeout) {
             clearTimeout(this.updateTimeout);
           }

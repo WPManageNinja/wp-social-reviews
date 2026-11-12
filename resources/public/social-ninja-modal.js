@@ -10,13 +10,12 @@ import Helper, { wpsrRelayoutMasonry } from './helper.js';
 window.wpsrHelper = Helper;
 
 jQuery(document).ready(function ($) {
-    //render youtube popup
     $(document).on('click', '.wpsr-yt-video-playmode', function (e) {
         YoutubePopup.init(e, this);
     });
 
-    // template5's whole row looks clickable, but only the thumbnail/title are wired, so forward the rest here
-    // dispatchEvent rather than jQuery's .trigger(), which gets swallowed by its own re-entrancy guard
+    // template5's whole row looks clickable, but only the thumbnail/title are wired, so forward the rest here.
+    // dispatchEvent rather than jQuery's .trigger(), which its own re-entrancy guard swallows.
     $(document).on('click', '.wpsr-yt-feed-template5 .wpsr-yt-all-feed .wpsr-yt-video', function (e) {
         if ($(e.target).closest('.wpsr-yt-video-playmode').length) {
             return;
@@ -27,17 +26,14 @@ jQuery(document).ready(function ($) {
         }
     });
 
-    // render twitter popup html
     $(document).on('click', '.wpsr-twitter-playmode', function (e) {
         TwitterPopup.init(e, this);
     });
 
-    // render instagram popup html
     $(document).on('click', '.wpsr-ig-playmode', function (e) {
         InstagramPopup.init(e, this);
     });
 
-    //render facebook popup html
     $(document).on('click', '.wpsr-fb-feed-playmode', function (e) {
         FacebookPopup.init(e, this);
     });
@@ -46,7 +42,6 @@ jQuery(document).ready(function ($) {
         TiktokPopup.init(e, this);
     });
 
-    // render instagram popup html
     $(document).on('click', '.wpsr-review-photos-playmode', function (e) {
         ReviewPhotos.init(e, this);
     });
@@ -148,7 +143,6 @@ jQuery(document).ready(function ($) {
         }
     });
 
-    //Read More and Read Less Click Event binding
     $(document).on("click", ".wpsr_read_more, .wpsr_read_less", function () {
         $(this).closest(".wpsr-yt-popup-video-meta-description, .wpsr-yt-popup-video-comment-text-inner").toggleClass("wpsr_show_less_content wpsr_show_more_content");
         // The card's own container, so a second template on the page keeps its columns.

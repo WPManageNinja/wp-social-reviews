@@ -39,7 +39,7 @@
                         <a class="wpsr-feed-popup-user-photo" :href="'https://www.twitter.com/'+feed.user.username" target="_blank" :title="feed.user.username" v-if="settings.popup_settings.avatar_image === 'true'">
                             <img :src="feed.user.profile_image_url" />
                         </a>
-                        <div class="wpsr-feed-popup-user-name" v-if="feed.user.username && ( settings.popup_settings.user_name === 'true' || settings.popup_settings.author_name === 'true' )">
+                        <div class="wpsr-feed-popup-user-name" dir="auto" v-if="feed.user.username && ( settings.popup_settings.user_name === 'true' || settings.popup_settings.author_name === 'true' )">
                             <p v-if="feed.user.name && settings.popup_settings.author_name === 'true'">{{ feed.user.name }}</p>
                             <a v-if="settings.popup_settings.user_name === 'true'" :href="'https://www.twitter.com/' + feed.user.username" target="_blank" :title="feed.user.username">@{{feed.user.username}}</a>
                         </div>
@@ -47,7 +47,7 @@
                     <div class="wpsr-feed-popup-comments-wrapper" v-if="settings.popup_settings.tweet_text === 'true'">
                         <div class="wpsr-feed-popup-comment" v-if="feed.user">
                             <div class="wpsr-feed-popup-comment-inner">
-                                <div class="wpsr-feed-popup-comment-text">
+                                <div class="wpsr-feed-popup-comment-text" dir="auto">
                                     <tweet :feed="feed"></tweet>
                                 </div>
                                 <div class="wpsr-feed-popup-comment-meta" v-if="settings.popup_settings.display_date === 'true' && feed.created_at">

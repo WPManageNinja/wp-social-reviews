@@ -20,8 +20,6 @@ class Review extends Model
     const VISITOR_SEARCH_MAX_ROWS = 300;
 
     /**
-     * The attributes that are mass assignable.
-     *
      * @var array
      */
     protected $casts = [
@@ -29,6 +27,14 @@ class Review extends Model
         'rating' => 'integer',
         'fields' => 'json'
     ];
+
+    /**
+     * Memo for "does this site have any custom reviews". A property, not a function
+     * static, so it can be reset when the answer changes within one process.
+     *
+     * @var bool|null
+     */
+    protected static $customReviewsCache = null;
 
     /**
      * Eager-load with `Review::with('categories')` in listings to avoid N+1.
@@ -60,7 +66,7 @@ class Review extends Model
     ];
 
     /**
-     * $searchable Columns in table to search
+     * Columns searched by SearchableScope.
      * @var array
      */
     protected $searchable = [
@@ -104,13 +110,10 @@ class Review extends Model
 
         $validTemplatePlatforms = array_intersect($platforms, array_keys($activePlatforms));
 
-        //add custom with platforms if custom reviews exists
-        // Cache this check to avoid repeated queries
-        static $customReviewsCache = null;
-        if ($customReviewsCache === null) {
-            $customReviewsCache = self::where('platform_name', 'custom')->exists();
+        if (static::$customReviewsCache === null) {
+            static::$customReviewsCache = self::where('platform_name', 'custom')->exists();
         }
-        if ($customReviewsCache && in_array("custom", $platforms)) {
+        if (static::$customReviewsCache && in_array("custom", $platforms)) {
             $index                          = array_search('custom', $platforms);
             $validTemplatePlatforms[$index] = 'custom';
         }
@@ -121,7 +124,6 @@ class Review extends Model
 
         if (!empty($validTemplatePlatforms)) {
             $filteredReviews = self::filteredReviewsQuery($validTemplatePlatforms, $settings)->get();
-	        // Check if this is an initial load for editor with load more enabled
 	        $isEditorInitialLoad = Arr::get($settings, 'is_editor_initial_load', false);
 	        if ($isEditorInitialLoad) {
 		        $totalReviewsNumber = Arr::get($settings, 'totalReviewsNumber.desktop', 50);
@@ -145,7 +147,6 @@ class Review extends Model
         );
     }
 
-    //all filtered reviews
     public static function filteredReviewsQuery($platforms, $filters)
     {
         $includeIds = Arr::get($filters, 'selectedIncList', []);
@@ -165,14 +166,10 @@ class Review extends Model
         if (!empty($platforms)) {
             $reviews = $reviews->whereIn('platform_name', $platforms);
 
-            // Applies to every selected platform, not a whitelist. The previous gate
-            // on Helper::getPlatformsWithCategories() assumed only editable reviews
-            // could be categorised; any review can now be tagged, so that gate meant a
-            // Google template with a category selected silently returned everything.
+            // Applies to every selected platform: any review can be categorised.
             if (count($categoryIds) && ReviewCategoriesMigrator::tablesExist()) {
-                // Ids survive a rename; names do not. Authoritative even when every id
-                // has been deleted — falling back to names there would widen the
-                // template to every review instead of the empty result it should give.
+                // Ids survive a rename. Authoritative even when every id is deleted:
+                // falling back to names would widen the template to every review.
                 $reviews = $reviews->whereHas('categories', function ($relationQuery) use ($categoryIds) {
                     $relationQuery->whereIn('wpsr_review_categories.id', $categoryIds);
                 });
@@ -182,16 +179,12 @@ class Review extends Model
                 };
 
                 if (!ReviewCategoriesMigrator::tablesExist()) {
-                    // The migration runs from wp-admin only, so a front-end request
-                    // can land here first on a site that has been updated but not yet
-                    // opened in the dashboard. Referencing the relation would fail the
-                    // whole query and render an empty template, so match on the
-                    // `category` column, which still holds every value at this point.
+                    // The migration runs from wp-admin only, so the front end can get here
+                    // first. The relation would fail the query; the column still holds every value.
                     $reviews = $reviews->whereIn('category', $categories);
                 } elseif (ReviewCategoriesMigrator::isBackfilled()) {
-                    // Pivot is authoritative. The `category` column must NOT be read
-                    // here: nothing clears it, so an unassigned category would keep
-                    // matching and "remove category" would appear to do nothing.
+                    // Pivot is authoritative. Nothing clears the `category` column, so reading
+                    // it would keep matching categories the user has unassigned.
                     $reviews = $reviews->whereHas('categories', $categoryMatch);
                 } else {
                     // Until the backfill finishes some categories exist only in the
@@ -211,7 +204,6 @@ class Review extends Model
 
         $reviews = self::applyReviewOrder($reviews, $order, $filters);
 
-        //filter by star rating
         if($starFilterVal !== -1) {
             $reviews = $reviews->where('rating', '>=', $filters['starFilterVal']);
         }
@@ -220,15 +212,13 @@ class Review extends Model
         $reviews = self::applyVisitorRatingFilter($reviews, $filters);
         $reviews = self::applyVisitorSearchFilter($reviews, $filters);
 
-        //filter by empty reviews
         if($hideEmptyReviews) {
             $reviews->where('reviewer_text', '!=', '');
         }
 
-        //filter by included or excluded
         if ($filterByTitle === 'include' && count($includeIds)) {
             $includeIds = array_unique(array_map('intval', $includeIds));
-            // Chunk large arrays to avoid very long IN clauses
+            // Chunk large lists to keep IN clauses short.
             $chunkSize = 100;
             if (count($includeIds) <= $chunkSize) {
                 $reviews = $reviews->whereIn('id', $includeIds);
@@ -249,13 +239,10 @@ class Review extends Model
         }
         if ($filterByTitle === 'exclude' && count($excludeIds)) {
             $excludeIds = array_unique(array_map('intval', $excludeIds));
-            // Chunk large arrays to avoid very long NOT IN clauses
             $chunkSize = 100;
             if (count($excludeIds) <= $chunkSize) {
                 $reviews = $reviews->whereNotIn('id', $excludeIds);
             } else {
-                // For NOT IN with chunks, we need to use whereNotIn for each chunk
-                // This is less efficient but necessary for very large arrays
                 foreach (array_chunk($excludeIds, $chunkSize) as $chunk) {
                     $reviews = $reviews->whereNotIn('id', $chunk);
                 }
@@ -263,16 +250,12 @@ class Review extends Model
         }
 
         if(!empty($selectedBusinesses)) {
-            // Chunk large arrays to avoid very long IN clauses which are slow
-            // MySQL has a limit on the number of items in an IN clause, and large IN clauses are slow
-            $chunkSize = 100; // Optimal chunk size for MySQL performance
+            $chunkSize = 100;
             $selectedBusinesses = array_unique($selectedBusinesses);
             
             if (count($selectedBusinesses) <= $chunkSize) {
-                // Small array, use single query
                 $reviews = $reviews->whereIn('source_id', $selectedBusinesses);
             } else {
-                // Large array, use chunked queries with OR conditions
                 $reviews->where(function($query) use ($selectedBusinesses, $chunkSize) {
                     $chunks = array_chunk($selectedBusinesses, $chunkSize);
                     $firstChunk = true;
@@ -288,35 +271,26 @@ class Review extends Model
             }
         }
 
-        //filter by words
         $reviews = static::filterReviewsByWords($reviews, $filters);
 
-        //filtered by total reviews
         $totalReviews = Arr::get($filters, 'totalReviewsNumber');
         $numOfReviews = wp_is_mobile() ? Arr::get($totalReviews, 'mobile') : Arr::get($totalReviews, 'desktop');
-        // Detect device type and override query if needed
         $numOfReviews = apply_filters('wpsocialreviews/responsive_post_count', $numOfReviews, $totalReviews);
 
-        // Check if this is an initial load for editor with load more enabled
         $isEditorInitialLoad = Arr::get($filters, 'is_editor_initial_load', false);
 
-        // Layouts without a load more control in the editor preview (slider, badge and
-        // notification) must not be capped to the paginate value, otherwise the preview is
-        // permanently stuck on the first batch with no way to pull the remaining reviews.
+        // Slider, badge and notification have no load more in the editor preview, so capping
+        // them to the paginate value would strand the preview on the first batch.
         $editorTemplateType = Arr::get($filters, 'templateType', 'grid');
-        $supportsEditorLoadMore = !in_array($editorTemplateType, array('slider', 'badge', 'notification'), true);
+        $supportsEditorLoadMore = Helper::layoutHasLoadMore($editorTemplateType) && !in_array($editorTemplateType, array('badge', 'notification'), true);
 
         if ($isEditorInitialLoad) {
-            // For include/exclude (hand-pick reviews), load all based on Number of Reviews setting
-            // For normal pagination, limit to paginate value
+            // Hand-picked reviews and no-load-more layouts use Number of Reviews (0 = no limit).
             if ($filterByTitle === 'include' || $filterByTitle === 'exclude' || !$supportsEditorLoadMore) {
-                // When using include/exclude, load all reviews based on Number of Reviews setting
                 if ($numOfReviews > 0) {
                     $reviews = $reviews->limit((int)$numOfReviews);
                 }
-                // If numOfReviews is not set, load all selected reviews (no limit)
             } else {
-                // Normal pagination behavior - limit to paginate value for load more
                 $paginateNumber = Arr::get($filters, 'paginate_number');
                 $fallbackPaginate = (int) Arr::get($filters, 'paginate', 6);
                 $paginate = wp_is_mobile() ? (int) Arr::get($paginateNumber, 'mobile', $fallbackPaginate) : (int) Arr::get($paginateNumber, 'desktop', $fallbackPaginate);
@@ -326,42 +300,6 @@ class Review extends Model
         } elseif($numOfReviews > 0) {
             $reviews = $reviews->limit((int)$numOfReviews);
         }
-
-//        $multiBusinessInfo = Helper::getBusinessInfoByPlatforms($platforms);
-
-//        $freq = array();
-//        foreach ($selectedBusinesses as $businessId) {
-//            $platform = Arr::get($multi_business_info, 'platforms.' . $businessId . '.platform_name', '');
-//            if (!empty($platform)) {
-//                if (isset($freq[$platform])) {
-//                    $freq[$platform]++;
-//                } else {
-//                    $freq[$platform] = 1;
-//                }
-//            }
-//            else {
-//                unset($selectedBusinesses[$businessId]);
-//            }
-//        }
-
-//        $selected = [];
-//        $notSelected = [];
-//        foreach ($platforms as $platform) {
-//            if(isset($freq[$platform]) && $freq[$platform]>=1) {
-//                $selected[] = $platform;
-//            } else {
-//                $notSelected[] = $platform;
-//            }
-//        }
-
-//        if(!empty($notSelected)) {
-//            $query1 = $reviews->where('platform_name', $notSelected);
-//        }
-//
-//        if(!empty($selectedBusinesses)) {
-//            $query2 = $reviews->where('source_id', $selectedBusinesses);
-//        }
-
 
         return $reviews;
     }
@@ -472,13 +410,11 @@ class Review extends Model
 
     public static function filterReviewsByWords($reviews, $filters)
     {
-        //filter by words
         $includesWords = $excludesWords = [];
         if (!empty($filters['includes_inputs'])) {
             $includesWords = static::parseReviewFilterWords($filters['includes_inputs']);
         }
 
-        //only have excludes inputs
         if (!empty($filters['excludes_inputs'])) {
             $excludesWords = static::parseReviewFilterWords($filters['excludes_inputs']);
         }
@@ -506,7 +442,6 @@ class Review extends Model
             });
         }
 
-        //only have excludes inputs
         if (!empty($excludesWords)) {
             $reviews->where(function ($query) use ($excludesWords) {
                 foreach($excludesWords as $word) {
@@ -547,7 +482,6 @@ class Review extends Model
 
     public static function paginatedReviews($platforms, $filters = array(), $page = 1, $knownTotal = null)
     {
-        // Get responsive paginate value
         $paginateNumber = Arr::get($filters, 'paginate_number');
         $fallbackPaginate = (int) Arr::get($filters, 'paginate', 6);
         $paginate = wp_is_mobile() ? (int) Arr::get($paginateNumber, 'mobile', $fallbackPaginate) : (int) Arr::get($paginateNumber, 'desktop', $fallbackPaginate);
@@ -557,10 +491,9 @@ class Review extends Model
         $paginationType = Arr::get($filters, 'pagination_type', '');
         $templateType   = Arr::get($filters, 'templateType', 'grid');
 
-        // Get the filtered query with all conditions applied
         $filterReviewsQuery = self::filteredReviewsQuery($platforms, $filters);
         
-        $usesLoadMore = ($paginationType === 'load_more' && $templateType !== 'slider');
+        $usesLoadMore = ($paginationType === 'load_more' && Helper::layoutHasLoadMore($templateType));
 
         // '%term%' cannot use an index, so a search skips the COUNT and probes one row past the page instead.
         $searchActive = Helper::sanitizeVisitorSearch(Arr::get($filters, 'visitorSearch', '')) !== ''
@@ -587,10 +520,9 @@ class Review extends Model
             $totalFilterReviews = max(0, (int) $knownTotal);
         }
 
-        // Answered by the probe row below when it runs; otherwise the total decides, as it always did.
+        // Set by the probe row below when it runs; otherwise the total decides.
         $hasMore = null;
 
-        // activate pagination
         if ($usesLoadMore) {
             // Trim the last page only against a total this request counted itself; a stale one would hide reviews.
             if ($serverCountedTotal && $totalFilterReviews > 0) {
@@ -656,11 +588,11 @@ class Review extends Model
             $reviewIds = array_column(json_decode($reviewsData['all_reviews'], true),"id");
             $reviewsLists = array();
             if ($templateMeta['filterByTitle'] === 'include') {
-                $reviewsLists = $templateMeta['selectedIncList'];
+                $reviewsLists = (array) Arr::get($templateMeta, 'selectedIncList', []);
                 $commonLists = array_intersect($reviewsLists,$reviewIds);
                 $templateMeta['selectedIncList'] = $commonLists;
             } else if ($templateMeta['filterByTitle'] === 'exclude') {
-                $reviewsLists = $templateMeta['selectedExcList'];
+                $reviewsLists = (array) Arr::get($templateMeta, 'selectedExcList', []);
                 $commonLists = array_intersect($reviewsLists,$reviewIds);
                 $templateMeta['selectedExcList'] = $commonLists;
             }
@@ -721,7 +653,7 @@ class Review extends Model
 
 	/**
 	 * Category names for the "Filter by Category" dropdown. Mirrors the source
-	 * getReviews() filters on, so it never offers an unmatchable option.
+	 * filteredReviewsQuery() filters on, so it never offers an unmatchable option.
 	 */
 	public static function getCategories()
 	{

@@ -16,15 +16,15 @@
                     <div class="wpsr-rating-and-count wpsr-reviews-header-template-2-overall-rating-wrapper">
                         <!-- Platform Icons/Logo -->
                         <div v-if="hasMultipleBusinesses" class="wpsr-business-info-paltforms wpsr-reviews-header-template-2-platforms">
-                            <div v-for="(platform, index ) in filteredPlatforms"
-                                :key="index"
-                                class="wpsr-reviews-header-template-2-platform-item"
-                                v-if="shouldShowPlatformIcon(platform)">
-                                <img :src="get_platform_icon(platform.platform_name, 'small')" :alt="platform.platform_name">
-                            </div>
+                            <template v-for="(platform, index ) in filteredPlatforms" :key="index">
+                                <div class="wpsr-reviews-header-template-2-platform-item"
+                                    v-if="shouldShowPlatformIcon(platform) && get_platform_icon(platform.platform_name, 'small')">
+                                    <img :src="get_platform_icon(platform.platform_name, 'small')" :alt="platform.platform_name">
+                                </div>
+                            </template>
                         </div>
 
-                        <div v-else-if="shouldShowSinglePlatformIcon" class="wpsr-business-info-logo wpsr-reviews-header-template-2-logo">
+                        <div v-else-if="shouldShowSinglePlatformIcon && get_platform_icon(businessInfo.platform_name, 'default')" class="wpsr-business-info-logo wpsr-reviews-header-template-2-logo">
                             <img :src="get_platform_icon(businessInfo.platform_name, 'default')" :alt="businessInfo.platform_name">
                         </div>
 
@@ -100,7 +100,7 @@
                             </template>
                         </div>
                     </div>
-                    <!-- Clear filter button (only show when filter is active) -->
+                    <!-- Clear filter button -->
                     <div v-if="hasActiveFilter" class="wpsr-reviews-header-template-2-clear-filter">
                         <p class="wpsr-clear-filter" @click="clearRatingFilter">
                             {{$t('See All reviews')}}
@@ -135,7 +135,6 @@ export default {
       BusinessModalBtn,
     },
     methods: {
-        // Override the template-specific classes method for Template2
         getTemplateSpecificClasses(baseClasses) {
             return [
                 'wpsr-template-2-wrapper',
@@ -146,17 +145,15 @@ export default {
         },
 
         handleRatingFilter(type, minRating, maxRating) {
-            // Emit event to parent components to handle filtering
             this.$emit('rating-filter', {
                 type: type, // 'star' or 'booking'
                 minRating: minRating,
                 maxRating: maxRating,
-                filterType: 'rating' // This will help distinguish from future sorting events
+                filterType: 'rating'
             });
         },
 
         clearRatingFilter() {
-            // Emit clear filter event
             this.$emit('rating-filter', {
                 type: 'clear',
                 filterType: 'clear'

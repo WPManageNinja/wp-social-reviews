@@ -1,0 +1,91 @@
+@import "layout-mixins";
+
+.wpsr-reviews-layout-style-score_slider {
+  container-type: inline-size;
+
+  > .wpsr-container {
+    display: grid;
+    grid-template-columns: clamp(200px, 24%, 280px) minmax(0, 1fr);
+    column-gap: 40px;
+    align-items: center;
+
+    > * {
+      grid-column: 2;
+      min-width: 0;
+    }
+
+    > .wpsr-business-info-wrapper {
+      grid-column: 1;
+      grid-row: 1 / span 3;
+    }
+  }
+
+  &.wpsr-reviews-wrapper {
+    > .wpsr-container > .wpsr-row,
+    .wpsr-business-info-wrapper .wpsr-row {
+      margin-left: 0;
+      margin-right: 0;
+    }
+  }
+
+  .wpsr-business-info-wrapper {
+    .wpsr-business-info {
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      padding: 28px 18px;
+      text-align: center;
+    }
+
+    .wpsr-business-info-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .wpsr-business-info-paltforms,
+    .wpsr-business-info-logo,
+    .wpsr-rating-and-count {
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .wpsr-business-info-right {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      border-left: none;
+    }
+  }
+
+  .wpsr-fixed-height .wpsr-business-info {
+    background-color: transparent;
+  }
+
+  .wpsr-reviews-slider .swiper-wrapper {
+    align-items: stretch;
+  }
+
+  .wpsr-reviews-slider .swiper-slide {
+    @include wpsr-stretch-card;
+    height: auto;
+  }
+
+  @include wpsr-stretched-skins;
+
+  @container (max-width: 720px) {
+    > .wpsr-container {
+      grid-template-columns: minmax(0, 1fr);
+
+      > *,
+      > .wpsr-business-info-wrapper {
+        grid-column: 1;
+        grid-row: auto;
+      }
+    }
+  }
+}

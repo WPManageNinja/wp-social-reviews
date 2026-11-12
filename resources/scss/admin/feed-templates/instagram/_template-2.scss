@@ -1,34 +1,14 @@
 .wpsr-ig-feed-template2{
+  // Posts drop their margin here, so the default gap needs a row gap matching the 30px gutter.
+  .wpsr-column-gap-default [class*="wpsr-col"],
+  &.wpsr-column-gap-default [class*="wpsr-col"]{
+    margin-bottom: 30px;
+  }
   .wpsr-instagram-masonry-activate{
     .wpsr-ig-post{
       height: initial;
     }
   }
-  //.wpsr-column-gap-no_gap{
-  //  [class*="wpsr-col"]{
-  //    margin-bottom: 0;
-  //  }
-  //}
-  //.wpsr-column-gap-narrow{
-  //  [class*="wpsr-col"]{
-  //    margin-bottom: 10px;
-  //  }
-  //}
-  //.wpsr-column-gap-small{
-  //  [class*="wpsr-col"]{
-  //    margin-bottom: 20px;
-  //  }
-  //}
-  //.wpsr-column-gap-wide{
-  //  [class*="wpsr-col"]{
-  //    margin-bottom: 40px;
-  //  }
-  //}
-  //.wpsr-column-gap-wider{
-  //  [class*="wpsr-col"]{
-  //    margin-bottom: 50px;
-  //  }
-  //}
 
   .wpsr-ig-post{
     margin-bottom: initial;

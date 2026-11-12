@@ -183,6 +183,7 @@ class YoutubeWidget extends Widget_Base {
                 'size_units' => ['px', 'em', '%'],
                 'selectors' => [
                     '{{WRAPPER}} .wpsr-yt-header-info .wpsr-yt-header-channel-statistics .wpsr-yt-header-statistic-item' => 'margin-right: {{SIZE}}{{UNIT}};',
+                    'body.rtl {{WRAPPER}} .wpsr-yt-header-info .wpsr-yt-header-channel-statistics .wpsr-yt-header-statistic-item' => 'margin-right: 0; margin-left: {{SIZE}}{{UNIT}};',
                     '{{WRAPPER}} .wpsr-yt-header-info .wpsr-yt-header-channel-statistics .wpsr-yt-header-statistic-item:after' => 'margin: 0 calc({{SIZE}}{{UNIT}}/2);',
                 ],
             ]
@@ -490,6 +491,7 @@ class YoutubeWidget extends Widget_Base {
                 'size_units' => ['px', 'em', '%'],
                 'selectors' => [
                     '{{WRAPPER}} .wpsr-yt-video-info .wpsr-yt-video-statistics .wpsr-yt-video-statistic-item' => 'margin-right: {{SIZE}}{{UNIT}};',
+                    'body.rtl {{WRAPPER}} .wpsr-yt-video-info .wpsr-yt-video-statistics .wpsr-yt-video-statistic-item' => 'margin-right: 0; margin-left: {{SIZE}}{{UNIT}};',
                     '{{WRAPPER}} .wpsr-yt-video .wpsr-yt-video-info .wpsr-yt-video-statistics .wpsr-yt-video-statistic-item:after' => 'margin: 0 calc({{SIZE}}{{UNIT}}/2);',
                 ],
             ]

@@ -1,5 +1,3 @@
-// import Vue from './elements';
-// import Vue from 'vue';
 import { createRouter, createWebHashHistory } from 'vue-router';
 import Rest from './Rest';
 import { routes } from './router/routes';
@@ -11,7 +9,6 @@ import { ElNotification } from 'element-plus';
 
 export default class WPSocialReviews {
     constructor() {
-        // Initialize core properties
         this.applyFilters = applyFilters;
         this.addFilter = addFilter;
         this.addAction = addAction;
@@ -21,10 +18,8 @@ export default class WPSocialReviews {
         this.assets_url = this.appVars.assets_url;
         this.assets_url_pro = this.appVars.assets_url_pro;
         
-        // Initialize events
         this.events = {};
         
-        // Bind methods to this instance
         this.$get = this.$get.bind(this);
         this.$post = this.$post.bind(this);
         this.$del = this.$del.bind(this);
@@ -64,8 +59,10 @@ export default class WPSocialReviews {
         this.show_platform_icon = this.show_platform_icon.bind(this);
         this.convertToPercentage = this.convertToPercentage.bind(this);
         this.ratingIcon = this.ratingIcon.bind(this);
+        this.ratingQualityLabel = this.ratingQualityLabel.bind(this);
+        this.platformDisplayName = this.platformDisplayName.bind(this);
+        this.platformIconsFor = this.platformIconsFor.bind(this);
 
-        // Bind event methods
         this.$on = this.$on.bind(this);
         this.$off = this.$off.bind(this);
         this.$emit = this.$emit.bind(this);
@@ -75,7 +72,6 @@ export default class WPSocialReviews {
         window.WPSocialReviewsAdmin.$emit = this.$emit;
     }
 
-    // Event handling methods
     $on(event, callback) {
         if (!this.events[event]) {
             this.events[event] = [];
@@ -163,8 +159,11 @@ export default class WPSocialReviews {
         let translation = i18n[str] || str;
         
         if (args.length > 0) {
-            translation = translation.replace(/%s|%d|%1\$s|%2\$s|%3\$s|%4\$s|%5\$s|%6\$s|%7\$s|%8\$s|%9\$s/g, () => {
-                return args.shift() || '';
+            // sprintf rules: %n$s reads argument n, so translators can reorder; bare %s/%d read in order.
+            let wpsrNextArg = 0;
+            translation = translation.replace(/%([1-9])\$[sd]|%[sd]/g, (match, position) => {
+                const value = position ? args[position - 1] : args[wpsrNextArg++];
+                return value === undefined || value === null ? '' : value;
             });
         }
         
@@ -342,8 +341,7 @@ export default class WPSocialReviews {
     }
 
     /**
-     * Escape HTML attribute values
-     * Use this when inserting user content into HTML attributes (href, class, etc.)
+     * Escape a value for use inside an HTML attribute.
      *
      * @param {string} text - Text to escape
      * @returns {string} Escaped text safe for HTML attributes
@@ -359,8 +357,7 @@ export default class WPSocialReviews {
     }
 
     /**
-     * Escape HTML content - converts ALL HTML to entities
-     * Use this when you want to display HTML as plain text
+     * Escape text so any HTML in it shows as plain text.
      *
      * @param {string} text - Text to escape
      * @returns {string} Escaped text with all HTML converted to entities
@@ -373,10 +370,8 @@ export default class WPSocialReviews {
     }
 
     /**
-     * Sanitize HTML
-     *
-     * Allowed tags: <p>, <br>, <a>, <span>
-     * Blocked: <script>, <iframe>, event handlers, dangerous URLs
+     * Allowed tags: img, p, span, br, strong, em. Script content, event handlers,
+     * style attributes and unsafe URLs are dropped.
      *
      * @param {string} html - HTML content to sanitize
      * @returns {string} Sanitized HTML with only safe tags and attributes
@@ -392,7 +387,7 @@ export default class WPSocialReviews {
         html = html.replace(/\s*on\s+\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^>\s]+)/ig, '');
         html = html.replace(/\s*style\s*=\s*(?:"[^"]*"|'[^']*'|[^>\s]+)/ig, '');
 
-        // Temporarily move src/href values into data-* attributes so the browser won't load resources while we parse
+        // Park src/href in data-* attributes so nothing loads while we parse.
         html = html.replace(/\s*(src|href)\s*=\s*(?:"([^\"]*)"|'([^']*)'|([^>\s]+))/ig, function(match, p1, g1, g2, g3){
             var val = g1 || g2 || g3 || '';
             val = val.replace(/"/g, '&quot;');
@@ -459,7 +454,7 @@ export default class WPSocialReviews {
                     let name = attr.name.toLowerCase();
                     let value = attr.value;
 
-                    // Map temporary data-wpsr-src/data-wpsr-href back to src/href after validation
+                    // Restore the parked src/href; the URL check below still applies.
                     if (name === 'data-wpsr-src') {
                         name = 'src';
                     }
@@ -479,7 +474,6 @@ export default class WPSocialReviews {
                     elementHTML += ` ${name}="${that.escapeHtmlAttr(value)}"`;
                 }
 
-                // Self-close void elements (no closing tag in HTML)
                 if (tagName === 'IMG' || tagName === 'BR') {
                     elementHTML += ' />';
                     return elementHTML;
@@ -503,10 +497,6 @@ export default class WPSocialReviews {
 
         return content;
     }
-
-    // ========================================================================
-    // URL AND HASHTAG GENERATION
-    // ========================================================================
 
     /**
      * Convert hashtags to clickable links
@@ -584,7 +574,6 @@ export default class WPSocialReviews {
      * @returns {string} Processed content
      */
     $contentLanguage(content, contentLanguage) {
-        // Handle empty or undefined content
         if (!content) return '';
 
         let translated_by_google = content.indexOf('(Translated by Google)');
@@ -608,8 +597,7 @@ export default class WPSocialReviews {
     }
 
     /**
-     * Safe version of $contentLanguage that escapes HTML for display
-     * Use this when rendering with v-html
+     * $contentLanguage() output, sanitized for v-html.
      * @param {string} content - Content to process
      * @param {string} contentLanguage - Language preference
      * @returns {string} Escaped content
@@ -628,15 +616,12 @@ export default class WPSocialReviews {
      * @returns {string} Processed content with Read More/Less buttons
      */
     $addReadMoreBtn(content, length, contentLanguage) {
-        // Handle empty or undefined content
         if (!content) return '';
 
         content = this.$contentLanguage(content, contentLanguage);
 
-        // Handle empty content after language processing
         if (!content) return '';
 
-        // Sanitize HTML
         content = this.sanitizeHtml(content);
 
         content = content.replace(/\s+/g, ' ').trim();
@@ -666,7 +651,6 @@ export default class WPSocialReviews {
      * @returns {string} Truncated HTML with only safe tags
      */
     truncateHTML(html, wordLimit) {
-        // Handle empty or undefined content
         if (!html) return '';
         if (!wordLimit) return html;
 
@@ -676,10 +660,9 @@ export default class WPSocialReviews {
         let result = '';
         let wordCount = 0;
 
-        // Only allow these safe tags - removed A to disallow links
+        // No A: links are dropped.
         const allowedTags = ['P', 'BR', 'SPAN'];
 
-        // Only allow these safe attributes per tag
         const allowedAttributes = {
             'SPAN': ['class']
         };
@@ -698,9 +681,8 @@ export default class WPSocialReviews {
             } else if (node.nodeType === Node.ELEMENT_NODE) {
                 const tagName = node.tagName.toUpperCase();
 
-                // If tag is not allowed, just process its text content
+                // A disallowed tag keeps only its text.
                 if (!allowedTags.includes(tagName)) {
-                    // Extract text content only
                     for (let child of node.childNodes) {
                         if (wordCount < wordLimit) {
                             processNode(child);
@@ -709,7 +691,6 @@ export default class WPSocialReviews {
                     return;
                 }
 
-                // Build safe element with only allowed attributes
                 let elementHTML = `<${node.tagName.toLowerCase()}`;
 
                 const allowed = allowedAttributes[tagName] || [];
@@ -719,10 +700,9 @@ export default class WPSocialReviews {
                         if (attr.name.toLowerCase() === 'href') {
                             const href = attr.value.trim().toLowerCase();
                             if (href.startsWith('javascript:') || href.startsWith('data:') || href.startsWith('vbscript:')) {
-                                continue; // Skip dangerous URLs
+                                continue;
                             }
                         }
-                        // Escape attribute value
                         const escapedValue = this.escapeHtmlAttr(attr.value);
                         elementHTML += ` ${attr.name}="${escapedValue}"`;
                     }
@@ -755,6 +735,15 @@ export default class WPSocialReviews {
         if (type === 'small') {
             icon_name = 'icon-' + platform + '-small.png';
         }
+        // Like the bundled-file part of Helper::platformIcon(). Custom logos and icon filters are not checked here.
+        if (platform !== this.appVars.tp_slug) {
+            const wpsrHiddenPlatforms = this.appVars.platforms_without_icon;
+            const wpsrBundledIcons = this.appVars.bundled_platform_icons;
+            if ((Array.isArray(wpsrHiddenPlatforms) && wpsrHiddenPlatforms.includes(platform)) ||
+                (Array.isArray(wpsrBundledIcons) && !wpsrBundledIcons.includes(icon_name))) {
+                return '';
+            }
+        }
         return assets_url + icon_name;
     }
 
@@ -783,6 +772,86 @@ export default class WPSocialReviews {
         const decimalPart = value - Math.floor(value);
         const percentage = Math.round(decimalPart * 100);
         return percentage + '%';
+    }
+
+    // Short quality word for a rating (Excellent/Great/Average/Poor/Bad), shared by badge and
+    // notification templates; keep thresholds in sync with Helper::ratingQualityLabel().
+    ratingQualityLabel(rating) {
+        const ratingValue = parseFloat(rating);
+        if (!ratingValue || ratingValue <= 0) {
+            return '';
+        }
+        if (ratingValue >= 4.5) {
+            return this.$t('Excellent');
+        }
+        if (ratingValue >= 3.9) {
+            return this.$t('Great');
+        }
+        if (ratingValue >= 2.9) {
+            return this.$t('Average');
+        }
+        if (ratingValue >= 2.1) {
+            return this.$t('Poor');
+        }
+        return this.$t('Bad');
+    }
+
+    // Human-readable platform name, shared by notification and other templates; keep this map
+    // in sync with Helper::platformDisplayName().
+    platformDisplayName(platform_name, fallbackName = '') {
+        const labels = {
+            google: this.$t('Google'),
+            facebook: this.$t('Facebook'),
+            airbnb: this.$t('Airbnb'),
+            yelp: this.$t('Yelp'),
+            tripadvisor: this.$t('Tripadvisor'),
+            amazon: this.$t('Amazon'),
+            aliexpress: this.$t('AliExpress'),
+            'booking.com': this.$t('Booking.com'),
+            woocommerce: this.$t('WooCommerce'),
+            'fluent-cart': this.$t('FluentCart'),
+            fluent_forms: this.$t('Fluent Forms'),
+            testimonial: this.$t('Testimonial'),
+            custom: fallbackName || this.$t('Custom'),
+        };
+        if (labels[platform_name]) {
+            return labels[platform_name];
+        }
+        return platform_name ? platform_name.charAt(0).toUpperCase() + platform_name.slice(1) : '';
+    }
+
+    // {name, icon} pairs for an aggregate's contributing platforms, shared by Badge1 (avatar-stack/score-strip)
+    // and Notification's Rating Pulse. A source's own logo first (Fluent Forms has no platform icon), then
+    // the platform icon file; multi-platform skips sourceless entries. TP is opt-in (displayTpBrand),
+    // same rule as Helper::hideLogo() — their brand terms require explicit permission. Keep in sync with
+    // Pro's ReviewsTemplateHandlerPro::badgePlatformIcons().
+    platformIconsFor(businessInfo, showIcons, displayTpBrand) {
+        if (!showIcons || !businessInfo) {
+            return [];
+        }
+        const hasIconFile = name => this.appVars.platforms_cards.some(card => card.platform === name);
+        const multiple = businessInfo.total_platforms > 1;
+        const icons = {};
+        Object.entries(businessInfo.platforms || {}).forEach(([sourceId, platform]) => {
+            const name = platform && platform.platform_name;
+            if (!name || (name.startsWith('trust') && displayTpBrand !== 'true')) {
+                return;
+            }
+            // Every generic custom source shares platform_name 'custom' — key those by source id,
+            // or a second custom source's logo would be dropped as a "duplicate" of the first.
+            const key = name === 'custom' ? sourceId : name;
+            if (icons[key] || (multiple && !platform.url && !platform.logo)) {
+                return;
+            }
+            const icon = platform.logo || (hasIconFile(name) ? this.get_platform_icon(name, 'small') : '');
+            if (icon) {
+                // Consumers key their v-for by this name — an unlabeled custom source still needs a
+                // unique one, or a second unlabeled source collides back onto the same list key.
+                const label = platform.platform_label || (key === name ? name : `${name} ${sourceId}`);
+                icons[key] = { label, icon };
+            }
+        });
+        return Object.values(icons).map(({ label, icon }) => ({ name: label, icon }));
     }
 
     ratingIcon(rating) {

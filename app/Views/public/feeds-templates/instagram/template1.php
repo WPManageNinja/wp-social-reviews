@@ -55,6 +55,14 @@ if (!empty($feeds) && is_array($feeds)) {
                     do_action('wpsocialreviews/instagram_post_media', $wpsr_feed, $template_meta, $wpsr_index, $wpsr_display_optimize_image);
                     ?>
                 </a>
+                <?php
+                /**
+                 * instagram_post_author hook.
+                 *
+                 * @hooked InstagramTemplateHandler::renderPostAuthor 10
+                 * */
+                do_action('wpsocialreviews/instagram_post_author', $wpsr_feed, $template_meta);
+                ?>
                 <?php if (count($wpsr_feed) > 6) {
                     ?>
                     <div class="wpsr-ig-post-info">
@@ -73,6 +81,13 @@ if (!empty($feeds) && is_array($feeds)) {
                         if(!(Arr::get($wpsr_feed, 'shoppable_options.show_shoppable') && Arr::get($template_meta, 'post_settings.display_mode') !== 'popup')) {
                             do_action('wpsocialreviews/instagram_post_statistics', $wpsr_feed, $template_meta);
                         }
+
+                        /**
+                         * instagram_post_date hook.
+                         *
+                         * @hooked InstagramTemplateHandler::renderPostDate 10
+                         * */
+                        do_action('wpsocialreviews/instagram_post_date', $wpsr_feed, $template_meta);
 
                         /**
                          * instagram_post_caption hook.

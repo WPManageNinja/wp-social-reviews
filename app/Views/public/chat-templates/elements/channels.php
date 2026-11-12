@@ -54,7 +54,7 @@ $wpsr_hidden_prefilled_style = trim('display:none;' . $wpsr_whatsapp_bg_color);
                        style="background-color:<?php echo esc_attr(Arr::get($settings, 'styles.channel_icon_bg_color', '')); ?>"
                        class="wpsr-fm-btn <?php echo esc_attr($settings['channels'][0]['name']); ?>"
                     >
-                            <span><?php echo esc_html($settings['chat_button']['button_text']); ?></span>
+                            <span dir="auto"><?php echo esc_html($settings['chat_button']['button_text']); ?></span>
                             <?php
                             if ($settings['chat_button']['display_icon'] === 'true') {
                                 if (chatHelper::isFluentFormsModalShortcode($wpsr_credential)) {
@@ -91,7 +91,7 @@ $wpsr_hidden_prefilled_style = trim('display:none;' . $wpsr_whatsapp_bg_color);
                 <?php } ?>
             <?php } ?>
             <?php if (sizeof($settings['channels']) > 1){ ?>
-            <span class="wpsr-fm-multiple-btn"><?php echo esc_html($settings['chat_button']['button_text']); ?></span>
+            <span class="wpsr-fm-multiple-btn" dir="auto"><?php echo esc_html($settings['chat_button']['button_text']); ?></span>
             <div class="wpsr-channels <?php echo sizeof($settings['channels']) == 1 ? 'wpsr-social-channel' : ''; ?>">
                 <?php
                 $app->view->render('public.chat-templates.elements.channels-button', array(

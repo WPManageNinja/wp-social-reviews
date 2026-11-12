@@ -1,32 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Translation String Extractor for WP Social Ninja
- *
- * Extracts all translatable strings wrapped in $t() from Vue/JS files
- * and generates a PHP class with __() calls for each string.
- *
- * Usage: node extract-translations.js
- * Run after adding new $t() calls in Vue/JS files.
- *
- * DO NOT edit the generated file (app/Services/TranslationStrings.php) directly.
- *
- * --- Translation best practices enforced by this script ---
- *
- * SKIPPED — strings containing HTML tags (e.g. <br/>, <strong>):
- *   Translators work in .po editors and must not see raw markup.
- *   Fix: remove HTML from the $t() string; render the tag in the Vue template.
- *   Example:
- *     Bad:  $t('Use a comma to separate words. <br/> ex: word1, word2')
- *     Good: $t('Use a comma to separate words.') + <br/> in template
- *
- * SKIPPED — pure URL strings (http:// / https://):
- *   URLs are not translatable text; bind them directly in templates.
- *   Fix: remove $t() wrapping from URL values.
- *
- * SKIPPED — pure numeric strings ('100', '200', …):
- *   Numbers carry no linguistic meaning. Use numeric values directly.
- *   Fix: replace $t('100') with the raw number or a labeled option object.
+ * Writes the $t() strings in resources/admin to app/Services/TranslationStrings.php (don't
+ * edit it by hand). Run after adding $t() calls. Strings with HTML, pure URLs and pure
+ * numbers are skipped and reported: translators must not see markup, and those aren't text.
  */
 
 const fs = require('fs');
@@ -38,7 +15,6 @@ const TEXT_DOMAIN = 'wp-social-reviews';
 const NAMESPACE = 'WPSocialReviews\\App\\Services';
 const CLASS_NAME = 'TranslationStrings';
 
-// Patterns to match $t() and this.$t() with single or double-quoted string literals
 const TRANSLATION_PATTERNS = [
     /\$t\(\s*'([^']+)'\s*[\),]/g,
     /\$t\(\s*"([^"]+)"\s*[\),]/g,
@@ -48,7 +24,6 @@ const TRANSLATION_PATTERNS = [
 
 // ---- Validation filters ------------------------------------------------
 
-// Strings containing any HTML tag — must not appear in __() calls.
 const HTML_TAG_RE = /<[a-zA-Z\/][^>]*>/;
 
 function isInvalid(str) {
@@ -98,8 +73,7 @@ function extractStringsFromFile(filePath) {
 }
 
 /**
- * Extract valid strings and collect violations separately so they can
- * be reported to the developer without silently discarding them.
+ * Violations are collected separately so they get reported, not silently dropped.
  */
 function extractStringsFromDirectory(dir) {
     const valid = new Set();
@@ -124,11 +98,18 @@ function extractStringsFromDirectory(dir) {
 
 // ---- PHP generation ----------------------------------------------------
 
+// Same placeholder shape PHPCS's WordPress.WP.I18n sniff looks for.
+const PLACEHOLDER_RE = /%(?:\d+\$)?[-+ 0']*\d*(?:\.\d+)?[bcdeEfFgGosuxX]/;
+
 function generateArrayEntries(strings, indent = '            ') {
     return strings
         .map(str => {
             const key = str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            return `${indent}'${key}' => __('${key}', '${TEXT_DOMAIN}'),`;
+            const entry = `${indent}'${key}' => __('${key}', '${TEXT_DOMAIN}'),`;
+            if (!PLACEHOLDER_RE.test(str)) {
+                return entry;
+            }
+            return `${indent}// translators: the placeholders are values the admin screen fills in at runtime; keep each one.\n${entry}`;
         })
         .join('\n');
 }
@@ -180,7 +161,6 @@ function main() {
 
     const { strings, violations } = extractStringsFromDirectory(RESOURCES_DIR);
 
-    // Group violations by reason for a clean report
     const byReason = {};
     for (const v of violations) {
         (byReason[v.reason] = byReason[v.reason] || []).push(v);
@@ -190,7 +170,6 @@ function main() {
         console.log('⚠  VIOLATIONS — these strings were SKIPPED and need source fixes:\n');
         for (const [reason, items] of Object.entries(byReason)) {
             console.log(`  [${reason}] (${items.length})`);
-            // Deduplicate by string value for the report
             const seen = new Set();
             for (const { string, file } of items) {
                 if (seen.has(string)) continue;

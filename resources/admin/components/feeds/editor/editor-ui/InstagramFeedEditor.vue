@@ -98,12 +98,12 @@
                 <EditorCollapsiblePanel :isActive="isActive" iconKey="post" :label="$t('Post')"/>
             </template>
             <FeedEditorGroup
-                :fieldsMaps="post_settings"
+                :fieldsMaps="feed_config.layout_type === 'masonry' ? post_settings.filter(field => field.fieldKey !== 'aspect_ratio') : post_settings"
                 :modelValue="feed_config.post_settings"
                 @update:modelValue="handlePostSettingsUpdate"
             />
         </el-collapse-item>
-        <el-collapse-item name="5">
+        <el-collapse-item name="5" v-if="has_pro || !hide_pro_features">
             <template #title="{ isActive}">
                 <EditorCollapsiblePanel :isActive="isActive" :isPro="!has_pro" iconKey="shopable_feed" :label="$t('Shoppable Feed')"/>
             </template>
@@ -185,7 +185,7 @@
                 @update:modelValue="handleCarouselSettingsUpdate"
             />
         </el-collapse-item>
-        <el-collapse-item name="7" v-if="feed_config.post_settings.display_mode ==='popup'">
+        <el-collapse-item name="7" v-if="feed_config.post_settings.display_mode ==='popup' && (has_pro || !hide_pro_features)">
 
             <template #title="{ isActive}">
                 <EditorCollapsiblePanel :isActive="isActive" iconKey="popup_box" :isPro="!has_pro" :label="$t('Popup Box')"/>
@@ -237,7 +237,9 @@
 
                 </div>
             </div>
+            <!-- Keyed by layout: the group ignores parent updates mid-edit, so it remounts to show the Inline toggle reset. -->
             <FeedEditorGroup v-if="feed_config.header_settings.display_header === 'true'"
+                :key="'header-' + feed_config.header_settings.header_layout"
                 :fieldsMaps="header_settings"
                 :modelValue="feed_config.header_settings"
                 @update:modelValue="handleHeaderSettingsUpdate"
@@ -256,7 +258,6 @@
                             @update:modelValue="(val) => $emit('update:feed_config', { ...feed_config, follow_button_settings: { ...feed_config.follow_button_settings, display_follow_button: val }})"
                             active-value="true"
                             inactive-value="false"
-                            :disabled="!has_pro"
                         >
                         </el-switch>
                     </div>
@@ -270,7 +271,7 @@
                 </transition>
             </span>
         </el-collapse-item>
-        <el-collapse-item name="10" v-if="feed_config.layout_type !== 'carousel'">
+        <el-collapse-item name="10" v-if="feed_config.layout_type !== 'carousel' && (has_pro || !hide_pro_features)">
             <template #title="{ isActive}">
                 <EditorCollapsiblePanel :isActive="isActive" iconKey="pagination" :label="$t('Pagination')"/>
             </template>
@@ -337,7 +338,7 @@ export default {
                     title: this.$t('Number of Posts to Display'),
                     min: 1,
                     max: this.has_pro ? 1000 : 10,
-                    tooltip: this.has_pro ? false : true,
+                    tooltip: !this.has_pro && !this.hide_pro_features,
                     tooltipText: this.$t('Upgrade to pro to display unlimited Instagram Post.'),
                     hide_tablet: true,
                     responsive: true,
@@ -357,6 +358,10 @@ export default {
                             label: this.$t('Oldest')
                         },
                         {
+                            value: 'random',
+                            label: this.$t('Random'),
+                        },
+                        {
                             value: 'most_popular',
                             label: this.$t('Most Popular'),
                             disabled: !this.has_pro,
@@ -364,11 +369,6 @@ export default {
                         {
                             value: 'least_popular',
                             label: this.$t('Least Popular'),
-                            disabled: !this.has_pro,
-                        },
-                        {
-                            value: 'random',
-                            label: this.$t('Random'),
                             disabled: !this.has_pro,
                         }
                     ],
@@ -503,6 +503,11 @@ export default {
                             img: this.assets_url + '/images/template/global-template/grid.png',
                         },
                         {
+                            key: 'list',
+                            title: this.$t('List'),
+                            img: this.assets_url + '/images/template/global-template/timeline.png',
+                        },
+                        {
                             key: 'carousel',
                             title: this.$t('Carousel'),
                             pro: !this.has_pro,
@@ -535,6 +540,16 @@ export default {
                             key: 'template2',
                             title: this.$t('Caption Card'),
                             img: this.assets_url + '/images/template/instagram-template/template2.png'
+                        },
+                        {
+                            key: 'template5',
+                            title: this.$t('Author Card'),
+                            img: this.assets_url + '/images/template/instagram-template/template5.png'
+                        },
+                        {
+                            key: 'template6',
+                            title: this.$t('Author Bar'),
+                            img: this.assets_url + '/images/template/instagram-template/template6.png'
                         },
                         {
                             key: 'template3',
@@ -585,6 +600,11 @@ export default {
                             'key': 'layout_type',
                             'operator': '!=',
                             'selector': 'highlights'
+                        },
+                        {
+                            'key': 'layout_type',
+                            'operator': '!=',
+                            'selector': 'list'
                         }
                     ],
                     options: [
@@ -654,6 +674,33 @@ export default {
                         }
                     ]
                 },
+                {
+                    fieldKey: 'color_scheme',
+                    type: 'select',
+                    title: this.$t('Color Scheme'),
+                    options: [
+                        {
+                            value: 'light',
+                            label: this.$t('Light')
+                        },
+                        {
+                            value: 'dark',
+                            label: this.$t('Dark')
+                        },
+                        {
+                            value: 'shadow',
+                            label: this.$t('Card Shadow')
+                        },
+                        {
+                            value: 'soft',
+                            label: this.$t('Soft Background')
+                        },
+                        {
+                            value: 'bordered',
+                            label: this.$t('Bordered')
+                        }
+                    ]
+                },
             ],
             pagination_settings: [
                 {
@@ -668,6 +715,8 @@ export default {
                         {
                             value: 'load_more',
                             label: 'Load More',
+                            // Pro serves the next pages (wpsr_feed_items_by_page_instagram); the button only renders with Pro.
+                            disabled: !this.has_pro,
                         }
                     ],
                     tooltip: true,
@@ -871,7 +920,13 @@ export default {
                     type: 'number',
                     title: this.$t('Trim Caption Words'),
                     flex: true,
-                    disabled : !this.has_pro,
+                },
+                {
+                    fieldKey: 'display_date',
+                    type: 'switch',
+                    title: this.$t('Display Date'),
+                    active_value: 'true',
+                    inactive_value: 'false',
                 },
                 {
                     fieldKey: 'display_likes_counter',
@@ -903,6 +958,10 @@ export default {
                         {
                             value: 'minimal',
                             label: this.$t('Minimal')
+                        },
+                        {
+                            value: 'inline',
+                            label: this.$t('Inline')
                         }
                     ]
                 },
@@ -1259,9 +1318,18 @@ export default {
             if (this.isUpdating) return;
             this.isUpdating = true;
 
+            const header = { ...val };
+            const previousLayout = this.feed_config.header_settings.header_layout;
+            // Inline has little room, so the full name and bio start off there and come back on when leaving it.
+            if (header.header_layout !== previousLayout && (header.header_layout === 'inline' || previousLayout === 'inline')) {
+                const display = header.header_layout === 'inline' ? 'false' : 'true';
+                header.display_name = display;
+                header.display_description = display;
+            }
+
             const updatedConfig = {
                 ...this.feed_config,
-                header_settings: val
+                header_settings: header
             };
 
             this.$emit('update:feed_config', updatedConfig);

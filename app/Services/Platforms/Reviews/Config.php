@@ -637,6 +637,7 @@ class Config
                 array(
                     'title' => __('Rating Title', 'wp-social-reviews'),
                     'key' => 'badge_title',
+                    'badge_templates' => array('badge1', 'badge2'),
                     'divider' => false,
                     'typography' => true,
                     'padding' => false,
@@ -654,6 +655,7 @@ class Config
                 array(
                     'title' => __('Rating Number', 'wp-social-reviews'),
                     'key' => 'badge_rating_number',
+                    'badge_templates' => array('badge1', 'badge2', 'badge3', 'badge5', 'badge6'),
                     'divider' => false,
                     'typography' => true,
                     'padding' => false,
@@ -679,6 +681,74 @@ class Config
                         array(
                             'title' => __('Text Color:', 'wp-social-reviews'),
                             'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Quality Label', 'wp-social-reviews'),
+                    'key' => 'badge_quality_label',
+                    'badge_templates' => array('badge4', 'badge5', 'badge6'),
+                    'divider' => false,
+                    'typography' => true,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title' => __('Background Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'background_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('More Reviews Count', 'wp-social-reviews'),
+                    'key' => 'badge_avatars_more',
+                    'badge_templates' => array('badge3'),
+                    'divider' => false,
+                    'typography' => true,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        ),
+                        array(
+                            'title' => __('Background Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'background_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Header Band', 'wp-social-reviews'),
+                    'key' => 'badge_sticker_header',
+                    'badge_templates' => array('badge6'),
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Background Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'background_color',
                             'type' => 'color_picker',
                             'flex' => true,
                             'disabled' => !$has_pro,
@@ -715,6 +785,7 @@ class Config
                 array(
                     'title' => __('Close Icon', 'wp-social-reviews'),
                     'key' => 'notification_close_icon',
+                    'notification_requires' => array('display_close_button' => 'true'),
                     'divider' => false,
                     'typography' => false,
                     'padding' => false,
@@ -732,6 +803,7 @@ class Config
                 array(
                     'title' => __('Reviewer Name', 'wp-social-reviews'),
                     'key' => 'notification_reviewer_name',
+                    'notification_templates' => array('notification1', 'notification2'),
                     'divider' => false,
                     'typography' => true,
                     'padding' => false,
@@ -766,6 +838,8 @@ class Config
                 array(
                     'title' => __('Review Time', 'wp-social-reviews'),
                     'key' => 'notification_review_time',
+                    'notification_templates' => array('notification1', 'notification2'),
+                    'notification_requires' => array('display_date' => 'true'),
                     'divider' => false,
                     'typography' => true,
                     'padding' => false,
@@ -774,6 +848,132 @@ class Config
                         array(
                             'title' => __('Text Color:', 'wp-social-reviews'),
                             'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Rating Word', 'wp-social-reviews'),
+                    'key' => 'notification_rating_word',
+                    'notification_templates' => array('notification2'),
+                    'divider' => false,
+                    'typography' => true,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Source', 'wp-social-reviews'),
+                    'key' => 'notification_source',
+                    'notification_templates' => array('notification2'),
+                    'divider' => false,
+                    'typography' => true,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Review Excerpt', 'wp-social-reviews'),
+                    'key' => 'notification_excerpt',
+                    'notification_templates' => array('notification2'),
+                    'divider' => false,
+                    'typography' => true,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Rating Number', 'wp-social-reviews'),
+                    'key' => 'notification_pulse_rating',
+                    'notification_templates' => array('notification3'),
+                    'divider' => false,
+                    'typography' => true,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Review Count', 'wp-social-reviews'),
+                    'key' => 'notification_pulse_count',
+                    'notification_templates' => array('notification3'),
+                    'divider' => false,
+                    'typography' => true,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Subtitle', 'wp-social-reviews'),
+                    'key' => 'notification_pulse_subtitle',
+                    'notification_templates' => array('notification3'),
+                    'divider' => false,
+                    'typography' => true,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Text Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'text_color',
+                            'type' => 'color_picker',
+                            'flex' => true,
+                            'disabled' => !$has_pro,
+                        )
+                    )
+                ),
+                array(
+                    'title' => __('Accent Bar', 'wp-social-reviews'),
+                    'key' => 'notification_pulse_accent',
+                    'notification_templates' => array('notification3'),
+                    'divider' => false,
+                    'typography' => false,
+                    'padding' => false,
+                    'border' => false,
+                    'styles' => array(
+                        array(
+                            'title' => __('Background Color:', 'wp-social-reviews'),
+                            'fieldKey' => 'background_color',
                             'type' => 'color_picker',
                             'flex' => true,
                             'disabled' => !$has_pro,
@@ -1561,7 +1761,7 @@ class Config
                     ),
                 ),
                 'badge_title' => array(
-                    'selector' => $badgePrefix . ' .wpsr-reviews-badge-wrapper-inner .wpsr-business-info-logo span',
+                    'selector' => $badgePrefix . ' .wpsr-reviews-badge-wrapper-inner .wpsr-business-info-logo span, ' . $badgePrefix . ' .wpsr-reviews-badge-wrapper-inner .wpsr-rating-and-count .wpsr-reviews-badge-title',
                     'color' => array(
                         'text_color' => Arr::get($settings, 'styles.badge_title.color.text_color', ''),
                     ),
@@ -1588,7 +1788,7 @@ class Config
                     ),
                 ),
                 'badge_rating_number' => array(
-                    'selector' => $badgePrefix . ' .wpsr-rating-and-count .wpsr-total-rating',
+                    'selector' => $badgePrefix . ' .wpsr-rating-and-count .wpsr-total-rating, ' . $badgePrefix . ' .wpsr-reviews-badge-wrapper-inner .wpsr-sticker-rating',
                     'color' => array(
                         'text_color' => Arr::get($settings, 'styles.badge_rating_number.color.text_color', ''),
                     ),
@@ -1615,7 +1815,7 @@ class Config
                     ),
                 ),
                 'badge_total_reviews' => array(
-                    'selector' => $badgePrefix . ' .wpsr-reviews-badge-btn .wpsr-rating-and-count .wpsr-total-reviews',
+                    'selector' => $badgePrefix . ' .wpsr-reviews-badge-btn .wpsr-rating-and-count .wpsr-total-reviews, ' . $badgePrefix . ' .wpsr-reviews-badge-html .wpsr-rating-and-count .wpsr-total-reviews, ' . $badgePrefix . ' .wpsr-reviews-badge-wrapper-inner .wpsr-score-strip-summary, ' . $badgePrefix . ' .wpsr-reviews-badge-wrapper-inner .wpsr-sticker-summary',
                     'color' => array(
                         'text_color' => Arr::get($settings, 'styles.badge_total_reviews.color.text_color', ''),
                     ),
@@ -1641,8 +1841,70 @@ class Config
                         'text_decoration' => Arr::get($settings, 'styles.badge_total_reviews.typography.text_decoration', ''),
                     ),
                 ),
+                'badge_quality_label' => array(
+                    'selector' => $badgePrefix . ' .wpsr-reviews-badge-wrapper-inner .wpsr-score-strip-quality, ' . $badgePrefix . ' .wpsr-reviews-badge-wrapper-inner .wpsr-sticker-quality',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.badge_quality_label.color.text_color', ''),
+                        'background_color' => Arr::get($settings, 'styles.badge_quality_label.color.background_color', ''),
+                    ),
+                    'typography' => array(
+                        'font_size' => array(
+                            'desktop' => Arr::get($settings, 'styles.badge_quality_label.typography.font_size.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.badge_quality_label.typography.font_size.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.badge_quality_label.typography.font_size.mobile', ''),
+                        ),
+                        'letter_spacing' => array(
+                            'desktop' => Arr::get($settings, 'styles.badge_quality_label.typography.letter_spacing.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.badge_quality_label.typography.letter_spacing.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.badge_quality_label.typography.letter_spacing.mobile', ''),
+                        ),
+                        'line_height' => array(
+                            'desktop' => Arr::get($settings, 'styles.badge_quality_label.typography.line_height.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.badge_quality_label.typography.line_height.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.badge_quality_label.typography.line_height.mobile', ''),
+                        ),
+                        'font_weight' => Arr::get($settings, 'styles.badge_quality_label.typography.font_weight', ''),
+                        'font_style' => Arr::get($settings, 'styles.badge_quality_label.typography.font_style', ''),
+                        'text_transform' => Arr::get($settings, 'styles.badge_quality_label.typography.text_transform', ''),
+                        'text_decoration' => Arr::get($settings, 'styles.badge_quality_label.typography.text_decoration', ''),
+                    ),
+                ),
+                'badge_avatars_more' => array(
+                    'selector' => $badgePrefix . ' .wpsr-reviews-badge-wrapper-inner .wpsr-badge-avatars .wpsr-badge-avatars-more',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.badge_avatars_more.color.text_color', ''),
+                        'background_color' => Arr::get($settings, 'styles.badge_avatars_more.color.background_color', ''),
+                    ),
+                    'typography' => array(
+                        'font_size' => array(
+                            'desktop' => Arr::get($settings, 'styles.badge_avatars_more.typography.font_size.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.badge_avatars_more.typography.font_size.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.badge_avatars_more.typography.font_size.mobile', ''),
+                        ),
+                        'letter_spacing' => array(
+                            'desktop' => Arr::get($settings, 'styles.badge_avatars_more.typography.letter_spacing.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.badge_avatars_more.typography.letter_spacing.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.badge_avatars_more.typography.letter_spacing.mobile', ''),
+                        ),
+                        'line_height' => array(
+                            'desktop' => Arr::get($settings, 'styles.badge_avatars_more.typography.line_height.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.badge_avatars_more.typography.line_height.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.badge_avatars_more.typography.line_height.mobile', ''),
+                        ),
+                        'font_weight' => Arr::get($settings, 'styles.badge_avatars_more.typography.font_weight', ''),
+                        'font_style' => Arr::get($settings, 'styles.badge_avatars_more.typography.font_style', ''),
+                        'text_transform' => Arr::get($settings, 'styles.badge_avatars_more.typography.text_transform', ''),
+                        'text_decoration' => Arr::get($settings, 'styles.badge_avatars_more.typography.text_decoration', ''),
+                    ),
+                ),
+                'badge_sticker_header' => array(
+                    'selector' => $badgePrefix . ' .wpsr-reviews-badge-wrapper-inner .wpsr-sticker-top',
+                    'color' => array(
+                        'background_color' => Arr::get($settings, 'styles.badge_sticker_header.color.background_color', ''),
+                    ),
+                ),
                 'badge_wrapper_box' => array(
-                    'selector' => $badgePrefix . ' .wpsr-reviews-badge-btn, .wpsr-reviews-badge-html',
+                    'selector' => $badgePrefix . ' .wpsr-reviews-badge-btn, ' . $badgePrefix . ' .wpsr-reviews-badge-html',
                     'color' => array(
                         'background_color' => Arr::get($settings, 'styles.badge_wrapper_box.color.background_color', ''),
                     ),
@@ -1761,7 +2023,7 @@ class Config
                     ),
                 ),
                 'notification_title' => array(
-                    'selector' => $notificationPrefix . ' .wpsr-reviews-notification-card .wpsr-notification-content-wrapper .wpsr-review-header p',
+                    'selector' => $notificationPrefix . ' .wpsr-reviews-notification-card .wpsr-notification-content-wrapper .wpsr-review-header p, ' . $notificationPrefix . ' .wpsr-reviews-notification-card .wpsr-notification-content-wrapper .wpsr-notification-custom-text, ' . $notificationPrefix . ' .wpsr-reviews-notification-card .wpsr-notification-pulse-line1',
                     'color' => array(
                         'text_color' => Arr::get($settings, 'styles.notification_title.color.text_color', ''),
                     ),
@@ -1788,7 +2050,7 @@ class Config
                     ),
                 ),
                 'notification_review_time' => array(
-                    'selector' => $notificationPrefix . ' .wpsr-reviews-notification-card .wpsr-notification-content-wrapper .wpsr-notification-footer .review-time',
+                    'selector' => $notificationPrefix . ' .wpsr-reviews-notification-card .wpsr-notification-content-wrapper .wpsr-notification-footer .review-time, ' . $notificationPrefix . ' .wpsr-reviews-notification-card .wpsr-notification-content-wrapper .wpsr-notification-meta .review-time',
                     'color' => array(
                         'text_color' => Arr::get($settings, 'styles.notification_review_time.color.text_color', ''),
                     ),
@@ -1814,8 +2076,176 @@ class Config
                         'text_decoration' => Arr::get($settings, 'styles.notification_review_time.typography.text_decoration', ''),
                     ),
                 ),
+                'notification_rating_word' => array(
+                    'selector' => $notificationPrefix . ' .wpsr-reviews-notification-card .wpsr-notification-content-wrapper .wpsr-notification-rating-word',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.notification_rating_word.color.text_color', ''),
+                    ),
+                    'typography' => array(
+                        'font_size' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_rating_word.typography.font_size.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_rating_word.typography.font_size.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_rating_word.typography.font_size.mobile', ''),
+                        ),
+                        'letter_spacing' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_rating_word.typography.letter_spacing.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_rating_word.typography.letter_spacing.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_rating_word.typography.letter_spacing.mobile', ''),
+                        ),
+                        'line_height' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_rating_word.typography.line_height.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_rating_word.typography.line_height.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_rating_word.typography.line_height.mobile', ''),
+                        ),
+                        'font_weight' => Arr::get($settings, 'styles.notification_rating_word.typography.font_weight', ''),
+                        'font_style' => Arr::get($settings, 'styles.notification_rating_word.typography.font_style', ''),
+                        'text_transform' => Arr::get($settings, 'styles.notification_rating_word.typography.text_transform', ''),
+                        'text_decoration' => Arr::get($settings, 'styles.notification_rating_word.typography.text_decoration', ''),
+                    ),
+                ),
+                'notification_source' => array(
+                    'selector' => $notificationPrefix . ' .wpsr-reviews-notification-card .wpsr-notification-body .wpsr-notification-source, ' . $notificationPrefix . ' .wpsr-reviews-notification-card .wpsr-notification-body .wpsr-notification-source .wpsr-notification-source-name',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.notification_source.color.text_color', ''),
+                    ),
+                    'typography' => array(
+                        'font_size' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_source.typography.font_size.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_source.typography.font_size.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_source.typography.font_size.mobile', ''),
+                        ),
+                        'letter_spacing' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_source.typography.letter_spacing.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_source.typography.letter_spacing.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_source.typography.letter_spacing.mobile', ''),
+                        ),
+                        'line_height' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_source.typography.line_height.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_source.typography.line_height.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_source.typography.line_height.mobile', ''),
+                        ),
+                        'font_weight' => Arr::get($settings, 'styles.notification_source.typography.font_weight', ''),
+                        'font_style' => Arr::get($settings, 'styles.notification_source.typography.font_style', ''),
+                        'text_transform' => Arr::get($settings, 'styles.notification_source.typography.text_transform', ''),
+                        'text_decoration' => Arr::get($settings, 'styles.notification_source.typography.text_decoration', ''),
+                    ),
+                ),
+                'notification_excerpt' => array(
+                    'selector' => $notificationPrefix . ' .wpsr-reviews-notification-card .wpsr-notification-quote .wpsr-notification-excerpt',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.notification_excerpt.color.text_color', ''),
+                    ),
+                    'typography' => array(
+                        'font_size' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_excerpt.typography.font_size.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_excerpt.typography.font_size.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_excerpt.typography.font_size.mobile', ''),
+                        ),
+                        'letter_spacing' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_excerpt.typography.letter_spacing.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_excerpt.typography.letter_spacing.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_excerpt.typography.letter_spacing.mobile', ''),
+                        ),
+                        'line_height' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_excerpt.typography.line_height.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_excerpt.typography.line_height.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_excerpt.typography.line_height.mobile', ''),
+                        ),
+                        'font_weight' => Arr::get($settings, 'styles.notification_excerpt.typography.font_weight', ''),
+                        'font_style' => Arr::get($settings, 'styles.notification_excerpt.typography.font_style', ''),
+                        'text_transform' => Arr::get($settings, 'styles.notification_excerpt.typography.text_transform', ''),
+                        'text_decoration' => Arr::get($settings, 'styles.notification_excerpt.typography.text_decoration', ''),
+                    ),
+                ),
+                'notification_pulse_rating' => array(
+                    'selector' => $notificationPrefix . '.wpsr-reviews-notification-card-wrapper .wpsr-reviews-notification-card .wpsr-notification-pulse-score .wpsr-notification-pulse-value',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.notification_pulse_rating.color.text_color', ''),
+                    ),
+                    'typography' => array(
+                        'font_size' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_pulse_rating.typography.font_size.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_pulse_rating.typography.font_size.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_pulse_rating.typography.font_size.mobile', ''),
+                        ),
+                        'letter_spacing' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_pulse_rating.typography.letter_spacing.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_pulse_rating.typography.letter_spacing.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_pulse_rating.typography.letter_spacing.mobile', ''),
+                        ),
+                        'line_height' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_pulse_rating.typography.line_height.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_pulse_rating.typography.line_height.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_pulse_rating.typography.line_height.mobile', ''),
+                        ),
+                        'font_weight' => Arr::get($settings, 'styles.notification_pulse_rating.typography.font_weight', ''),
+                        'font_style' => Arr::get($settings, 'styles.notification_pulse_rating.typography.font_style', ''),
+                        'text_transform' => Arr::get($settings, 'styles.notification_pulse_rating.typography.text_transform', ''),
+                        'text_decoration' => Arr::get($settings, 'styles.notification_pulse_rating.typography.text_decoration', ''),
+                    ),
+                ),
+                'notification_pulse_count' => array(
+                    'selector' => $notificationPrefix . '.wpsr-reviews-notification-card-wrapper .wpsr-reviews-notification-card .wpsr-notification-pulse-line1 b',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.notification_pulse_count.color.text_color', ''),
+                    ),
+                    'typography' => array(
+                        'font_size' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_pulse_count.typography.font_size.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_pulse_count.typography.font_size.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_pulse_count.typography.font_size.mobile', ''),
+                        ),
+                        'letter_spacing' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_pulse_count.typography.letter_spacing.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_pulse_count.typography.letter_spacing.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_pulse_count.typography.letter_spacing.mobile', ''),
+                        ),
+                        'line_height' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_pulse_count.typography.line_height.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_pulse_count.typography.line_height.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_pulse_count.typography.line_height.mobile', ''),
+                        ),
+                        'font_weight' => Arr::get($settings, 'styles.notification_pulse_count.typography.font_weight', ''),
+                        'font_style' => Arr::get($settings, 'styles.notification_pulse_count.typography.font_style', ''),
+                        'text_transform' => Arr::get($settings, 'styles.notification_pulse_count.typography.text_transform', ''),
+                        'text_decoration' => Arr::get($settings, 'styles.notification_pulse_count.typography.text_decoration', ''),
+                    ),
+                ),
+                'notification_pulse_subtitle' => array(
+                    'selector' => $notificationPrefix . '.wpsr-reviews-notification-card-wrapper .wpsr-reviews-notification-card .wpsr-notification-pulse-line2',
+                    'color' => array(
+                        'text_color' => Arr::get($settings, 'styles.notification_pulse_subtitle.color.text_color', ''),
+                    ),
+                    'typography' => array(
+                        'font_size' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_pulse_subtitle.typography.font_size.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_pulse_subtitle.typography.font_size.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_pulse_subtitle.typography.font_size.mobile', ''),
+                        ),
+                        'letter_spacing' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_pulse_subtitle.typography.letter_spacing.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_pulse_subtitle.typography.letter_spacing.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_pulse_subtitle.typography.letter_spacing.mobile', ''),
+                        ),
+                        'line_height' => array(
+                            'desktop' => Arr::get($settings, 'styles.notification_pulse_subtitle.typography.line_height.desktop', ''),
+                            'tablet' => Arr::get($settings, 'styles.notification_pulse_subtitle.typography.line_height.tablet', ''),
+                            'mobile' => Arr::get($settings, 'styles.notification_pulse_subtitle.typography.line_height.mobile', ''),
+                        ),
+                        'font_weight' => Arr::get($settings, 'styles.notification_pulse_subtitle.typography.font_weight', ''),
+                        'font_style' => Arr::get($settings, 'styles.notification_pulse_subtitle.typography.font_style', ''),
+                        'text_transform' => Arr::get($settings, 'styles.notification_pulse_subtitle.typography.text_transform', ''),
+                        'text_decoration' => Arr::get($settings, 'styles.notification_pulse_subtitle.typography.text_decoration', ''),
+                    ),
+                ),
+                'notification_pulse_accent' => array(
+                    'selector' => $notificationPrefix . '.wpsr-reviews-notification-card-wrapper.wpsr-reviews-notification3::before',
+                    'color' => array(
+                        'background_color' => Arr::get($settings, 'styles.notification_pulse_accent.color.background_color', ''),
+                    ),
+                ),
                 'notification_wrapper_box' => array(
-                    'selector' => $notificationPrefix . '.wpsr-reviews-notification-card-wrapper.wpsr-notification-active',
+                    'selector' => $notificationPrefix . '.wpsr-reviews-notification-card-wrapper.wpsr-notification-active, ' . $notificationPrefix . '.wpsr-reviews-notification-card-wrapper',
                     'color' => array(
                         'background_color' => Arr::get($settings, 'styles.notification_wrapper_box.color.background_color', ''),
                     ),

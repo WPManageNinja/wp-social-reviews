@@ -459,7 +459,7 @@ class InstagramWidget extends OxygenEl
         if ( isset( $_GET['ct_builder'] ) ) {
             wp_enqueue_style(
                 'wp_social_ninja_ig',
-                WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_ig.css',
+                WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_ig' . (is_rtl() ? '-rtl' : '') . '.css',
                 array(),
                 WPSOCIALREVIEWS_VERSION
             );

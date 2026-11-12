@@ -51,8 +51,6 @@ class DataProtector {
     /**
      * Encrypts a value.
      *
-     * If a user-based key is set, that key is used. Otherwise, the default key is used.
-     *
      * @since 3.9.1
      *
      * @param string $value Value to encrypt.
@@ -82,8 +80,6 @@ class DataProtector {
     /**
      * Decrypts a value.
      *
-     * If a user-based key is set, that key is used. Otherwise, the default key is used.
-     *
      * @since 3.9.1
      *
      * @param string $raw_value Value to decrypt.
@@ -104,9 +100,8 @@ class DataProtector {
         $method = 'aes-256-ctr';
         $ivlen  = openssl_cipher_iv_length( $method );
 
-        // encrypt() emits base64( iv . ciphertext ), so anything this short was never
-        // our payload. maybe_encrypt() probes plaintext through here, and a short
-        // slice would reach openssl_decrypt() as an undersized IV and warn.
+        // Too short to be iv . ciphertext. maybe_encrypt() probes plaintext through here,
+        // and a short slice would reach openssl_decrypt() as an undersized IV and warn.
         if ( false === $raw_value || strlen( $raw_value ) <= $ivlen ) {
             return false;
         }

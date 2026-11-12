@@ -1,18 +1,12 @@
 import { DarkModeMixin } from './DarkModeMixin';
 
 /**
- * Platform Icon Mixin
- * 
- * Provides centralized platform icon functionality with dark mode support.
- * This mixin can be used across all Vue components that need to display platform icons.
+ * Platform icon URLs and markup, with dark-mode variants.
  */
 export const PlatformIconMixin = {
     mixins: [DarkModeMixin],
 
     computed: {
-        /**
-         * Get assets URL from various possible sources
-         */
         assetsUrl() {
             return this.assets_url || this.appVars?.assets_url || window.WPSocialReviewsAdmin?.assets_url || '';
         }
@@ -20,8 +14,6 @@ export const PlatformIconMixin = {
 
     methods: {
         /**
-         * Get platform icon URL with dark mode support
-         * 
          * @param {string} platform - Platform name (e.g., 'facebook', 'instagram', 'tiktok')
          * @param {string} size - Icon size ('small' or 'large')
          * @param {string} customUrl - Custom icon URL (optional)
@@ -30,7 +22,7 @@ export const PlatformIconMixin = {
         getPlatformIcon(platform, size = 'small', customUrl = null) {
             let normalizedPlatform = this.normalizePlatformName(platform);
 
-            // If dark mode is enabled, try to get dark version first (only for platforms that have dark versions)
+            // Only these platforms ship a dark icon.
             if (this.isDarkMode) {
                 const platformsWithDarkIcons = ['facebook', 'amazon'];
                 if (platformsWithDarkIcons.includes(normalizedPlatform)) {
@@ -40,13 +32,13 @@ export const PlatformIconMixin = {
                 }
             }
 
-            // If custom URL is provided, return it (backend provides the correct icon)
+            // customUrl comes from the backend, already resolved.
             if (customUrl) {
                 return customUrl;
             }
 
-            // Check for custom platforms in business_info (for ReviewsEditor)
-            // Safely access business_info to avoid Vue warnings when not defined
+            // Custom platforms carry their logo in business_info (ReviewsEditor). Read it via
+            // hasOwnProperty so components without it don't trigger Vue warnings.
             let businessInfo = null;
             try {
                 const data = this.$data || {};
@@ -59,7 +51,6 @@ export const PlatformIconMixin = {
                     }
                 }
             } catch (e) {
-                // Silently catch any errors
             }
             
             if (businessInfo) {
@@ -70,13 +61,10 @@ export const PlatformIconMixin = {
                 }
             }
 
-            // Fallback to regular icon
             return this.getRegularIcon(normalizedPlatform, size);
         },
         
         /**
-         * Get platform icon HTML with dark mode support
-         * 
          * @param {string} platform - Platform name
          * @param {string} cssClass - CSS class for the image (optional)
          * @returns {string} HTML string
@@ -87,8 +75,6 @@ export const PlatformIconMixin = {
         },
         
         /**
-         * Get multiple platform icons HTML
-         * 
          * @param {string} platforms - Comma-separated platform names
          * @param {string} cssClass - CSS class for the wrapper (optional)
          * @returns {string} HTML string
@@ -114,8 +100,6 @@ export const PlatformIconMixin = {
         },
         
         /**
-         * Normalize platform name for consistent handling
-         * 
          * @param {string} platform - Platform name
          * @returns {string} Normalized platform name
          */
@@ -131,14 +115,12 @@ export const PlatformIconMixin = {
 
         
         /**
-         * Get regular (light mode) icon URL
-         * 
+         * Light-mode icon URL.
          * @param {string} platform - Normalized platform name
          * @param {string} size - Icon size
          * @returns {string} Regular icon URL
          */
         getRegularIcon(platform, size = 'small') {
-            // Check if we have platform cards data
             if (window.WPSocialReviewsAdmin?.platforms_cards) {
                 const platformCards = window.WPSocialReviewsAdmin.platforms_cards;
                 const match = platformCards.find(item => item.platform === platform);
@@ -147,7 +129,6 @@ export const PlatformIconMixin = {
                 }
             }
 
-            // Check brand icons
             if (window.WPSocialReviewsAdmin?.brand_icons) {
                 const icons = window.WPSocialReviewsAdmin.brand_icons;
                 if (icons[platform]) {
@@ -160,7 +141,6 @@ export const PlatformIconMixin = {
 
             }
 
-            // Fallback to constructed path for standard platforms
             if(size !== '' && window.WPSocialReviewsAdmin?.brand_icons && window.WPSocialReviewsAdmin.brand_icons[platform]) {
                 const sizePrefix = size === 'small' ? '-small' : '';
                 return `${this.assetsUrl}/images/icon/icon-${platform}${sizePrefix}.png`;
@@ -170,10 +150,9 @@ export const PlatformIconMixin = {
         },
         
         /**
-         * Handle dark mode changes - called by DarkModeMixin
+         * Called by DarkModeMixin.
          */
         onDarkModeChange(isDarkMode) {
-            // Force re-render when dark mode changes
             this.$forceUpdate();
         }
     }

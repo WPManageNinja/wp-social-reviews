@@ -7,37 +7,30 @@ class ReviewCategoriesMigrator
     static $categoriesTable = 'wpsr_review_categories';
     static $relationshipsTable = 'wpsr_review_category_relationships';
 
-    // Written only once the backfill has finished. Table existence must NOT be the
-    // guard: tables are created first, so a backfill that died partway would never
-    // be retried and the site would stay half-migrated.
+    // Set only once the backfill finishes. Table existence can't be the guard: tables
+    // are created first, so a backfill that died partway would never be retried.
     static $backfillOption = 'wpsr_review_categories_backfilled';
 
     // Reviews per pass: one SELECT plus one multi-row INSERT each.
     static $backfillChunkSize = 1000;
 
-    // The id of the last review already backfilled. Persisted (not just held in
-    // memory) so a large table that outlasts one admin request resumes where it
-    // stopped instead of cold-restarting at 0 and re-scanning everything.
+    // Last review id backfilled, persisted so a large table resumes across requests.
     static $backfillCursorOption = 'wpsr_review_categories_backfill_cursor';
 
-    // Ceiling on chunks handled in a single migrate() so the admin request cannot
-    // time out or exhaust memory on a large table; the persisted cursor lets the
-    // next migrate() resume the remainder. 20 * 1000 = 20k reviews per request.
+    // Chunks per migrate(), so one request can't time out or run out of memory.
+    // 20 * 1000 = 20k reviews per request.
     static $backfillMaxChunksPerRequest = 20;
 
-    // Resume point for the orphan sweep: the last relationship id processed before it
-    // stopped (per-request cap or query error), or 0 when migrate() had to defer the whole
-    // pass to a maintenance request. Its presence — not its value — is the "pending" flag,
-    // so a sweep owed from cursor 0 still runs; cleared only on a complete scan.
+    // Orphan sweep resume point: the last relationship id processed, or 0 for a deferred
+    // full pass. Its presence, not its value, is the "pending" flag. Cleared on a full scan.
     static $orphanSweepPendingOption = 'wpsr_review_categories_orphan_sweep_pending';
 
-    // Per-request memo for tablesExist(), keyed by prefixed table name so it stays
-    // correct across switch_to_blog().
+    // Memo for tableExists(), keyed by prefixed name so it survives switch_to_blog().
     protected static $tableExistsCache = [];
 
     /**
-     * Read paths must check this before touching the relation — a request that hasn't
-     * run the migration yet can reach the tables before they exist.
+     * Read paths must check this before touching the relation. The tables may not
+     * exist yet on a request that hasn't run the migration.
      */
     public static function tablesExist()
     {
@@ -48,9 +41,8 @@ class ReviewCategoriesMigrator
     }
 
     /**
-     * True once the legacy `category` column is fully copied into the taxonomy — the
-     * switch that makes it authoritative for readers. Re-checks the tables too, so a
-     * flag outliving its tables can't mislead readers.
+     * True once the legacy `category` column is fully copied into the taxonomy, which
+     * makes the taxonomy authoritative. Re-checks the tables in case the flag outlived them.
      */
     public static function isBackfilled()
     {
@@ -58,26 +50,23 @@ class ReviewCategoriesMigrator
     }
 
     /**
-     * Request contexts that may absorb the bounded backfill/sweep work: ordinary admin
-     * page loads, cron and WP-CLI. Admin-ajax is excluded — autosaves, heartbeat and
-     * other interactive polling must not inherit up to ~20k row deletions.
+     * Requests that may run the backfill/sweep: admin page loads, cron and WP-CLI.
+     * Not admin-ajax, so heartbeat and autosave never inherit ~20k row deletions.
      */
     public static function isMaintenanceRequest()
     {
-        if (wp_doing_cron() || (defined('WP_CLI') && WP_CLI)) {
-            return true;
-        }
+        $isMaintenance = wp_doing_cron()
+            || (defined('WP_CLI') && WP_CLI)
+            || (is_admin() && !wp_doing_ajax());
 
-        return is_admin() && !wp_doing_ajax();
+        return (bool) apply_filters('wpsocialreviews/is_maintenance_request', $isMaintenance);
     }
 
     public static function migrate()
     {
         global $wpdb;
 
-        // Safe to call from any request context (including a front-end plugins_loaded
-        // continuation), not just wp-admin: dbDelta() lives in an admin-only include,
-        // so pull it in when a table still needs creating.
+        // Callable from any request context, but dbDelta() lives in an admin-only include.
         if (!function_exists('dbDelta')) {
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         }
@@ -90,8 +79,7 @@ class ReviewCategoriesMigrator
         $relationshipsTableExisted = static::tableExists($relationshipsTable);
 
         if (!$categoriesTableExisted) {
-            // 191 not 255: `slug` is UNIQUE-indexed and utf8mb4 over 191 exceeds InnoDB's
-            // 767-byte key limit. `name` matches so two names can't truncate to one slug.
+            // 191, not 255: see ReviewCategory::MAX_LENGTH.
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- Required for migration to create table
             $sql = "CREATE TABLE $categoriesTable (
                 `id`         bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -106,9 +94,8 @@ class ReviewCategoriesMigrator
 
         if (!$relationshipsTableExisted) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- Required for migration to create table
-            // `review_id` is int(11) to match wpsr_reviews.id (declared int(11) by
-            // ReviewsMigrator); a mismatched-width join can't use the index. A separate
-            // idx_review_id is redundant against idx_review_category's leftmost column.
+            // `review_id` matches wpsr_reviews.id's int(11) so the join can use the index.
+            // idx_review_category's leftmost column already covers review_id lookups.
             $sql = "CREATE TABLE $relationshipsTable (
                 `id`          bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
                 `review_id`   int(11) NOT NULL,
@@ -122,39 +109,31 @@ class ReviewCategoriesMigrator
         // The memo predates the CREATE TABLEs above.
         static::$tableExistsCache = [];
 
-        // A just-created table can't have been backfilled, so clear any stale flag and
-        // cursor — this is how a site recovers from the tables being dropped.
+        // A just-created table can't have been backfilled, so clear any stale state.
+        // This is how a site recovers from the tables being dropped.
         if (!$categoriesTableExisted || !$relationshipsTableExisted) {
             delete_option(static::$backfillOption);
             delete_option(static::$backfillCursorOption);
-            // An empty pivot has nothing to sweep, and the flag would otherwise keep
-            // scheduling a continuation for rows that no longer exist.
             delete_option(static::$orphanSweepPendingOption);
         }
 
-        // Table creation above runs in any context (cheap DDL); the backfill and sweep are
-        // bounded but real work (up to ~20k rows), so they stay on admin, cron and WP-CLI
-        // requests whatever context migrate() was called from.
+        // Table creation is cheap and runs anywhere. The backfill and sweep are real work,
+        // so they only run on maintenance requests.
         if (static::isMaintenanceRequest()) {
             static::maybeBackfillFromCategoryColumn($categoriesTable, $relationshipsTable);
 
-            // Reconcile orphans once the taxonomy is authoritative — the version-gated
-            // reconciliation point, skipped during the backfill window (nothing orphaned
-            // yet).
+            // Nothing can be orphaned until the backfill is done.
             if (static::isBackfilled()) {
                 static::sweepOrphanedRelationships($categoriesTable, $relationshipsTable);
             }
         } elseif (static::isBackfilled()) {
-            // Hands the sweep this context isn't allowed to run to the next maintenance
-            // request; without a resume point maybeContinueOrphanSweep() finds nothing
-            // pending and, with the backfill flag set, migrate() never reconciles.
+            // Defer the sweep to the next maintenance request.
             static::markOrphanSweepPending();
         }
     }
 
     /**
-     * Flags a full sweep as owed without disturbing one already in flight: an existing
-     * cursor is a partial pass mid-table, and resetting it to 0 would redo that work.
+     * Flags a full sweep as owed without resetting one already in flight.
      */
     protected static function markOrphanSweepPending()
     {
@@ -164,23 +143,18 @@ class ReviewCategoriesMigrator
     }
 
     /**
-     * Runs whatever sweep is owed — one migrate() deferred, or the remainder of a pass that
-     * hit its per-request cap — so cleanup finishes across ordinary admin requests instead
-     * of stalling until the next DB-version bump. Costs one option read and no queries when
-     * nothing is pending.
+     * Runs any owed sweep (deferred by migrate() or cut short by the per-request cap)
+     * so cleanup finishes across admin requests. One option read when nothing is pending.
      */
     public static function maybeContinueOrphanSweep()
     {
         global $wpdb;
 
-        // Pending is signalled by the option existing, not by a truthy value: a sweep
-        // that stopped or failed at cursor 0 (a valid, falsy id) must still be resumable.
+        // Pending means the option exists; cursor 0 is falsy but still pending.
         if (get_option(static::$orphanSweepPendingOption, null) === null) {
             return;
         }
 
-        // Same guard as migrate(): sweeping before the taxonomy is authoritative (or
-        // with the tables gone) would query a relation that isn't there yet.
         if (!static::isBackfilled()) {
             return;
         }
@@ -192,10 +166,9 @@ class ReviewCategoriesMigrator
     }
 
     /**
-     * Deletes pivot rows whose category or review is gone — the delete-vs-assign races the
-     * models' non-atomic cleanup can't catch — in bounded primary-key batches so a large
-     * table can't hold locks past the request budget. A pass that hits the cap or a query
-     * error persists its cursor for maybeContinueOrphanSweep() to resume. Fallback, not primary.
+     * Deletes pivot rows whose category or review is gone (races the models' cleanup
+     * can't catch), in bounded id batches. On the cap or a query error the cursor is
+     * persisted for maybeContinueOrphanSweep().
      */
     protected static function sweepOrphanedRelationships($categoriesTable, $relationshipsTable)
     {
@@ -203,14 +176,11 @@ class ReviewCategoriesMigrator
 
         $reviewsTable = $wpdb->prefix . 'wpsr_reviews';
 
-        // Resume point left by a request that hit the cap; 0 starts a fresh pass.
         $lastId = (int) get_option(static::$orphanSweepPendingOption, 0);
 
         for ($batch = 0; $batch < static::$backfillMaxChunksPerRequest; $batch++) {
-            // Page a bounded number of relationship rows past the cursor, then flag which
-            // are orphaned — the inner LIMIT caps rows *inspected*, so a sparse or clean
-            // table can't scan the whole remainder hunting for enough orphans to fill it.
-            // A row is orphaned when either its category or its review no longer exists.
+            // The inner LIMIT caps rows inspected, not orphans found, so a clean table
+            // can't be scanned end to end in one batch.
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Bounded orphan cleanup; no FK to cascade
             $rows = $wpdb->get_results($wpdb->prepare(
                 "SELECT r.id AS rel_id, c.id AS category_match, rv.id AS review_match
@@ -227,12 +197,8 @@ class ReviewCategoriesMigrator
                 static::$backfillChunkSize
             ));
 
-            // get_results returns [] on error too, so the two cases are told apart by the
-            // error: only a genuinely empty page proves the rest of the table is clean.
+            // get_results returns [] on error too, so check the error before "empty".
             if ($wpdb->last_error) {
-                // Persist the last good cursor so maybeContinueOrphanSweep() retries —
-                // even on the first batch (cursor 0), whose falsy value would otherwise
-                // read as "nothing pending". Never clears the state on error.
                 update_option(static::$orphanSweepPendingOption, $lastId, 'no');
                 return;
             }
@@ -242,9 +208,6 @@ class ReviewCategoriesMigrator
                 return;
             }
 
-            // Orphans are the inspected rows with no matching category or no matching
-            // review; the cursor advances to the highest id inspected either way, so a
-            // clean page still moves forward.
             $orphanIds = [];
             foreach ($rows as $row) {
                 if ($row->category_match === null || $row->review_match === null) {
@@ -261,41 +224,34 @@ class ReviewCategoriesMigrator
                 ));
 
                 if ($wpdb->last_error) {
-                    // $lastId still points before this page (the delete that failed didn't
-                    // advance it), so persisting it retries this page.
+                    // $lastId still points before this page, so this page is retried.
                     update_option(static::$orphanSweepPendingOption, $lastId, 'no');
                     return;
                 }
             }
 
-            // Ordered ascending, so the last row is the high-water mark of the scan.
             $lastRow = end($rows);
             $lastId = (int) $lastRow->rel_id;
 
-            // A short page means the LIMIT was never reached, i.e. the scan ran to the end
-            // of the table: the pass is done without a query to rediscover that.
+            // A short page means the scan reached the end of the table.
             if (count($rows) < static::$backfillChunkSize) {
                 delete_option(static::$orphanSweepPendingOption);
                 return;
             }
         }
 
-        // Cap reached mid-table: persist the resume point, whose presence flags pending.
-        // Query errors persist their own resume point and return above.
+        // Cap reached mid-table.
         update_option(static::$orphanSweepPendingOption, $lastId, 'no');
     }
 
     /**
-     * Runs the backfill once per site, marking it done only on success. A partial
-     * run leaves the flag unset so the next migrate() retries it, which is safe:
-     * lookups are by slug and pivot writes are INSERT IGNORE.
+     * Runs the backfill once per site, flagging it done only on success. Retrying a
+     * partial run is safe: lookups are by slug and pivot writes are INSERT IGNORE.
      */
     protected static function maybeBackfillFromCategoryColumn($categoriesTable, $relationshipsTable)
     {
-        // Never flag the backfill done while the tables are missing. dbDelta fails
-        // silently, and the backfill reports success for a site with nothing to
-        // migrate — together those would set a flag telling every reader the
-        // taxonomy is authoritative when it does not exist.
+        // dbDelta fails silently, and a site with nothing to migrate reports success,
+        // so without this the flag could claim a taxonomy that doesn't exist.
         if (!static::tablesExist()) {
             return;
         }
@@ -313,8 +269,7 @@ class ReviewCategoriesMigrator
     {
         global $wpdb;
 
-        // Memoised because tablesExist() runs on every front-end render that filters
-        // by category.
+        // Memoised: tablesExist() runs on every front-end render that filters by category.
         if (!isset(static::$tableExistsCache[$table])) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Required for migration to check table existence
             static::$tableExistsCache[$table] = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table)) === $table;
@@ -325,8 +280,7 @@ class ReviewCategoriesMigrator
 
     /**
      * Copies the legacy `wpsr_reviews`.`category` column into the taxonomy in bounded
-     * id-cursor chunks, resolving only each chunk's own slugs so nothing scales with the
-     * whole vocabulary. Resumable via the persisted cursor.
+     * id-cursor chunks, resolving only each chunk's slugs. Resumable via the cursor.
      *
      * @return bool True when complete (including nothing to migrate); false if it aborted
      *              partway, so the caller leaves the flag unset and retries.
@@ -336,15 +290,14 @@ class ReviewCategoriesMigrator
         global $wpdb;
         $reviewsTable = $wpdb->prefix . 'wpsr_reviews';
 
-        // Nothing to migrate from — done, rather than retrying forever.
+        // Nothing to migrate from, so done rather than retrying forever.
         if (!static::tableExists($reviewsTable)) {
             return true;
         }
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Required for one-time migration backfill
         $existingColumns = $wpdb->get_col($wpdb->prepare("DESC %i", $reviewsTable), 0);
-        // get_col returns [] on a query error too, so a failed DESC must not read as
-        // "no category column, nothing to migrate" and flag the backfill complete.
+        // get_col returns [] on error too; a failed DESC must not flag the backfill complete.
         if ($wpdb->last_error) {
             return false;
         }
@@ -354,8 +307,6 @@ class ReviewCategoriesMigrator
 
         $lastId = (int) get_option(static::$backfillCursorOption, 0);
 
-        // A fixed number of id-cursor chunks per request keeps the work bounded on a
-        // large table; the persisted cursor lets the next migrate() resume the rest.
         for ($chunk = 0; $chunk < static::$backfillMaxChunksPerRequest; $chunk++) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Required for one-time migration backfill
             $rows = $wpdb->get_results($wpdb->prepare(
@@ -365,8 +316,7 @@ class ReviewCategoriesMigrator
                 static::$backfillChunkSize
             ));
 
-            // A query error must not read as an exhausted cursor: get_results returns []
-            // on error, which would delete the cursor and flag the backfill complete.
+            // get_results returns [] on error too; don't mistake it for an exhausted cursor.
             if ($wpdb->last_error) {
                 return false;
             }
@@ -376,8 +326,6 @@ class ReviewCategoriesMigrator
                 return true;
             }
 
-            // Discovery is bounded to this chunk: only the slugs seen in this slice of
-            // reviews are resolved, so the pass never materialises the whole vocabulary.
             $slugByReview = [];
             $nameBySlug = [];
             foreach ($rows as $row) {
@@ -395,7 +343,6 @@ class ReviewCategoriesMigrator
             }
 
             if (!empty($nameBySlug)) {
-                // One SELECT for the chunk's existing slugs, one INSERT for the missing.
                 $idBySlug = static::resolveSlugIds($categoriesTable, $nameBySlug);
                 if ($idBySlug === false) {
                     return false;
@@ -413,9 +360,8 @@ class ReviewCategoriesMigrator
                 }
             }
 
-            // Commit after each chunk so a failure — or the per-request cap — resumes
-            // from here. Continuation is driven by the plugins_loaded gate in
-            // boot/app.php, independent of the one-shot version-upgrade guard.
+            // Commit per chunk so a failure or the cap resumes from here, via the
+            // plugins_loaded gate in boot/app.php.
             update_option(static::$backfillCursorOption, $lastId, 'no');
         }
 
@@ -423,8 +369,8 @@ class ReviewCategoriesMigrator
     }
 
     /**
-     * Mirrors ReviewCategory::makeSlug(), inlined to keep the migration independent of
-     * the app models. Used on both sides of the backfill so they map by the same key.
+     * Mirrors ReviewCategory::makeSlug(), inlined so the migration doesn't depend on
+     * the app models.
      */
     protected static function categorySlug($value)
     {
@@ -444,9 +390,8 @@ class ReviewCategoriesMigrator
     }
 
     /**
-     * Resolves a chunk's slugs to ids: one SELECT for the ones that exist, one bulk
-     * INSERT IGNORE for the rest, then a read-back. Bounded by the chunk, never the
-     * whole vocabulary.
+     * Resolves a chunk's slugs to ids: SELECT the existing ones, INSERT IGNORE the
+     * rest, then read them back.
      *
      * @param array $nameBySlug [slug => display name].
      * @return array|false [slug => id] covering every input slug, or false on a query error.
@@ -471,9 +416,8 @@ class ReviewCategoriesMigrator
             $idBySlug += $created;
         }
 
-        // Every slug must resolve after insertion, or the reviews on those slugs would
-        // be silently skipped and the cursor advanced past them. Abort so the next run
-        // retries rather than losing the links (and never flags the backfill complete).
+        // An unresolved slug would skip its reviews and advance the cursor past them.
+        // Abort so the next run retries.
         if (count($idBySlug) < count($nameBySlug)) {
             return false;
         }
@@ -501,8 +445,7 @@ class ReviewCategoriesMigrator
             "SELECT id, slug FROM %i WHERE slug IN ($placeholders)",
             $args
         ));
-        // get_results returns [] on error, so surface it as a failure to retry rather
-        // than "no matching slugs" (which would drop reviews and advance the cursor).
+        // get_results returns [] on error too; fail so the caller retries.
         if ($wpdb->last_error) {
             return false;
         }
@@ -516,8 +459,8 @@ class ReviewCategoriesMigrator
     }
 
     /**
-     * Bulk-inserts categories in one statement. INSERT IGNORE against UNIQUE(slug) so a
-     * slug created concurrently (or already present) does not abort the batch.
+     * Bulk-inserts categories in one statement. INSERT IGNORE so a slug that already
+     * exists doesn't abort the batch.
      *
      * @param array $nameBySlug [slug => display name] to create.
      * @return bool False only on an outright query error.

@@ -18,14 +18,11 @@ abstract class Controller extends BaseController
     }
 
     /**
-     * Decode a JSON-encoded request parameter into an array.
-     *
-     * Do not unslash around this call. Request values are already unslashed —
-     * WP_REST_Server unslashes $_POST/$_GET and JSON bodies are read raw — so a
-     * further pass would strip backslashes the user typed into their content.
+     * Decode a JSON request parameter into an array. Don't unslash around this call:
+     * request values are already unslashed, so another pass strips the user's backslashes.
      *
      * @param mixed $wpsr_value Raw request parameter.
-     * @return array|null Null when the value is absent or is not JSON for an array.
+     * @return array|null Null when the value is absent or is not a JSON array.
      */
     protected function decodeJsonParam($wpsr_value)
     {

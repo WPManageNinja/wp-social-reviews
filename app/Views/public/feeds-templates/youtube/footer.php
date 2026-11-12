@@ -34,7 +34,6 @@ if (($pagination_type === 'load_more') || (!empty($header) && $feed_settings['su
                 <div class="wpsr-load-icon-wrapper"><span></span></div>
             </button>';
     }
-// wpsr-youtube-footer end
     if (!empty($header) && isset($feed_settings['subscribe_button_settings']['subscribe_button_position']) && $feed_settings['subscribe_button_settings']['subscribe_button_position'] !== 'header' && ($wpsr_feed_type !== 'search_feed' && $wpsr_feed_type !== 'single_video')) {
         /**
          * youtube_channel_subscribe_btn hook.
@@ -44,7 +43,7 @@ if (($pagination_type === 'load_more') || (!empty($header) && $feed_settings['su
         do_action('wpsocialreviews/youtube_channel_subscribe_btn', $header,
             $feed_settings['subscribe_button_settings']);
     }
-    echo '</div>';
+    echo '</div>'; // wpsr-youtube-footer end
 }
 if (($layout_type !== 'carousel' && $pagination_type === 'prev_next' && defined('WPSOCIALREVIEWS_PRO')) && (isset($feed_settings['video_settings']) && $feed_settings['video_settings']['play_mode'] !== 'gallery')) {
     do_action('wpsocialreviews/render_youtube_prev_next_pagination', $templateId, $paginate, $total, '');

@@ -13,8 +13,8 @@ use WPSocialReviews\App\Services\Helper as ServicesHelper;
 abstract class BaseReview
 {
     /**
-     * Identity values and insert rows per statement. Payload length comes from a remote API
-     * page, so nothing in this class bounds it — statements stay chunked.
+     * Identity values and insert rows per statement. Payload length comes from a remote
+     * API page and is unbounded, so statements stay chunked.
      */
     const SYNC_BATCH_SIZE = 500;
 
@@ -45,7 +45,6 @@ abstract class BaseReview
         add_action('wpsocialreviews/get_advance_settings_' . $this->platform, array($this, 'getAdvanceSettings'));
         add_action('wpsocialreviews/save_advance_settings_' . $this->platform, array($this, 'saveAdvanceSettings'));
 
-        // clear verification configs
         add_action('wpsocialreviews/clear_reviews_verification_configs_' . $this->platform, array($this, 'clearVerificationConfigs'));
 
         if ($this->authProvider) {
@@ -53,10 +52,8 @@ abstract class BaseReview
             add_action('wpsocialreviews/consume_review_auth_' . $this->platform, array($this, 'consumeAuth'));
         }
 
-        //activate cron job
         add_action('wpsr_' . $this->platform . '_reviews_update', array($this, 'doCronEvent'));
 
-        //manually update reviews
         add_action('wpsocialreviews/'.$this->platform . '_manually_sync_reviews', array($this, 'manuallySyncReviews'));
     }
 
@@ -99,8 +96,12 @@ abstract class BaseReview
         ];
     }
 
-    //Remove database reviews that don't match platforms reviews
-    public function reviewDelete($currentReviews, $fieldValue)
+    // Trash stored reviews that the platform no longer returns.
+    /**
+     * @param string|null $windowStart oldest review_time the fetch covered, when it stopped at
+     *                                 the limit. Older stored reviews weren't checked, so they stay.
+     */
+    public function reviewDelete($currentReviews, $fieldValue, $windowStart = null)
     {
         $fieldName = 'source_id';
         $reviewIdentifyValue = '';
@@ -113,15 +114,19 @@ abstract class BaseReview
             $fieldValue = $accountId[3];
             $uniqueIdentifierKey = 'review_id';
         }
-        $existReviews = Review::where('platform_name', $this->platform)
-                                ->where($fieldName, $fieldValue)
-                                ->get();
+        $existQuery = Review::where('platform_name', $this->platform)
+                                ->where($fieldName, $fieldValue);
 
-        // Extract the IDs from both arrays
+        // Strictly newer: a stored review tied with the oldest fetched one may sit on the next page.
+        if (!empty($windowStart)) {
+            $existQuery = $existQuery->where('review_time', '>', $windowStart);
+        }
+
+        $existReviews = $existQuery->get();
+
         $idsExistReviews = Helper::getIdsExistReviews($existReviews, $uniqueIdentifierKey);
         $idsCurrentReviews = Helper::getIdsCurrentReviews($currentReviews, $reviewIdentifyValue, $this->platform);
         
-        // Find the common IDs between the two arrays
         $notMatchIds = array_diff($idsExistReviews, $idsCurrentReviews);
 
         foreach ($notMatchIds as $id) {
@@ -146,8 +151,8 @@ abstract class BaseReview
 
         $fieldName = $this->syncIdentityColumn($remoteSyncReviewerNames);
 
-        // AliExpress decides on a delete only after learning a review is new, and that delete
-        // must land before the row is written, so its statements stay interleaved per item.
+        // AliExpress deletes only once it knows a review is new, and that delete must land
+        // before the insert, so its statements stay per item.
         $batchable = $this->platform !== 'aliexpress';
 
         $identityValues = [];
@@ -166,16 +171,14 @@ abstract class BaseReview
         foreach ($reviews as $index => $review) {
             if(($this->platform === 'tripadvisor' || $this->platform === 'yelp')){
                 $currentReviewId = Arr::get($review, 'id');
-                // Skip reviews that have already been fetched
                 if ($currentReviewId === $lastFetchedReviewId) {
-                    continue; // Skip reviews already stored
+                    continue;
                 }
             }
 
             $value = $identityValues[$index];
             $identityKey = (string) $value;
 
-            // check if a review already exists or not
             if ($batchable) {
                 $exist = isset($existingByIdentity[$identityKey]) ? $existingByIdentity[$identityKey] : false;
             } else {
@@ -216,8 +219,7 @@ abstract class BaseReview
             }
 
             if ($exist) {
-                // Preserve existing approval status: if the review was manually disabled (review_approved == 0),
-                // don't overwrite it by re-approving during syncing.
+                // Keep the stored approval, so a sync never re-approves a disabled review.
                 if (isset($exist->review_approved)) {
                     $newReview['review_approved'] = (int) $exist->review_approved;
                 }
@@ -226,8 +228,8 @@ abstract class BaseReview
             } elseif (!$batchable) {
                 Review::insert($newReview);
             } else {
-                // A repeated identity inside one payload used to find the row the earlier item had
-                // just written and update it, keeping that row's approval. Staging repeats that.
+                // A repeated identity in one payload keeps the earlier item's approval,
+                // as it would if that row had already been written.
                 if (isset($pendingInserts[$identityKey])) {
                     $newReview['review_approved'] = (int) $pendingInserts[$identityKey]['review_approved'];
                 }
@@ -235,22 +237,19 @@ abstract class BaseReview
                 $pendingInserts[$identityKey] = $newReview;
             }
 
-            // Update the last fetched review ID to the current one
             $lastFetchedReviewId = $currentReviewId;
         }
 
         $this->insertSyncedReviews($pendingInserts);
 
         if(($this->platform === 'tripadvisor' || $this->platform === 'yelp')) {
-            // Save the last fetched review ID for the next run
             $lastFetchedReviewsIds[$this->platform][$placeId] = $lastFetchedReviewId;
             update_option('last_fetched_reviews_id', $lastFetchedReviewsIds);
         }
     }
 
     /**
-     * Which column identifies a review for this platform. It depends on the platform alone,
-     * so it is resolved once per sync rather than once per payload item.
+     * Which column identifies a review for this platform. Resolved once per sync.
      */
     protected function syncIdentityColumn($reviewerNameProviders)
     {
@@ -271,7 +270,9 @@ abstract class BaseReview
         } elseif ($this->platform === 'aliexpress') {
             return Arr::get($review, 'evaluationIdStr');
         } elseif ($this->platform === 'booking.com') {
-            return Arr::get($review, 'source_id').'-'. Arr::get($review, 'reviewer_name');
+            // Booking's own review id; falls back to the name when the payload carries no key.
+            $key = Arr::get($review, 'review_key') ?: Arr::get($review, 'reviewer_name');
+            return Arr::get($review, 'source_id').'-'. $key;
         } elseif ($this->platform === 'tripadvisor' || $this->platform === 'yelp') {
             return Arr::get($review, 'id');
         } elseif ($this->platform === 'airbnb') {
@@ -292,8 +293,7 @@ abstract class BaseReview
     }
 
     /**
-     * One SELECT per 500 identity values instead of one per payload item. Keyed on the first
-     * row seen for a value, which is what the single `first()` it replaces also gave.
+     * One SELECT per 500 identity values. Keyed on the first row seen for a value, as first() would be.
      */
     protected function findReviewsByIdentity($fieldName, array $identityValues)
     {
@@ -306,8 +306,7 @@ abstract class BaseReview
         foreach (array_chunk($values, static::SYNC_BATCH_SIZE) as $chunk) {
             $query = Review::where('platform_name', $this->platform);
 
-            // strval() folds a missing identity to '', but IN ('') never matches a NULL
-            // column, and the per-item where() this replaced compiled to IS NULL.
+            // strval() folds a NULL identity to '', and IN ('') never matches NULL.
             if (in_array('', $chunk, true)) {
                 $query = $query->where(function ($subQuery) use ($fieldName, $chunk) {
                     $subQuery->whereIn($fieldName, $chunk)->orWhereNull($fieldName);
@@ -353,8 +352,8 @@ abstract class BaseReview
     }
 
     /**
-     * Rows are grouped by their key set because a multi-row INSERT takes its columns from the
-     * first row, and platforms whose payload omits a field produce more than one shape.
+     * Rows are grouped by key set: a multi-row INSERT takes its columns from the first row,
+     * and a payload that omits a field produces more than one shape.
      */
     protected function insertSyncedReviews(array $rows)
     {
@@ -397,6 +396,8 @@ abstract class BaseReview
 
     public function saveAdvanceSettings($settings = array())
     {
+        $settings = $this->withMinimumSyncInterval($settings);
+
         update_option('wpsr_' . $this->platform . '_global_settings', $settings, 'no');
 
         $this->saveCache();
@@ -421,11 +422,28 @@ abstract class BaseReview
                     )
                 );
             }
+            $settings = $this->withMinimumSyncInterval($settings);
         }
 
         wp_send_json_success([
             'settings' => $settings,
         ], 200);
+    }
+
+    /**
+     * TP and Booking.com never sync more often than weekly; stored shorter intervals are raised to 1 week.
+     */
+    private function withMinimumSyncInterval($settings)
+    {
+        if (!is_array($settings) || !(Helper::is_tp($this->platform) || $this->platform === 'booking.com')) {
+            return $settings;
+        }
+
+        if (intval(Arr::get($settings, 'global_settings.expiration', 0)) < WEEK_IN_SECONDS) {
+            $settings['global_settings']['expiration'] = WEEK_IN_SECONDS;
+        }
+
+        return $settings;
     }
 
     public function activateCronEvent()
@@ -470,33 +488,6 @@ abstract class BaseReview
     public function manuallySyncReviews($credentials)
     {
         $settings = get_option($this->optionKey);
-
-
-//        if($this->platform === 'airbnb') {
-//            $url = Arr::get($credentials, 'url', '');
-//            $businessType = strpos($url, 'rooms') ? 'rooms' : 'experiences';
-//            if ((!empty(Arr::get($credentials, 'name')) && !empty($url)) || !empty(Arr::get($credentials, 'url'))) {
-//                $setting['business_name'] = Arr::get($credentials, 'name', '');
-//                $setting['business_type'] = $businessType;
-//                if(empty($credentials['name']) && empty(Arr::get($credentials, 'average_rating'))) {
-//                    $setting['business_name'] = Arr::get($credentials, 'url');
-//                }
-//                if(!empty($setting['business_name']) && !empty(Arr::get($setting, 'business_type'))) {
-//                    try {
-//                        (new Airbnb())->searchBusiness($setting);
-//                        wp_send_json_success([
-//                            'message'  => __('Reviews synced successfully!', 'wp-social-reviews')
-//                        ]);
-//                    } catch (\Exception $exception) {
-//                        wp_send_json_error([
-//                            'message'    => $exception->getMessage()
-//                        ], 423);
-//                    }
-//                }
-//            }
-//        } else {
-//
-//        }
 
         $url = Arr::get($credentials, 'url', '');
         $businessName = Arr::get($credentials, 'name', '');
@@ -550,6 +541,13 @@ abstract class BaseReview
 
     public function doCronEvent()
     {
+        $optionName = 'wpsr_' . $this->platform . '_global_settings';
+        $globalSettings = get_option($optionName);
+        $minimumSettings = $this->withMinimumSyncInterval($globalSettings);
+        if ($minimumSettings !== $globalSettings) {
+            update_option($optionName, $minimumSettings, 'no');
+        }
+
         $expiredCaches = $this->cacheHandler->getExpiredCaches();
         if(!$expiredCaches) {
             return false;
@@ -562,7 +560,8 @@ abstract class BaseReview
         if (!empty($settings) && is_array($settings)) {
             foreach ($settings as $setting) {
                 $placeId = Arr::get($setting, 'place_id');
-                $language = Arr::get($settings, $placeId.'.language', 'en');
+                // Not a dotted path: Booking place ids contain a dot, which Arr::get would split.
+                $language = Arr::get($setting, 'language', 'en');
 
                 if (in_array($placeId, $expiredCaches)) {
                     $businessUrl = Arr::get($setting, 'url_value', '');
@@ -574,24 +573,6 @@ abstract class BaseReview
                         'language' => $language,
                         'url' => $businessUrl
                     ];
-                    //if the platform is airbnb then we have to do search and works differently else verify credential
-//                    if($this->platform === 'airbnb') {
-//                        if ((!empty(Arr::get($setting, 'business_name')) && !empty(Arr::get($setting, 'business_type'))) || !empty(Arr::get($setting, 'url_value'))) {
-//                            if(empty($setting['business_name']) && empty(Arr::get($setting, 'business_type'))) {
-//                                $setting['business_name'] = Arr::get($setting, 'url_value');
-//                            }
-//                            if(!empty($setting['business_name']) && !empty(Arr::get($setting, 'business_type'))) {
-//                                try {
-//                                    (new Airbnb())->searchBusiness($setting);
-//                                } catch (\Exception $exception) {
-//                                    error_log($exception->getMessage());
-//                                }
-//                            }
-//                        }
-//                    } else {
-//
-//                    }
-
                     $attempted = false;
 
                     if($this->platform === 'aliexpress') {
@@ -611,9 +592,8 @@ abstract class BaseReview
                         }
                     }
 
-                    // Only move the cursor once a refresh has actually been attempted.
-                    // Advancing it regardless left an unrefreshable business looking fresh,
-                    // so the next cron skipped it instead of retrying.
+                    // Move the cursor only after a refresh attempt, or an unrefreshable
+                    // business looks fresh and the next cron skips it.
                     if ($attempted) {
                         $this->cacheHandler->createCache('wpsr_reviews_' . $this->platform . '_business_info_' . $placeId, $placeId);
                     }

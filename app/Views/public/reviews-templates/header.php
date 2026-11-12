@@ -18,18 +18,37 @@ $wpsr_wrapper_id               = $templateType === 'slider' && defined('WPSOCIAL
 $wpsr_position                = $templateType === 'notification' ? 'wpsr-'.$template_meta['notification_settings']['notification_position'] : '';
 $wpsr_desktop_column_number   = Arr::get($template_meta, 'responsive_column_number.desktop');
 $wpsr_data_platforms = is_array($platforms) ? implode(',', $platforms) : $platforms;
+$wpsr_layout_style_class = Helper::layoutStyleClass($template_meta);
 
 $wpsr_ai_enabled = Arr::get($template_meta, 'ai_summary.enabled', false);
 
 $wpsr_wrapper_atts_array = [
     'id' => esc_attr($wpsr_wrapper_id),
-    'class' => 'wpsr-reviews-' . esc_attr($templateId) . ' wpsr-reviews-wrapper wpsr-feed-wrap wpsr_content '.esc_attr($wpsr_position) .' '.esc_attr($wpsr_has_slider) . ' '.esc_attr($wpsr_equal_height). ' ' . esc_attr($wpsr_content_length_deactivated) .' wpsr-reviews-template-'. esc_attr($wpsr_template).' wpsr-reviews-layout-'.esc_attr($templateType).' '.esc_attr($wpsr_header_enable),
+    'class' => 'wpsr-reviews-' . esc_attr($templateId) . ' wpsr-reviews-wrapper wpsr-feed-wrap wpsr_content '.esc_attr($wpsr_position) .' '.esc_attr($wpsr_has_slider) . ' '.esc_attr($wpsr_equal_height). ' ' . esc_attr($wpsr_content_length_deactivated) .' wpsr-reviews-template-'. esc_attr($wpsr_template).' wpsr-reviews-layout-'.esc_attr($templateType).' '.esc_attr($wpsr_header_enable).($wpsr_layout_style_class ? ' '.esc_attr($wpsr_layout_style_class) : ''),
     'data-column' => $wpsr_desktop_column_number,
     'data-platforms' => $wpsr_data_platforms,
 ];
 
 if($templateType === 'slider' && defined('WPSOCIALREVIEWS_PRO')) {
     $wpsr_wrapper_atts_array['data-slider_settings'] = wp_json_encode($wpsr_slider_data);
+}
+
+// The notification popup reads each platform's icon from here. An empty value means no icon.
+// The template's platforms are included too, because the sort toolbar can load reviews from them later.
+if ($templateType === 'notification' && Arr::get($template_meta, 'isPlatformIcon') === 'true') {
+    $wpsr_icon_platforms = is_array($platforms) ? $platforms : explode(',', (string) $platforms);
+    foreach ((!empty($reviews) ? $reviews : []) as $wpsr_review) {
+        $wpsr_icon_platforms[] = Arr::get($wpsr_review, 'platform_name', '');
+    }
+    $wpsr_platform_icons = [];
+    foreach ($wpsr_icon_platforms as $wpsr_review_platform) {
+        $wpsr_review_platform = is_string($wpsr_review_platform) ? trim($wpsr_review_platform) : '';
+        if ($wpsr_review_platform === '' || isset($wpsr_platform_icons[$wpsr_review_platform])) {
+            continue;
+        }
+        $wpsr_platform_icons[$wpsr_review_platform] = esc_url_raw(Helper::platformIcon($wpsr_review_platform, 'small'));
+    }
+    $wpsr_wrapper_atts_array['data-platform_icons'] = wp_json_encode((object) $wpsr_platform_icons);
 }
 
 $wpsr_wrapper_atts = '';
@@ -45,6 +64,7 @@ echo wp_kses('<div ' . $wpsr_wrapper_atts . '>', array(
         'data-column' => true,
         'data-slider_settings' => true,
         'data-platforms' => true,
+        'data-platform_icons' => true,
     )
 ));
 
@@ -161,6 +181,11 @@ if($template_meta['enable_schema'] === 'true'){
             'addressCountry' => $wpsr_business_country
         ];
         $wpsr_schema_array['itemReviewed']['address'] = $wpsr_address;
+    }
+
+    // An empty image is not a valid schema value, so leave the key out.
+    if (empty($wpsr_image)) {
+        unset($wpsr_schema_array['image'], $wpsr_schema_array['itemReviewed']['image']);
     }
 
     $wpsr_schema_array = apply_filters('wpsocialreviews/reviews_schema_data', $wpsr_schema_array, [

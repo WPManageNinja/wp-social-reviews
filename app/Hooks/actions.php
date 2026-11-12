@@ -3,19 +3,13 @@
 defined('ABSPATH') or die;
 
 /**
- * All registered action's handlers should be in app\Hooks\Handlers,
- * addAction is similar to add_action and addCustomAction is just a
- * wrapper over add_action which will add a prefix to the hook name
- * using the plugin slug to make it unique in all wordpress plugins,
- * ex: $app->addCustomAction('foo', ['FooHandler', 'handleFoo']) is
- * equivalent to add_action('slug-foo', ['FooHandler', 'handleFoo']).
+ * Handlers live in app/Hooks/Handlers. addCustomAction() is add_action()
+ * with the hook name prefixed by the plugin slug.
  */
 
 /**
  * @var \WPSocialReviews\Framework\Foundation\Application $app
  */
-
-// Init the platform on plugin load
 
 (new \WPSocialReviews\App\Hooks\Handlers\PlatformHandler())->register();
 
@@ -36,7 +30,6 @@ add_action('save_post', function ($postId, $post) use ($app) {
         return;
     }
 
-    // Ensure $post is valid
     if (!is_a($post, 'WP_Post') || !isset($post->post_content)) {
         return;
     }
@@ -87,9 +80,7 @@ add_action('save_post', function ($postId, $post) use ($app) {
 }, 10, 2);
 
 add_action('init', function () {
-    // Ensure cron jobs are registered on plugin load (in case they were deleted)
-    // This prevents the cron job from being permanently lost if WordPress clears it
-    // Re-register cron jobs if they're missing (ActivateCronEvent checks internally)
+    // Re-register cron events in case something cleared them. activate() skips existing ones.
     (new \WPSocialReviews\App\Hooks\Handlers\ActivateCronEvent())->activate();
 
     (new \WPSocialReviews\App\Hooks\Handlers\ShortcodeHandler())->addShortcode();
@@ -105,7 +96,6 @@ add_action('init', function () {
 $app->addAction('wp_ajax_wpsr_get_more_feeds', 'ShortcodeHandler@handleLoadMoreAjax');
 $app->addAction('wp_ajax_nopriv_wpsr_get_more_feeds', 'ShortcodeHandler@handleLoadMoreAjax');
 
-// Register the widget
 add_action('widgets_init', function () {
     register_widget('WPSocialReviews\App\Services\SidebarWidgets');
 });
@@ -190,7 +180,7 @@ add_action('enqueue_block_editor_assets', function () {
 
     wp_enqueue_style(
         'wpsr-gutenberg-block',
-        WPSOCIALREVIEWS_URL . 'assets/css/social-review-gutenblock.css',
+        WPSOCIALREVIEWS_URL . 'assets/css/social-review-gutenblock' . (is_rtl() ? '-rtl' : '') . '.css',
         array('wp-edit-blocks'),
         WPSOCIALREVIEWS_VERSION
     );
@@ -212,7 +202,6 @@ $app->addAction('wpsocialreviews/review_content', 'ReviewsTemplateHandler@render
 $app->addAction('wpsocialreviews/review_title', 'ReviewsTemplateHandler@renderReviewTitleHtml', 10, 3);
 $app->addAction('wpsocialreviews/review_ai_summary_list', 'ReviewsTemplateHandler@renderAiSummaryList', 10, 6);
 
-//reviews templates ajax load more
 /*******
  *
  * Twitter feed templates action hooks
@@ -271,6 +260,10 @@ $app->addAction('wpsocialreviews/instagram_post_media', 'InstagramTemplateHandle
 $app->addAction('wpsocialreviews/instagram_post_caption', 'InstagramTemplateHandler@renderPostCaption', 10, 2);
 $app->addAction('wpsocialreviews/instagram_icon', 'InstagramTemplateHandler@renderIcon');
 $app->addAction('wpsocialreviews/instagram_user_avatar', 'InstagramTemplateHandler@renderUserAvatar', 10, 2);
+$app->addAction('wpsocialreviews/instagram_header_statistics', 'InstagramTemplateHandler@renderHeaderStatisticsHtml', 10, 3);
+$app->addAction('wpsocialreviews/instagram_post_date', 'InstagramTemplateHandler@renderPostDate', 10, 2);
+$app->addAction('wpsocialreviews/instagram_follow_button', 'InstagramTemplateHandler@renderFollowButtonHtml');
+$app->addAction('wpsocialreviews/instagram_post_author', 'InstagramTemplateHandler@renderPostAuthor', 10, 2);
 /*******
  *
  * Facebook feed templates action hooks
@@ -330,7 +323,6 @@ if(defined('LSCWP_V')){
     });
 }
 
-// require the CLI
 if (defined('WP_CLI') && WP_CLI) {
     \WP_CLI::add_command('wpsocialninja', '\WPSocialReviews\App\Hooks\CLI\Commands');
 }

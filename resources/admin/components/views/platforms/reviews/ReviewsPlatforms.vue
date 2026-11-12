@@ -138,6 +138,7 @@
                          :reviewsinfo="reviewsinfo"
                          :locationList="locationList"
                          :platFormName="platFormName"
+                         :deprecationNotice="deprecationNotice"
                          @sync-loader="syncLoaderActivate"
                          @add-new-template="addNewTemplate"
                          @clear-verification-credentials="clearVerificationCredentials"
@@ -238,10 +239,14 @@
                       :message="message"
                       :messageType="messageType"
                       :languages="languages"
+                      :connectMode="connectMode"
+                      :bookingHotel="bookingHotel"
+                      :businessLimitNotice="businessLimitNotice"
                       @sourceId="sourceId = $event"
                       @save-reviews="saveReviews"
                       @set-languages="setLanguages"
                       @url_value="setUrlValue"
+                      @booking-hotel="bookingHotel = $event"
                       @credentialsType="credentialsType = $event"
                   />
 
@@ -459,6 +464,51 @@
             </div>
           </el-dialog>
           </template>
+
+          <!-- A saved property is keyed by its old page link, not by a hotel id, so only the
+               admin can say whether this hotel is one of them. -->
+          <el-dialog
+              v-model="legacyPromptVisible"
+              width="42%"
+              class="wpsr-modal wpsr-legacy-choice-modal"
+              :close-on-click-modal="false"
+          >
+            <template #header>
+              <div class="wpsr-connection-modal-header">
+                <h4 class="wpsr-dialog-title">{{ $t('Is this hotel already on your site?') }}</h4>
+              </div>
+            </template>
+
+            <p class="wpsr-legacy-choice-note">{{ legacyPromptMessage }}</p>
+
+            <el-radio-group v-model="legacyChoice" class="wpsr-legacy-choice-list">
+              <el-radio
+                  v-for="property in legacyProperties"
+                  :key="property.place_id"
+                  :value="property.place_id"
+              >
+                <span class="wpsr-legacy-choice-name">
+                  {{ property.name }}
+                  <em v-if="property.suggested">{{ $t('looks like a match') }}</em>
+                </span>
+                <span class="wpsr-legacy-choice-meta">
+                  {{ property.review_count }} {{ $t('saved reviews would be replaced') }}
+                </span>
+                <span class="wpsr-legacy-choice-meta" v-if="property.url">{{ property.url }}</span>
+              </el-radio>
+              <el-radio :value="legacyNewChoice">
+                <span class="wpsr-legacy-choice-name">{{ $t('No, this is a new property') }}</span>
+                <span class="wpsr-legacy-choice-meta">{{ $t('Nothing you already saved is changed') }}</span>
+              </el-radio>
+            </el-radio-group>
+
+            <template #footer>
+              <el-button @click="legacyPromptVisible = false">{{ $t('Cancel') }}</el-button>
+              <el-button type="primary" :disabled="!legacyChoice" @click="confirmLegacyChoice">
+                {{ $t('Continue') }}
+              </el-button>
+            </template>
+          </el-dialog>
         </div>
       </el-row>
     </div>
@@ -487,7 +537,7 @@ import FacebookMarkIcon from "../../../pieces/icons/FacebookMarkIcon.vue";
 import ProCrownIcon from "../../../pieces/icons/ProCrownIcon.vue";
 import FluentCartForm from "./FluentCartForm.vue";
 import AuthRedirectOverlay from "../../../core-ui/AuthRedirectOverlay.vue";
-import { wpsrBuildAuthReturnUrl as buildWpsrAuthReturnUrl } from "../../../../utils";
+import { wpsrBuildAuthReturnUrl as buildWpsrAuthReturnUrl, wpsrSubmitAuthForm } from "../../../../utils";
 
 export default {
   name: "ReviewsPlatforms",
@@ -605,6 +655,15 @@ export default {
       termsAndConditions: '',
       experiences: false,
       downloadReviewsUrl: '',
+      bookingHotel: null,
+      connectMode: 'url',
+      legacyPromptVisible: false,
+      legacyPromptMessage: '',
+      legacyProperties: [],
+      legacyChoice: '',
+      legacyChoiceKey: 'legacy_choice',
+      legacyNewChoice: 'new',
+      legacySettings: null,
       verifyPlatform: false,
       is_enabled_platform: false,
       disabled: false,
@@ -619,6 +678,7 @@ export default {
       promotion: [],
       languages: [],
       deprecationNotice: '',
+      businessLimitNotice: '',
       language: 'en',
       version: '',
       credentialsType : 'oauth',
@@ -669,8 +729,8 @@ export default {
         return_url: this.wpsrBuildAuthReturnUrl('edit-template', 'google'),
         source: 'Google Reviews'
       }).then(response => {
-        if (response && response.data && response.data.url) {
-          window.open(response.data.url, '_self');
+        if (response && response.data && response.data.action) {
+          wpsrSubmitAuthForm(response.data.action, response.data.fields);
         } else {
           this.googleAuthLoading = false;
         }
@@ -695,8 +755,8 @@ export default {
         return_url: this.wpsrBuildAuthReturnUrl('edit-template', 'facebook'),
         source: 'Facebook Reviews'
       }).then(response => {
-        if (response && response.data && response.data.url) {
-          window.open(response.data.url, '_self');
+        if (response && response.data && response.data.action) {
+          wpsrSubmitAuthForm(response.data.action, response.data.fields);
         } else {
           this.facebookAuthLoading = false;
         }
@@ -728,6 +788,7 @@ export default {
       this.platFormName = platformName;
       this.platformTitle = platformTitle;
       this.reviewsPagination = null;
+      this.businessLimitNotice = '';
 
       if (!this.has_pro && (platformName !== 'google' && platformName !== 'airbnb')) {
         this.internalDialog = true;
@@ -895,6 +956,8 @@ export default {
               }
 
               this.deprecationNotice = (response.additional_info && response.additional_info.deprecation_notice) || '';
+              this.businessLimitNotice = (response.additional_info && response.additional_info.business_limit_notice) || '';
+              this.connectMode = (response.additional_info && response.additional_info.connect_mode) || 'url';
 
               if (this.platFormName === 'fluent-cart' && response.additional_info) {
                 this.hasFluentCartProducts = !!response.additional_info.has_products;
@@ -975,6 +1038,13 @@ export default {
         this.apiKey = defaultApiKey;
       }
 
+      if (this.platFormName === 'booking.com' && this.connectMode === 'search' && !this.bookingHotel) {
+        this.message = 'Please pick your hotel from the search results.';
+        this.messageType = errorType;
+        this.acces_token_loader = false;
+        return;
+      }
+
       // Validate API key and source ID
       if (!this.apiKey || !this.sourceId) {
         this.message = !this.apiKey ? requiredMessage : '';
@@ -1016,30 +1086,86 @@ export default {
           language: this.language
         }
 
-        this.$post('platforms/reviews', {
-          settings: settings
-        })
-            .then(response => {
-              if (response.data) {
-                  if(response.data.business_info){
-                    this.reviewsinfo = response.data.business_info;
-                  }
-                  this.handleSuccess(response.data.message);
-                  this.getApiCredential(this.platFormName);
-                  this.getEnabledPlatforms();
-                // this.businessName = '';
-              }
-            })
-            .catch((errors) => {
-              this.handleError(errors);
-            })
-            .always(() => {
-              this.loading = false;
-              this.addNewBusiness = false;
-              this.acces_token_loader = false;
-              this.message = this.messageType = this.source_message = this.source_messageType = '';
-            });
+        if (this.platFormName === 'booking.com' && this.connectMode === 'search' && this.bookingHotel) {
+          settings.hotel_id = this.bookingHotel.hotel_id;
+          settings.ufi = this.bookingHotel.ufi;
+          settings.hotel_name = this.bookingHotel.name;
+          settings.hotel_country = this.bookingHotel.country;
+          settings.hotel_location = this.bookingHotel.location;
+        }
+
+        this.submitReviewSettings(settings);
       }
+    },
+    submitReviewSettings(settings) {
+      this.loading = true;
+
+      this.$post('platforms/reviews', {
+        settings: settings
+      })
+          .then(response => {
+            if (response.data) {
+                if(response.data.business_info){
+                  this.reviewsinfo = response.data.business_info;
+                }
+                this.handleSuccess(response.data.message);
+                this.getApiCredential(this.platFormName);
+                this.getEnabledPlatforms();
+                this.bookingHotel = null;
+              // this.businessName = '';
+            }
+          })
+          .catch((errors) => {
+            if (!this.openLegacyChoice(errors, settings)) {
+              this.handleError(errors);
+            }
+          })
+          .always(() => {
+            this.loading = false;
+            this.acces_token_loader = false;
+            // Leave the connect panel open behind the question, so Cancel returns the admin
+            // to the hotel they picked.
+            if (!this.legacyPromptVisible) {
+              this.addNewBusiness = false;
+            }
+            this.message = this.messageType = this.source_message = this.source_messageType = '';
+          });
+    },
+    /**
+     * The save was held back until the admin says which saved property this hotel is.
+     * Returns false when the error is an ordinary one, so the caller can report it.
+     */
+    openLegacyChoice(errors, settings) {
+      const data = errors && errors.responseJSON ? errors.responseJSON.data : null;
+      const prompt = data ? data.replace_prompt : null;
+
+      if (!prompt || !prompt.properties || !prompt.properties.length) {
+        return false;
+      }
+
+      const suggested = prompt.properties.find(property => property.suggested);
+
+      this.legacySettings = settings;
+      this.legacyProperties = prompt.properties;
+      this.legacyPromptMessage = data.message || '';
+      this.legacyChoiceKey = prompt.choice_key || 'legacy_choice';
+      this.legacyNewChoice = prompt.new_choice || 'new';
+      this.legacyChoice = suggested ? suggested.place_id : this.legacyNewChoice;
+      this.legacyPromptVisible = true;
+
+      return true;
+    },
+    confirmLegacyChoice() {
+      if (!this.legacyChoice || !this.legacySettings) {
+        return;
+      }
+
+      const settings = {...this.legacySettings};
+      settings[this.legacyChoiceKey] = this.legacyChoice;
+
+      this.legacyPromptVisible = false;
+      this.acces_token_loader = true;
+      this.submitReviewSettings(settings);
     },
     clearVerificationCredentials(sourceId = '') {
       this.$del('platforms/reviews/configs', {

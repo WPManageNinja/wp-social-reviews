@@ -23,9 +23,6 @@ class TwitterWidget extends OxygenEl
     }
 
     function controls() {
-        /*****************************
-         * template list
-         *****************************/
         $platforms = ['twitter'];
         $templates = Helper::getTemplates($platforms);
         $templates_control = $this->addOptionControl(
@@ -40,14 +37,8 @@ class TwitterWidget extends OxygenEl
         );
         $templates_control->rebuildElementOnChange();
 
-        /*****************************
-         * Header
-         *****************************/
         $tw_header_section = $this->addControlSection( "wpsr_tw_header_section", __("Header", "wp-social-reviews"), "assets/icon.png", $this );
 
-        /*****************************
-         * Header fullname
-         *****************************/
         $tw_header_fn = $tw_header_section->addControlSection( "wpsr_tw_header_fullname_section", __("Fullname", "wp-social-reviews"), "assets/icon.png", $this );
         $tw_header_fn->addStyleControls(
             array(
@@ -82,9 +73,6 @@ class TwitterWidget extends OxygenEl
             )
         );
 
-        /*****************************
-         * Header username
-         *****************************/
         $tw_header_un = $tw_header_section->addControlSection( "wpsr_tw_header_username_section", __("Username", "wp-social-reviews"), "assets/icon.png", $this );
         $tw_header_un->addStyleControls(
             array(
@@ -119,9 +107,6 @@ class TwitterWidget extends OxygenEl
             )
         );
 
-        /*****************************
-         * Header description
-         *****************************/
         $tw_header_des = $tw_header_section->addControlSection( "wpsr_tw_header_des_section", __("Description", "wp-social-reviews"), "assets/icon.png", $this );
         $tw_header_des->addStyleControls(
             array(
@@ -161,9 +146,6 @@ class TwitterWidget extends OxygenEl
             )
         );
 
-        /*****************************
-         * Header location
-         *****************************/
         $tw_header_location = $tw_header_section->addControlSection( "wpsr_tw_header_location_section", __("Location", "wp-social-reviews"), "assets/icon.png", $this );
         $tw_header_location->addStyleControls(
             array(
@@ -198,9 +180,6 @@ class TwitterWidget extends OxygenEl
             )
         );
 
-        /*****************************
-         * Header statistics
-         *****************************/
         $tw_header_stat = $tw_header_section->addControlSection( "wpsr_tw_header_stat_section", __("Statistics", "wp-social-reviews"), "assets/icon.png", $this );
         $tw_header_stat->addStyleControls(
             array(
@@ -248,9 +227,6 @@ class TwitterWidget extends OxygenEl
         );
 
 
-        /*****************************
-         * Header follow btn
-         *****************************/
         $tw_header_fb = $tw_header_section->addControlSection( "wpsr_tw_header_fb_section", __("Follow Button", "wp-social-reviews"), "assets/icon.png", $this );
         $tw_header_fb_fz = $tw_header_fb->addStyleControl(
             array(
@@ -299,9 +275,6 @@ class TwitterWidget extends OxygenEl
             '.wpsr-twitter-feed-header .wpsr-twitter-user-follow-btn'
         )->whiteList();
 
-        /*****************************
-         * Header Box
-         *****************************/
         $tw_header_box = $tw_header_section->addControlSection( "wpsr_tw_header_box_section", __("Box", "wp-social-reviews"), "assets/icon.png", $this );
         $tw_header_box->addStyleControls(
             array(
@@ -337,9 +310,6 @@ class TwitterWidget extends OxygenEl
             '.wpsr-twitter-feed-header .wpsr-twitter-user-info-wrapper'
         )->whiteList();
 
-        /*****************************
-         * Name
-         *****************************/
         $tw_name_section = $this->addControlSection( "wpsr_tw_name_section", __("Name", "wp-social-reviews"), "assets/icon.png", $this );
         $tw_name_section->typographySection( __('Typography', 'wp-social-reviews'), '.wpsr-twitter-tweet .wpsr-twitter-author-tweet .wpsr-tweet-author-info .wpsr-tweet-author-links a.wpsr-tweet-author-name', $this );
         $tw_name_section->addPreset(
@@ -349,9 +319,6 @@ class TwitterWidget extends OxygenEl
             '.wpsr-twitter-tweet .wpsr-twitter-author-tweet .wpsr-tweet-author-info .wpsr-tweet-author-links a.wpsr-tweet-author-name'
         )->whiteList();
 
-        /*****************************
-         * Meta
-         *****************************/
         $tw_meta_section = $this->addControlSection( "wpsr_tw_meta_section", __("Meta", "wp-social-reviews"), "assets/icon.png", $this );
         $tw_meta_section->typographySection( __('Typography', 'wp-social-reviews'), '.wpsr-twitter-tweet .wpsr-twitter-author-tweet .wpsr-tweet-author-info .wpsr-tweet-author-links .wpsr-tweet-author-username-time a', $this );
         $tw_meta_gap = $tw_meta_section->addStyleControl(
@@ -372,9 +339,6 @@ class TwitterWidget extends OxygenEl
             '.wpsr-twitter-tweet .wpsr-twitter-author-tweet .wpsr-tweet-author-info .wpsr-tweet-author-links .wpsr-tweet-author-username-time a'
         )->whiteList();
 
-        /*****************************
-         * description
-         *****************************/
         $tw_des_section = $this->addControlSection( "wpsr_tw_description_section", __("Content", "wp-social-reviews"), "assets/icon.png", $this );
         $tw_des_section->addStyleControls(
             array(
@@ -394,9 +358,6 @@ class TwitterWidget extends OxygenEl
         )->whiteList();
 
 
-        /*****************************
-         * Actions
-         *****************************/
         $tw_actions_section = $this->addControlSection( "wpsr_tw_actions_section", __("Actions", "wp-social-reviews"), "assets/icon.png", $this );
 
         $tw_actions_typo = $tw_actions_section->addControlSection( "wpsr_tw_actions_typo", __("Typography", "wp-social-reviews"), "assets/icon.png", $this );
@@ -438,9 +399,6 @@ class TwitterWidget extends OxygenEl
             '.wpsr-twitter-tweet .wpsr-twitter-author-tweet .wpsr-tweet-actions'
         )->whiteList();
 
-        /*****************************
-         * Pagination
-         *****************************/
         $pagination_section = $this->addControlSection( "wpsr_tw_pagination_section", __("Pagination", "wp-social-reviews"), "assets/icon.png", $this );
         $pagination_section->typographySection( __('Typography', 'wp-social-reviews'), '.wpsr_more', $this );
         $pagination_section->addStyleControls(
@@ -482,9 +440,6 @@ class TwitterWidget extends OxygenEl
             '.wpsr_more'
         )->whiteList();
 
-        /*****************************
-         * Box
-         *****************************/
         $tw_box_section = $this->addControlSection( "wpsr_tw_box_section", __("Item Box", "wp-social-reviews"), "assets/icon.png", $this );
         $selector = '.wpsr-twitter-feed-wrapper .wpsr-twitter-tweet';
         $tw_box_section->addStyleControls(
@@ -551,7 +506,7 @@ class TwitterWidget extends OxygenEl
         if ( isset( $_GET['ct_builder'] ) ) {
             wp_enqueue_style(
                 'wp_social_ninja_tw',
-                WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_tw.css',
+                WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_tw' . (is_rtl() ? '-rtl' : '') . '.css',
                 array(),
                 WPSOCIALREVIEWS_VERSION
             );

@@ -39,21 +39,23 @@
         <div class="wpsr-table-controls">
           <div class="wpsr-controls-left">
             <div class="wpsr-controls-bulk-actions">
-              <el-select class="wpsr-select-field-primary" v-model="bulkAction" placeholder="Bulk Action" size="default" style="width: 160px;">
-                <el-option label="Bulk Actions" value="">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><Plus /></el-icon>
-                    <span>Bulk Actions</span>
-                  </span>
-                </el-option>
-                <el-option label="Delete" value="delete">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><Delete /></el-icon>
-                    <span>Delete</span>
-                  </span>
-                </el-option>
-              </el-select>
-              <el-button @click="applyBulkAction" :disabled="!selectedItems.length">Apply</el-button>
+              <div class="wpsr-bulk-action-group">
+                <el-select class="wpsr-select-field-primary" v-model="bulkAction" placeholder="Bulk Action" size="default" style="width: 160px;">
+                  <el-option label="Bulk Actions" value="">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><Plus /></el-icon>
+                      <span>Bulk Actions</span>
+                    </span>
+                  </el-option>
+                  <el-option label="Delete" value="delete">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><Delete /></el-icon>
+                      <span>Delete</span>
+                    </span>
+                  </el-option>
+                </el-select>
+                <el-button @click="applyBulkAction" :disabled="!selectedItems.length">Apply</el-button>
+              </div>
             </div>
             <div class="wpsr-controls-filter">
               <el-select class="wpsr-select-field-primary" v-model="filter_value" placeholder="All Sources" size="default" clearable
@@ -99,7 +101,7 @@
                     <div v-else class="wpsr-mr-10 wpsr-cell-logo-secondary" v-html="getPlatformIconsHtml(scope.row.name)"></div>
 
                     <div v-if="scope.row.title || scope.row.name" @click.prevent="handleRowAction('edit', scope.row)" :class="scope.row.logo ? 'wpsr-ml-10' : ''" class="wpsr-item-editable wpsr-cell-logo-secondary wpsr-item-title wpsr-d-flex wpsr-flex-align-center">
-                      {{ $trimWords(scope.row.title || scope.row.name, 3, true) }}
+                      <span dir="auto">{{ $trimWords(scope.row.title || scope.row.name, 3, true) }}</span>
                       <el-icon class="wpsr-ml-5 wpsr-display-on-hover"><Edit /></el-icon>
                     </div>
                     
@@ -478,7 +480,7 @@ export default {
           .catch((error) => {
             this.handleError(error);
           })
-          .finally(() => {
+          .always(() => {
             this.installing_ff = false;
           });
     },

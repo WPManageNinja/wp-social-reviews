@@ -3,7 +3,7 @@
 Plugin Name:  WP Social Ninja
 Plugin URI:   https://wpsocialninja.com/
 Description:  Display your social feeds, reviews and chat widgets automatically and easily on your website with the all-in-one social media plugin.
-Version:      4.4.0
+Version:      4.5.0
 Author:       WPManageNinja LLC
 Author URI:   https://wpsocialninja.com/
 License:      GPLv2 or later
@@ -13,15 +13,18 @@ Domain Path:  /language
 
 defined('ABSPATH') or die;
 
-define('WPSOCIALREVIEWS_VERSION', '4.4.0');
+define('WPSOCIALREVIEWS_VERSION', '4.5.0');
 define('WPSOCIALREVIEWS_DB_VERSION', 122);
-define('WPSOCIALREVIEWS_PRO_MIN_VERSION', '4.4.0');
+define('WPSOCIALREVIEWS_PRO_MIN_VERSION', '4.5.0');
 define('WPSOCIALREVIEWS_MAIN_FILE', __FILE__);
 define('WPSOCIALREVIEWS_BASENAME', plugin_basename(__FILE__));
 define('WPSOCIALREVIEWS_URL', plugin_dir_url(__FILE__));
 define('WPSOCIALREVIEWS_DIR', plugin_dir_path(__FILE__));
 define('WPSOCIALREVIEWS_UPLOAD_DIR_NAME', 'wp-social-ninja');
-define('WPSN_AUTH_BASE_URL', 'https://connect.wpsocialninja.com');
+// Overridable from wp-config.php (e.g. to point a dev/staging site at a staging auth bridge).
+if (!defined('WPSN_AUTH_BASE_URL')) {
+    define('WPSN_AUTH_BASE_URL', 'https://connect.wpsocialninja.com');
+}
 
 if (!defined( 'WPSOCIALREVIEWS_INSTAGRAM_MAX_RECORDS')) {
     define('WPSOCIALREVIEWS_INSTAGRAM_MAX_RECORDS', 300);

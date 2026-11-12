@@ -1,5 +1,5 @@
 <template>
-    <div :class="['wpsr-review-content', 'wpsr-review-summary-list', 'wpsr_add_read_more_list', 'wpsr_show_less_list', { 'wpsr-ai-summary-fixed-height': isExpanded && template_meta.contentType !== 'content_in_scrollbar'}]">
+    <div dir="auto" :class="['wpsr-review-content', 'wpsr-review-summary-list', 'wpsr_add_read_more_list', 'wpsr_show_less_list', { 'wpsr-ai-summary-fixed-height': isExpanded && template_meta.contentType !== 'content_in_scrollbar'}]">
         <ul :class="['wpsr-ai-review-summary-list', {'wpsr-ai-review-summary-list-scroll': template_meta.contentType === 'content_in_scrollbar'}]">
             <li v-for="point in summaryList">
                 <span v-if="isValidPoint(point)" class="wpsr-summary-point">

@@ -18,17 +18,8 @@ class ActivationHandler
     }
 
     /**
-     * One-time purge of pre-4.3.1 YouTube feed caches.
-     *
-     * The public-only privacy filter (YoutubeFeed::getPublishVideos) runs at fetch
-     * time, so caches written by 4.3.0 can still contain private/unlisted videos and
-     * would keep serving them until they expired. Clear the youtube cache rows once so
-     * the next fetch repopulates them through the filter. Runs after DBMigrator::run()
-     * so the wpsr_caches table exists, and is guarded by a non-autoloaded option whose
-     * flag is only set after a successful clear, so a failure retries on the next run.
-     *
-     * On network activation the caches, tables and the completion option are all
-     * per-site, so mirror DBMigrator::run() and purge each site in its own context.
+     * One-time purge of YouTube caches written before the fetch-time privacy filter,
+     * so private/unlisted videos stop being served. Runs per site on network activation.
      *
      * @param bool $network_wide
      *

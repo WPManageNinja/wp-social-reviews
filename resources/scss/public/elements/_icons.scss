@@ -10,7 +10,7 @@
   font-style: normal;
 }
 
-.wpsr_content {
+.wpsr_content, .wpsr-reviews-notification-card-wrapper {
   [data-icon]:before {
     font-family: "wp-social-reviews" !important;
     content: attr(data-icon);
@@ -99,5 +99,11 @@
   }
   .icon-ban:before {
     content: "\75";
+  }
+  .icon-pause:before {
+    content: "\77";
+  }
+  .icon-play:before {
+    content: "\78";
   }
 }

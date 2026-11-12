@@ -31,7 +31,7 @@
           />
         </div>
         
-        <!-- Original video feed handling -->
+        <!-- Video feed -->
         <div :class="'wpsr-iframe-'+currentIndex" class="wpsr-optimize-image-wrapper" v-if="(feed_type === 'video_feed' || feed_type === 'video_playlist_feed') && !isVideoPopup">
             <!-- Show video player when optimized images are off and it's a video -->
             <VideoPlayer
@@ -180,7 +180,7 @@
               <img :src="feed.user_avatar ? feed.user_avatar : account.picture.data.url" />
             </a>
             <div class="wpsr-feed-popup-group">
-              <div class="wpsr-feed-popup-user-name" v-if="settings.popup_settings.display_username === 'true'">
+              <div class="wpsr-feed-popup-user-name" dir="auto" v-if="settings.popup_settings.display_username === 'true'">
                 <a :href="'https://www.facebook.com/'+account.id" target="_blank" :title="account.name">{{ account.name }}</a>
               </div>
               <div class="wpsr-feed-popup-date" v-if="settings.popup_settings.display_date === 'true' && feed.created_time">
@@ -197,7 +197,7 @@
             <div class="wpsr-feed-popup-comments-wrapper-inner">
               <div class="wpsr-feed-popup-comment" v-if="feed.name || feed.message">
                 <div class="wpsr-feed-popup-comment-inner">
-                  <div class="wpsr-feed-popup-comment-text" v-if="settings.popup_settings.display_caption === 'true' && feed_type !== 'event_feed' ">
+                  <div class="wpsr-feed-popup-comment-text" dir="auto" v-if="settings.popup_settings.display_caption === 'true' && feed_type !== 'event_feed' ">
                     <p v-if="feed.name" v-html="facebookTextValidate(feed.name)"></p>
                     <p v-if="feed.message" v-html="facebookTextValidate(feed.message)"></p>
                   </div>
@@ -213,7 +213,7 @@
               <div v-if="settings.popup_settings.display_comments === 'true' && feed.comments">
                 <div class="wpsr-feed-popup-comment" v-for="(comment, index) in feed.comments['data']" :key="index">
                   <div class="wpsr-feed-popup-comment-inner wpsr-feed-popup-comment-list">
-                    <div class="wpsr-feed-popup-comment-text wpsr-feed-popup-comment-item">
+                    <div class="wpsr-feed-popup-comment-text wpsr-feed-popup-comment-item" dir="auto">
                       <img class="wpsr-feed-popup-comment-user-avatar" v-if="image_settings.optimized_images !== 'true' && image_settings.has_gdpr !== 'true' && comment.from.picture && settings.popup_settings.display_comments_user_picture === 'true'" :src="comment.from.picture.data.url" :alt="comment.from.name">
                       <div class="wpsr-feed-popup-comment-group">
                          <span>{{comment.from.name}}</span>
@@ -260,7 +260,6 @@ export default {
       watch: {
       feed: {
         handler(feed) {
-          // Reset video popup when feed changes
           this.resetVideoPopup();
           
           if(feed.attachments && feed.attachments.data && feed.attachments.data[0].subattachments) {
@@ -306,7 +305,6 @@ export default {
         },
         on: {
           slideChange: function() {
-            // Pause all videos when slide changes
             const allVideos = document.querySelectorAll('.wpsr-feed-popup-carousel-video');
             allVideos.forEach(video => {
               if (!video.paused) {
@@ -314,11 +312,10 @@ export default {
               }
             });
             
-            // Play video if current slide contains a video
             const activeSlide = this.slides[this.activeIndex];
             const video = activeSlide.querySelector('.wpsr-feed-popup-carousel-video');
             if (video) {
-              // Add a small delay to ensure the slide transition is complete
+              // Wait for the slide transition to finish.
               setTimeout(() => {
                 video.play().catch(e => {
                 });
@@ -340,7 +337,6 @@ export default {
 
       jQuery('.wpsr-feed-popup-loader').addClass('wpsr-popup-loading');
 
-      // Pause all videos when popup closes
       this.pauseAllVideos();
 
       let hasIframe = jQuery("#wpsr-feed-popup-video-iframe");
@@ -368,18 +364,14 @@ export default {
       return this.nl2br(feed);
     },
     
-    // Handle video popup from photo component
     handleVideoPopup(videoData) {
   
-      // Only show video popup if we have valid video data and URL
       if (videoData && videoData.displayMode === 'popup' && videoData.url) {
       
         this.isVideoPopup = true;
         this.videoPopupUrl = videoData.url;
         
-        // Hide other media content when showing video
         this.$nextTick(() => {          
-          // Add error handling for video loading
           const videoElement = this.$el.querySelector('#wpsr-feed-popup-video');
           if (videoElement) {
             videoElement.onerror = (e) => {
@@ -418,11 +410,9 @@ export default {
       });
     },
     
-    // Get video URL for carousel items
     getCarouselVideoUrl(item) {
       if (!item) return null;
       
-      // Priority order: media.source > target.url > url > media.video.source > media.video.hd_quality > media.video.sd_quality
       return (item.media && item.media.source) || 
              (item.target && item.target.url) || 
              item.url || 
@@ -432,15 +422,13 @@ export default {
              null;
     },
 
-    // Get timeline video URL
     getTimelineVideoUrl() {
       if (!this.feed || !this.feed.attachments || !this.feed.attachments.data || !this.feed.attachments.data[0]) {
         return null;
       }
       const attachment = this.feed.attachments.data[0];
       
-      // Priority order: media.source > media.video.source > media.url
-      // Only return direct video URLs that work with <video> tag
+      // Only direct sources a <video> tag can play.
       const directVideoUrl = (attachment.media && attachment.media.source) || 
                             (attachment.media && attachment.media.video && attachment.media.video.source);
       
@@ -448,24 +436,19 @@ export default {
         return directVideoUrl;
       }
       
-      // If no direct video URL, return null to trigger iframe fallback
       return null;
     },
 
-    // Get video feed URL
     getVideoFeedUrl() {
       if (!this.feed) return null;
       
-      // Priority order: media_url > source > default_media
       return this.feed.media_url || 
              this.feed.source || 
              this.feed.default_media || 
              null;
     },
 
-    // Pause all videos when popup closes
     pauseAllVideos() {
-      // Pause all carousel videos
       const carouselVideos = document.querySelectorAll('.wpsr-feed-popup-carousel-video');
       carouselVideos.forEach(video => {
         if (!video.paused) {
@@ -473,13 +456,11 @@ export default {
         }
       });
 
-      // Pause main popup video
       const popupVideo = document.querySelector('#wpsr-feed-popup-video');
       if (popupVideo && !popupVideo.paused) {
         popupVideo.pause();
       }
 
-      // Pause timeline video player
       const timelineVideos = document.querySelectorAll('.wpsr-feed-popup-video-player');
       timelineVideos.forEach(video => {
         if (!video.paused) {
@@ -487,7 +468,6 @@ export default {
         }
       });
 
-      // Pause VideoPlayer components
       const videoPlayerComponents = this.$el.querySelectorAll('.wpsr-video-container');
       videoPlayerComponents.forEach(container => {
         const video = container.querySelector('video');
@@ -496,7 +476,6 @@ export default {
         }
       });
 
-      // Pause any iframe videos
       const iframeVideos = document.querySelectorAll('iframe[src*="video"]');
       iframeVideos.forEach(iframe => {
         if (iframe.src.includes('autoplay=1')) {
@@ -508,7 +487,6 @@ export default {
   mounted() {
     document.addEventListener('click', this.closePopUpBox);
   },
-  // Vue 3 renamed this; under the old name the click listener was never removed.
   beforeUnmount() {
     this.pauseAllVideos();
     document.removeEventListener('click', this.closePopUpBox);

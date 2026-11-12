@@ -37,10 +37,8 @@ class ReviewCategory extends Model
     }
 
     /**
-     * Width of both `name` and `slug`. 191 because `slug` is UNIQUE-indexed and
-     * under utf8mb4 anything longer exceeds InnoDB's 767-byte key limit; `name`
-     * matches so two names cannot truncate to one slug. Also encoded in
-     * ReviewCategoriesMigrator (column widths and backfill) — change together.
+     * Width of `name` and `slug`. The unique `slug` index hits InnoDB's 767-byte key
+     * limit past 191 utf8mb4 chars. ReviewCategoriesMigrator uses it too; change together.
      */
     const MAX_LENGTH = 191;
 
@@ -50,10 +48,8 @@ class ReviewCategory extends Model
     }
 
     /**
-     * Names arrive from CSV import and Fluent Forms submissions as well as from the
-     * admin, so an over-long one is ordinary input, not an edge case. Capping here
-     * rather than at each call site means no write path can miss it. mb_substr so a
-     * multi-byte character is never split in half.
+     * Capped here so no write path (admin, CSV import, Fluent Forms) can miss it.
+     * mb_substr so a multi-byte character is never split.
      */
     public function setNameAttribute($value)
     {
@@ -85,8 +81,8 @@ class ReviewCategory extends Model
             return $existing;
         }
 
-        // The lookup above and this insert are not atomic — concurrent imports can
-        // both reach here with the same slug. The UNIQUE index rejects the loser.
+        // Lookup and insert aren't atomic. Concurrent imports can race on one slug,
+        // and the UNIQUE index rejects the loser.
         try {
             $category = static::create([
                 'name' => $name,
@@ -105,11 +101,9 @@ class ReviewCategory extends Model
     }
 
     /**
-     * Resolves a save payload's categories into category IDs.
-     *
-     * IDs and new names arrive as two separate lists because they cannot be told
-     * apart by value — a category named "2024" looks exactly like ID 2024. IDs are
-     * confirmed against the table so a stale one cannot be linked.
+     * Resolves a save payload's categories into category IDs. IDs and names come as
+     * separate lists since a category named "2024" looks like ID 2024. IDs are
+     * checked against the table so a stale one can't be linked.
      */
     public static function resolveIds($ids = [], $names = [])
     {
@@ -138,9 +132,7 @@ class ReviewCategory extends Model
 
     /**
      * Resolves category names to ids, matching on slug so "support" finds "Support".
-     *
-     * All-or-nothing: keying a filter by only the ids that resolved would drop the
-     * unresolved names from it.
+     * All-or-nothing, so a filter never silently drops an unresolved name.
      *
      * @return array Ids for every name, or [] if any name has no category row.
      */
@@ -222,9 +214,8 @@ class ReviewCategory extends Model
     }
 
     /**
-     * Every category alphabetically, names only — no relationship counts. For the
-     * assign dropdowns, where a single-capability caller must not learn cross-scope
-     * usage totals.
+     * Every category alphabetically, without counts. For the assign dropdowns, where
+     * a single-capability caller must not learn cross-scope usage totals.
      */
     public static function allOrdered()
     {

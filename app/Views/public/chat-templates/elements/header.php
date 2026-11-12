@@ -16,20 +16,20 @@ use WPSocialReviews\Framework\Support\Arr;
     <div class="wpsr-fm-group-details">
 
         <?php if (Arr::get($templateSettings, 'chat_header.name')) { ?>
-        <h3 style="color:<?php echo isset($settings['styles']['header_title_color']) ? esc_attr($settings['styles']['header_title_color']) : ''; ?>">
+        <h3 dir="auto" style="color:<?php echo isset($settings['styles']['header_title_color']) ? esc_attr($settings['styles']['header_title_color']) : ''; ?>">
             <?php echo esc_html($templateSettings['chat_header']['name']); ?>
         </h3>
         <?php } ?>
 
         <?php if (Arr::get($templateSettings, 'chat_header.caption')) { ?>
-            <p class="wpsr-fm-caption"
+            <p class="wpsr-fm-caption" dir="auto"
                style="color:<?php echo isset($settings['styles']['header_caption_color']) ? esc_attr($settings['styles']['header_caption_color']) : ''; ?>">
                 <?php echo esc_html($templateSettings['chat_header']['caption']); ?>
             </p>
         <?php } ?>
 
         <?php if (Arr::get($settings, 'settings.caption_when_offline')) { ?>
-            <p class="wpsr-fm-offline-caption"
+            <p class="wpsr-fm-offline-caption" dir="auto"
                style="color:<?php echo isset($settings['styles']['header_caption_color']) ? esc_attr($settings['styles']['header_caption_color']) : ''; ?>">
                 <?php echo esc_html($settings['settings']['caption_when_offline']); ?>
             </p>

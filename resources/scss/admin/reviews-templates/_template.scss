@@ -26,6 +26,9 @@
   color: #1194dc;
   cursor: pointer;
   padding-left: 4px;
+  // The text around it is dir="auto"; logical sides keep the gap before the link in either direction.
+  padding-inline-start: 4px;
+  padding-inline-end: 0;
 
 }
 .wpsr-has-equal-height,
@@ -163,8 +166,11 @@ a.wpsr-reviewer-image-animation::before {
   .wpsr-popup-collapse{
     display: inline-flex;
     text-decoration: none;
+    // A right glyph turned to point down; mirroring the rotation would point it up.
+    /*!rtl:ignore*/
     transform: rotate(90deg);
     position: absolute;
+    /*!rtl:ignore*/
     right: -10px;
     top: -15px;
     font-size: 28px;
@@ -1238,6 +1244,9 @@ a.wpsr-reviewer-image-animation::before {
   color: #1194dc;
   cursor: pointer;
   padding-left: 4px;
+  // The text around it is dir="auto"; logical sides keep the gap before the link in either direction.
+  padding-inline-start: 4px;
+  padding-inline-end: 0;
 
 }
 

@@ -2,11 +2,9 @@
     'use strict';
 
     /**
-     * Wire up every review form inside root that isn't wired up yet.
-     *
-     * An uninitialized form is not merely inert — it keeps its native
-     * method="post" submit and posts the whole page. Forms that arrive after
-     * page load must be initialized through window.wpsrInitReviewForms().
+     * Wire up every review form inside root that isn't wired up yet. An uninitialized
+     * form keeps its native POST submit, so forms added after page load must go
+     * through window.wpsrInitReviewForms().
      *
      * @param {Element|Document} root
      */
@@ -46,10 +44,8 @@
     });
 
     /**
-     * Generate a UUID v4 for scoping an upload session.
-     * Uses crypto.randomUUID() where available; falls back to crypto.getRandomValues()
-     * so all parallel uploads in the first file-selection batch share the same ID
-     * before any server response arrives.
+     * UUID v4 for an upload session. Falls back to crypto.getRandomValues() where
+     * crypto.randomUUID() is missing.
      */
     function generateUploadSessionId() {
         if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -262,29 +258,24 @@
             var hiddenInput = container.parentElement.querySelector('.wpsr-rating-value');
 
             icons.forEach(function (icon) {
-                // Keyboard accessibility
                 icon.setAttribute('tabindex', '0');
                 icon.setAttribute('role', 'radio');
                 icon.setAttribute('aria-checked', 'false');
                 icon.setAttribute('aria-label', 'Rating ' + icon.getAttribute('data-value'));
 
-                // Hover
                 icon.addEventListener('mouseenter', function () {
                     var val = parseInt(icon.getAttribute('data-value'));
                     highlightIcons(icons, val, 'wpsr-rating-hover');
                 });
 
-                // Mouse leave
                 icon.addEventListener('mouseleave', function () {
                     clearClass(icons, 'wpsr-rating-hover');
                 });
 
-                // Click
                 icon.addEventListener('click', function () {
                     selectRating(icons, icon, hiddenInput);
                 });
 
-                // Keyboard support
                 icon.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
@@ -301,7 +292,6 @@
         clearClass(icons, 'wpsr-rating-active');
         highlightIcons(icons, val, 'wpsr-rating-active');
 
-        // Update aria-checked
         icons.forEach(function (icon) {
             var iconVal = parseInt(icon.getAttribute('data-value'));
             icon.setAttribute('aria-checked', iconVal <= val ? 'true' : 'false');
@@ -332,15 +322,11 @@
             var preview = input.parentElement.querySelector('.wpsr-media-preview');
             if (!preview) return;
 
-            // Track {fileUrl, token, previewEl} for files successfully uploaded to the server.
-            // Only these will be included in the form submission — no binary data sent on submit.
+            // Uploaded {fileUrl, token, previewEl}. Only these go with the submission, no binary data.
             var uploadedFiles  = [];
-            // Count uploads that are in-flight but not yet resolved.
-            // Combined with uploadedFiles.length this enforces the cap across concurrent selections.
+            // Together with uploadedFiles.length, enforces the cap across concurrent selections.
             var pendingUploads = 0;
-            // Client-generated UUID that scopes all uploads for this field to one session
-            // lifecycle. Generated eagerly so every request in the first parallel batch
-            // carries the same ID — no server round-trip needed before uploads begin.
+            // Generated eagerly so every request in the first parallel batch shares one session.
             var uploadSessionId = generateUploadSessionId();
 
             var notice = document.createElement('p');
@@ -361,8 +347,7 @@
                 removeBtn.textContent = '\u00D7';
                 removeBtn.addEventListener('click', function () {
                     wrapper.remove();
-                    // If the upload is still in flight, abort it so the pending slot
-                    // is freed immediately rather than after the network request finishes.
+                    // Abort an in-flight upload so its pending slot frees right away.
                     if (typeof wrapper._abort === 'function') {
                         wrapper._abort();
                     }
@@ -379,7 +364,7 @@
 
             input.addEventListener('change', function () {
                 var ajaxUrl      = (typeof wpsrReviewForm !== 'undefined' && wpsrReviewForm.ajaxUrl) ? wpsrReviewForm.ajaxUrl : '';
-                // Fallback to the known constant so a localization timing gap does not silently drop uploads.
+                // Fallback so a localization timing gap doesn't drop uploads.
                 var uploadAction = (typeof wpsrReviewForm !== 'undefined' && wpsrReviewForm.uploadAction) ? wpsrReviewForm.uploadAction : 'wpsr_review_form_upload';
                 var formId       = form.getAttribute('data-form-id');
                 var nonce        = form.querySelector('[name="_wpsr_nonce"]');
@@ -400,12 +385,10 @@
 
                     pendingUploads++;
 
-                    // Show placeholder preview while uploading
                     var objectUrl  = URL.createObjectURL(file);
                     var controller = new AbortController();
                     var wrapper    = addPreviewItem(objectUrl, null);
                     wrapper.classList.add('wpsr-media-uploading');
-                    // Expose abort so the remove button can free the slot immediately.
                     wrapper._abort = function () { controller.abort(); };
 
                     var formData = new FormData();
@@ -415,8 +398,6 @@
                     formData.append('file',        file);
                     // Tells the server which media field's limits and types to enforce.
                     formData.append('field_name',  input.getAttribute('name') || '');
-                    // Always send the session ID — it is generated before any upload fires,
-                    // so parallel first-batch requests all share the same bucket.
                     formData.append('upload_session_id', uploadSessionId);
 
                     fetch(ajaxUrl, { method: 'POST', body: formData, credentials: 'same-origin', signal: controller.signal })
@@ -424,15 +405,14 @@
                         .then(function (result) {
                             wrapper.classList.remove('wpsr-media-uploading');
                             if (result.success && result.data && result.data.files && result.data.files[0]) {
-                                // User may have clicked Remove while the upload was in flight.
-                                // If the wrapper is no longer in the DOM, discard the result silently.
+                                // Removed while the upload was in flight.
                                 if (!wrapper.isConnected) {
                                     return;
                                 }
                                 var fileUrl  = result.data.files[0].file;
                                 var token    = result.data.files[0].token || '';
                                 uploadedFiles.push({ fileUrl: fileUrl, token: token, previewEl: wrapper });
-                                // Rebind remove so it uses the real fileUrl
+                                // Rebind remove with the real fileUrl.
                                 wrapper.querySelector('.wpsr-media-remove').addEventListener('click', function () {
                                     uploadedFiles = uploadedFiles.filter(function (f) {
                                         return f.fileUrl !== fileUrl;
@@ -458,28 +438,25 @@
                         });
                 });
 
-                // Reset the file input so the same file can be re-selected if needed
+                // Reset so the same file can be picked again.
                 input.value = '';
             });
 
-            // Expose uploaded URLs for the submit handler (kept for back-compat)
+            // Raw URLs, kept for back-compat.
             preview._getUploadedUrls = function () {
                 return uploadedFiles.map(function (f) { return f.fileUrl; });
             };
 
-            // Expose signed tokens for the submit handler — preferred over raw URLs
+            // Signed tokens, preferred over raw URLs.
             preview._getUploadedTokens = function () {
                 return uploadedFiles.map(function (f) { return f.token; });
             };
 
-            // Expose the upload session ID for inclusion in the form submission.
             preview._getSessionId = function () {
                 return uploadSessionId;
             };
 
-            // Expose reset so the submit handler can clear state after success.
-            // A fresh session ID is generated so any re-upload after reset starts a
-            // new isolated bucket rather than reusing the claimed session.
+            // A fresh session ID, so uploads after a reset don't reuse the claimed session.
             preview._reset = function () {
                 uploadedFiles   = [];
                 uploadSessionId = generateUploadSessionId();
@@ -506,18 +483,14 @@
 
             if (!formId || !messagesEl || !submitBtn) return;
 
-            // Clear previous messages
             messagesEl.innerHTML = '';
 
-            // Block submit while a file is still being uploaded
-            // ff_uploading check that prevents submitting with incomplete file data.
             if (form.querySelector('.wpsr-media-uploading')) {
                 showMessage(messagesEl, getI18n('uploadInProgress', 'File upload in progress. Please wait...'), 'error');
                 wpsrSubmitting = false;
                 return;
             }
 
-            // Validate rating
             var ratingInput = form.querySelector('.wpsr-rating-value[required]');
             if (ratingInput && !ratingInput.value) {
                 showMessage(messagesEl, getI18n('ratingRequired', 'Please select a rating.'), 'error');
@@ -531,7 +504,6 @@
                 return;
             }
 
-            // Disable button
             form.classList.add('wpsr-form-loading');
             submitBtn.disabled = true;
             var originalText = submitBtn.textContent;
@@ -540,9 +512,7 @@
             var ajaxUrl = (typeof wpsrReviewForm !== 'undefined' && wpsrReviewForm.ajaxUrl)
                 ? wpsrReviewForm.ajaxUrl
                 : '';
-            // Fallback to the known constant — this value never changes across deployments,
-            // so a localization timing gap between base and pro plugin releases does not
-            // hard-stop form submission in the browser.
+            // Fallback so a localization timing gap between core and Pro releases can't block submission.
             var action = (typeof wpsrReviewForm !== 'undefined' && wpsrReviewForm.action)
                 ? wpsrReviewForm.action
                 : 'wpsr_submit_review_form';
@@ -553,9 +523,8 @@
                 return;
             }
 
-            // Collect signed upload tokens per media field into a JSON map submitted
-            // as a separate body field — avoids relying on parse_str bracket-notation
-            // handling for multi-file tokens inside the URL-encoded data blob.
+            // Tokens go as a separate JSON map instead of relying on parse_str's bracket
+            // handling inside the URL-encoded data blob.
             var mediaTokenMap = {};
             form.querySelectorAll('.wpsr-field-media input[type="file"]').forEach(function (fileInput) {
                 var fieldName = fileInput.getAttribute('name');
@@ -582,9 +551,8 @@
                 body.append('wpsr_media_tokens', JSON.stringify(mediaTokenMap));
             }
 
-            // Include every field's upload session ID so the server can claim each
-            // per-session orphan-tracking bucket. Sent as a map because repeating a
-            // single key would leave the server with only the last value.
+            // One session ID per media field, so the server can claim each orphan-tracking bucket.
+            // Sent as a map because a repeated key would reach the server as only the last value.
             var uploadSessionMap = {};
             form.querySelectorAll('.wpsr-field-media input[type="file"]').forEach(function (fileInput) {
                 var fieldName = fileInput.getAttribute('name');
@@ -616,15 +584,12 @@
                 return response.json();
             })
             .then(function (result) {
-                // Gate on the WP AJAX JSON envelope (success: true) rather than HTTP status.
-                // wp_send_json_success()  → { success: true,  data: { message: '...' } }
-                // wp_send_json()/errors   → { errors: { field: ['msg'] } }  (non-2xx)
+                // Gate on the WP AJAX envelope (success: true), not the HTTP status.
                 if (result && result.success === true) {
                     var msg = (result.data && result.data.message) || getI18n('thankYou', 'Thank you for your review!');
                     showMessage(messagesEl, msg, 'success');
                     form.reset();
                     resetTurnstile(form);
-                    // Clear image previews and accumulated file state
                     form.querySelectorAll('.wpsr-media-preview').forEach(function (p) {
                         if (typeof p._reset === 'function') {
                             p._reset();
@@ -632,14 +597,12 @@
                             p.innerHTML = '';
                         }
                     });
-                    // Clear rating active states and aria
                     form.querySelectorAll('.wpsr-rating-active').forEach(function (icon) {
                         icon.classList.remove('wpsr-rating-active');
                         icon.setAttribute('aria-checked', 'false');
                     });
                 } else {
-                    // Both logical failures and non-2xx HTTP errors carry errors
-                    // at result.errors: { field: ['msg'] }
+                    // Logical failures and non-2xx errors both carry result.errors: { field: ['msg'] }.
                     var errors = (result && result.errors) || {};
                     var errorItems = [];
                     Object.keys(errors).forEach(function (field) {

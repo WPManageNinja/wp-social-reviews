@@ -593,7 +593,7 @@ export default {
       const platform = this.reviewPlatform || '';
 
       // tp_slug is only filled in by the Pro plugin, and this block only renders
-      // on free installs — so Trustpilot arrives as PHP's placeholder.
+      // on free installs — so that platform's slug arrives as PHP's placeholder.
       if (!platform || platform === '_not_defined_yet_') {
         return 'settings_reviews';
       }
@@ -639,7 +639,7 @@ export default {
       // Tripadvisor bills per entity from a one-time allowance, so anything more
       // frequent than weekly burns through it. 604800 = 1 Week.
       return items.filter((item) => {
-        if (platform === "tripadvisor" && item.value < 604800) {
+        if ((["tripadvisor", "booking.com"].includes(platform) || (platform && platform === this.appVars.tp_slug)) && item.value < 604800) {
           return false;
         }
 

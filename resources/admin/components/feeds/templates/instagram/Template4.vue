@@ -3,7 +3,7 @@
       <div v-if="configs.dynamic && configs.dynamic.error_message && configs.dynamic.error_message.length">
         <ErrorCard :error_message="configs.dynamic.error_message"/>
       </div>
-        <div class="wpsr-ig-feed-wrapper wpsr-instagram-slider-activate wpsr-instagram-masonry-activate wpsr-ig-feed-template4" :class="'wpsr-column-gap-'+configs.feed_settings.column_gaps+' wpsr-ig-feed-template-'+$route.params.template_id">
+        <div class="wpsr-ig-feed-wrapper wpsr-instagram-slider-activate wpsr-ig-feed-template4" :class="'wpsr-column-gap-'+configs.feed_settings.column_gaps+' wpsr-ig-feed-template-'+$route.params.template_id+' wpsr-ig-scheme-'+(configs.feed_settings.color_scheme || 'light')+(configs.feed_settings.layout_type === 'list' ? ' wpsr-instagram-list-activate' : '')+(configs.feed_settings.layout_type === 'masonry' ? ' wpsr-instagram-masonry-activate' : '')">
             <div class="wpsr-container">
               <Header
                     v-if="configs.dynamic && configs.dynamic.header"

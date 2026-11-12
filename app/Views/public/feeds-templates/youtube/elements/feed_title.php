@@ -11,7 +11,7 @@ $wpsr_fp_duration = Arr::get($template_meta, 'video_settings.fluent_player_layer
     : 0;
 ?>
 
-<h3 class="wpsr-yt-video-title">
+<h3 class="wpsr-yt-video-title" dir="auto">
     <a class="wpsr-yt-video-playmode" data-videoid="<?php echo esc_attr($videoId); ?>"
        data-index="<?php echo esc_attr($index); ?>"
        data-playmode="<?php echo isset($template_meta['video_settings']['play_mode']) ? esc_attr($template_meta['video_settings']['play_mode']) : 'inline'; ?>"

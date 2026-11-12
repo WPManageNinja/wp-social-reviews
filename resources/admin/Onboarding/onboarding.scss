@@ -20,7 +20,7 @@
 }
 
 .wpsr-onboarding-container {
-    min-height: 100vh; // ensures container fills the viewport
+    min-height: 100vh;
     background: var(--wpsr-secondary-bg, #F5F7FA);
     display: flex;
     flex-direction: column;
@@ -68,7 +68,6 @@
         background: var(--wpsr-primary-bg, #FFFFFF);
         border-radius: 16px;
         padding: 24px;
-        //padding-bottom: 100px; // for navigation bar
         margin: 0 auto;
         position: relative;
     }
@@ -281,13 +280,6 @@
                     border-radius: 6px;
                     object-fit: contain;
                 }
-
-                //p {
-                //    margin: 0 0 16px 0;
-                //    font-size: 14px;
-                //    color: #6c757d;
-                //    line-height: 1.4;
-                //}
             }
             h4 {
                 margin: 0;
@@ -316,7 +308,7 @@
     // Navigation
     .wpsr-navigation {
         position: fixed;
-        left: 160px; // match your container's left offset
+        left: 160px; // WP admin menu width
         right: 0;
         bottom: 0;
         z-index: 100;
@@ -326,7 +318,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        max-width: calc(100vw - 160px); // match your container width
+        max-width: calc(100vw - 160px);
 
         .wpsr-skip-button {
             background: none;
@@ -389,7 +381,7 @@
 .folded{
     .wpsr-navigation{
         left: 36px;
-        max-width: calc(100vw - 36px); // match your container width
+        max-width: calc(100vw - 36px);
     }
 }
 // Animations
@@ -434,79 +426,10 @@
     }
 }
 
-
-//// Dark Mode Support (if WordPress admin has dark mode)
-//@media (prefers-color-scheme: dark) {
-//    .wpsr-onboarding-container {
-//        background: #1d2327;
-//        color: #f0f0f1;
-//
-//        .wpsr-step-header h1,
-//        .wpsr-form-group label,
-//        .wpsr-platform-section h3,
-//        .wpsr-preference-content h4,
-//        .wpsr-summary-item h4 {
-//            color: #f0f0f1;
-//        }
-//
-//        .wpsr-input {
-//            background: #2c3338;
-//            border-color: #3c434a;
-//            color: #f0f0f1;
-//
-//            &:focus {
-//                border-color: #007cba;
-//            }
-//        }
-//
-//        .wpsr-platform-card {
-//            background: #2c3338;
-//            border-color: #3c434a;
-//
-//            &:hover {
-//                background: #32373c;
-//            }
-//
-//            &.selected {
-//                background: rgba(0, 124, 186, 0.1);
-//            }
-//        }
-//
-//        .wpsr-preference-item,
-//        .wpsr-summary-item {
-//            background: #2c3338;
-//            border-color: #3c434a;
-//        }
-//
-//        .wpsr-btn-secondary {
-//            background: #2c3338;
-//            border-color: #3c434a;
-//            color: #f0f0f1;
-//
-//            &:hover:not(:disabled) {
-//                background: #32373c;
-//            }
-//        }
-//    }
-//}
 .wpsr-social-ninja-icon{
     display: flex;
     align-items: center;
     gap: 8px;
-    // .wpsr-social-ninja-icon-svg{
-    //     width: 32px;
-    //     height: 32px;
-    //     svg{
-    //     width: 32px;
-    //     height: 32px;
-    //     }
-    // }
-    // .wpsr-social-ninja-icon-text{
-    //     font-size: 20px;
-    //     font-weight: 600;
-    //     color: var(--wpsr-heading-text, #0E121B);
-    //     margin-left: 8px;
-    // }
 }
 @keyframes blink {
   0%, 100% {

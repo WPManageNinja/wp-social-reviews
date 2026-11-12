@@ -24,26 +24,44 @@
 		bottom: 0;
 		margin-bottom: 15px !important;
 	}
+	// The corner is a user setting (badge_position), so it stays physical in RTL.
 	.wpsr-float_top_left{
 		top: 160px;
+		/*!rtl:ignore*/
 		left: 15px;
 	}
 	.wpsr-float_top_right{
 		top: 160px;
+		/*!rtl:ignore*/
 		right: 15px;
 		&.active{
+			/*!rtl:ignore*/
 			right: 365px;
 		}
 	}
 
 	.wpsr-float_left_bottom{
+		/*!rtl:ignore*/
 		left: 15px;
 	}
 	.wpsr-float_right_bottom{
+		/*!rtl:ignore*/
 		right: 15px;
 		&.active{
+			/*!rtl:ignore*/
 			right: 365px;
 		}
+	}
+	// In RTL the drawer opens on the left, so the left-corner badges step aside instead.
+	.rtl & .wpsr-float_top_right.active,
+	.rtl & .wpsr-float_right_bottom.active{
+		/*!rtl:ignore*/
+		right: 15px;
+	}
+	.rtl & .wpsr-float_top_left.active,
+	.rtl & .wpsr-float_left_bottom.active{
+		/*!rtl:ignore*/
+		left: 365px;
 	}
 	.wpsr-reviews-badge-btn,
 	.wpsr-reviews-badge-html{

@@ -1,0 +1,129 @@
+// Marquee (templateType "marquee"): two rows of cards moving in opposite directions. Rows only
+// exist with Pro (ShortcodeHandler), so without it the template is a plain grid. Shared with the admin
+// preview, which renders each row's skin inside the track (hence display: contents below).
+@import "layout-mixins";
+
+.wpsr-marquee-row {
+  flex: 0 0 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 10px 0 20px;
+  @include wpsr-edge-fade(6%);
+
+  &.wpsr-marquee-ready {
+    overflow: hidden;
+  }
+}
+
+.wpsr-marquee-track {
+  display: flex;
+  align-items: stretch;
+  width: max-content;
+
+  > .wpsr-all-reviews {
+    display: contents;
+  }
+
+  // Margin, not gap: with a gap the -50% loop point would land half a gap off.
+  > [class*="wpsr-col-"],
+  > .wpsr-all-reviews > [class*="wpsr-col-"] {
+    @include wpsr-stretch-card;
+    flex: 0 0 min(var(--wpsr-marquee-card-width, 360px), 85vw);
+    width: min(var(--wpsr-marquee-card-width, 360px), 85vw);
+    max-width: none;
+    margin: 0 20px 0 0;
+    padding: 0;
+  }
+
+  .wpsr-review-template {
+    height: auto !important;
+    margin-bottom: 0;
+  }
+
+  @include wpsr-stretched-skins;
+
+  .wpsr-marquee-ready & {
+    animation: wpsr-marquee var(--wpsr-marquee-duration, 60s) linear infinite;
+  }
+
+  .wpsr-marquee-ready[data-direction="right"] & {
+    animation-direction: reverse;
+  }
+
+  .wpsr-marquee-row:hover &,
+  .wpsr-marquee-row:focus-within &,
+  .wpsr-marquee-paused & {
+    animation-play-state: paused;
+  }
+}
+
+// Already written for RTL, so the generated -rtl.css must not flip it back.
+/*!rtl:begin:ignore*/
+.rtl .wpsr-marquee-ready .wpsr-marquee-track {
+  animation-name: wpsr-marquee-rtl;
+}
+/*!rtl:end:ignore*/
+
+@keyframes wpsr-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/*!rtl:begin:ignore*/
+@keyframes wpsr-marquee-rtl {
+  to {
+    transform: translateX(50%);
+  }
+}
+/*!rtl:end:ignore*/
+
+// A copied card's video: the poster when the player has one, otherwise a plain dark frame.
+.wpsr-marquee-video-still {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 4px;
+  background: #111 center / cover no-repeat;
+}
+
+.wpsr-marquee-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 4px 0 0;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 50%;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+
+  i {
+    font-family: "wp-social-reviews";
+    font-style: normal;
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wpsr-marquee-row.wpsr-marquee-ready {
+    overflow-x: auto;
+  }
+
+  .wpsr-marquee-ready .wpsr-marquee-track {
+    animation: none;
+  }
+
+  .wpsr-marquee-toggle {
+    display: none;
+  }
+}

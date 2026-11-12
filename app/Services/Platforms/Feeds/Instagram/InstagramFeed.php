@@ -229,7 +229,7 @@ class InstagramFeed extends BaseFeed
 
                 $this->errorManager->removeErrors('connection', $accountArgs);
 
-                // when reconnecting, remove previous caches
+                // A reconnect must not serve the old account's caches.
                 foreach ($accountArgs as $account){
                     $userId = Arr::get($account, 'user_id');
                     $this->clearFeedCache($userId);
@@ -255,7 +255,7 @@ class InstagramFeed extends BaseFeed
     }
 
     /**
-     * Set instagram api url
+     * Build the Instagram API url for a header or verification request
      *
      * @return string
      * @since 1.3.0
@@ -269,11 +269,9 @@ class InstagramFeed extends BaseFeed
 
             if ($api_type === 'personal') {
                 if ($endpoint === 'verification_header') {
-                    //header
                     $access_token = $this->dataProtector->decrypt($access_token) ? $this->dataProtector->decrypt($access_token) : $access_token;
                     $apiUrl = 'https://graph.instagram.com/me?fields=id,username,media_count&access_token=' . $access_token;
                 } elseif ($endpoint === 'header') {
-                    //header
                     $access_token = (new RefreshToken())->getAccessToken($args);
                     $access_token = $this->dataProtector->decrypt($access_token) ? $this->dataProtector->decrypt($access_token) : $access_token;
                     $apiUrl       = 'https://graph.instagram.com/me?fields=id,username,media_count&access_token=' . $access_token;
@@ -281,16 +279,13 @@ class InstagramFeed extends BaseFeed
             } elseif ($api_type === 'business') {
                 $access_token = $this->dataProtector->decrypt($access_token) ? $this->dataProtector->decrypt($access_token) : $access_token;
                 if ($endpoint === 'verification') {
-                    //verification
                     $apiUrl = "https://graph.facebook.com/v21.0/me/accounts?fields=name,id&access_token=" . $access_token;
                 } elseif ($endpoint === 'header') {
-                    //header
                     $apiUrl = 'https://graph.facebook.com/' . $args['user_id'] . '?fields=biography,id,username,website,followers_count,media_count,profile_picture_url,name&access_token=' . $access_token;
                 }
             } elseif ($api_type === 'business_basic') {
                 $access_token = $this->dataProtector->decrypt($access_token) ? $this->dataProtector->decrypt($access_token) : $access_token;
                 if ($endpoint === 'verification_header' || $endpoint === 'header') {
-                    //verification
                     $apiUrl = "https://graph.instagram.com/v21.0/me?fields=user_id,username,account_type,profile_picture_url,followers_count,follows_count,media_count,name,biography&access_token=" . $access_token;
                 }
             }
@@ -365,7 +360,7 @@ class InstagramFeed extends BaseFeed
     {
         $args['isConnected'] = false;
        
-        // set ig authorize business profile info
+        // Accounts picked through the business authorization flow.
         if(empty($response)){
             foreach ($args['selectedAccounts'] as $account) {
                 $access_token = Arr::get($account, 'access_token');
@@ -383,7 +378,7 @@ class InstagramFeed extends BaseFeed
             }
         }
 
-        // set manually ig business profile info
+        // A manually connected business account.
         if (!is_wp_error($response) && !(new Common())->instagramError($response)) {
             $args['username']    = $response['username'];
             $args['user_avatar'] = $response['profile_picture_url'];
@@ -428,7 +423,6 @@ class InstagramFeed extends BaseFeed
     public function getVerificationConfigs()
     {
         $connected_accounts = (new Common())->findConnectedAccounts();
-        //$token = [];
         foreach($connected_accounts as $key => $account) {
             if ($account['api_type'] === 'business') {
                 $transientName = 'user_account_header_'.$account['user_id'];
@@ -437,8 +431,6 @@ class InstagramFeed extends BaseFeed
                     $connected_accounts[$key]['user_avatar'] = $transient['user_avatar'];
                 }
             }
-
-            //$token[] = $this->dataProtector->decrypt($account['access_token']) ? $this->dataProtector->decrypt($account['access_token']) : $account['access_token'];
         }
 
         $business_accounts_list = get_option('wpsr_instagram_authorized_business_accounts_list');
@@ -467,11 +459,17 @@ class InstagramFeed extends BaseFeed
             if (Arr::get($args, 'user_id') && Arr::get($args, 'username')) {
                 $userId                      = (string)$args['user_id'];
                 $access_token = Arr::get($args, 'access_token', '');
+                $created_at = time();
+                $existing = Arr::get($connected_accounts, $userId, []);
+                // Token renewal is timed from created_at, so re-saving the same token must keep it.
+                if (!empty($existing['created_at']) && $this->isSameAccessToken(Arr::get($existing, 'access_token', ''), $access_token)) {
+                    $created_at = $existing['created_at'];
+                }
                 $access_token = $this->dataProtector->maybe_encrypt($access_token);
                 $connected_accounts[$userId] = array(
                     'access_token' => $access_token,
                     'expires_in'   => Arr::get($args, 'expires_in', ''),
-                    'created_at'   => time(),
+                    'created_at'   => $created_at,
                     'user_id'      => $userId,
                     'username'     => Arr::get($args, 'username', ''),
                     'api_type'     => Arr::get($args, 'api_type', ''),
@@ -499,6 +497,18 @@ class InstagramFeed extends BaseFeed
         }
     }
 
+    private function isSameAccessToken($storedToken, $token)
+    {
+        if (empty($storedToken) || empty($token)) {
+            return false;
+        }
+
+        $storedToken = $this->dataProtector->decrypt($storedToken) ?: $storedToken;
+        $token       = $this->dataProtector->decrypt($token) ?: $token;
+
+        return hash_equals($storedToken, $token);
+    }
+
     /**
      * Disconnect Verification Configs
      * @return void
@@ -517,7 +527,6 @@ class InstagramFeed extends BaseFeed
             update_option('wpsr_instagram_verification_configs', array('connected_accounts' => $accounts), 'no');
         }
 
-        //when remove user account, delete last used time
         $this->platfromData->deleteLastUsedTime($userId);
 
         $additionalKeys = [];
@@ -535,16 +544,16 @@ class InstagramFeed extends BaseFeed
     }
 
     /**
-     * Clear multiple cache entries related to a user's feed and account.
+     * Clear the feed and account caches of one user.
      *
-     * @param array|null $additionalKeys Additional cache keys to clear.
      * @param string|int|null $userId User ID associated with the cache.
+     * @param array|null $additionalKeys Additional cache keys to clear.
      */
     private function clearFeedCache($userId = null, $additionalKeys = [])
     {
 
         if (empty($userId)) {
-            return; // avoid clearing global keys if userId is missing
+            return; // Without a user id the keys would match every account.
         }
 
         $defaultKeys = [
@@ -564,10 +573,9 @@ class InstagramFeed extends BaseFeed
     public function getTemplateMeta($settings = [], $postId = null)
     {
         $formatted_feed_template_meta = $settings;
-        //feed settings to simplify repetitive use
         $feed_settings = Arr::get($formatted_feed_template_meta, 'feed_settings', []);
 
-        //generate error here if gdpr and custom app validation fails
+        // GDPR mode requires optimized images.
         $global_settings = get_option('wpsr_instagram_global_settings');
         $advanceSettings = (new GlobalSettings())->getGlobalSettings('advance_settings');
 
@@ -582,7 +590,6 @@ class InstagramFeed extends BaseFeed
             $response      = $this->templateApiHandler($feed_settings);
         }
 
-        //filter the feeds
         if (Arr::get($response, 'error_message') && empty(Arr::get($response, 'items'))) {
             $filterResponse = $response;
         } else {
@@ -593,7 +600,6 @@ class InstagramFeed extends BaseFeed
         $formatted_feed_template_meta['dynamic'] = $filterResponse;
         $configs                                 = $formatted_feed_template_meta;
 
-        //get all connected ids
         $connected_ids            = (new Common())->findConnectedAccounts();
         $configs['connected_ids'] = $connected_ids;
         $account_ids = Arr::get($feed_settings, 'source_settings.account_ids', []);
@@ -649,6 +655,7 @@ class InstagramFeed extends BaseFeed
             'settings'         => $settings,
             'template_details' => $templateDetails,
             'elements'         => $instagramConfig->getStyleElement(),
+            'default_styles'   => $instagramConfig->formatStylesConfig([], $postId),
             'post_types'       => GlobalHelper::getPostTypes()
         ]);
     }
@@ -680,7 +687,7 @@ class InstagramFeed extends BaseFeed
     }
 
     /**
-     * Update template is settings is changed in editor
+     * Save the template settings from the editor
      *
      * @return void
      * @since 1.3.0
@@ -689,7 +696,6 @@ class InstagramFeed extends BaseFeed
     {
         $settings['feed_settings']['source_settings']['hash_tags'] = $this->formatHashTags($settings);
 
-        // Remove template from onboarding sessions since it's now been edited
         if (Arr::get($settings, 'feed_settings.created_from_onboarding')) {
             OnboardingHelper::removeFromOnboardingSessions($postId);
         }
@@ -699,7 +705,7 @@ class InstagramFeed extends BaseFeed
         }
         $format_feed_settings = Config::formatInstagramConfig($settings['feed_settings'], array());
 
-        // unset them for wpsr_template_config meta
+        // Runtime-only keys, not part of the saved _wpsr_template_config.
         $unsetKeys = ['dynamic', 'styles_config', 'styles', 'responsive_styles'];
         foreach ($unsetKeys as $key){
             if(Arr::get($format_feed_settings, $key, false)){
@@ -724,7 +730,6 @@ class InstagramFeed extends BaseFeed
             return '';
         }
 
-        //remove all whitespace (including tabs and line ends)
         $hash_tags = preg_replace('/\s+/', '', $hash_tags);
         $hash_tags = explode(',', $hash_tags);
         $hash_tag_text = '';
@@ -773,16 +778,6 @@ class InstagramFeed extends BaseFeed
             if ($feedType === 'user_account_feed') {
                 $response = (new AccountFeed())->getMultipleAccountResponse($accountIds);
             }
-
-//            if ($feedType === 'tagged_feed') {
-//                if (defined('WPSOCIALREVIEWS_PRO') && class_exists('\WPSocialReviewsPro\App\Services\Platforms\Feeds\Instagram\TaggedFeed') ) {
-//                    $response = (new \WPSocialReviewsPro\App\Services\Platforms\Feeds\Instagram\TaggedFeed())->getMultipleTaggedResponse($accountIds);
-//                } else {
-//                    $message = __('You need to upgrade to pro version to show tagged feeds!!', 'wp-social-reviews');
-//
-//                    return array('error_message' => $message);
-//                }
-//            }
 
             if ($feedType === 'hashtag_feed') {
                 $hashtagType = isset($apiSettings['hashtag_type']) ? $apiSettings['hashtag_type'] : 'recent_media ';
@@ -877,7 +872,7 @@ class InstagramFeed extends BaseFeed
     }
 
     /**
-     * formats header
+     * Format header details
      *
      * @param $args
      *
@@ -930,7 +925,6 @@ class InstagramFeed extends BaseFeed
                     $accountId     = substr($optionName, $feed_position, strlen($optionName) - $feed_position);
 
                     if (!empty($accountId)) {
-                        //for user account feed type we need to find header details of the ig user
                         $accountDetails  = isset($connectedAccounts[$accountId]) ? $connectedAccounts[$accountId] : array();
                         if(empty($accountDetails)) {
                             continue;
@@ -948,7 +942,7 @@ class InstagramFeed extends BaseFeed
                             }
                             $this->errorManager->removeErrors('connection', $accountDetails);
                         } else {
-                            //we won't delete cache, we will store it 7 days, and after 7 days we will delete this
+                            // The existing cache is kept; only the error is recorded.
                             if((new Common())->instagramError($headerDetails)) {
                                 $connectedAccounts = $this->addPlatformApiErrors($headerDetails, $connectedAccounts, $accountDetails);
                                 update_option('wpsr_instagram_verification_configs', array('connected_accounts' => $connectedAccounts));
@@ -985,7 +979,6 @@ class InstagramFeed extends BaseFeed
 
                     $accountId = substr($optionName, $id_position, $hashtag_id_position - $id_position);
 
-                    //hashtag id
                     $hashtagId = substr($optionName, $hashtag_id_position + strlen('_hashtag_id_'),
                         $type_position - ($hashtag_id_position + strlen('_hashtag_id_')));
 
@@ -1025,20 +1018,20 @@ class InstagramFeed extends BaseFeed
 
     public function doTokenRefreshes()
     {
-        $caches = $this->cacheHandler->getExpiredCacheByName('wpsr_instagram_verification_configs_');
-
+        // should_attempt_refresh() decides; the verification cache marker is deleted by any cache clear.
         $options            = get_option('wpsr_instagram_verification_configs', array());
         $connected_accounts = isset($options['connected_accounts']) ? $options['connected_accounts'] : array();
         if (is_array($connected_accounts) && !empty($connected_accounts)) {
             foreach ($connected_accounts as $connected_account) {
-                if (in_array($connected_account['user_id'], $caches)) {
+                if (!empty($connected_account['user_id'])) {
                     $is_personal = (isset($connected_account['api_type']) && $connected_account['api_type'] === 'personal');
                     $is_business_basic = (isset($connected_account['api_type']) && $connected_account['api_type'] === 'business_basic');
                     $is_private  = (isset($connected_account['is_private'])) ? $connected_account['is_private'] : false;
 
-                    if (($is_personal || $is_business_basic)&& isset($connected_account['expires_in']) && !empty($connected_account['expires_in']) && !$is_private) {
-                        if ((new RefreshToken())->should_attempt_refresh($connected_account)) {
-                            (new RefreshToken())->getAccessToken($connected_account);
+                    if (($is_personal || $is_business_basic) && isset($connected_account['expires_in']) && !empty($connected_account['expires_in']) && !$is_private) {
+                        $refreshToken = new RefreshToken();
+                        if ($refreshToken->should_attempt_refresh($connected_account) && !$refreshToken->getAccessToken($connected_account)) {
+                            $this->recordTokenRefreshError($refreshToken->lastError, $connected_account);
                         }
                     }
                 }
@@ -1046,12 +1039,30 @@ class InstagramFeed extends BaseFeed
         }
     }
 
+    private function recordTokenRefreshError($error, $connectedAccount)
+    {
+        if (is_wp_error($error)) {
+            $error = ['error' => ['code' => $error->get_error_code(), 'message' => $error->get_error_message()]];
+        }
+
+        if (!Arr::get($error, 'error.code')) {
+            $error = ['error' => ['code' => 'token_refresh_failed', 'message' => __('Instagram access token could not be renewed.', 'wp-social-reviews')]];
+        }
+
+        $connectedAccounts = (new Common())->findConnectedAccounts();
+        if (empty($connectedAccounts[$connectedAccount['user_id']])) {
+            return;
+        }
+
+        $connectedAccounts = $this->addPlatformApiErrors($error, $connectedAccounts, $connectedAccounts[$connectedAccount['user_id']]);
+        update_option('wpsr_instagram_verification_configs', array('connected_accounts' => $connectedAccounts));
+    }
+
     public function setGlobalSettings()
     {
         $option_name    = 'wpsr_' . $this->platform . '_global_settings';
         $existsSettings = get_option($option_name);
         if (!$existsSettings) {
-            // add global instagram settings when user verified
             $args = [
                 'global_settings' => [
                     'expiration'        => 60*60*6,
@@ -1068,9 +1079,6 @@ class InstagramFeed extends BaseFeed
         $this->cacheHandler->clearPageCaches($this->platform);
         $this->cacheHandler->clearCache();
 
-//        $singleFeed = new SingleFeed();
-//        $singleFeed->clearPermissionErrors();
-//        $singleFeed->clearFailedRequests();
         wp_send_json_success([
             'message' => __('Cache cleared successfully!', 'wp-social-reviews'),
         ], 200);

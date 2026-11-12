@@ -1,0 +1,116 @@
+// Colour scheme presets. :where() adds no specificity, so each rule ties with the base rule it
+// overrides (and wins by coming later), while a colour set in Pro's style editor still wins.
+// Import after the template partials.
+
+:where(.wpsr-ig-scheme-dark) {
+  &.wpsr-ig-feed-wrapper {
+    background-color: #111111;
+    padding: 20px;
+    border-radius: 12px;
+  }
+  .wpsr-ig-header .wpsr-ig-header-inner {
+    background-color: #1c1c1c;
+    .wpsr-ig-header-info {
+      .wpsr-ig-header-name a,
+      .wpsr-ig-header-fullname,
+      .wpsr-ig-header-statistics .wpsr-ig-header-statistic-item,
+      .wpsr-ig-header-statistics .wpsr-ig-header-statistic-item strong {
+        color: #ffffff;
+      }
+      .wpsr-ig-header-description p {
+        color: #a8a8a8;
+      }
+    }
+  }
+  &.wpsr-feed-wrap .wpsr-ig-follow-btn a {
+    background-color: #ffffff;
+    color: #111111;
+    &:hover,
+    &:focus {
+      background-color: #e6e6e6;
+    }
+  }
+  &.wpsr-ig-feed-template2 .wpsr-ig-post {
+    background-color: #1c1c1c;
+    box-shadow: none;
+    border: 1px solid #2a2a2a;
+    .wpsr-ig-post-info {
+      .wpsr-ig-post-caption p,
+      .wpsr-ig-post-statistics .wpsr-ig-post-single-statistic,
+      .wpsr-ig-post-statistics .wpsr-ig-post-single-statistic span {
+        color: #f5f5f5;
+      }
+      .wpsr-ig-post-caption p a {
+        color: #8ab4f8;
+      }
+    }
+    .wpsr-ig-post-author-name {
+      color: #f5f5f5;
+    }
+    .wpsr-ig-post-author-avatar {
+      box-shadow: 0 0 0 2px #1c1c1c, 0 0 0 3px #3a3a3a;
+    }
+  }
+  .wpsr-ig-load-more.wpsr-load-more-default {
+    background-color: #262626;
+    color: #ffffff;
+    &:hover {
+      background-color: #333333;
+    }
+  }
+}
+
+:where(.wpsr-ig-scheme-shadow) {
+  .wpsr-ig-header.wpsr-ig-header-layout-minimal .wpsr-ig-header-inner {
+    padding: 15px 20px;
+  }
+  .wpsr-ig-header .wpsr-ig-header-inner {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  }
+  &.wpsr-ig-feed-template1 .wpsr-ig-post,
+  &.wpsr-ig-feed-template2 .wpsr-ig-post {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  }
+}
+
+:where(.wpsr-ig-scheme-soft) {
+  &.wpsr-ig-feed-wrapper {
+    background-color: #f5f5f5;
+    padding: 20px;
+    border-radius: 12px;
+  }
+  .wpsr-ig-header .wpsr-ig-header-inner {
+    background-color: #ffffff;
+    border-radius: 8px;
+  }
+  &.wpsr-ig-feed-template2 .wpsr-ig-post {
+    background-color: #ffffff;
+    box-shadow: none;
+    border-radius: 8px;
+  }
+}
+
+:where(.wpsr-ig-scheme-bordered) {
+  .wpsr-ig-header.wpsr-ig-header-layout-minimal .wpsr-ig-header-inner {
+    padding: 15px 20px;
+  }
+  .wpsr-ig-header .wpsr-ig-header-inner {
+    background-color: transparent;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+  }
+  &.wpsr-ig-feed-template1 .wpsr-ig-post {
+    border: 1px solid #dbdbdb;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  &.wpsr-ig-feed-template2 .wpsr-ig-post {
+    box-shadow: none;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+  }
+}

@@ -58,7 +58,6 @@ import {
     ElSkeleton
 } from 'element-plus'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
-import 'element-plus/dist/index.css'
 
 // Create a plugin to install all Element Plus components
 const ElementPlus = {

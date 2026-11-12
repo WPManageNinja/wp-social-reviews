@@ -35,7 +35,7 @@
           <div class="wpsr-business-info-paltforms-url">
             <a v-for="(platform, index ) in availablePlatforms" :key="index" :href="platform.url" target="_blank">
               <img v-if="platform.logo && platform.logo !== ''" :src="platform.logo" alt="">
-              <img v-else-if="shouldShowPlatformIcon(platform)" :src="getPlatformIconUrl(platform)" :alt="platform.platform_name">
+              <img v-else-if="shouldShowPlatformIcon(platform) && getPlatformIconUrl(platform)" :src="getPlatformIconUrl(platform)" :alt="platform.platform_name">
               <div class="wpsr-paltforms-url">
                 <span class="wpsr-platform" v-if="platform.name">{{ formatPlatformName(platform.name) }}</span>
                 <span class="wpsr-url">{{platform.url}}</span>

@@ -15,13 +15,8 @@ class ReviewsTemplateHandler
 {
 
     /**
-     *
-     * Render parent opening div for the review item
-     *
      * @param $template_meta
-     *
      * @since 3.7.0
-     *
      **/
     public function renderTemplateItemParentWrapper($template_meta = []){
         $app = App::getInstance();
@@ -37,28 +32,19 @@ class ReviewsTemplateHandler
     }
 
     /**
-     *
-     * Render parent closing div for the review item
-     *
      * @since 3.7.0
-     *
      **/
     public function renderTemplateItemParentWrapperEnd(){
        echo '</div>';
     }
 
     /**
-     *
-     * Render Reviewer Image HTML
-     *
      * @param $reviewer_image_meta
      * @param $reviewer_url
      * @param $reviewer_img
      * @param $reviewer_name
      * @param $enableExternalLink
-     *
      * @since 1.0.0
-     *
      **/
     public function renderReviewerImageHtml($reviewer_image_meta = false, $reviewer_url = '', $reviewer_img = '', $reviewer_name = '', $enableExternalLink = 'true', $media_url = '', $platform_name = '')
     {
@@ -99,14 +85,9 @@ class ReviewsTemplateHandler
     }
 
     /**
-     *
-     * Render Reviewer Platform HTML
-     *
      * @param $display_platform_icon
      * @param $platform_name
-     *
      * @since 1.0.0
-     *
      **/
     public function renderReviewPlatformHtml($display_platform_icon = '', $display_tp_brand = '', $platform_name = '')
     {
@@ -125,22 +106,16 @@ class ReviewsTemplateHandler
     }
 
     /**
-     *
-     * Render Reviewer Name HTML
-     *
      * @param $display_reviewer_name
      * @param $reviewer_url
      * @param $reviewer_name
-     *
      * @since 1.0.0
-     *
      **/
     public function renderReviewerNameHtml($display_reviewer_name = 'true', $reviewer_url = '', $reviewer_name = '', $enableExternalLink = 'true', $platformName = 'google', $enableVerifiedBadge = 'false', $verifiedBadgeTooltipText = '')
     {
         if ($display_reviewer_name === 'false') {
             return;
         }
-        // abruptly stopeed here.
         $shouldShowVerifiedBadge = $this->shouldShowVerifiedBadge($platformName, $enableVerifiedBadge);
 
         $attrs = [
@@ -169,7 +144,7 @@ class ReviewsTemplateHandler
             $platform_name !== 'ai' ||
             $platform_name === 'google'||
             $platform_name === 'airbnb'||
-            $platform_name === 'trustpilot'||
+            Helper::is_tp($platform_name)||
             $platform_name === 'yelp'||
             $platform_name === 'tripadvisor'||
             $platform_name === 'aliexpress'||
@@ -186,17 +161,12 @@ class ReviewsTemplateHandler
     }
 
     /**
-     *
-     * Render Reviewer Rating HTML
-     *
      * @param $display_reviewer_rating
      * @param $rating_style
      * @param $rating
      * @param $platform_name
      * @param $recommendation_type
-     *
      * @since 1.0.0
-     *
      **/
     public function renderReviewerRatingHtml($display_reviewer_rating,
                                              $rating_style,
@@ -222,14 +192,9 @@ class ReviewsTemplateHandler
     }
 
     /**
-     *
-     * Render Review Date HTML
-     *
      * @param $display_review_date
      * @param $review_time
-     *
      * @since 1.0.0
-     *
      **/
     public function renderReviewDateHtml($display_review_date, $review_time)
     {
@@ -260,17 +225,12 @@ class ReviewsTemplateHandler
     }
 
     /**
-     *
-     * Render Review Content HTML
-     *
      * @param $display_review_text
      * @param $content_length
      * @param $contentType
      * @param $reviewer_text
      * @param $reviewer_url
-     *
      * @since 1.0.0
-     *
      **/
     public function renderReviewContentHtml($display_review_text, $content_length, $contentType, $reviewer_text, $contentLanguage, $platform_name = '', $enable_ai_readmore = 'false', $enable_text_typing_animation = 'true')
     {
@@ -316,11 +276,9 @@ class ReviewsTemplateHandler
     }
 
     /**
-     *
-     * Retrieve reviews load more data. String-only wrapper over getPaginatedFeedData().
+     * String-only wrapper over getPaginatedFeedData().
      *
      * @since 1.2.4
-     *
      **/
     public function getPaginatedFeedHtml($templateId, $page, $imageSettings)
     {

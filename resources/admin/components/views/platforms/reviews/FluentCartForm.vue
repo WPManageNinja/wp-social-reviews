@@ -18,7 +18,7 @@
         <div v-if="hasFluentCartProducts">
           <div class="wpsr-alert wpsr-alert-info wpsr-d-flex wpsr-mb-10">
             <el-icon size="18" color="var(--wpsr-svg-secondary-color)"><InfoFilled /></el-icon>
-            <p>{{ $t("FluentCart doesn't have a built-in review system yet, so connecting a product won't import any existing reviews. Once connected, reviews will start appearing here as customers submit them through a WP Social Ninja review form (Reviews → Review Forms) targeting this product.") }}</p>
+            <p>{{ $t("Connecting a product won't import reviews already collected by FluentCart's built-in product reviews. Once connected, reviews will start appearing here as customers submit them through a WP Social Ninja review form (Reviews → Review Forms) targeting this product.") }}</p>
           </div>
           <div class="wpsr-connection-modal-input-wrapper">
             <div class="wpsr-connection-modal-input-heading-wrapper">

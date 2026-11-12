@@ -109,7 +109,7 @@ class Common
     }
 
     /**
-     * Weather Response Has Error or Not
+     * Whether the response is an error
      *
      * @param array|\WP_Error $response
      *

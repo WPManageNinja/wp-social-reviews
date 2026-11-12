@@ -52,3 +52,23 @@
 .wpsr-ig-feed-template4.wpsr-instagram-masonry-activate .wpsr-ig-post-pin-card {
   height: initial;
 }
+
+// Masonry only staggers when each tile keeps its own height, so the aspect-ratio frame is dropped.
+.wpsr-ig-feed-wrapper.wpsr-instagram-masonry-activate .wpsr-ig-all-feed .wpsr-ig-post-media {
+  padding-top: 0;
+  img,
+  video {
+    position: static;
+    display: block;
+    width: 100%;
+    height: auto;
+    min-width: 0;
+    max-width: 100%;
+    transform: none;
+  }
+}
+
+// The hover zoom re-centres with translate(-50%, -50%), which shifts an in-flow image.
+.wpsr-ig-feed-template4.wpsr-instagram-masonry-activate .wpsr-ig-post-pin-card:is(:hover, :focus-within) .wpsr-ig-post-media :is(img, video) {
+  transform: none;
+}

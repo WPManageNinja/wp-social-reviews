@@ -1,0 +1,36 @@
+// Shared by the layout styles. Mixins only, so every partial can import it without duplicating output.
+
+// Stretches the card to fill its cell. A one-track grid, not flex, so skins that inherit flex-direction (grid2) keep theirs.
+@mixin wpsr-stretch-card {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+// Skins that need help once their card is taller than its content.
+@mixin wpsr-stretched-skins {
+  .wpsr-review-template {
+    &.wpsr-review-template-two {
+      align-content: flex-start;
+    }
+
+    // The visible card is the speech bubble, so the bubble grows and the author stays under it.
+    &.wpsr-review-template-four {
+      display: flex;
+      flex-direction: column;
+
+      > .wpsr-review-header {
+        flex: 1 1 auto;
+      }
+    }
+
+    &.wpsr-review-template-seven,
+    &.wpsr-review-template-nine {
+      align-items: flex-start;
+    }
+  }
+}
+
+@mixin wpsr-edge-fade($edge) {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 $edge, #000 calc(100% - #{$edge}), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 $edge, #000 calc(100% - #{$edge}), transparent);
+}

@@ -280,9 +280,18 @@
               </div>
             </div>
 
-            <div 
-              v-if="advance_settings.ai_review_summarizer_enabled === 'true'" 
+            <div
+              v-if="advance_settings.ai_review_summarizer_enabled === 'true'"
               class="wpsr-ai-configuration">
+              <div v-if="!ai_platforms.length" class="wpsr-setting-row">
+                <div class="wpsr-setting-left">
+                  <p class="wpsr-setting-description wpsr-ai-deprecation-note">
+                    {{ aiPlatformsUnavailableNotice }}
+                  </p>
+                </div>
+              </div>
+
+              <template v-else>
               <div class="wpsr-setting-row">
                   <div class="wpsr-setting-left">
                     <h3 class="wpsr-setting-title">{{ $t("AI Platform") }}</h3>
@@ -297,10 +306,10 @@
                 <div class="wpsr-setting-right">
                   <el-select v-model="advance_settings.ai_platform" class="wpsr-text-input" @change="aiProviderChanged" placeholder="Select">
                     <el-option
-                      v-for="(platform, platformKey) in available_ai_platforms"
-                      :key="platformKey"
-                      :label="platform"
-                      :value="platformKey"
+                      v-for="platform in ai_platforms"
+                      :key="platform.value"
+                      :label="platform.label"
+                      :value="platform.value"
                       >
                     </el-option>
                   </el-select>
@@ -315,42 +324,57 @@
                   <p class="wpsr-setting-description">
                     {{
                       $t(
-                        'Select an AI model you want to use.'
+                        'Choose the AI model for text generation.'
                       )
                     }}
                   </p>
                 </div>
                 <div class="wpsr-setting-right">
-                  <el-select v-if="advance_settings.ai_platform === 'Deepseek'" class="wpsr-text-input" v-model="advance_settings.selected_model" clearable placeholder="Select">
+                  <div class="wpsr-setting-field">
+                    <el-select
+                        class="wpsr-text-input"
+                        v-model="advance_settings.selected_model"
+                        clearable
+                        :disabled="!!selectedPlatform && selectedPlatform.models.length < 2"
+                        placeholder="Select">
                       <el-option
-                          v-for="(model, modelKey) in deepseek_supported_models "
-                          :key="modelKey"
-                          :label="model"
-                          :value="modelKey">
+                          v-for="model in modelOptions"
+                          :key="model.value"
+                          :label="model.label"
+                          :value="model.value"
+                          :disabled="!!model.disabled">
+                        <span>{{ model.label }}</span>
+                        <span v-if="model.status === 'deprecated'" class="wpsr-ai-status-tag">{{ $t("Deprecated") }}</span>
+                        <span v-else-if="model.status === 'retired'" class="wpsr-ai-status-tag wpsr-ai-status-tag-retired">{{ $t("Unavailable") }}</span>
                       </el-option>
                     </el-select>
-
-                    <el-select v-if="advance_settings.ai_platform === 'OpenRouter'" class="wpsr-text-input" v-model="advance_settings.selected_model" clearable placeholder="Select">
-                      <el-option
-                          v-for="(model, modelKey) in open_router_supported_models"
-                          :key="modelKey"
-                          :label="model"
-                          :value="modelKey">
-                      </el-option>
-                    </el-select>
-
-                    <el-select v-if="advance_settings.ai_platform === 'OpenAI'" class="wpsr-text-input" v-model="advance_settings.selected_model" clearable placeholder="Select">
-                      <el-option
-                          v-for="(model, modelKey) in open_ai_supported_models"
-                          :key="modelKey"
-                          :label="model"
-                          :value="modelKey">
-                      </el-option>
-                    </el-select>
+                    <p v-if="selectedModelWarning" class="wpsr-setting-description wpsr-ai-deprecation-note">
+                      {{ selectedModelWarning }}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div class="wpsr-setting-row">
+              <!-- A platform that authenticates elsewhere explains itself here instead of asking for a key. -->
+              <div v-if="!selectedPlatformNeedsApiKey" class="wpsr-setting-row">
+                <div class="wpsr-setting-left">
+                  <h3 class="wpsr-setting-title">
+                    {{ $t("%s Configuration", selectedPlatform.label) }}
+                  </h3>
+                  <p class="wpsr-setting-description">{{ selectedPlatform.notice }}</p>
+                  <p v-if="selectedPlatformNoticeLink" class="wpsr-setting-description wpsr-ai-notice-link-row">
+                    <a
+                        class="wpsr-ai-notice-link"
+                        :href="selectedPlatformNoticeLink.url"
+                        target="_blank"
+                        rel="noopener noreferrer">
+                      {{ selectedPlatformNoticeLink.label }}
+                    </a>
+                  </p>
+                </div>
+              </div>
+
+              <div v-else class="wpsr-setting-row">
                 <div class="wpsr-setting-left">
                   <h3 class="wpsr-setting-title">{{ $t("API key") }}</h3>
                   <p class="wpsr-setting-description">
@@ -362,9 +386,29 @@
                   </p>
                 </div>
                 <div class="wpsr-setting-right">
-                  <el-input class="wpsr-text-input wpsr-input-border" v-model="advance_settings.ai_api_key" type="password" placeholder="API Key" show-password/>
+                  <div class="wpsr-setting-field">
+                    <!-- Readable only while the field holds the server's mask; anything typed is a real key and stays hidden. -->
+                    <el-input
+                        class="wpsr-text-input wpsr-input-border"
+                        v-model="advance_settings.ai_api_key"
+                        :type="hasSavedApiKey ? 'text' : 'password'"
+                        show-password
+                        autocomplete="off"
+                        data-1p-ignore
+                        data-lpignore="true"
+                        data-bwignore
+                        :placeholder="$t('Enter API Key')"/>
+                    <p v-if="hasSavedApiKey" class="wpsr-setting-description wpsr-ai-api-key-hint">
+                      {{
+                        $t(
+                          'A key is already saved. Type a new key to replace it, or clear the field to remove it.'
+                        )
+                      }}
+                    </p>
+                  </div>
                 </div>
               </div>
+              </template>
             </div>
           </div>
         </div>
@@ -379,6 +423,15 @@ import NativeFormCaptchaSettings from "./NativeFormCaptchaSettings.vue";
 import FluentCrmReviewTagSettings from "./FluentCrmReviewTagSettings.vue";
 import { InfoFilled } from "@element-plus/icons-vue";
 import { settingsMixin } from "../../../../mixins/settingsMixin";
+import {
+  wpsrAiCredentialsForPlatform,
+  wpsrAiDefaultModel,
+  wpsrAiOfferedModels,
+  wpsrAiNoticeLink,
+  wpsrAiOnlyModel,
+  wpsrAiPlatformNeedsApiKey,
+  wpsrIsMaskedApiKey,
+} from "../../../../utils/aiSettings";
 
 export default {
   name: "GlobalReviewSettings",
@@ -413,10 +466,9 @@ export default {
           value: "webp",
         },
       ],
-      available_ai_platforms: [],
-      open_ai_supported_models: [],
-      open_router_supported_models: [],
-      deepseek_supported_models: [],
+      ai_platforms: [],
+      has_wordpress_ai: false,
+      saved_ai_config: { platform: null, model: null, api_key: null },
       reviewsPublishTypeOptions: [
         { value: 'auto', label: 'Publish Automatically' },
         { value: 'manually', label: 'Require Approval' },
@@ -434,6 +486,104 @@ export default {
   computed: {
     canManageReviewsPlatformsSettings() {
       return this.hasPermission(['wpsn_reviews_platforms_settings', 'wpsn_full_access']);
+    },
+    hasSavedApiKey() {
+      return wpsrIsMaskedApiKey(this.advance_settings?.ai_api_key);
+    },
+    // The platform list comes from Pro, so an empty one means Pro is missing or
+    // too old to advertise its platforms. Say which, rather than showing an
+    // empty dropdown.
+    aiPlatformsUnavailableNotice() {
+      if (!this.has_pro) {
+        return this.$t(
+          'The AI Review Summarizer needs WP Social Ninja Pro. Your saved configuration is kept.'
+        );
+      }
+
+      return this.$t(
+        'Update WP Social Ninja Pro to choose an AI platform and model. Your saved configuration is kept.'
+      );
+    },
+    selectedPlatform() {
+      const saved = this.advance_settings?.ai_platform;
+      if (!saved) {
+        return null;
+      }
+      // Older versions stored these values inconsistently cased, so match loosely.
+      const folded = String(saved).toLowerCase();
+      return this.ai_platforms.find(
+        (platform) => String(platform.value).toLowerCase() === folded
+      ) || null;
+    },
+    selectedPlatformNeedsApiKey() {
+      return wpsrAiPlatformNeedsApiKey(this.selectedPlatform);
+    },
+    selectedPlatformNoticeLink() {
+      return wpsrAiNoticeLink(this.selectedPlatform);
+    },
+    modelOptions() {
+      const saved = this.advance_settings?.selected_model;
+      const models = wpsrAiOfferedModels(this.selectedPlatform, saved).map((model) =>
+        model.disabled ? { ...model, label: this.$t('%s (Retired)', model.label), plainLabel: model.label } : model
+      );
+
+      // A model saved by an older release, or added by a filter that has since
+      // stopped registering, still has to show — otherwise the field reads blank.
+      if (saved && !models.some((model) => model.value === saved)) {
+        models.unshift({
+          value: saved,
+          label: this.$t('%s (Unknown)', saved),
+          status: 'unknown',
+          note: ''
+        });
+      }
+
+      return models;
+    },
+    selectedModelWarning() {
+      const saved = this.advance_settings?.selected_model;
+      const model = this.modelOptions.find((option) => option.value === saved);
+
+      if (!model) {
+        return '';
+      }
+
+      if (model.status === 'unknown' && wpsrAiDefaultModel(this.selectedPlatform)) {
+        return this.$t(
+          'This model is not one your selected platform offers here, so AI summaries use the Default model. Pick a listed model to choose one yourself.'
+        );
+      }
+
+      if (model.status === 'unknown') {
+        return this.$t(
+          'This model is not one your selected platform offers here. Pick a listed model to be sure AI summaries keep running.'
+        );
+      }
+
+      // The note already says summaries carry on with the Default model.
+      if (model.status === 'retired' && wpsrAiDefaultModel(this.selectedPlatform)) {
+        const retiredWithDefault = this.$t('%1$s is no longer available.', model.plainLabel || model.label);
+        return model.note ? retiredWithDefault + ' ' + model.note : retiredWithDefault;
+      }
+
+      if (model.status === 'retired') {
+        const retired = this.$t(
+          '%1$s is no longer available. Pick a current model to restore AI summaries.',
+          model.label
+        );
+        return model.note ? retired + ' ' + model.note : retired;
+      }
+
+      if (model.status !== 'deprecated') {
+        return '';
+      }
+
+      const warning = this.$t(
+        '%1$s is deprecated and may stop working without notice. Pick a current model to keep AI summaries running.',
+        model.label
+      );
+
+      return model.note ? warning + ' ' + model.note : warning;
     }
   },
 
@@ -480,14 +630,26 @@ export default {
             if (!this.has_pro && this.advance_settings?.review_publish_mode === 'conditional') {
               this.advance_settings.review_publish_mode = 'auto';
             }
-            this.available_ai_platforms =
-              response.ai_summarizer_settings_options.available_ai_platforms;
-            this.open_ai_supported_models =
-              response.ai_summarizer_settings_options.open_ai_supported_models;
-            this.open_router_supported_models =
-              response.ai_summarizer_settings_options.open_router_supported_models;
-            this.deepseek_supported_models =
-              response.ai_summarizer_settings_options.deepseek_supported_models;
+            this.ai_platforms =
+              response.ai_summarizer_settings_options.ai_platforms || [];
+            this.has_wordpress_ai =
+              !!response.ai_summarizer_settings_options.has_wordpress_ai;
+            // Remembered so returning to the saved platform can restore its
+            // credentials instead of leaving the fields blank.
+            // A platform offering one model renders a disabled select, so nothing
+            // else could fill it in if it arrived empty.
+            if (this.advance_settings && !this.advance_settings.selected_model) {
+              const onlyModel = wpsrAiOnlyModel(this.selectedPlatform) || wpsrAiDefaultModel(this.selectedPlatform);
+              if (onlyModel) {
+                this.advance_settings.selected_model = onlyModel;
+              }
+            }
+
+            this.saved_ai_config = {
+              platform: this.advance_settings?.ai_platform ?? null,
+              model: this.advance_settings?.selected_model ?? null,
+              api_key: this.advance_settings?.ai_api_key ?? null
+            };
           }
         })
         .catch((error) => {
@@ -498,8 +660,12 @@ export default {
         });
     },
     aiProviderChanged(value) {
-      this.advance_settings.selected_model = null;
-      this.advance_settings.ai_api_key = null;
+      // v-model has already applied the new value, so selectedPlatform is the one
+      // being switched to — its single model, if it has one, gets preselected.
+      const credentials = wpsrAiCredentialsForPlatform(value, this.saved_ai_config, this.selectedPlatform);
+
+      this.advance_settings.selected_model = credentials.selected_model || wpsrAiDefaultModel(this.selectedPlatform);
+      this.advance_settings.ai_api_key = credentials.ai_api_key;
     },
     onAISummarizerToggle(value) {
       // If AI summarizer is disabled, show a warning for existing users with configurations

@@ -18,17 +18,18 @@
               </div>
 
               <div class="wpsr-header-right">
-                <el-dropdown @command="addNewItem">
-                  <el-button type="primary" class="wpsr_primary_btn">
+                <el-button v-if="availableSections.length === 1" type="primary" class="wpsr_primary_btn" :loading="creatingItem" @click="addNewItem(availableSections[0])">
+                  <el-icon class="wpsr-mr-5"><Plus /></el-icon>{{ $t('Add %s Template', ucFirst(availableSections[0])) }}
+                </el-button>
+                <el-dropdown v-else-if="availableSections.length > 1" @command="addNewItem">
+                  <el-button type="primary" class="wpsr_primary_btn" :loading="creatingItem">
                     <el-icon class="wpsr-mr-5"><Plus /></el-icon>{{ $t('Create Template') }}
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <template v-for="(section, key) in valid_sections" :key="key">
-                        <el-dropdown-item :command="section" v-if="connectedPlatformSections && connectedPlatformSections[section]">
-                          {{ `Add ${ucFirst(section)} Template` }}
-                        </el-dropdown-item>
-                      </template>
+                      <el-dropdown-item v-for="section in availableSections" :key="section" :command="section">
+                        {{ $t('Add %s Template', ucFirst(section)) }}
+                      </el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
                 </el-dropdown>
@@ -39,30 +40,30 @@
           <div class="wpsr-table-controls">
             <div class="wpsr-controls-left">
               <div class="wpsr-controls-bulk-actions">
-               <el-select class="wpsr-select-field-primary" v-model="bulkAction" placeholder="Bulk Action" size="default" style="width: 160px;">
-                 <el-option label="Bulk Actions" value="">
+               <el-select class="wpsr-select-field-primary" v-model="bulkAction" :placeholder="$t('Bulk Action')" size="default" style="width: 160px;">
+                 <el-option :label="$t('Bulk Actions')" value="">
                   <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
                     <el-icon><Plus /></el-icon>
-                    <span>Bulk Actions</span>
+                    <span>{{ $t('Bulk Actions') }}</span>
                   </span>
                  </el-option>
-                 <el-option label="Delete" value="delete">
+                 <el-option :label="$t('Delete')" value="delete">
                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
                      <el-icon><Delete /></el-icon>
-                     <span>Delete</span>
+                     <span>{{ $t('Delete') }}</span>
                    </span>
                  </el-option>
-                 <el-option label="Duplicate" value="duplicate">
+                 <el-option :label="$t('Duplicate')" value="duplicate">
                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
                      <el-icon><DocumentCopy /></el-icon>
-                     <span>Duplicate</span>
+                     <span>{{ $t('Duplicate') }}</span>
                    </span>
                  </el-option>
                </el-select>
-               <el-button @click="applyBulkAction" :disabled="!selectedItems.length">Apply</el-button>
+               <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
              </div>
               <div class="wpsr-controls-filter">
-                <el-select class="wpsr-select-field-primary" v-model="filter_value" placeholder="All Platforms" size="default" clearable
+                <el-select class="wpsr-select-field-primary" v-model="filter_value" :placeholder="$t('All Platforms')" size="default" clearable
                            v-if="Object.entries(validPlatforms).length" @change="getItems" style="width: 220px;">
                   <el-option
                       v-for="item in validPlatforms"
@@ -77,7 +78,7 @@
               <el-input
                 class="wpsr-input-default"
                 v-model="search_string"
-                placeholder="Search..."
+                :placeholder="$t('Search...')"
                 size="default"
                 style="width: 200px;"
                 @keyup.enter="getItems()"
@@ -101,27 +102,27 @@
             >
                 <el-table-column type="selection" width="55" align="center"></el-table-column>
 
-                <el-table-column label="ID" width="70" prop="ID" sortable>
+                <el-table-column :label="$t('ID')" width="70" prop="ID" sortable>
                   <template #default="scope">
                     <span class="wpsr-item-id wpsr-item-editable" @click.prevent="handleRowAction('edit', scope.row)">#{{ scope.row.ID }}</span>
                   </template>
                 </el-table-column>
 
                 <el-table-column
-                    label="Title"
+                    :label="$t('Title')"
                     min-width="180"
                     show-overflow-tooltip
                 >
                   <template #default="scope" >
                     <div class="wpsr-item-title-cell wpsr-item-editable" @click.prevent="handleRowAction('edit', scope.row)">
                       <strong class="wpsr-item-title wpsr-d-flex wpsr-flex-align-center">
-                        {{ $trimWords(scope.row.post_title, 3, true) }} <el-icon class="wpsr-ml-5 wpsr-display-on-hover"><Edit /></el-icon>
+                        <span dir="auto">{{ $trimWords(scope.row.post_title, 3, true) }}</span> <el-icon class="wpsr-ml-5 wpsr-display-on-hover"><Edit /></el-icon>
                       </strong>
                     </div>
                   </template>
                 </el-table-column>
 
-                <el-table-column label="Platform" min-width="150">
+                <el-table-column :label="$t('Platform')" min-width="150">
                   <template #default="scope">
                     <div class="wpsr-item-group wpsr-d-flex wpsr-flex-align-center">
                       <div class="wpsr-platform-cell" v-html="getPlatformIconsHtml(scope.row.platform_name)"></div>
@@ -130,13 +131,13 @@
                   </template>
                 </el-table-column>
 
-                <el-table-column label="Create Date" min-width="140">
+                <el-table-column :label="$t('Create Date')" min-width="140">
                   <template #default="scope">
                     <span class="wpsr-date">{{ wpsrDateFormat(scope.row.post_date_gmt, 'DD MMM, YYYY') }}</span>
                   </template>
                 </el-table-column>
 
-                <el-table-column label="ShortCode" min-width="280">
+                <el-table-column :label="$t('ShortCode')" min-width="280">
                   <template #default="scope">
                     <div class="wpsr-shortcode-cell">
                       <template v-if="feedPlatforms.includes(scope.row.platform_name) || scope.row.platform_name === 'testimonial'">
@@ -192,7 +193,7 @@
             <div class="wpsr-table-pagination">
                 <div class="wpsr-pagination-info">
                   <span class="wpsr-pagination-text">
-                    Page {{ page_number }} of {{ Math.ceil(total / per_page) }}
+                    {{ $t('Page %1$s of %2$s', page_number, Math.ceil(total / per_page)) }}
                   </span>
                 </div>
                 <el-pagination
@@ -219,25 +220,28 @@
                 {{ $t('Start by creating a template to design your perfect layout.') }}
               </p>
 
-              <el-dropdown v-if="Object.keys(validPlatforms).length" @command="addNewItem">
-                <el-button class="wpsr_primary_btn" type="primary">
-                  <el-icon class="wpsr-mr-5"><Plus /></el-icon>{{ $t('Create Template') }}
+              <template v-if="Object.keys(validPlatforms).length">
+                <el-button v-if="availableSections.length === 1" class="wpsr_primary_btn" type="primary" :loading="creatingItem" @click="addNewItem(availableSections[0])">
+                  <el-icon class="wpsr-mr-5"><Plus /></el-icon>{{ $t('Add %s Template', ucFirst(availableSections[0])) }}
                 </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <template v-for="(section, key) in valid_sections" :key="key">
-                      <el-dropdown-item :command="section" v-if="connectedPlatformSections && connectedPlatformSections[section]">
-                        {{ `Add ${ucFirst(section)} Template` }}
+                <el-dropdown v-else-if="availableSections.length > 1" @command="addNewItem">
+                  <el-button class="wpsr_primary_btn" type="primary" :loading="creatingItem">
+                    <el-icon class="wpsr-mr-5"><Plus /></el-icon>{{ $t('Create Template') }}
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item v-for="section in availableSections" :key="section" :command="section">
+                        {{ $t('Add %s Template', ucFirst(section)) }}
                       </el-dropdown-item>
-                    </template>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </template>
 
               <div v-if="!Object.keys(validPlatforms).length" class="wpsr-alert wpsr-alert-warning wpsr-d-flex wpsr-mt-20">
                 <InfoIcon color="var(--wpsr-icon-info-warning-color)"/>
                 <p>
-                  <strong>Note:</strong>
+                  <strong>{{ $t('Note:') }}</strong>
                   {{ $t('Before creating your template you need to configure your social platform.') }}
                   <router-link to="/">{{ $t('Click Here') }}</router-link>
                   {{ $t(' to configure your settings first!') }}
@@ -256,26 +260,26 @@
             width="40%"
             :before-close="handleDeleteClose">
           <div class="wpsr-delete-content">
-            <h4 v-if="isBulkDelete">Are you sure, you want to delete {{ selectedItems.length }} template(s)?</h4>
-            <h4 v-else>Are you sure you want to delete this template?</h4>
-            <p v-if="isBulkDelete">All the data associated with these templates will be deleted.</p>
-            <p v-else>All data associated with this template will be permanently deleted.</p>
+            <h4 v-if="isBulkDelete">{{ $t('Are you sure you want to delete %s template(s)?', selectedItems.length) }}</h4>
+            <h4 v-else>{{ $t('Are you sure you want to delete this template?') }}</h4>
+            <p v-if="isBulkDelete">{{ $t('All the data associated with these templates will be deleted.') }}</p>
+            <p v-else>{{ $t('All data associated with this template will be permanently deleted.') }}</p>
 
             <div class="wpsr-delete-details">
               <template v-if="isBulkDelete">
-                <p><strong>Selected Templates:</strong> {{ selectedItems.length }} item(s)</p>
-                <p><strong>IDs:</strong> {{ selectedItems.map(item => '#' + item.ID).join(', ') }}</p>
+                <p><strong>{{ $t('Selected Templates:') }}</strong> {{ $t('%s item(s)', selectedItems.length) }}</p>
+                <p><strong>{{ $t('IDs:') }}</strong> {{ selectedItems.map(item => '#' + item.ID).join(', ') }}</p>
               </template>
               <template v-else>
-                <p><strong>Template ID:</strong> #{{ deletingItem.ID }}</p>
-                <p><strong>Template Title:</strong> {{ deletingItem.post_title }}</p>
+                <p><strong>{{ $t('Template ID:') }}</strong> #{{ deletingItem.ID }}</p>
+                <p><strong>{{ $t('Template Title:') }}</strong> {{ deletingItem.post_title }}</p>
               </template>
             </div>
           </div>
           <template #footer>
             <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-              <el-button class="wpsr_default_btn" :disabled="loading" @click="show_delete_modal = false">Cancel</el-button>
-              <el-button class="wpsr_primary_btn" type="danger" :loading="loading" @click="confirmDelete()">Confirm</el-button>
+              <el-button class="wpsr_default_btn" :disabled="loading" @click="show_delete_modal = false">{{ $t('Cancel') }}</el-button>
+              <el-button class="wpsr_primary_btn" type="danger" :loading="loading" @click="confirmDelete()">{{ $t('Confirm') }}</el-button>
             </div>
           </template>
         </el-dialog>
@@ -288,19 +292,20 @@
             :show-close="!loading"
             width="40%">
           <div class="wpsr-delete-content">
-            <h4>Are you sure, you want to {{ bulkAction }} {{ selectedItems.length }} template(s)?</h4>
-            <p v-if="bulkAction === 'enable'">This will activate the selected templates.</p>
-            <p v-else-if="bulkAction === 'disable'">This will deactivate the selected templates.</p>
+            <h4 v-if="bulkAction === 'enable'">{{ $t('Are you sure you want to enable %s template(s)?', selectedItems.length) }}</h4>
+            <h4 v-else>{{ $t('Are you sure you want to disable %s template(s)?', selectedItems.length) }}</h4>
+            <p v-if="bulkAction === 'enable'">{{ $t('This will activate the selected templates.') }}</p>
+            <p v-else-if="bulkAction === 'disable'">{{ $t('This will deactivate the selected templates.') }}</p>
 
             <div class="wpsr-delete-details">
-              <p><strong>Selected Templates:</strong> {{ selectedItems.length }} item(s)</p>
-              <p><strong>IDs:</strong> {{ selectedItems.map(item => '#' + item.ID).join(', ') }}</p>
+              <p><strong>{{ $t('Selected Templates:') }}</strong> {{ $t('%s item(s)', selectedItems.length) }}</p>
+              <p><strong>{{ $t('IDs:') }}</strong> {{ selectedItems.map(item => '#' + item.ID).join(', ') }}</p>
             </div>
           </div>
           <template #footer>
             <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-              <el-button class="wpsr_default_btn" :disabled="loading" @click="show_status_modal = false">Cancel</el-button>
-              <el-button class="wpsr_primary_btn" :loading="loading" @click="performStatusUpdate()">Confirm</el-button>
+              <el-button class="wpsr_default_btn" :disabled="loading" @click="show_status_modal = false">{{ $t('Cancel') }}</el-button>
+              <el-button class="wpsr_primary_btn" :loading="loading" @click="performStatusUpdate()">{{ $t('Confirm') }}</el-button>
             </div>
           </template>
         </el-dialog>
@@ -313,18 +318,18 @@
             :show-close="!loading"
             width="40%">
           <div class="wpsr-delete-content">
-            <h4>Are you sure, you want to duplicate {{ selectedItems.length }} template(s)?</h4>
-            <p>This will create copies of the selected templates.</p>
+            <h4>{{ $t('Are you sure you want to duplicate %s template(s)?', selectedItems.length) }}</h4>
+            <p>{{ $t('This will create copies of the selected templates.') }}</p>
 
             <div class="wpsr-delete-details">
-              <p><strong>Selected Templates:</strong> {{ selectedItems.length }} item(s)</p>
-              <p><strong>IDs:</strong> {{ selectedItems.map(item => '#' + item.ID).join(', ') }}</p>
+              <p><strong>{{ $t('Selected Templates:') }}</strong> {{ $t('%s item(s)', selectedItems.length) }}</p>
+              <p><strong>{{ $t('IDs:') }}</strong> {{ selectedItems.map(item => '#' + item.ID).join(', ') }}</p>
             </div>
           </div>
           <template #footer>
             <div class="wpsr-d-flex wpsr-jc-end wpsr-mt-20">
-              <el-button class="wpsr_default_btn" :disabled="loading" @click="show_bulk_duplicate_modal = false">Cancel</el-button>
-              <el-button class="wpsr_primary_btn" :loading="loading" @click="performBulkDuplicate()">Confirm</el-button>
+              <el-button class="wpsr_default_btn" :disabled="loading" @click="show_bulk_duplicate_modal = false">{{ $t('Cancel') }}</el-button>
+              <el-button class="wpsr_primary_btn" :loading="loading" @click="performBulkDuplicate()">{{ $t('Confirm') }}</el-button>
             </div>
           </template>
         </el-dialog>
@@ -358,6 +363,11 @@ export default {
       CreateTemplateIcon
     },
     mixins: [tableMixin, PlatformIconMixin],
+    computed: {
+      availableSections() {
+        return this.valid_sections.filter(section => this.connectedPlatformSections && this.connectedPlatformSections[section]);
+      }
+    },
     data() {
       return {
         valid_sections: ['reviews', 'testimonial', 'youtube', 'instagram', 'facebook_feed', 'tiktok', 'twitter'],

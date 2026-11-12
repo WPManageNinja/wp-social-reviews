@@ -35,8 +35,7 @@
                 :value="category.id">
             </el-option>
           </el-select>
-          <!-- An empty dropdown after a failed load would look like "no categories
-               exist"; say so plainly and offer a retry instead. -->
+          <!-- Say the load failed, or an empty list reads as "no categories exist". -->
           <p v-if="loadError" class="wpsr-field-hint">
             {{ $t('Could not load existing categories.') }} <el-button link type="primary" size="small" @click="$emit('retry')">{{ $t('Retry') }}</el-button>
           </p>
@@ -54,8 +53,7 @@
       <div class="wpsr-modal-footer wpsr-mt-20">
         <el-button class="wpsr_default_btn" :disabled="applying" @click="$emit('update:modelValue', false)">{{ $t('Cancel') }}</el-button>
         <div class="wpsr-modal-footer-actions">
-          <!-- Removal only applies to an existing category: a name typed here has
-               nothing attached yet. The server rejects the pairing too. -->
+          <!-- Removal needs an existing category. The server rejects it too. -->
           <el-button
               v-if="mode === 'existing'"
               class="wpsr_default_btn"
@@ -82,11 +80,8 @@
 
 <script>
 /**
- * Bulk assign/remove a category across the selected reviews. Pairs with
- * mixins/reviewCategoryMixin.js, which supplies `categories` and handles `submit`.
- *
- * "Remove Category" here only unassigns — deleting a category itself is
- * site-wide and lives in ManageCategoriesModal.
+ * Bulk assign/remove a category on the selected reviews. reviewCategoryMixin supplies
+ * `categories` and handles `submit`. Remove only unassigns; deleting lives in ManageCategoriesModal.
  */
 export default {
   name: 'BulkCategoryModal',
@@ -125,7 +120,6 @@ export default {
     }
   },
   computed: {
-    // Gates both action buttons: whichever mode is active must have a value.
     canSubmit() {
       return this.mode === 'existing' ? !!this.categoryId : this.newName.trim() !== '';
     },
@@ -136,9 +130,7 @@ export default {
     }
   },
   methods: {
-    // Block every close path (Cancel/×/Esc/backdrop) while a request is in flight, so
-    // the user can't dismiss the dialog, change the table selection, and then have the
-    // in-flight operation's success handler clear that newer selection.
+    // Don't close mid-request, or its success handler clears a selection the user has since changed.
     onDialogVisibility(visible) {
       if (!visible && this.applying) {
         return;

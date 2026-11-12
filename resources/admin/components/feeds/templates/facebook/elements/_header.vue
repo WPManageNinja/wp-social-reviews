@@ -14,16 +14,16 @@
 
             <div class="wpsr-fb-feed-user-info">
               <div class="wpsr-fb-feed-user-info-name-wrapper" v-if="account.name && header_settings.display_page_name === 'true'">
-                <a class="wpsr-fb-feed-user-info-name" rel="nofollow" :href="account.link" :title="account.name" target="_blank">
+                <a class="wpsr-fb-feed-user-info-name" dir="auto" rel="nofollow" :href="account.link" :title="account.name" target="_blank">
                   {{ account.name }}
                 </a>
               </div>
-              <div class="wpsr-fb-feed-user-info-description" v-if="account.about && header_settings.display_description === 'true'">
+              <div class="wpsr-fb-feed-user-info-description" dir="auto" v-if="account.about && header_settings.display_description === 'true'">
                 <p> {{ account.about }}</p>
               </div>
               <div class="wpsr-fb-feed-user-statistics">
-                <span v-if="account.fan_count !== 0 && header_settings.display_likes_counter === 'true'">{{ shortNumberFormat( account.fan_count ) }} {{$t('likes')}}</span>
-                <span v-if="account.followers_count !== 0 && header_settings.display_followers_count === 'true'">{{ shortNumberFormat( account.followers_count ) }} {{$t('followers')}}</span>
+                <span v-if="account.fan_count !== 0 && header_settings.display_likes_counter === 'true'"><bdi>{{ shortNumberFormat( account.fan_count ) }} {{$t('likes')}}</bdi></span>
+                <span v-if="account.followers_count !== 0 && header_settings.display_followers_count === 'true'"><bdi>{{ shortNumberFormat( account.followers_count ) }} {{$t('followers')}}</bdi></span>
               </div>
             </div>
           </div>
@@ -68,7 +68,7 @@ export default {
   methods: {
       get_header_avatar(account) {
         let placeholder = this.assets_url + '/images/template/review-template/placeholder-image.png';
-        if(account.avatar && account.avatar.local_avatar.length) {
+        if(account.avatar && account.avatar.local_avatar && account.avatar.local_avatar.length) {
           return account.avatar.local_avatar;
         }
 
@@ -80,7 +80,7 @@ export default {
       },
       get_header_cover(account){
         let placeholder = this.assets_url + '/images/template/review-template/placeholder-image.png';
-        if(account.covers && account.covers.local_cover.length) {
+        if(account.covers && account.covers.local_cover && account.covers.local_cover.length) {
           return account.covers.local_cover;
         }
 

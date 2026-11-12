@@ -15,6 +15,9 @@ class RefreshToken
     public $grant_type = 'ig_refresh_token';
     public $optionKey = 'wpsr_instagram_verification_configs';
 
+    /** @var array|\WP_Error|null Response of the last failed refresh, for the caller to record. */
+    public $lastError = null;
+
     public function __construct()
     {
 
@@ -79,8 +82,10 @@ class RefreshToken
             if (!is_wp_error($refreshTokens)) {
                 $accessToken = isset($refreshTokens['access_token']) ? $refreshTokens['access_token'] : '';
                 if (!empty($accessToken)) {
-                    $connected_accounts[$connectedId] = array(
-                        'access_token' => $accessToken,
+                    // Merged so fields this method does not own (is_private, status, errors) survive a renewal.
+                    $stored_account = isset($connected_accounts[$connectedId]) ? $connected_accounts[$connectedId] : $connected_account;
+                    $connected_accounts[$connectedId] = array_merge($stored_account, array(
+                        'access_token' => (new DataProtector())->maybe_encrypt($accessToken),
                         'expires_in'   => isset($refreshTokens['expires_in']) ? $refreshTokens['expires_in'] : '',
                         'created_at'   => time(),
                         'user_id'      => $connectedId,
@@ -88,7 +93,7 @@ class RefreshToken
                         'api_type'     => isset($connected_account['api_type']) ? $connected_account['api_type'] : '',
                         'user_avatar'  => isset($connected_account['user_avatar']) ? $connected_account['user_avatar'] : '',
                         'name'         => isset($connected_account['name']) ? $connected_account['name'] : ''
-                    );
+                    ));
                     update_option($this->optionKey, array('connected_accounts' => $connected_accounts), 'no');
 
                     foreach ($connected_accounts as $connected_account) {
@@ -102,9 +107,14 @@ class RefreshToken
                     }
                 }
 
+                if (empty($accessToken)) {
+                    $this->lastError = $refreshTokens;
+                }
+
                 return $accessToken;
 
             } else {
+                $this->lastError = $refreshTokens;
                 return false;
             }
         }

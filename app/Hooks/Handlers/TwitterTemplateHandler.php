@@ -12,14 +12,9 @@ use WPSocialReviews\App\Services\GlobalSettings;
 class TwitterTemplateHandler
 {
     /**
-     *
-     * Render Author Info HTML
-     *
      * @param $feed
      * @param $template_meta
-     *
      * @since 1.2.4
-     *
      **/
     public function renderTweetAuthorNameHtml($feed = [], $template_meta = [])
     {
@@ -34,14 +29,9 @@ class TwitterTemplateHandler
     }
 
     /**
-     *
-     * Render Author Verified Icon HTML
-     *
      * @param $feed
      * @param $template_meta
-     *
      * @since 1.2.4
-     *
      **/
     public function renderTweetAuthorVerifiedIconHtml($feed = [], $template_meta = [])
     {
@@ -59,14 +49,9 @@ class TwitterTemplateHandler
     }
 
     /**
-     *
-     * Render Author Username HTML
-     *
      * @param $feed
      * @param $template_meta
-     *
      * @since 1.2.4
-     *
      **/
     public function renderTweetAuthorUsernameHtml($feed = [], $template_meta = [])
     {
@@ -82,14 +67,9 @@ class TwitterTemplateHandler
     }
 
     /**
-     *
-     * Render Tweet time HTML
-     *
      * @param $feed
      * @param $template_meta
-     *
      * @since 1.2.4
-     *
      **/
     public function renderTweetTimeHtml($feed = [], $template_meta = [])
     {
@@ -108,14 +88,9 @@ class TwitterTemplateHandler
     }
 
     /**
-     *
-     * Render Author Avatar HTML
-     *
      * @param $feed
      * @param $template_meta
-     *
      * @since 1.2.4
-     *
      **/
     public function renderTweetAuthorAvatarHtml($feed = [], $template_meta = [])
     {
@@ -134,13 +109,8 @@ class TwitterTemplateHandler
     }
 
     /**
-     *
-     * Render Tweet Retweeted Status
-     *
      * @param $feed
-     *
      * @since 1.2.4
-     *
      **/
     public function renderTweetRetweetedStatusHtml($feed = [])
     {
@@ -154,23 +124,14 @@ class TwitterTemplateHandler
     }
 
     /**
-     *
-     * Render Tweet Content HTML
-     *
      * @param $feed
      * @param $template_meta
      * @param $templateId
      * @param $index
-     *
      * @since 1.2.4
-     *
      **/
     public function renderTweetContentHtml($feed = [], $template_meta = [], $templateId = null, $index = null)
     {
-//        $media_type = 'photo';//TwitterHelper::getMediaType($feed);
-//        $has_external_media = TwitterHelper::hasExternalMedia($feed);
-//        $external_platform = TwitterHelper::externalPlatformName($linkInfo);
-
         $medias = Arr::get($feed, 'media', []);
         $externalLinks = Arr::get($feed, 'entities.urls', []);
 
@@ -228,16 +189,11 @@ class TwitterTemplateHandler
     }
 
     /**
-     *
-     * Render Tweet Image HTML
-     *
      * @param $feed
      * @param $template_meta
      * @param $templateId
      * @param $index
-     *
      * @since 1.2.4
-     *
      **/
     public function renderTweetImageHtml($feed = [], $media = [], $template_meta = [], $templateId = null, $index = null)
     {
@@ -262,16 +218,11 @@ class TwitterTemplateHandler
     }
 
     /**
-     *
-     * Render Tweet Video HTML
-     *
      * @param $feed
      * @param $template_meta
      * @param $templateId
      * @param $index
-     *
      * @since 1.2.4
-     *
      **/
     public function renderTweetVideoHtml($feed = [], $media  = [], $template_meta = [], $templateId = null, $index = null)
     {
@@ -321,14 +272,9 @@ class TwitterTemplateHandler
     }
 
     /**
-     *
-     * Render Tweet Action Reply HTML
-     *
      * @param $feed
      * @param $template_meta
-     *
      * @since 1.2.4
-     *
      **/
     public function renderTweetActionReply($feed = [], $template_meta = [])
     {
@@ -344,14 +290,9 @@ class TwitterTemplateHandler
     }
 
     /**
-     *
-     * Render Tweet Action Retweet Count HTML
-     *
      * @param $feed
      * @param $template_meta
-     *
      * @since 1.2.4
-     *
      **/
     public function renderTweetActionRetweetCount($feed = [], $template_meta = [])
     {
@@ -369,14 +310,9 @@ class TwitterTemplateHandler
     }
 
     /**
-     *
-     * Render Tweet Action Favorite Count HTML
-     *
      * @param $feed
      * @param $template_meta
-     *
      * @since 1.2.4
-     *
      **/
     public function renderTweetActionFavoriteCount($feed = [], $template_meta = [])
     {
@@ -394,11 +330,7 @@ class TwitterTemplateHandler
     }
 
     /**
-     *
-     * Retrieve twitter load more data
-     *
      * @since 1.2.4
-     *
      **/
     public function getPaginatedFeedHtml($templateId, $page)
     {

@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h3 v-if="display_title === 'true' " class="wpsr-yt-video-title">
+        <h3 v-if="display_title === 'true' " class="wpsr-yt-video-title" dir="auto">
             <a class="wpsr-yt-video-playmode" tabindex="0" role="button" @keydown="wpsrActivateOnKey" @click="$emit('youtube-video-playmode', $event, feed, configs.feed_settings.video_settings.play_mode, index)">
                 {{ $trimWords(feed.snippet.title, configs.feed_settings.video_settings.trim_title_words, has_pro) }}
             </a>

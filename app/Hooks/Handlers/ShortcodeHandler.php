@@ -326,16 +326,20 @@ class ShortcodeHandler
             if (empty($business_info)) {
                 return $html;
             }
-            $html .= apply_filters('wpsocialreviews/add_reviews_badge_template', $templateId, $templateType,
-                $business_info, $badge_settings);
+            // Pro renders the badge; without it the filter would echo the bare template ID.
+            if (defined('WPSOCIALREVIEWS_PRO')) {
+                $html .= apply_filters('wpsocialreviews/add_reviews_badge_template', $templateId, $templateType,
+                    $business_info, $badge_settings, $reviews, Arr::get($template_meta, 'display_tp_brand', 'false') === 'true');
+            }
             if (Arr::get($badge_settings, 'display_mode') !== 'popup') {
+                do_action('wpsocialreviews/load_template_assets', $templateId);
                 return $html;
             }
         }
 
-        if ($templateType === 'notification') {
+        if ($templateType === 'notification' && defined('WPSOCIALREVIEWS_PRO')) {
             $html .= apply_filters('wpsocialreviews/add_reviews_notification_template', $templateId, $template_meta,
-                $reviews);
+                $reviews, $business_info);
             $this->enqueueNotificationScripts();
         }
 
@@ -380,7 +384,7 @@ class ShortcodeHandler
                 try {
                     $aiSummaryData = \WPSocialReviewsPro\App\Services\AI\AIReviewSummarizerHelper::addAiSummaryToReviewArray($reviews, $templateId, $template_meta);
                     $reviews = Arr::get($aiSummaryData, 'reviews');
-                } catch (Exception $e) {
+                } catch (\Throwable $e) {
                     // in the case of shortcodes we should not show the error message
                     // it depends on the leads decision.
                     //error_log($e->getMessage());
@@ -389,20 +393,42 @@ class ShortcodeHandler
         }
 
 
-        $templates = ['grid1', 'grid2', 'grid3', 'grid4', 'grid5'];
-        if (!in_array($template, $templates) && defined('WPSOCIALREVIEWS_PRO')) {
-            $html .= apply_filters('wpsocialreviews/add_reviews_template', $template, $reviews, $template_meta, $business_info);
-        } else {
-            $templatePath = $this->reviewsTemplatePath($template);
-            if (!empty($templatePath['error_message'])) {
-                return $templatePath['error_message'] . '<br/>';
-            }
-            $html .= $app->view->make($templatePath, array(
-                'reviews' => $reviews,
-                'template_meta' => $template_meta,
-                'business_info' => $business_info
-            ));
+        if ($templateType === 'marquee') {
+            wp_enqueue_script('wpsr-marquee');
         }
+
+        /**
+         * Rows the cards render in, each with its own reviews and wrapper markup. One row by default.
+         *
+         * @param array $rows          [['reviews' => $reviews, 'before' => '', 'after' => '']]
+         * @param array $template_meta
+         */
+        $reviewRows = apply_filters('wpsocialreviews/reviews_template_rows', [['reviews' => $reviews, 'before' => '', 'after' => '']], $template_meta);
+        $allReviews = $reviews;
+
+        foreach ($reviewRows as $reviewRow) {
+            $reviews = $reviewRow['reviews'];
+            $html .= $reviewRow['before'];
+
+            $templates = ['grid1', 'grid2', 'grid3', 'grid4', 'grid5'];
+            if (!in_array($template, $templates) && defined('WPSOCIALREVIEWS_PRO')) {
+                $html .= apply_filters('wpsocialreviews/add_reviews_template', $template, $reviews, $template_meta, $business_info);
+            } else {
+                $templatePath = $this->reviewsTemplatePath($template);
+                if (!empty($templatePath['error_message'])) {
+                    return $templatePath['error_message'] . '<br/>';
+                }
+                $html .= $app->view->make($templatePath, array(
+                    'reviews' => $reviews,
+                    'template_meta' => $template_meta,
+                    'business_info' => $business_info
+                ));
+            }
+
+            $html .= $reviewRow['after'];
+        }
+
+        $reviews = $allReviews;
 
         $html .= $app->view->make('public.reviews-templates.footer', array(
             'templateId'    => $templateId,
@@ -813,6 +839,8 @@ class ShortcodeHandler
         $templateMapping = [
             'template1' => 'public.feeds-templates.instagram.template1',
             'template2' => 'public.feeds-templates.instagram.template2',
+            'template5' => 'public.feeds-templates.instagram.template2',
+            'template6' => 'public.feeds-templates.instagram.template1',
         ];
         $template = Arr::get($settings['feed_settings'], 'template', '');
         $isProTemplate = InstagramTemplateHandler::canRenderProTemplate($template);
@@ -828,6 +856,11 @@ class ShortcodeHandler
 
         //pagination settings
         $pagination_settings = $this->formatPaginationSettings($feed);
+        // Load More is Pro: it serves the next pages and the button, so without it the whole feed shows on one page.
+        if ($pagination_settings['pagination_type'] === 'load_more' && !defined('WPSOCIALREVIEWS_PRO')) {
+            $pagination_settings['pagination_type'] = 'none';
+            $pagination_settings['maxId'] = is_array($settings['feeds']) ? count($settings['feeds']) : 0;
+        }
         $translations = GlobalSettings::getTranslations();
         $feeds = Arr::get($settings, 'dynamic.items', []);
 
@@ -901,6 +934,10 @@ class ShortcodeHandler
                 'maxId'         => $pagination_settings['maxId'],
                 'image_settings' => $this->imageSettings
             );
+
+            if (in_array($template, array('template5', 'template6'), true)) {
+                $template_body_data['template_meta']['_header_data']['avatar_url'] = (new InstagramTemplateHandler())->getUserAvatar($settings['header'], Arr::get($settings, 'feed_settings.header_settings', []));
+            }
 
             if ($isProTemplate) {
                 $template_body_data['header'] = $settings['header'];
@@ -1086,6 +1123,10 @@ class ShortcodeHandler
         wp_register_script('wpsr-reviews-sort-toolbar', WPSOCIALREVIEWS_URL . 'assets/js/wpsr-reviews-sort-toolbar.js',
             array('jquery', 'wp-social-review'), WPSOCIALREVIEWS_VERSION, true);
 
+        // Registered only; enqueued when an Marquee layout renders.
+        wp_register_script('wpsr-marquee', WPSOCIALREVIEWS_URL . 'assets/js/wpsr-marquee.js',
+            array(), WPSOCIALREVIEWS_VERSION, true);
+
         wp_register_script('social-ninja-modal', WPSOCIALREVIEWS_URL . 'assets/js/social-ninja-modal.js',
             array('jquery'), WPSOCIALREVIEWS_VERSION, true);
 
@@ -1112,49 +1153,49 @@ class ShortcodeHandler
     {
         wp_register_style(
             'wp_social_ninja_reviews',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_reviews.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_reviews' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
 
         wp_register_style(
             'wp_social_ninja_testimonial',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_testimonial.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_testimonial' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
 
         wp_register_style(
             'wp_social_ninja_ig',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_ig.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_ig' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
 
         wp_register_style(
             'wp_social_ninja_fb',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_fb.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_fb' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
 
         wp_register_style(
             'wp_social_ninja_tw',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_tw.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_tw' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
 
         wp_register_style(
             'wp_social_ninja_yt',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_yt.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_yt' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
 
         wp_register_style(
             'wp_social_ninja_tt',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_tt.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_tt' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
@@ -1361,6 +1402,10 @@ class ShortcodeHandler
         // Read before the check below, which uses it to pick the allowed post types.
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading AJAX parameters for pagination, not processing sensitive form data
         $platform = sanitize_text_field(Arr::get($_REQUEST, 'platform'));
+
+        if (!in_array($platform, GlobalHelper::shortcodeAllowedPlatforms(), true)) {
+            wp_send_json_error(['message' => __('Invalid platform.', 'wp-social-reviews')], 403);
+        }
 
         // Notification popups render a reviews feed from their own post type, so allow it here only.
         $wpsr_extra_post_types = $platform === 'reviews' ? ['wpsr_reviews_notify'] : [];

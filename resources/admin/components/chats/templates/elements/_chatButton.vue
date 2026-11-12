@@ -7,11 +7,11 @@
              :class="configs.channels.length === 1 && configs.channels[0].name ? configs.channels[0].name : ''"
             @click.prevent="openPopupWindow(configs)"
             >
-              <span class="wpsr-chat-btn-text">{{configs.chat_button.button_text}}</span>
+              <span class="wpsr-chat-btn-text" dir="auto">{{configs.chat_button.button_text}}</span>
               <img v-if="configs.chat_button.display_icon === 'true' && configs.channels[0].name" :src="image_url" :alt="configs.channels[0].label">
             </a>
             <div v-if="configs.channels.length > 1">
-              <span v-if="!showPreFilledInputBox && !isChannelShow" class="wpsr-fm-multiple-btn">{{configs.chat_button.button_text}}</span>
+              <span v-if="!showPreFilledInputBox && !isChannelShow" class="wpsr-fm-multiple-btn" dir="auto">{{configs.chat_button.button_text}}</span>
               <div class="wpsr-channels">
                 <Channels
                     v-if="(!showPreFilledInputBox && configs.layout_type === 'chat_box') || (!isChannelShow && configs.layout_type === 'icons')"

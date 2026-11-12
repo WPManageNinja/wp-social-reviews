@@ -16,7 +16,7 @@
                 <UpgradeToProBanner placement="feature_lock_reviews_style" />
                 <div v-for="(option, insideIndex) in options" :key="insideIndex">
                   <!-- Add a conditional wrapper div to prevent empty divs -->
-                  <div v-if="shouldRenderOption(option, insideIndex)" class="wpsr-styling-components" :class="!has_pro ? 'wpsr-style-upgrade':''">
+                  <div v-if="shouldRenderOption(option, insideIndex) && matchesNotificationTemplate(option)" class="wpsr-styling-components" :class="!has_pro ? 'wpsr-style-upgrade':''">
                     <h3 v-if="option.title" class="wpsr-style-title wpsr-pb-0">{{ option.title }}</h3>
                         <span class="wpsr-style-typography-wrapper">
                           <FeedEditorGroup
@@ -183,9 +183,17 @@ export default {
       temp_style_badge_title: {},
       temp_style_badge_rating_number: {},
       temp_style_badge_total_reviews: {},
+      temp_style_badge_quality_label: {},
+      temp_style_badge_avatars_more: {},
       temp_style_notification_reviewer_name: {},
       temp_style_notification_title: {},
       temp_style_notification_review_time: {},
+      temp_style_notification_rating_word: {},
+      temp_style_notification_source: {},
+      temp_style_notification_excerpt: {},
+      temp_style_notification_pulse_rating: {},
+      temp_style_notification_pulse_count: {},
+      temp_style_notification_pulse_subtitle: {},
       temp_style_pagination: {},
       temp_style_pagination_hover: {},
       temp_style_review_box: {},
@@ -209,9 +217,17 @@ export default {
       temp_style_badge_title_responsive: {},
       temp_style_badge_rating_number_responsive: {},
       temp_style_badge_total_reviews_responsive: {},
+      temp_style_badge_quality_label_responsive: {},
+      temp_style_badge_avatars_more_responsive: {},
       temp_style_notification_reviewer_name_responsive: {},
       temp_style_notification_title_responsive: {},
       temp_style_notification_review_time_responsive: {},
+      temp_style_notification_rating_word_responsive: {},
+      temp_style_notification_source_responsive: {},
+      temp_style_notification_excerpt_responsive: {},
+      temp_style_notification_pulse_rating_responsive: {},
+      temp_style_notification_pulse_count_responsive: {},
+      temp_style_notification_pulse_subtitle_responsive: {},
       temp_style_read_more_less_responsive: {},
       temp_style_platform_responsive: {},
       temp_style_pagination_responsive: {},
@@ -284,9 +300,17 @@ export default {
         'badge_title',
         'badge_rating_number',
         'badge_total_reviews',
+        'badge_quality_label',
+        'badge_avatars_more',
         'notification_reviewer_name',
         'notification_title',
         'notification_review_time',
+        'notification_rating_word',
+        'notification_source',
+        'notification_excerpt',
+        'notification_pulse_rating',
+        'notification_pulse_count',
+        'notification_pulse_subtitle',
         'pagination',
         'pagination_hover',
         'review_title',
@@ -298,6 +322,20 @@ export default {
       identifierKey.forEach(identifier => {
         this.resetVariableHandler(this.feed_config, identifier);
       })
+    },
+
+    matchesNotificationTemplate(option) {
+      if (!option) {
+        return true;
+      }
+      const settings = this.template_meta.notification_settings || {};
+      if (Array.isArray(option.notification_templates) && !option.notification_templates.includes(settings.template)) {
+        return false;
+      }
+      if (option.notification_requires && typeof option.notification_requires === 'object') {
+        return Object.keys(option.notification_requires).every(key => settings[key] === option.notification_requires[key]);
+      }
+      return true;
     },
 
     resetMe (val) {
@@ -328,6 +366,12 @@ export default {
       return 'FilterIcon';
     },
     shouldRenderOption(option, insideIndex) {
+      if (option && Array.isArray(option.badge_templates)) {
+        const badgeTemplate = (this.template_meta.badge_settings || {}).template;
+        if (!option.badge_templates.includes(badgeTemplate)) {
+          return false;
+        }
+      }
       // Add your custom logic here to determine whether to render the option or not
       // For example, you can check if the option has any styles defined
       if (option.key && this.feed_config.styles[option.key]) {
@@ -384,11 +428,21 @@ export default {
         this.feed_config.styles.badge_title,
         this.feed_config.styles.badge_rating_number,
         this.feed_config.styles.badge_total_reviews,
+        this.feed_config.styles.badge_quality_label,
+        this.feed_config.styles.badge_avatars_more,
+        this.feed_config.styles.badge_sticker_header,
         this.feed_config.styles.badge_wrapper_box,
         this.feed_config.styles.notification_close_icon,
         this.feed_config.styles.notification_reviewer_name,
         this.feed_config.styles.notification_title,
         this.feed_config.styles.notification_review_time,
+        this.feed_config.styles.notification_rating_word,
+        this.feed_config.styles.notification_source,
+        this.feed_config.styles.notification_excerpt,
+        this.feed_config.styles.notification_pulse_rating,
+        this.feed_config.styles.notification_pulse_count,
+        this.feed_config.styles.notification_pulse_subtitle,
+        this.feed_config.styles.notification_pulse_accent,
         this.feed_config.styles.notification_wrapper_box,
         this.feed_config.styles.pagination,
         this.feed_config.styles.pagination_hover,

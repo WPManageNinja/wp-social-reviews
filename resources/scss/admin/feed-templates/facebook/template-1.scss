@@ -54,6 +54,9 @@
   color: #65676b;
   cursor: pointer;
   padding-left: 4px;
+  // The text around it is dir="auto"; logical sides keep the gap before the link in either direction.
+  padding-inline-start: 4px;
+  padding-inline-end: 0;
 }
 
 .wpsr-fb-load-more.wpsr-load-more-default{
@@ -72,6 +75,10 @@
     }
     [class*="wpsr-col"]{
       margin-bottom: 0;
+    }
+    .wpsr-fb-feed-item .wpsr-fb-feed-inner{
+      border-radius: 0;
+      box-shadow: none;
     }
   }
   .wpsr-column-gap-narrow{
@@ -244,21 +251,29 @@
   }
   .wpsr-fb-feed-image-album-layout-2{
     display: flex;
-    img{
-      flex: 0 50%;
+    gap: 4px;
+    // Zero-basis halves: otherwise a portrait first photo hits its max-height and its width shrinks with it.
+    > img,
+    > .wpsr-fb-feed-image-album{
+      flex: 1 1 0;
+      min-width: 0;
       max-width: 50%;
-      margin-right: 3px;
-      margin-left: 3px;
+    }
+    > img{
+      margin: 0;
+      object-fit: cover;
     }
     .wpsr-fb-feed-image-album{
       margin-top: initial;
+      display: flex;
       .wpsr-fb-feed-image-album-item{
-        width: initial;
+        width: 100%;
         display: block;
         img{
           height: 100%;
           max-width: 100%;
           width: 100%;
+          object-fit: cover;
         }
       }
     }

@@ -82,35 +82,35 @@ class ElementorWidget
     {
         wp_register_style(
             'wp_social_ninja_reviews',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_reviews.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_reviews' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
 
         wp_register_style(
             'wp_social_ninja_yt',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_yt.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_yt' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
 
         wp_register_style(
             'wp_social_ninja_ig',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_ig.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_ig' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
 
         wp_register_style(
             'wp_social_ninja_tw',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_tw.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_tw' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
 
         wp_register_style(
             'wp_social_ninja_fb',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_fb.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_fb' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );

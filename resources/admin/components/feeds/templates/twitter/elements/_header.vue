@@ -19,7 +19,7 @@
               </div>
               <div class="wpsr-twitter-user-info">
                   <div class="wpsr-twitter-user-info-name-wrapper">
-                      <a class="wpsr-twitter-user-info-name" v-if="header_settings.show_name === 'true'" rel="nofollow" :href="'https://twitter.com/'+header.username" :title="header.name" target="_blank">
+                      <a class="wpsr-twitter-user-info-name" dir="auto" v-if="header_settings.show_name === 'true'" rel="nofollow" :href="'https://twitter.com/'+header.username" :title="header.name" target="_blank">
                           {{ header.name }}
                       <span class="wpsr-tweeter-user-verified" title="Verified account" v-if="header.verified">
                          <svg viewBox="0 0 24 24" aria-label="Verified account">
@@ -28,11 +28,11 @@
                           </svg>
                       </span>
                       </a>
-                      <a v-if="header_settings.show_user_name === 'true'" class="wpsr-twitter-user-info-username" rel="nofollow" :href="'https://twitter.com/'+header.username" target="_blank">
+                      <a v-if="header_settings.show_user_name === 'true'" class="wpsr-twitter-user-info-username" dir="auto" rel="nofollow" :href="'https://twitter.com/'+header.username" target="_blank">
                           @{{ header.username }}
                       </a>
                   </div>
-                  <div class="wpsr-twitter-user-bio" v-if="header.description && header_settings.show_description === 'true'">
+                  <div class="wpsr-twitter-user-bio" dir="auto" v-if="header.description && header_settings.show_description === 'true'">
                       <p v-html="formatContent(header.description)">
                       </p>
                   </div>

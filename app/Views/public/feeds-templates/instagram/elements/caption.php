@@ -1,7 +1,7 @@
 <?php defined('ABSPATH') or die;
 
 if ($caption) { ?>
-    <div class="wpsr-ig-post-caption">
+    <div class="wpsr-ig-post-caption" dir="auto">
         <p class="wpsr-ig-post-caption-text">
             <?php
             $wpsr_caption = preg_replace(

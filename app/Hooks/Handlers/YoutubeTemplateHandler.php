@@ -12,13 +12,8 @@ class YoutubeTemplateHandler
 {
 
     /**
-     *
-     * Render parent opening div for the template item
-     *
      * @param $template_meta
-     *
      * @since 3.7.0
-     *
      **/
     public function renderTemplateItemWrapper($template_meta = []){
         $app = App::getInstance();
@@ -153,10 +148,8 @@ class YoutubeTemplateHandler
     }
 
     /**
-     * Render a feed video as a Fluent Player instance
-     *
-     * The inline and gallery play modes build the player in the browser, and
-     * only the server can run Fluent Player's shortcode.
+     * Render a feed video as a Fluent Player instance for the inline and gallery
+     * play modes. Only the server can run Fluent Player's shortcode.
      *
      * @since 4.4.0
      */
@@ -181,9 +174,8 @@ class YoutubeTemplateHandler
 
         $html = FluentPlayerEmbed::render($videoId, $feed_settings, [
             'autoplay' => true,
-            // The length comes from the feed the browser already rendered, so no
-            // per-click feed lookup is needed. Only re-anchored layers use it, and
-            // a spoofed value would only shift that visitor's own layer timing.
+            // Taken from the request to skip a feed lookup. A spoofed value only
+            // shifts that visitor's own layer timing.
             'duration' => Arr::get($feed_settings, 'video_settings.fluent_player_layers_at_end') === 'true'
                 ? $duration
                 : 0

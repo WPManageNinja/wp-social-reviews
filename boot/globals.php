@@ -6,10 +6,8 @@ use WPSocialReviews\App\Models\Review;
 use WPSocialReviews\Framework\Support\Arr;
 
 /**
- ***** DO NOT CALL ANY FUNCTIONS DIRECTLY FROM THIS FILE ******
- *
- * This file will be loaded even before the framework is loaded
- * so the $app is not available here, only declare functions here.
+ * Declare functions only, never call them here. This file loads before the
+ * framework, so $app isn't available.
  */
 
 
@@ -29,7 +27,7 @@ is_readable(__DIR__ . '/globals_dev.php') && include 'globals_dev.php';
 //}
 
 /**
- * Get reviews of the specific platforms, $filters expects valid filters to filter reviews
+ * Reviews for the given platforms, filtered by template-style $filters.
  *
  * @param array $platforms
  * @param array $filters
@@ -45,7 +43,7 @@ if(!function_exists('wpsrGetReviews')){
 }
 
 /**
- * Get business info of the platforms provided, if source ids is provided it will return specific source ids data
+ * Business info for the given platforms, limited to $sourceIds when given.
  *
  * @param array $platforms
  * @param array $sourceIds
@@ -86,7 +84,7 @@ if(!function_exists('wpsrGetReviewsDataFromTemplate')){
 }
 
 /**
- * Get wpsocialninja instance or other core modules
+ * The app instance, or a service bound to $key.
  *
  * @param string $key
  *
@@ -124,11 +122,10 @@ if(! function_exists('wpsr_backend_sanitizer')) {
         $originalValues = $inputs;
 
         foreach ($inputs as $key => &$value) {
-            // Construct the full key for rule lookup (e.g., 'fields.author_company')
+            // Dot-notation key for the map, e.g. 'fields.author_company'.
             $fullKey = empty($keyPrefix) ? $key : $keyPrefix . '.' . $key;
 
             if (is_array($value)) {
-                // Check if there's a specific sanitization rule for this array
                 $method = Arr::get($sanitizeMap, $fullKey);
 
                 if ($method === 'wpsr_array_map_absint') {
@@ -136,7 +133,6 @@ if(! function_exists('wpsr_backend_sanitizer')) {
                 } elseif ($method === 'wpsr_array_map_sanitize_text_field') {
                     $value = array_map('sanitize_text_field', $value);
                 } else {
-                    // If no specific rule, recurse
                     wpsr_backend_sanitizer($value, $sanitizeMap, $defaultMethod, $fullKey);
                 }
             } else {
@@ -156,7 +152,6 @@ if(! function_exists('wpsr_backend_sanitizer')) {
     }
 }
 
-// Add global boolean sanitizer helper
 if (! function_exists('wpsr_sanitize_boolean')) {
     /**
      * Normalize boolean-like values using WordPress REST helper when available.
@@ -178,17 +173,11 @@ if (! function_exists('wpsr_sanitize_boolean')) {
     }
 }
 
-// Add global opaque-token sanitizer helper
 if (! function_exists('wpsr_sanitize_opaque_token')) {
     /**
-     * Strict charset validation for opaque OAuth-bridge tokens (payload, result_id, flow_id).
-     *
-     * These are machine values, not human text — the payload is standard base64
-     * (base64_encode of iv+ciphertext, i.e. A-Za-z0-9+/=), result_id is base64url,
-     * and flow_id is a UUID4. Their contract is "matches this charset", not "is safe
-     * HTML", so validate them for what they are instead of running an HTML sanitizer
-     * over them. Anything outside the allowed set is rejected to an empty string so a
-     * malformed value fails loudly downstream rather than being silently mangled.
+     * Charset check for opaque OAuth-bridge tokens: payload (base64), result_id
+     * (base64url) and flow_id (UUID4). A value with any other character becomes ''
+     * so it fails downstream instead of being silently mangled.
      *
      * @param mixed $value
      * @return string sanitized value, or '' if it contains any disallowed character
@@ -206,11 +195,10 @@ if (! function_exists('wpsr_sanitize_opaque_token')) {
     }
 }
 
-// Add global recipients sanitizer helper
 if (! function_exists('wpsr_sanitize_recipients')) {
     /**
-     * Sanitize recipients input (comma-separated string or array) into a clean comma-separated string
-     * or an array if $as_string is false. Uses sanitize_email.
+     * Sanitize recipients (comma-separated string or array) with sanitize_email.
+     * Returns a comma-separated string, or an array when $as_string is false.
      *
      * @param string|array $value
      * @param bool $as_string
@@ -229,7 +217,6 @@ if (! function_exists('wpsr_sanitize_recipients')) {
             if ($email === '') {
                 continue;
             }
-            // Use only sanitize_email as requested
             $s = sanitize_email($email);
             if (!empty($s)) {
                 $clean[] = $s;
@@ -247,18 +234,16 @@ if (! function_exists('wpsr_sanitize_recipients')) {
 if(! function_exists('wpsr_sanitize_css_selector')) {
     /**
      * Sanitizes a CSS selector, allowing only safe characters.
-     * Strips anything that could be used to inject malicious code.
      */
     function wpsr_sanitize_css_selector($selector) {
-        // Allow alphanumeric, spaces, and common CSS selectors/combinators . # : > + ~ [ ] - _
+        // Alphanumerics, whitespace and . # : > + ~ [ ] - _ * , | = "
         return preg_replace('/[^a-zA-Z0-9\s\.#:>+\~\[\]\-\_\*\,\|\="]/', '', $selector);
     }
 }
 
 if(! function_exists('wpsr_sanitize_color')) {
     /**
-     * Sanitizes a CSS color value.
-     * Uses WordPress core for hex colors and a regex for other formats.
+     * Sanitizes a CSS color: hex, rgb(a)/hsl(a) within range, or a few named colors.
      */
     function wpsr_sanitize_color($color) {
         $color = trim($color);
@@ -266,18 +251,16 @@ if(! function_exists('wpsr_sanitize_color')) {
             return '';
         }
 
-        // 1. Use WordPress core function for hex colors first.
         if (preg_match('/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/', $color)) {
             return sanitize_hex_color($color);
         }
 
-        // 2. Allow rgba(), rgb(), hsla(), hsl()
         if (preg_match('/^(rgba?|hsla?)\(\s*(\d{1,3}%?\s*,\s*){2}\d{1,3}%?\s*(,\s*[0-9.]+)?\s*\)$/', $color, $wpsr_match)) {
             $wpsr_fn = strtolower($wpsr_match[1]);
             $wpsr_parts = array_map('trim', explode(',', trim(substr($color, strpos($color, '(') + 1), ' )')));
             $wpsr_alpha = count($wpsr_parts) === 4 ? array_pop($wpsr_parts) : null;
 
-            // The pattern checks shape only, so rgb(999,0,0) and rgba(0,0,0,1.5) passed.
+            // The pattern checks shape only; rgb(999,0,0) and rgba(0,0,0,1.5) are caught here.
             $wpsr_limits = ($wpsr_fn === 'hsl' || $wpsr_fn === 'hsla') ? [360, 100, 100] : [255, 255, 255];
             foreach ($wpsr_parts as $wpsr_index => $wpsr_part) {
                 $wpsr_limit = substr($wpsr_part, -1) === '%' ? 100 : $wpsr_limits[$wpsr_index];
@@ -293,24 +276,20 @@ if(! function_exists('wpsr_sanitize_color')) {
             return $color;
         }
 
-        // 3. Allow common named colors (a subset for safety)
         $named_colors = ['inherit', 'transparent', 'currentcolor', 'black', 'white', 'red', 'green', 'blue', 'yellow', 'cyan', 'magenta'];
         if (in_array(strtolower($color), $named_colors)) {
             return $color;
         }
 
-        return ''; // Return empty if no match
+        return '';
     }
 }
 
 if(! function_exists('wpsr_sanitize_css_unit')) {
     /**
      * Sanitizes a CSS unit value (e.g., 10px, 1.5em, 100%).
-     * Ensures the value is a number followed by a valid CSS unit.
      */
     function wpsr_sanitize_css_unit($value) {
-        // Allow numbers, decimals, negative signs, and common CSS units.
-        // This is a strict but practical regex.
         if (preg_match('/^(\-?\d*\.?\d+)(px|em|rem|%|vw|vh|vmin|vmax|ex|ch|cm|mm|in|pt|pc|deg|rad|turn|s|ms)?$/', $value)) {
             return $value;
         }
@@ -321,7 +300,6 @@ if(! function_exists('wpsr_sanitize_css_unit')) {
 if(! function_exists('wpsr_sanitize_css_keyword')) {
     /**
      * Sanitizes a CSS keyword (e.g., bold, underline, center, block).
-     * Uses WordPress core's sanitize_key which is perfect for this.
      */
     function wpsr_sanitize_css_keyword($value) {
         return sanitize_key($value);
@@ -342,11 +320,9 @@ if(! function_exists('wpsr_sanitize_styles_config')) {
 
         $sanitized_config = [];
         foreach ($styles_config as $key => $value) {
-            // The main container is usually 'styles'
             if ($key === 'styles' && is_array($value)) {
                 $sanitized_config[$key] = wpsr_sanitize_style_properties($value);
             } else {
-                // Handle any other top-level keys generically.
                 $sanitized_config[$key] = sanitize_text_field($value);
             }
         }
@@ -379,12 +355,10 @@ if(! function_exists('wpsr_sanitize_style_properties')) {
                     case 'border_radius':
                     case 'box_shadow':
                     case 'spacing': // often used instead of padding
-                        // These are arrays of values, so we recurse.
                         $sanitized_property_data[$data_key] = wpsr_sanitize_style_data($data_value);
                         break;
 
                     default:
-                        // Fallback for any unexpected keys.
                         $sanitized_property_data[$data_key] = sanitize_text_field($data_value);
                 }
             }
@@ -410,10 +384,9 @@ if(! function_exists('wpsr_sanitize_style_data')) {
         $sanitized = [];
         foreach ($data as $key => $value) {
             if (is_array($value)) {
-                // For responsive values like 'font_size' => ['desktop' => '16px', 'mobile' => '14px']
+                // Responsive values, e.g. 'font_size' => ['desktop' => '16px', 'mobile' => '14px'].
                 $sanitized[$key] = wpsr_sanitize_style_data($value);
             } else {
-                // Apply specific sanitizers based on the key name.
                 if (strpos($key, 'color') !== false) {
                     $sanitized[$key] = wpsr_sanitize_color($value);
                 } elseif (in_array($key, ['font_size', 'letter_spacing', 'line_height', 'top', 'right', 'bottom', 'left', 'width', 'height', 'max_width', 'spaceBetween', 'horizontal', 'vertical', 'blur', 'spread'])) {
@@ -421,7 +394,6 @@ if(! function_exists('wpsr_sanitize_style_data')) {
                 } elseif (in_array($key, ['font_weight', 'font_style', 'text_transform', 'text_decoration', 'border_style', 'linked', 'box_shadow_style', 'inset'])) {
                     $sanitized[$key] = wpsr_sanitize_css_keyword($value);
                 } else {
-                    // General fallback for any other text-based value.
                     $sanitized[$key] = sanitize_text_field($value);
                 }
             }
@@ -433,7 +405,6 @@ if(! function_exists('wpsr_sanitize_style_data')) {
 if (!function_exists('wpsr_trim_url')) {
     /**
      * Trim a URL the way JavaScript's String.prototype.trim() does.
-     *
      * The character set is mirrored by WPSR_TRIM_SET in utils/videoUrl.js.
      *
      * @param mixed $value
@@ -469,10 +440,8 @@ if (!function_exists('wpsr_is_http_url')) {
 
 if (!function_exists('wpsr_sanitize_http_url')) {
     /**
-     * Validate one http(s) URL, host included.
-     *
-     * Tested before esc_url_raw(), which turns a bare word into a URL. IDN must
-     * arrive as punycode; a non-ASCII path is fine and preserved.
+     * Validate one http(s) URL, host included. Checked before esc_url_raw(), which
+     * turns a bare word into a URL. IDN hosts must be punycode; non-ASCII paths are fine.
      *
      * @param mixed $value
      *
@@ -511,11 +480,8 @@ if (!function_exists('wpsr_sanitize_http_url')) {
 
 if (!function_exists('wpsr_sanitize_media_url')) {
     /**
-     * Gate for a URL the server itself will fetch later.
-     *
-     * wp_http_validate_url() is the rule: it settles scheme, credentials, port,
-     * the site's own host, and the private/reserved address list that WordPress
-     * keeps current. Only the http(s) shape check is ours.
+     * Gate for a URL the server will fetch later. wp_http_validate_url() decides
+     * scheme, port, credentials and private/reserved hosts; only the shape check is ours.
      *
      * @param mixed $value
      *

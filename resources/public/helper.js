@@ -1,6 +1,5 @@
 /**
- * Escape HTML attribute values
- * Use this when inserting user content into HTML attributes (href, class, etc.)
+ * Escape a value for use inside an HTML attribute.
  *
  * @param {string} text - Text to escape
  * @returns {string} Escaped text for HTML attributes
@@ -16,8 +15,7 @@ export function escapeHtmlAttr(text) {
 }
 
 /**
- * Escape HTML content - converts ALL HTML to entities
- * Use this when you want to display HTML as plain text
+ * Escape text so any HTML in it shows as plain text.
  *
  * @param {string} text - Text to escape
  * @returns {string} Escaped text with all HTML converted to entities
@@ -30,10 +28,8 @@ export function escapeHtml(text) {
 }
 
 /**
- * Sanitize HTML - allows safe tags
- *
- * Allowed tags: <p>, <br>, <a>, <span>
- * Blocked: <script>, <iframe>, event handlers, dangerous URLs
+ * Allowed tags: img, p, span, br, strong, em. Script content, event handlers
+ * and unsafe URLs are dropped.
  *
  * @param {string} html - HTML content to sanitize
  * @returns {string} Sanitized HTML with only safe tags and attributes
@@ -59,40 +55,32 @@ function sanitizeHtml(html) {
         const v = value.trim();
         const lower = v.toLowerCase();
 
-        // Disallow javascript: and vbscript:
         if (lower.startsWith('javascript:') || lower.startsWith('vbscript:')) return false;
 
-        // Allow data URIs only for safe raster images (no svg)
+        // Data URIs only for raster images (no svg).
         if (lower.startsWith('data:')) {
-            // allow data:image/png|jpeg|jpg|gif;base64,...
             return /^data:image\/(png|jpe?g|gif);base64,[a-z0-9+/=]+$/i.test(v);
         }
 
-        // Allow http(s), protocol-relative //, or relative paths
         if (lower.startsWith('http:') || lower.startsWith('https:') || lower.startsWith('//') || v.startsWith('/')) return true;
 
-        // Also allow relative paths like "uploads/..."
         if (!/^[a-z0-9+\-.]+:/i.test(v)) return true;
 
         return false;
     }
 
     function cleanNode(node) {
-        // Text nodes - escape them
         if (node.nodeType === Node.TEXT_NODE) {
             return escapeHtml(node.nodeValue);
         }
 
-        // Element nodes
         if (node.nodeType === Node.ELEMENT_NODE) {
             const tagName = node.tagName.toUpperCase();
 
-            // Drop content of explicit dangerous tags entirely
             if (discardContentTags.includes(tagName)) {
                 return '';
             }
 
-            // If tag not allowed, unwrap but keep cleaned children
             if (!allowedTags.includes(tagName)) {
                 let textContent = '';
                 for (let child of node.childNodes) {
@@ -101,7 +89,6 @@ function sanitizeHtml(html) {
                 return textContent;
             }
 
-            // Build allowed element with sanitized attributes
             const tagLower = node.tagName.toLowerCase();
             let elementHTML = `<${tagLower}`;
 
@@ -110,22 +97,18 @@ function sanitizeHtml(html) {
             for (let attr of Array.from(node.attributes)) {
                 const name = attr.name.toLowerCase();
 
-                // Skip event handlers and anything not explicitly allowed
                 if (name.startsWith('on')) continue;
                 if (!allowed.includes(name)) continue;
 
-                // Sanitize URLs for src/href-like attributes
                 if (name === 'src' || name === 'href') {
                     if (!isSafeUrl(name, attr.value)) continue;
                 }
 
-                // Final safety: skip values that contain "javascript:" anywhere after trimming/lowercasing
                 if (attr.value && attr.value.toLowerCase().includes('javascript:')) continue;
 
                 elementHTML += ` ${attr.name}="${escapeHtmlAttr(attr.value)}"`;
             }
 
-            // Self-close void elements (no closing tag in HTML)
             if (tagName === 'IMG' || tagName === 'BR') {
                 elementHTML += ' />';
                 return elementHTML;
@@ -133,7 +116,6 @@ function sanitizeHtml(html) {
 
             elementHTML += '>';
 
-            // Recursively process children
             for (let child of node.childNodes) {
                 elementHTML += cleanNode(child);
             }
@@ -142,7 +124,6 @@ function sanitizeHtml(html) {
             return elementHTML;
         }
 
-        // Other node types - ignore
         return '';
     }
 
@@ -154,12 +135,7 @@ function sanitizeHtml(html) {
     return content;
 }
 
-// ============================================================================
-// TEXT FORMATTING
-// ============================================================================
-
 export function formatText(text, hashTagUrl) {
-    // Sanitize HTML
     let content = sanitizeHtml(text);
     content = generateURLsFromText(content);
     content = generateURLsFromHashTag(content, hashTagUrl);
@@ -173,10 +149,6 @@ export function nl2br(str, is_xhtml) {
     let breakTag = (is_xhtml || typeof is_xhtml === 'undefined') ? '<br />' : '<br>';
     return (str + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1' + breakTag + '$2');
 }
-
-// ============================================================================
-// URL AND HASHTAG GENERATION
-// ============================================================================
 
 /**
  * Convert hashtags to clickable links
@@ -207,8 +179,7 @@ export function generateURLsFromHashTag(str, url){
 export function generateURLsFromText(str) {
     if (!str) return '';
 
-    // Regex to match URLs that are NOT inside HTML attributes (particularly img src)
-    // This pattern excludes URLs that are preceded by certain HTML attribute patterns
+    // Skip URLs already inside an attribute such as img src.
     return str.replace(/(?<!src\s*=\s*["'][^"']*)[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&~\?\/.=]+(?![^<>]*>)/g, function (url) {
         let escapedUrl = escapeHtmlAttr(url);
         let escapedText = escapeHtml(url);
@@ -250,11 +221,8 @@ export function formatDateWithTime(date) {
 }
 
 const excerptItem = function(content, limit, read_more_text, read_less_txt) {
-    //This limit you can set after how much characters you want to show Read More.
     let characterLimit = limit ? limit : 100;
-    // Text to show when text is collapsed
     let readMoreTxt = window.wpsr_ajax_params.read_more ?  window.wpsr_ajax_params.read_more : "Read More";
-    // Text to show when text is expanded
     let readLessTxt =  window.wpsr_ajax_params.read_less ?  window.wpsr_ajax_params.read_less : "Read Less";
     if (content.length > characterLimit) {
         let excerpt = content.substring(0, characterLimit);
@@ -262,7 +230,6 @@ const excerptItem = function(content, limit, read_more_text, read_less_txt) {
         let newString = hideContent.replace("Read MoreRead Less", "");
         let addContent = '';
         addContent += excerpt + "<span class='wpsr_add_read_more_slice_content'>" + newString + "</span>";
-        //addContent +=  readMoreTxt ? "..." : '';
         addContent += "<span class='wpsr_read_more'>" + readMoreTxt + "</span>";
         addContent += "<span class='wpsr_read_less'>" + readLessTxt + "</span>";
         return addContent;
@@ -278,12 +245,9 @@ export function htmlSubstring(text,len) {
         result = '';
 
     let indexMap = [];
-    //for each tag, while we don't have enough characters
     while((m = r.exec(text)) && length) {
-        //get the text substring between the last tag and this one
         let temp = text.substring(lasti, m.index).substr(0, length);
         indexMap.push({'first':m.index,'second':r.lastIndex});
-        //append to the result and count the number of characters added
         result += text.substring(lasti, m.index);
         length -= temp.length;
         lasti = r.lastIndex;
@@ -325,13 +289,10 @@ function processContent(selector, readMore, readLess, urlPrefix) {
     jQuery(selector + ":not(.wpsr_more_added)").each(function () {
         let $el = jQuery(this);
 
-        // Get word limit from data attribute
         let wordLimit = $el.data('num-words-trim');
 
-        // Step 1: Sanitize content
         let rawContent = this.innerHTML;
 
-        // Handle empty or undefined content
         if (!rawContent || rawContent.trim() === '') {
             this.innerHTML = '';
             $el.addClass('wpsr_more_added');
@@ -341,23 +302,20 @@ function processContent(selector, readMore, readLess, urlPrefix) {
         let sanitizedContent = sanitizeHtml(rawContent);
         this.innerHTML = sanitizedContent;
 
-        // Step 2: Truncate content if word limit is set
         let processedContent = sanitizedContent;
         if (wordLimit) {
             processedContent = truncateHTML(sanitizedContent, wordLimit, readMore, readLess);
         }
 
-        // Step 3: Generate clickable URLs and hashtags
         if (urlPrefix && processedContent) {
             processedContent = generateURLsFromText(processedContent) || processedContent;
             processedContent = generateURLsFromHashTag(processedContent, urlPrefix) || processedContent;
         }
 
-        // Step 4: Update DOM with processed content
         this.innerHTML = processedContent || '';
         $el.addClass('wpsr_more_added');
 
-        // Ensure initial masonry layout after content insertion (covers images/fonts)
+        // Re-layout masonry once the new content has settled.
         setTimeout(() => {
             if (jQuery.fn.masonry) {
                 let $row = $el.closest('.wpsr-row');
@@ -379,7 +337,6 @@ export function animateTextTypingEffect(selector = '.wpsr-ai-review-summary', sp
     if(aiSummary && aiSummary.parentNode.classList.contains('wpsr-disable-typing-animation')) return;
     
     if (aiSummary === null) return;
-    // Find the first direct text node inside #ai-summary
     let firstTextNode = null;
     aiSummary.childNodes.forEach(node => {
       if (node.nodeType === Node.TEXT_NODE && node.nodeValue.trim() !== "" && !firstTextNode) {
@@ -387,9 +344,8 @@ export function animateTextTypingEffect(selector = '.wpsr-ai-review-summary', sp
       }
     });
 
-    if (!firstTextNode) return; // No valid text node found, exit
+    if (!firstTextNode) return;
 
-    // Store the original text and clear it for animation
     const originalText = firstTextNode.nodeValue.trim();
     firstTextNode.nodeValue = "";
 
@@ -399,7 +355,7 @@ export function animateTextTypingEffect(selector = '.wpsr-ai-review-summary', sp
       if (index < originalText.length) {
         firstTextNode.nodeValue += originalText.charAt(index);
         index++;
-        setTimeout(typeWriter, speed); // Adjust speed here
+        setTimeout(typeWriter, speed);
       }
     }
 
@@ -458,7 +414,6 @@ export function processAISummaryList($) {
         $this.empty();
         await processItems(excerptList, $this, $, enableTextTypingAnimation);
 
-        // Move masonry initialization to a function and call it after 200ms
         setTimeout(() => {
             initializeMasonryLayout($);
         }, 200);
@@ -467,9 +422,7 @@ export function processAISummaryList($) {
             return;
         }
 
-        // Text to show when text is collapsed
         let readMoreTxt = window.wpsr_ajax_params.read_more ?  window.wpsr_ajax_params.read_more : "Read More";
-        // Text to show when text is expanded
         let readLessTxt =  window.wpsr_ajax_params.read_less ?  window.wpsr_ajax_params.read_less : "Read Less";
 
         var $readMore = $('<span class="wpsr_read_more" aria-label="Read more" tabindex="0">'+readMoreTxt+'</span>');
@@ -489,7 +442,6 @@ export function processAISummaryList($) {
     });
 };
 
-// Add this helper function for masonry initialization
 function initializeMasonryLayout($) {
     $('.wpsr-row').each(function () {
         if($(this).hasClass('wpsr-active-masonry-layout')){
@@ -525,7 +477,7 @@ async function typeText($p, text, enableTextTypingAnimation = true, $remaining =
                 $p.append($remaining);
                 resolve();
             }
-        }, 5); // Adjust the delay as needed
+        }, 5);
     });
 }
 
@@ -556,7 +508,6 @@ async function processItems(excerptList, $this, $, enableTextTypingAnimation = t
             var html = $p.html();
             $p.html('');
             await typeText($p, item.excerpt, enableTextTypingAnimation, $remaining);
-            // Adjust the speed of the animation by changing the interval time
         }
     }
 }
@@ -569,37 +520,33 @@ async function processItems(excerptList, $this, $, enableTextTypingAnimation = t
  * @param {string} readLess - Text for "Read Less" button
  * @returns {string} Truncated HTML with Read More/Less buttons if needed
  */
-function truncateHTML(html, wordLimit, readMore, readLess) {
+export function truncateHTML(html, wordLimit, readMore, readLess) {
     if (!html || !wordLimit) {
         return html;
     }
 
-    // Normalize whitespace
     html = html.replace(/\s+/g, ' ').trim();
 
-    // Count words from plain text
     let tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     let plainText = tempDiv.textContent || tempDiv.innerText || '';
     let words = plainText.trim().split(/\s+/);
 
-    // If content is shorter than limit, return as-is
     if (words.length <= wordLimit) {
         return html;
     }
 
-    // Truncate by word count while preserving HTML tags
     let wordCount = 0;
     let excerpt = '';
     let remaining = '';
 
-    // Split by spaces but preserve HTML tags
-    let parts = html.split(/(\s+)/);
+    // Tags are their own tokens: splitting on whitespace alone cuts inside <img alt="⭐" src="…">.
+    let parts = html.split(/(<[^<>]*>|\s+)/);
 
     for (let i = 0; i < parts.length; i++) {
         let part = parts[i];
 
-        // Check if this part is a word (not whitespace or HTML tag)
+        // A word is anything but whitespace or a lone tag.
         let isWord = part.trim() && !part.match(/^<[^>]+>$/);
 
         if (isWord) {
@@ -610,8 +557,10 @@ function truncateHTML(html, wordLimit, readMore, readLess) {
                 remaining += part;
             }
         } else {
-            // Add whitespace and tags to appropriate section
             if (wordCount < wordLimit) {
+                excerpt += part;
+            } else if (!remaining.trim() && /^<\//.test(part)) {
+                // A closing tag before the next word belongs to the excerpt, or it would close the hidden span.
                 excerpt += part;
             } else {
                 remaining += part;
@@ -619,7 +568,6 @@ function truncateHTML(html, wordLimit, readMore, readLess) {
         }
     }
 
-    // Add Read More/Less buttons if there's remaining content
     if (remaining.trim().length > 0) {
         return excerpt +
             "<span class='wpsr_add_read_more_slice_content'>" + remaining + "</span>" +
@@ -633,14 +581,10 @@ function truncateHTML(html, wordLimit, readMore, readLess) {
 export function shortNumberFormat(number) {
     let symbol = ["", "k", "M", "G", "T", "P", "E"];
     let tier = Math.log10(number) / 3 | 0;
-    // if zero, we don't need a suffix
     if (tier === 0) return number;
-    // get suffix and determine scale
     let suffix = symbol[tier];
     let scale = Math.pow(10, tier * 3);
-    // scale the number
     let scaled = number / scale;
-    // format number and add suffix
     return parseFloat(scaled.toFixed(1)) + suffix;
 }
 
@@ -651,18 +595,9 @@ export function carouselOptions(sliderSettings, id, index, $this){
 
     let options = {
         a11y: window.wpsr_ajax_params.a11y,
-        // loop: true,
-        // loopFillGroupWithBlank: true,
-        // centeredSlides: true,
-        // autoHeight: true, // overlap reviews read more
         speed:1000,
-        // initialSlide: 0,
         direction: 'horizontal',
         spaceBetween: sliderSettings.spaceBetween ? sliderSettings.spaceBetween : 20,
-        // effect: 'slide',
-        // loop: true,
-        // slidesOffsetBefore: 0,
-        // autoHeight: false,
         breakpoints: {
             320: {
                 slidesPerView: sliderSettings.responsive_slides_to_show ? sliderSettings.responsive_slides_to_show.mobile : 1,
@@ -740,9 +675,8 @@ export function checkBFScrollbar(){
 }
 
 /**
- * Lay out one masonry container, and keep it laid out.
- *
- * Per container: two templates on a page can ask for different column counts.
+ * Lay out one masonry container, and keep it laid out. Per container, because two
+ * templates on a page can ask for different column counts.
  *
  * @param {jQuery} $container element carrying wpsr-active-masonry-layout
  */
@@ -771,9 +705,8 @@ export function wpsrRelayoutMasonry($container) {
 }
 
 /**
- * Re-lay out a container once one of its cards changes height.
- *
- * imagesLoaded only waits for <img>, so a player grows its card after layout ran.
+ * Re-lay out a container when a card changes height. imagesLoaded only waits for
+ * <img>, so a player grows its card after layout ran.
  *
  * @param {jQuery} $container
  * @param {string} itemSelector
@@ -786,7 +719,11 @@ export function wpsrWatchMasonryHeights($container, itemSelector) {
 
     let observer = $container.data('wpsrMasonryObserver');
 
-    if (!observer) {
+    if (observer) {
+        // A ResizeObserver retains its targets, so cards a sort, filter or search replaced
+        // would leak and keep relaying out this container. All current cards are re-observed below.
+        observer.disconnect();
+    } else {
         // One pass per frame, or a page of players resizing would queue one each.
         let queued = false;
 
@@ -805,7 +742,7 @@ export function wpsrWatchMasonryHeights($container, itemSelector) {
         $container.data('wpsrMasonryObserver', observer);
     }
 
-    // observe() on a card already watched is a no-op, so Load More can re-call this.
+    // The whole current set, not just the new arrivals: the disconnect above cleared it.
     $container.find(itemSelector).each(function () {
         observer.observe(this);
     });
@@ -815,10 +752,8 @@ export function wpsrWatchMasonryHeights($container, itemSelector) {
 let wpsrInjectedPlayerSeq = 0;
 
 /**
- * Wire up markup that arrived after page load.
- *
- * Fluent Player and the review form script both scan the DOM only once, on
- * DOMContentLoaded, so injected markup stays inert until initialized here.
+ * Wire up markup that arrived after page load. Fluent Player and the review form
+ * script scan the DOM only once, on DOMContentLoaded.
  *
  * @param {jQuery|Element} container
  * @param {number|string} templateId

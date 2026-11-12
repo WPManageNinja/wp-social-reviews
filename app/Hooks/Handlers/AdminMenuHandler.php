@@ -7,6 +7,7 @@ use WPSocialReviews\App\Services\DashboardNotices;
 use WPSocialReviews\App\Services\Helper;
 use WPSocialReviews\App\Services\Onboarding\OnboardingService;
 use WPSocialReviews\App\Services\PermissionManager;
+use WPSocialReviews\App\Services\Platforms\Reviews\Helper as ReviewsHelper;
 use WPSocialReviews\App\Services\TranslationString;
 use WPSocialReviews\App\Services\UpgradeUrl;
 use WPSocialReviews\Framework\Support\Arr;
@@ -280,7 +281,7 @@ class AdminMenuHandler
             wp_enqueue_script('jquery-masonry');
             wp_enqueue_script('imagesloaded');
 
-            wp_enqueue_style('wpsocialreviews_admin_app', WPSOCIALREVIEWS_URL . 'assets/css/social-review-admin.css',
+            wp_enqueue_style('wpsocialreviews_admin_app', WPSOCIALREVIEWS_URL . 'assets/css/social-review-admin' . (is_rtl() ? '-rtl' : '') . '.css',
                 array(), WPSOCIALREVIEWS_VERSION);
 
             $upload     = wp_upload_dir();
@@ -323,6 +324,8 @@ class AdminMenuHandler
                 'hasFluentCart'           => defined('FLUENTCART_VERSION'),
                 'hasWooCommerce'          => defined('WC_VERSION'),
                 'brand_icons'             => $this->getBrandIcons(),
+                'bundled_platform_icons'  => ReviewsHelper::getBundledPlatformIcons(),
+                'platforms_without_icon'  => array_values((array) ReviewsHelper::getPlatformsWithCategories()),
                 'tp_slug'                 => '_not_defined_yet_',
                 'tp_title'                 => ' ',
                 'upload_url'   => $upload_url,
@@ -378,7 +381,7 @@ class AdminMenuHandler
 
         wp_enqueue_style(
             'wpsr-onboarding-app',
-            WPSOCIALREVIEWS_URL . 'assets/css/onboarding.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/onboarding' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
@@ -625,7 +628,7 @@ class AdminMenuHandler
             [
                 'id'                 => 11,
                 'platform'           => 'fluent-cart',
-                'platform_title'     => __('Fluent Cart', 'wp-social-reviews'),
+                'platform_title'     => __('FluentCart', 'wp-social-reviews'),
                 'image'              => $assetBase . 'icon-fluent-cart-small.png',
                 'apiKey'             => '',
                 'sourceId'           => '',
@@ -639,8 +642,8 @@ class AdminMenuHandler
                 'privacy'            => 'https://wpsocialninja.com/privacy-policy/',
                 'termsAndConditions' => 'https://wpsocialninja.com/terms-conditions/',
                 'promotion'          => [
-                    'title' => __('Fluent Cart Reviews', 'wp-social-reviews'),
-                    'description' => __('Fetch & display your Fluent Cart reviews to connect with your audiences without wasting any time.', 'wp-social-reviews'),
+                    'title' => __('FluentCart Reviews', 'wp-social-reviews'),
+                    'description' => __('Fetch & display your FluentCart reviews to connect with your audiences without wasting any time.', 'wp-social-reviews'),
                     'img' => $promoteBase . 'fluent-cart.png',
                     'features' => $this->reviewsFeatureList()
                 ]
@@ -757,7 +760,7 @@ class AdminMenuHandler
             ],
             [
                 'route' => 'fluent-cart-settings',
-                'title' => 'Fluent Cart Settings',
+                'title' => 'FluentCart Settings',
                 'permission' => ['wpsn_reviews_platforms_settings'],
                 'icon'  => $assetBase . 'icon-fluent-cart-small.png'
             ]

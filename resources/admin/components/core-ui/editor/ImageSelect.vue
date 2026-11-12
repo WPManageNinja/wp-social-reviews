@@ -155,7 +155,6 @@ export default {
         }
         if(this.headerTitle === this.$t('Layout Type')) {
             this.triggerImageCount = 4;
-            this.localShowSeeMoreButton = false;
             this.shouldPaddingNeedToAdd = false;
         }
         

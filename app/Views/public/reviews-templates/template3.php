@@ -11,6 +11,8 @@ $wpsr_should_display_ai_summary_icon = Arr::get($template_meta, 'ai_summary.disp
 if (!empty($reviews)) {
     foreach ($reviews as $wpsr_index => $wpsr_review) {
         $wpsr_source_id = Arr::get($wpsr_review, 'source_id', '');
+        // Only looked up for 'custom' sources: platformDisplayName() ignores this argument for every other platform.
+        $wpsr_custom_source_name = $wpsr_review->platform_name === 'custom' ? Arr::get(Helper::getCustomPlatformLogo($wpsr_review->platform_name, $wpsr_source_id), 'name', '') : '';
         $wpsr_media_id = Arr::get($wpsr_review, 'review_id', '');
         $wpsr_review_images  = Arr::get($wpsr_review, 'fields.review_images', '');
         $wpsr_product_name  = Arr::get($wpsr_review, 'fields.product_name', '');
@@ -32,13 +34,20 @@ if (!empty($reviews)) {
                  data-source_id="<?php echo esc_attr($wpsr_source_id); ?>"
                  data-media_id="<?php echo esc_attr($wpsr_media_id); ?>"
                  data-review_platform="<?php echo esc_attr($wpsr_review->platform_name); ?>"
+                 data-platform_label="<?php echo esc_attr(Helper::platformDisplayName($wpsr_review->platform_name, $wpsr_custom_source_name)); ?>"
                  data-product_thumbnail="<?php echo esc_attr($wpsr_product_thumbnail_url); ?>"
                  data-product_name="<?php echo esc_attr($wpsr_product_name); ?>"
                  data-image_resize="<?php echo esc_attr($wpsr_image_size)?>"
             >
                 <?php if ($wpsr_review->platform_name !== 'ai' && ($template_meta['isPlatformIcon'] === 'true' && !Helper::is_tp($wpsr_review->platform_name)) || ($template_meta['isPlatformIcon'] === 'true' && $template_meta['display_tp_brand'] === 'true' && Helper::is_tp($wpsr_review->platform_name ))) { ?>
+                    <?php
+                    $wpsr_platform_text = (empty($template_meta['platform_label']) || !in_array($wpsr_review->platform_name, ['custom', 'fluent_forms', 'woocommerce'])) ? strtok($wpsr_review->platform_name, '_') : $template_meta['platform_label'];
+                    if (!in_array($wpsr_review->platform_name, ['custom', 'fluent_forms', 'woocommerce'])) {
+                        $wpsr_platform_text = Helper::getCustomSourceLabel($wpsr_review->platform_name) ?: $wpsr_platform_text;
+                    }
+                    ?>
                     <div class="wpsr-review-platform">
-                        <span><?php echo esc_html((empty($template_meta['platform_label']) || !in_array($wpsr_review->platform_name, ['custom', 'fluent_forms', 'woocommerce'])) ? strtok($wpsr_review->platform_name, '_') : $template_meta['platform_label']); ?></span>
+                        <span><?php echo esc_html($wpsr_platform_text); ?></span>
                     </div>
                 <?php } ?>
                 <?php
@@ -49,12 +58,12 @@ if (!empty($reviews)) {
                  * */
                 do_action('wpsocialreviews/review_title', $template_meta['display_review_title'], $wpsr_review->review_title, $wpsr_review->platform_name);
 
+                $wpsr_rating = ($wpsr_review->category === 'ai_summary') ? $wpsr_average_rating : $wpsr_review->rating;
                 /**
                  * reviewer_rating hook.
                  *
                  * @hooked ReviewsTemplateHandler::renderReviewerRatingHtml 10
                  * */
-                $wpsr_rating = ($wpsr_review->category === 'ai_summary') ? $wpsr_average_rating : $wpsr_review->rating;
                 do_action('wpsocialreviews/reviewer_rating', $template_meta['reviewerrating'],
                     $template_meta['rating_style'], $wpsr_rating, $wpsr_review->platform_name,
                     $wpsr_review->recommendation_type, $template_meta['platform']);
@@ -109,16 +118,16 @@ if (!empty($reviews)) {
                 ?>
                 <div class="wpsr-review-header">
                     <?php
-                        /**
-                         * reviewer_image hook.
-                         *
-                         * @hooked ReviewsTemplateHandler::renderReviewerImageHtml 10
-                         * */
                         if (method_exists(Helper::class, 'shouldShowAISummaryIcon')) {
                             $wpsr_should_show_icon = Helper::shouldShowAISummaryIcon($wpsr_review, $wpsr_should_display_ai_summary_icon, $template_meta);
                         } else {
                             $wpsr_should_show_icon = $template_meta['reviewer_image'];
                         }
+                        /**
+                         * reviewer_image hook.
+                         *
+                         * @hooked ReviewsTemplateHandler::renderReviewerImageHtml 10
+                         * */
                         do_action('wpsocialreviews/reviewer_image', $wpsr_should_show_icon,
                             $wpsr_reviewer_url, $wpsr_review->reviewer_img, $wpsr_review->reviewer_name, $wpsr_enable_external_link, $wpsr_review->media_url, $wpsr_review->platform_name);
                     ?>

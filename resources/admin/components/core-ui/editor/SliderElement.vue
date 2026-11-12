@@ -145,6 +145,6 @@ export default {
 .el-dropdown-menu__item i {
   font-size: 16px;
   padding-top: 6px;
-  margin-right: 0px;
+  margin-inline-end: 0px;
 }
 </style>

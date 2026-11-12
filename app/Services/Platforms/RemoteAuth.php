@@ -19,7 +19,7 @@ class RemoteAuth
         'tiktok/feed',
     ];
 
-    /** This site's bridge identity { site_id, site_secret } (site_secret encrypted at rest); authenticates all refresh calls. */
+    /** This site's bridge identity { site_id, site_secret }, secret encrypted at rest. Signs every refresh call. */
     const IDENTITY_OPTION = 'wpsr_auth_bridge_identity';
 
     /**
@@ -45,15 +45,13 @@ class RemoteAuth
             );
         }
 
-        // Per-site credential issued by the bridge during the connect handshake. There is no
-        // global shipped secret to leak — each install signs with its own key.
+        // Per-site key issued in the connect handshake. No shared secret ships with the plugin.
         $identity   = self::bridgeIdentity();
         $siteId     = (string) Arr::get($identity, 'site_id', '');
         $siteSecret = (string) Arr::get($identity, 'site_secret', '');
 
         if (empty($siteId) || empty($siteSecret)) {
-            // Not provisioned yet (e.g. connected before per-site auth existed, or the option was
-            // cleared). Reconnecting re-establishes the identity. Never send an unsigned request.
+            // Not provisioned yet; reconnecting issues one. Never send an unsigned request.
             return new \WP_Error(
                 'wpsr_refresh_reconnect',
                 __('Your connection needs to be re-established. Please reconnect your account.', 'wp-social-reviews'),
@@ -72,8 +70,7 @@ class RemoteAuth
         $response = wp_remote_post($url, [
             'headers' => [
                 'Content-Type'     => 'application/json',
-                // Identifies which per-site key the bridge derives to verify the signature.
-                // Public identifier, not a secret — the secret never leaves this site.
+                // Public id that tells the bridge which key to verify with. Not a secret.
                 'X-WPSN-Site-Id'   => $siteId,
                 'X-WPSN-Timestamp' => $timestamp,
                 'X-WPSN-Signature' => $signature,
@@ -139,8 +136,8 @@ class RemoteAuth
     }
 
     /**
-     * Persist the per-site credential the bridge issues in the connect-handshake result. No-op if
-     * the result carries no identity (older bridge), so an existing identity is preserved.
+     * Store the per-site credential from the connect handshake. A result without one
+     * (older bridge) leaves the existing identity in place.
      *
      * @param mixed $result
      * @return void
@@ -213,8 +210,8 @@ class RemoteAuth
     }
 
     /**
-     * Canonical JSON for the refresh body matching what the bridge signs (UNESCAPED_SLASHES, escaped unicode, compact).
-     * NOTE: if the body ever gains a second key or nested object, re-introduce a recursive ksort or signatures will 401.
+     * Canonical JSON matching what the bridge signs: unescaped slashes, escaped unicode, compact.
+     * A body with more than one key or a nested object needs a recursive ksort, or signatures 401.
      *
      * @param array<string, mixed> $data
      * @return string
@@ -258,19 +255,51 @@ class RemoteAuth
             'flow'       => $flow,
         ], 15 * MINUTE_IN_SECONDS);
 
-        $query = build_query([
+        // Sent as a POST form (not a query string) so auth_result_key never lands in a URL,
+        // browser history, or server logs.
+        // Core fields go last so the user-fields filter can never override them.
+        $fields = array_merge(self::bridgeUserFields(), [
             'return_url'      => $returnUrl,
             'auth_flow_id'    => $flowId,
             'auth_challenge'  => $challenge,
             'auth_result_key' => $resultKey,
             'source'          => $source,
         ]);
-        $url = ServicesHelper::authBaseUrl() . '/connect/' . rawurlencode($provider) . '/' . rawurlencode($flow) . '?' . $query;
+        $action = ServicesHelper::authBaseUrl() . '/connect/' . rawurlencode($provider) . '/' . rawurlencode($flow);
 
         wp_send_json_success([
-            'url'     => $url,
+            'action'  => $action,
+            'fields'  => $fields,
             'flow_id' => $flowId,
         ], 200);
+    }
+
+    /**
+     * Connecting admin + plugin tier, recorded by the bridge for connected-user tracking only
+     * (never echoed back in the result payload). Filterable so site owners can drop or alter it.
+     *
+     * @return array<string, string>
+     */
+    private static function bridgeUserFields()
+    {
+        $user = wp_get_current_user();
+
+        $fields = [
+            'wp_user_email'   => $user && $user->exists() ? (string) $user->user_email : '',
+            'wp_display_name' => $user && $user->exists() ? (string) $user->display_name : '',
+            'plugin_tier'     => defined('WPSOCIALREVIEWS_PRO') ? 'pro' : 'free',
+        ];
+
+        $fields = apply_filters('wpsocialreviews/auth_bridge_user_fields', $fields, $user);
+        if (!is_array($fields)) {
+            return [];
+        }
+
+        // Only these three keys may reach the bridge: anything else (core auth fields, bridge
+        // control fields like launch or marketing_*) would change the connect flow itself.
+        $fields = array_intersect_key($fields, array_flip(['wp_user_email', 'wp_display_name', 'plugin_tier']));
+
+        return array_map('strval', array_filter($fields, 'is_scalar'));
     }
 
     public static function consumeAuth($platform, $settings, callable $persistCallback, callable $formatCallback)
@@ -297,8 +326,7 @@ class RemoteAuth
             $result = self::decryptPayload($payload, $prepared);
             delete_transient($transientKey);
 
-            // Capture the per-site refresh credential the bridge issues alongside the token, then
-            // drop the secret so it never leaks into platform-specific token configs.
+            // Store the refresh credential, then drop the secret so it never lands in platform token configs.
             self::storeBridgeIdentity($result);
             if (is_array($result)) {
                 unset($result['site_secret']);

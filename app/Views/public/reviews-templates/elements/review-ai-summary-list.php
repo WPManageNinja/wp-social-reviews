@@ -1,6 +1,6 @@
 <?php defined('ABSPATH') or die; ?>
 <div class="wpsr-review-content wpsr-review-summary-list wpsr_add_read_more wpsr_show_less_content wpsr_add_read_more_list wpsr_show_less_list wpsr-ai-summary-list-collapsed <?php echo !$displayReadMore && $contentType !== 'content_in_scrollbar' ? 'wpsr-ai-summary-fixed-height' : '' ?>"
-     data-should-display-read-more="<?php echo $displayReadMore ? 'true' : 'false'; ?>" tabindex="0">
+     data-should-display-read-more="<?php echo $displayReadMore ? 'true' : 'false'; ?>" tabindex="0" dir="auto">
     <?php
         $wpsr_unordered_list_classes = 'wpsr-ai-review-summary-list';
         if($contentType === 'content_in_scrollbar'){

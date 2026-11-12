@@ -1,5 +1,8 @@
+// The corner is a user setting (notification_position), so it stays physical in RTL; one marker per declaration.
 .wpsr-reviews-wrapper.wpsr-reviews-layout-notification{
+  /*!rtl:ignore*/
   left: 20px !important;
+  /*!rtl:ignore*/
   right: initial !important;
   top: initial !important;
   bottom: -200px;
@@ -13,7 +16,9 @@
     border-radius: 10px 10px;
     visibility: visible !important;
     &.wpsr-float_right_bottom{
+      /*!rtl:ignore*/
       right: 20px !important;
+      /*!rtl:ignore*/
       left: auto !important;
     }
     .wpsr-business-info-right .wpsr-write-review-modal-wrapper{
@@ -36,12 +41,16 @@
     }
   }
   &.deactivate{
+    /*!rtl:ignore*/
     left: 20px !important;
+    /*!rtl:ignore*/
     right: initial !important;
     top: initial !important;
     opacity: 0;
     &.wpsr-float_right_bottom{
+      /*!rtl:ignore*/
       right: 20px !important;
+      /*!rtl:ignore*/
       left: auto !important;
     }
   }
@@ -71,12 +80,15 @@
 .wpsr-reviews-notification-card-wrapper{
   position: fixed;
   bottom: -200px;
+  /*!rtl:ignore*/
   left: 20px;
   z-index: 99999999;
   background-color: #fff;
   box-shadow: 0 5px 20px 0 rgb(0 0 0 / 10%);
   border-radius: 10px;
   padding: 20px 20px;
+  width: 390px;
+  max-width: calc(100vw - 40px);
   transition: 0.4s;
   text-decoration: none;
   color: #000;
@@ -91,9 +103,12 @@
     cursor: pointer;
   }
   &.wpsr-float_right_bottom{
+    /*!rtl:ignore*/
     right: 20px;
+    /*!rtl:ignore*/
     left: auto;
     @media only screen and (max-width : 320px) {
+      /*!rtl:ignore*/
       right: 15px;
     }
   }
@@ -109,6 +124,32 @@
   .wpsr-show-logo {
     display: block;
   }
+  // The card link: theme link styles must not leak in, and the whole card stays clickable.
+  .wpsr-reviews-notification-card {
+    color: inherit;
+    text-decoration: none;
+    &:hover, &:focus {
+      color: inherit;
+      text-decoration: none;
+      box-shadow: none;
+    }
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      border-radius: 10px;
+    }
+    &:focus {
+      outline: none;
+    }
+    &:focus-visible::after {
+      outline: 2px solid #111;
+      outline-offset: -2px;
+    }
+  }
   .wpsr-close {
     position: absolute;
     z-index: 2;
@@ -121,6 +162,27 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    // A <button>: reset what themes put on buttons.
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    min-height: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: none;
+    line-height: 1;
+    &:hover, &:focus {
+      background: transparent;
+      box-shadow: none;
+    }
+    &:focus {
+      outline: none;
+    }
+    &:focus-visible {
+      outline: 2px solid #111;
+      outline-offset: 1px;
+    }
     svg{
       height: 12px;
       width: 12px;
@@ -173,6 +235,7 @@
   align-items: center;
   .wpsr-notification-image-wrapper{
     margin-right: 10px;
+    flex: none;
   }
   .wpsr-reviewer-image,
   .wpsr-product-image{
@@ -183,7 +246,41 @@
       border-radius: 50%;
     }
   }
+  .wpsr-reviewer-image{
+    position: relative;
+    .wpsr-notification-platform-dot{
+      position: absolute;
+      inset-inline-end: -2px;
+      bottom: -2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #6b7280;
+      border: 2px solid #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      .wpsr-notification-platform-dot-letter{
+        color: #fff;
+        font-size: 9px;
+        font-weight: 700;
+        line-height: 1;
+      }
+    }
+  }
+  .wpsr-notification-head{
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    .wpsr-notification-image-wrapper{
+      margin-right: 10px;
+      flex: none;
+    }
+  }
   .wpsr-notification-content-wrapper{
+    flex: 1;
+    min-width: 0;
     .wpsr-star-empty,
     .wpsr-star-filled {
       width: 100%;
@@ -192,10 +289,11 @@
     .wpsr-star-container{
       margin-right: 0;
     }
-    
+
     .wpsr-review-header{
       display: flex;
       align-items: center;
+      min-width: 0;
       @media only screen and (max-width : 767px) {
         display: block;
       }
@@ -204,59 +302,402 @@
         color: #111;
         padding-right: 5px;
         font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
       }
       p{
         padding: 0;
         margin: 0;
         font-size: 14px;
         line-height: 1.4;
+        flex: none;
+        white-space: nowrap;
       }
     }
-    .wpsr-notification-body{
+    .wpsr-notification-footer{
+      line-height: 1.0;
+    }
+
+    .wpsr-notification-nameline{
       display: flex;
       align-items: center;
-      line-height: 0;
-      .wpsr-rating-wrapper{
-        padding-right: 5px;
-        .wpsr-rating{
-          display: flex;
-          align-items: center;
-          .wpsr-star{
-            svg{
-              height: 18px;
-              width: 18px;
-              display: inherit;
-              path{
-                fill: #f7b80c;
-              }
+      flex-wrap: nowrap;
+      gap: 5px;
+      min-width: 0;
+      .reviewer-name{
+        padding-right: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+      }
+    }
+    .wpsr-verified-review{
+      display: inline-flex;
+      align-items: center;
+      position: relative;
+      flex: none;
+      .verified-badge-star{
+        width: 13px;
+        height: 13px;
+        background: #197BFF;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 5%;
+        &::before{
+          content: '';
+          position: absolute;
+          width: 13px;
+          height: 13px;
+          background: #197BFF;
+          border-radius: 5%;
+          transform: rotate(30deg);
+          z-index: -1;
+        }
+        &::after{
+          content: '';
+          position: absolute;
+          width: 13px;
+          height: 13px;
+          background: #197BFF;
+          border-radius: 5%;
+          transform: rotate(60deg);
+          z-index: -2;
+        }
+      }
+      .checkmark{
+        width: 9px;
+        height: 5px;
+        border: 2px solid #fff;
+        border-top: none;
+        border-right: none;
+        transform: rotate(-45deg) translate(1px, -1px);
+      }
+      &.wpsr-tooltip::before,
+      &.wpsr-tooltip::after{
+        position: absolute;
+        left: 50%;
+        bottom: 100%;
+        transform: translateX(-50%);
+        opacity: 0;
+        visibility: hidden;
+        transition: 0.15s;
+        pointer-events: none;
+      }
+      &.wpsr-tooltip::before{
+        content: attr(data-tooltip);
+        margin-bottom: 6px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        background: #111;
+        color: #fff;
+        font-size: 11px;
+        white-space: nowrap;
+        z-index: 3;
+      }
+      &.wpsr-tooltip:hover::before,
+      &.wpsr-tooltip:hover::after,
+      &.wpsr-tooltip:focus::before,
+      &.wpsr-tooltip:focus::after{
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+    .wpsr-notification-rating-word{
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: #6b7280;
+      flex: none;
+      white-space: nowrap;
+    }
+    .wpsr-notification-custom-text{
+      margin: 4px 0 0;
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #1f2937;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .wpsr-notification-meta{
+      margin-top: 1px;
+      line-height: 1.0;
+    }
+    .wpsr-notification-footer .review-time,
+    .wpsr-notification-meta .review-time{
+      font-size: 12px;
+      line-height: 18px;
+      color: #888888;
+    }
+  }
+
+  .wpsr-notification-quote{
+    position: relative;
+    margin: 8px 0 0;
+    .icon-quote-right{
+      position: absolute;
+      inset-inline-start: -2px;
+      top: -4px;
+      font-size: 20px;
+      line-height: 1;
+      color: #e5e7eb;
+    }
+    .wpsr-notification-excerpt{
+      margin: 0;
+      padding-inline-start: 20px;
+      font-size: 14.5px;
+      line-height: 1.45;
+      color: #1f2937;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+  // The excerpt is dir="auto" but the quote icon follows the card, so on RTL pages the gap stays on the right.
+  .rtl & .wpsr-notification-quote .wpsr-notification-excerpt{
+    padding-inline-start: 0;
+    /*!rtl:ignore*/
+    padding-right: 20px;
+  }
+  .wpsr-notification-body{
+    display: flex;
+    align-items: center;
+    line-height: 0;
+    .wpsr-rating-wrapper{
+      padding-right: 5px;
+      .wpsr-rating{
+        display: flex;
+        align-items: center;
+        .wpsr-star{
+          svg{
+            height: 18px;
+            width: 18px;
+            display: inherit;
+            path{
+              fill: #f7b80c;
             }
           }
         }
       }
-      .wpsr-review-platform{
-        img{
-          max-height: 20px;
-          width: auto;
-          border-radius: 4px;
+    }
+    .wpsr-review-platform{
+      padding-left: 5px;
+      img{
+        max-height: 20px;
+        width: auto;
+        border-radius: 4px;
+      }
+      .wpsr-review-source-title{
+        font-size: 13px;
+        color: #0954db;
+        margin-top: 3px;
+      }
+    }
+    &.wpsr-notification-body-spread{
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+    .wpsr-notification-source{
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1.2;
+      color: #6b7280;
+      font-size: 13px;
+      img{
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        object-fit: contain;
+        &[src=""]{
+          display: none;
         }
       }
-      .wpsr-review-platform{
-        padding-left: 5px;
-        .wpsr-review-source-title{
-          font-size: 13px;
-          color: #0954db;
-          margin-top: 3px;
-        }
+      .wpsr-notification-source-name{
+        font-weight: 700;
+        color: #111;
       }
+    }
+  }
+}
 
+.wpsr-reviews-notification2 .wpsr-reviews-notification-card{
+  display: block;
+  .wpsr-reviewer-image img{
+    width: 42px;
+    height: 42px;
+  }
+}
+
+// The wrapper carries the card's own background/shadow/radius (see .wpsr-reviews-notification-card-wrapper
+// above) and both classes land on the same element, so the bar must anchor here, not on the inner <a> —
+// that only boxes the content, not the wrapper's padding, which left the bar short and inset.
+.wpsr-reviews-notification-card-wrapper.wpsr-reviews-notification3{
+  &::before{
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 4px;
+    border-radius: 10px 0 0 10px;
+    background: #0954db;
+  }
+  .wpsr-notification-pulse-score{
+    flex: none;
+    text-align: center;
+    margin-inline-end: 14px;
+    .wpsr-notification-pulse-value{
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1;
+      color: #111;
     }
-    .wpsr-notification-footer{
-      line-height: 1.0;
-      .review-time{
-        font-size: 12px;
-        line-height: 18px;
-        color: #888888;
+    .wpsr-rating-wrapper{
+      padding: 0;
+      margin-top: 4px;
+      .wpsr-rating{
+        justify-content: center;
+      }
+      .wpsr-star-container{
+        width: 16px;
+        height: 16px;
+        margin-right: 3px;
       }
     }
+  }
+  .wpsr-notification-pulse-body{
+    flex: 1;
+    min-width: 0;
+  }
+  .wpsr-notification-pulse-line1{
+    font-size: 13.5px;
+    color: #1f2937;
+    b{
+      color: #0a7d4b;
+    }
+  }
+  .wpsr-notification-pulse-platform-icons{
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    vertical-align: middle;
+    img{
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+    }
+  }
+  .wpsr-notification-pulse-line2{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .wpsr-notification-pulse-avatars{
+    display: flex;
+    img{
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      object-fit: cover;
+      margin-inline-start: -7px;
+      &:first-child{
+        margin-inline-start: 0;
+      }
+    }
+  }
+}
+
+.wpsr-reviews-notification-card-wrapper{
+  &.wpsr-reviews-platform-google .wpsr-notification-platform-dot{ background: #4285F4; }
+  &.wpsr-reviews-platform-facebook .wpsr-notification-platform-dot{ background: #1877F2; }
+  &.wpsr-reviews-platform-airbnb .wpsr-notification-platform-dot{ background: #FF385C; }
+  &.wpsr-reviews-platform-aliexpress .wpsr-notification-platform-dot{ background: #FF4747; }
+  &.wpsr-reviews-platform-booking\.com .wpsr-notification-platform-dot{ background: #003580; }
+  &.wpsr-reviews-platform-tripadvisor .wpsr-notification-platform-dot{ background: #34A853; }
+  &.wpsr-reviews-platform-trustpilot .wpsr-notification-platform-dot{ background: #00B67A; }
+  &.wpsr-reviews-platform-yelp .wpsr-notification-platform-dot{ background: #D32323; }
+  &.wpsr-reviews-platform-woocommerce .wpsr-notification-platform-dot{ background: #7F54B3; }
+}
+
+.wpsr-notification-nav-group{
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  .wpsr-notification-nav{
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid #e5e7eb;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-size: 11px;
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    min-height: 0;
+    box-shadow: none;
+    line-height: 1;
+    &:hover, &:focus{
+      background: #f3f4f6;
+      box-shadow: none;
+    }
+    &:focus{
+      outline: none;
+    }
+    &:focus-visible{
+      outline: 2px solid #111;
+      outline-offset: 1px;
+    }
+  }
+  .wpsr-notification-dots{
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    span{
+      width: 14px;
+      height: 3px;
+      border-radius: 2px;
+      background: #e5e7eb;
+      transition: 0.2s;
+      &.active{
+        background: #0954db;
+        width: 20px;
+      }
+    }
+  }
+}
+
+// Swap the card in place instead of sliding; !important matches the layout's own transition rule.
+@media (prefers-reduced-motion: reduce) {
+  .wpsr-reviews-notification-card-wrapper,
+  .wpsr-reviews-wrapper.wpsr-reviews-layout-notification {
+    transition: none !important;
+  }
+  .wpsr-notification-dots span {
+    transition: none !important;
   }
 }

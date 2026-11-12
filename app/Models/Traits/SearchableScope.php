@@ -5,7 +5,7 @@ namespace WPSocialReviews\App\Models\Traits;
 trait SearchableScope
 {
 	/**
-     * Local scope to filter subscribers by search/query string
+     * Filter by a search string across the model's $searchable columns.
      *
      * @param \WPSocialReviews\Framework\Database\Query\Builder $query
      * @param string $search
@@ -29,8 +29,7 @@ trait SearchableScope
     }
 
     /**
-     * Escape a term for a LIKE predicate so % and _ match those characters
-     * rather than acting as wildcards. Binding alone does not do this.
+     * Escape % and _ for a LIKE predicate. Binding alone does not do this.
      *
      * @param string $term
      *

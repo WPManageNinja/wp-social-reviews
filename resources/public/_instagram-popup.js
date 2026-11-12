@@ -262,14 +262,14 @@ export default {
     },
     renderUsername() {
         return ( currentFeed.username && currentPopupSettings.display_username === 'true' ) ?
-            `<div class="wpsr-feed-popup-user-name">
+            `<div class="wpsr-feed-popup-user-name" dir="auto">
                   <a href="https://www.instagram.com/${currentFeed.username}" target="_blank" title="${currentFeed.username}">${currentFeed.username}</a>
             </div>` : '';
     },
     renderDate() {
         return (currentPopupSettings.display_date === 'true' && currentFeed.timestamp ) ?
             `<div class="wpsr-feed-popup-statistics-date">
-                ${ typeof currentFeed.like_count !== 'undefined' ? `<span>${currentFeed.like_count} ${ ' ' } ${window.wpsr_ajax_params.likes}</span>` : '' }  
+                ${ typeof currentFeed.like_count !== 'undefined' ? `<span dir="auto">${currentFeed.like_count} ${ ' ' } ${window.wpsr_ajax_params.likes}</span>` : '' }  
                 <a href="${ currentFeed.permalink }" target="_blank">
                     <time datetime="${ currentFeed.time_ago }" title="${ currentFeed.time_ago }">${ currentFeed.time_ago  }</time>
                 </a>
@@ -278,7 +278,7 @@ export default {
     renderHashtags() {
         return additionalSettings.feed_type === 'hashtag_feed' ?
             `<div class="wpsr-feed-popup-user-info">
-                  <p class="wpsr-feed-popup-user-name">
+                  <p class="wpsr-feed-popup-user-name" dir="auto">
                     ${formatText(additionalSettings.hash_tags, 'https://www.instagram.com/explore/tags/')}
                   </p>
             </div>` : ``;
@@ -288,7 +288,7 @@ export default {
             `<div class="wpsr-feed-popup-comment">
                <div class="wpsr-feed-popup-comment-inner">
                ${ currentPopupSettings.display_caption === 'true' ?
-                  `<div class="wpsr-feed-popup-comment-text">
+                  `<div class="wpsr-feed-popup-comment-text" dir="auto">
                     ${ additionalSettings.feed_type !== 'hashtag_feed' && typeof currentFeed.username !== undefined ?
                         `<a href="https://www.instagram.com/${currentFeed.username}" target="_blank" title="${currentFeed.username}">${currentFeed.username}</a>` : ``
                     }
@@ -309,7 +309,7 @@ export default {
          return comments ? Object.keys(comments).map(function (key) {
            return `<div class="wpsr-feed-popup-comment">
            <div class="wpsr-feed-popup-comment-inner">
-                    <div class="wpsr-feed-popup-comment-text">
+                    <div class="wpsr-feed-popup-comment-text" dir="auto">
                        
                        ${ comments[key].username !== undefined ?
                            `<a href="https://www.instagram.com/${comments[key].username}" target="_blank" title="${comments[key].username}">${comments[key].username}</a>` : ``

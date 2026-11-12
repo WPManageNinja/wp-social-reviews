@@ -52,17 +52,17 @@ export const igMixin = {
             }
             return feed.permalink;
         },
-        // Mirrors InstagramTemplateHandler's $wpsr_has_link. Only the 'instagram' display mode
-        // navigates; with an href on the other modes a click on a video leaves the editor, and
-        // preventDefault is not an option because it cancels the native controls too.
+        // Mirrors InstagramTemplateHandler's $wpsr_has_link. Only 'instagram' mode navigates.
+        // Elsewhere a click on a video would leave the editor, and preventDefault also
+        // cancels the native controls.
         getFeedHref(feed) {
             if (this.configs.feed_settings.post_settings.display_mode !== 'instagram') {
                 return null;
             }
             return this.getFeedLink(feed);
         },
-        // Without an href the anchor is not focusable, so the non-navigating display modes need
-        // explicit button semantics. Mirrors the tabindex/role the theme's views emit.
+        // Without an href the anchor is not focusable, so it needs button semantics.
+        // Mirrors the tabindex/role the theme's views emit.
         getFeedTabindex(feed) {
             return this.getFeedHref(feed) ? null : '0';
         },
@@ -92,9 +92,7 @@ export const igMixin = {
             if (playMode === 'popup') {
                 e.preventDefault();
                 jQuery('.wpsr-feed-popup-overlay').toggleClass('wpsr-feed-popup-open');
-                //jQuery(".wpsr-ig-playmode").removeAttr("href");
             } else if (playMode === 'inline') {
-                // Get the parent post and feedId
                 let $clickedPost = jQuery(e.target).closest('div.wpsr-ig-post');
                 let feedId = $clickedPost.data('index');
 
@@ -111,9 +109,8 @@ export const igMixin = {
                     return;
                 }
 
-                e.preventDefault(); // prevent default if it's a link/button
+                e.preventDefault();
 
-                // Pause all other videos
                 jQuery('.wpsr-ig-post-video').each(function () {
                     let videoEl = jQuery(this).get(0);
                     let $parentPost = jQuery(this).closest('.wpsr-ig-post');
@@ -134,7 +131,6 @@ export const igMixin = {
                 jQuery(postSelector).attr("href", feed.permalink);
             } else {
                 e.preventDefault();
-                //jQuery(".wpsr-ig-playmode").removeAttr("href");
             }
         }
     },

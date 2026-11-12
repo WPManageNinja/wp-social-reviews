@@ -1,17 +1,11 @@
 <?php
 use WPSocialReviews\App\Services\Widgets\Helper;
 /**
- * This is an example module with only the basic
- * setup necessary to get it working.
- *
  * @class WPSR_Fl_Instagram_Module
  */
 class WPSR_Fl_Instagram_Module extends FLBuilderModule {
 
     /**
-     * Constructor function for the module. You must pass the
-     * name, description, dir and url in an array to the parent class.
-     *
      * @method __construct
      */
     public function __construct()
@@ -22,15 +16,15 @@ class WPSR_Fl_Instagram_Module extends FLBuilderModule {
             'category'		=> __('WP Social Ninja', 'wp-social-reviews'),
             'dir'           => WPSOCIALREVIEWS_DIR . 'app/Services/Widgets/Beaver/Instagram/',
             'url'           => WPSOCIALREVIEWS_URL . 'app/Services/Widgets/Beaver/Instagram/',
-            'editor_export' => true, // Defaults to true and can be omitted.
-            'enabled'       => true, // Defaults to true and can be omitted.
-            'partial_refresh' => true, // Set this to true to enable partial refresh.
+            'editor_export' => true,
+            'enabled'       => true,
+            'partial_refresh' => true,
             'icon'            => 'format-image.svg',
         ));
 
         $this->add_css(
             'wp_social_ninja_ig',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_ig.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_ig' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
@@ -45,16 +39,13 @@ class WPSR_Fl_Instagram_Module extends FLBuilderModule {
     }
 }
 
-/**
- * Register the module and its form settings.
- */
 FLBuilder::register_module('WPSR_Fl_Instagram_Module', array(
-    'general'       => array( // Tab
-        'title'         => __('General', 'wp-social-reviews'), // Tab title
-        'sections'      => array( // Tab Sections
-            'general'       => array( // Section
-                'title'     => '', // Section Title
-                'fields' => array( // Section Fields
+    'general'       => array(
+        'title'         => __('General', 'wp-social-reviews'),
+        'sections'      => array(
+            'general'       => array(
+                'title'     => '',
+                'fields' => array(
                     'template_id'  => array(
                         'type'         => 'select',
                         'label'        => __( 'Select a Template', 'wp-social-reviews' ),

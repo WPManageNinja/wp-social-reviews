@@ -20,11 +20,11 @@
                    <iframe id="wpsr-yt-popup-video-iframe" :src="'https://www.youtube.com/embed/'+[ feed.snippet.resourceId && feed.snippet.resourceId.videoId ? feed.snippet.resourceId.videoId : feed.id ]+'?loop='+[settings.video_loop && settings.video_loop === 'true' ? 1 : 0]+'&rel=0&autoplay='+[settings.autoplay && settings.autoplay === 'true' ? 1 : 0]" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
                 </div>
                 <div class="wpsr-yt-popup-box-content" v-if="has_pro">
-                    <h1 class="wpsr-yt-popup-video-title" v-if="feed.snippet && settings.display_title === 'true'">{{feed.snippet.title}}</h1>
+                    <h1 class="wpsr-yt-popup-video-title" dir="auto" v-if="feed.snippet && settings.display_title === 'true'">{{feed.snippet.title}}</h1>
                     <div class="wpsr-yt-popup-video-info" v-if="feed.statistics">
                         <div class="wpsr-yt-popup-video-info-left" v-if="feed && feed.statistics">
-                            <span v-if="settings.display_views_counter === 'true'" class="wpsr-yt-popup-video-views">{{feed.statistics.viewCount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}} {{ $t('Views')}}</span>
-                            <span v-if="settings.display_date === 'true'" class="wpsr-yt-popup-video-date">{{ wpsrDateFormat(feed.snippet.publishedAt, 'MMM DD, YYYY') }}</span>
+                            <span v-if="settings.display_views_counter === 'true'" class="wpsr-yt-popup-video-views"><bdi>{{feed.statistics.viewCount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}} {{ $t('Views')}}</bdi></span>
+                            <span v-if="settings.display_date === 'true'" class="wpsr-yt-popup-video-date"><bdi>{{ wpsrDateFormat(feed.snippet.publishedAt, 'MMM DD, YYYY') }}</bdi></span>
                         </div>
                         <div class="wpsr-yt-popup-video-info-right" v-if="feed.statistics && feed">
                         <span v-if="settings.display_likes_counter === 'true'" class="wpsr-yt-popup-video-likes">
@@ -56,7 +56,7 @@
                             <a v-if="settings.display_channel_name === 'true' && header" class="wpsr-yt-popup-video-meta-channel-name" target="_blank" :href="'https://www.youtube.com/channel/'+header.items[0].id" :title="header.items[0].snippet.title">{{header.items[0].snippet.title}}</a>
                             <a v-if="settings.display_channel_name === 'true' && !header" class="wpsr-yt-popup-video-meta-channel-name" target="_blank" :href="'https://www.youtube.com/channel/'+feed.snippet.channelId" :title=" feed.snippet.channelTitle">{{ feed.snippet.channelTitle }}</a>
                             <span v-if="settings.display_subscribers_counter === 'true' && header" class="wpsr-yt-popup-video-meta-channel-subscriber-count">{{shortNumberFormat(header.items[0].statistics.subscriberCount)}} Subscribers</span>
-                            <p v-if="settings.display_description === 'true'" class="wpsr-yt-popup-video-meta-description wpsr_show_less_content" v-html="formatText(feed.snippet.description)"></p>
+                            <p v-if="settings.display_description === 'true'" class="wpsr-yt-popup-video-meta-description wpsr_show_less_content" dir="auto" v-html="formatText(feed.snippet.description)"></p>
                         </div>
                         <div v-if="settings.display_subscribe_button === 'true' && header" class="wpsr-yt-popup-video-meta-btn">
                             <a :href="'https://www.youtube.com/channel/'+header.items[0].id+'?sub_confirmation=1'" target="_blank">{{ $t('Subscribe')}}</a>
@@ -76,7 +76,7 @@
                                     <span class="wpsr-yt-popup-video-comment-info-header-time">{{wpsrDateFormat(comment.snippet.topLevelComment.snippet.publishedAt , 'MMM DD YY','time_from_now') }}</span>
                                 </div>
                                 <div class="wpsr-yt-popup-video-comment-text">
-                                    <p class="wpsr-yt-popup-video-comment-text-inner wpsr_show_less_content" v-html="formatText( comment.snippet.topLevelComment.snippet.textOriginal )"></p>
+                                    <p class="wpsr-yt-popup-video-comment-text-inner wpsr_show_less_content" dir="auto" v-html="formatText( comment.snippet.topLevelComment.snippet.textOriginal )"></p>
                                 </div>
                             </div>
                         </div>

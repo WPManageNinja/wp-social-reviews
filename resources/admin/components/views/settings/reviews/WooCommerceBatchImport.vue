@@ -59,38 +59,6 @@
     </div>
   
   </div>
-
-
-    
-
-<!--    <div v-if="importProgressInterval" class="wpsr-import-progress wpsr-mt-15">-->
-<!--      <div class="wpsr-progress-header" v-if="importProgress">-->
-<!--        <div class="wpsr-progress-header-label">-->
-<!--          <span>Product Reviews</span>-->
-<!--          <span>{{ importProgress.percentage }}% complete</span>-->
-<!--        </div>-->
-<!--        <div>-->
-<!--          <el-progress-->
-<!--            :percentage="importProgress.percentage"-->
-<!--            :show-text="false"-->
-<!--          />-->
-<!--        </div>-->
-
-<!--        &lt;!&ndash; Enhanced progress details &ndash;&gt;-->
-<!--        <div class="wpsr-progress-details">-->
-<!--          <p class="wpsr-progress-stats">-->
-<!--            <span v-if="showImportStartedMessage">{{ importStartedMessage }}</span> {{ numberWithCommas(importProgress.processed) }} of {{ numberWithCommas(importProgress.total) }} WooCommerce reviews processed.-->
-<!--            <span v-if="importProgress.speed > 0" class="wpsr-speed">-->
-<!--              ({{ importProgress.speed }}/sec)-->
-<!--            </span>-->
-<!--          </p>-->
-
-<!--          <p v-if="importProgress.eta && !importProgress.completed" class="wpsr-eta">-->
-<!--            Estimated time remaining: {{ formatTime(importProgress.eta) }}-->
-<!--          </p>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </div>-->
 </template>
 
 <script type="text/babel">
@@ -123,30 +91,18 @@ export default {
     }
   },
   methods: {
-    /**
-     * Trigger WooCommerce reviews import
-     */
     triggerWooImport() {
       this.$emit('trigger-import');
     },
     
-    /**
-     * Check import progress
-     */
     checkImportProgress() {
       this.$emit('check-progress');
     },
 
-    /**
-     * Restart WooCommerce reviews import
-     */
     restartWooImport() {
       this.$emit('restart-import');
     },
 
-    /**
-     * Format time in seconds to human readable format
-     */
     formatTime(seconds) {
       if (seconds < 60) {
         return `${Math.round(seconds)}s`;

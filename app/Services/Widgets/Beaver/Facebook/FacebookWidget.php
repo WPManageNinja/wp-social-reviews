@@ -29,7 +29,7 @@ class WPSR_Fl_Facebook_Module extends FLBuilderModule {
 
         $this->add_css(
             'wp_social_ninja_fb',
-            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_fb.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/wp_social_ninja_fb' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );

@@ -86,8 +86,7 @@ class PlatformManager
         $iconFile = Arr::get($icons, $platform, '');
 
         if (!$iconFile) {
-            // Fallback icon
-            return $base_url . 'icon-default.png';
+            return '';
         }
 
         // If $iconFile is a full URL, return it as is

@@ -1,6 +1,6 @@
 <template>
   <div v-if="display_desc && feed.text && feed_settings.display_description === 'true'" class="wpsr-feed-description-link">
-    <p class="wpsr-feed-description-text" v-html="this.$trimWords(tiktokTextValidate(feed.text), feed_settings.content_length, true)"></p>
+    <p class="wpsr-feed-description-text" dir="auto" v-html="this.$trimWords(tiktokTextValidate(feed.text), feed_settings.content_length, true)"></p>
   </div>
 </template>
 <script>

@@ -8,19 +8,9 @@ class UninstallHandler
     public $isTableDelete = true;
 
     /**
-     * Uninstall entry point. Removes all plugin data unless the user opted to keep it.
-     *
-     * The "preserve plugin data" guard lives here rather than in deleteAllPlatformsData()
-     * because that method serves two callers with opposite intent: this one, where the
-     * user's stored preference must win, and SettingsController::deleteAllData(), where
-     * the user has explicitly clicked "Delete All Data" and the preference must be
-     * ignored. Guarding the shared method would turn that button into a silent no-op,
-     * since preserve_plugin_data defaults to 'true'.
-     *
-     * The preference is read straight from the wpsr_global_settings option rather than
-     * through the GlobalSettings service, to keep the uninstall path free of service
-     * instantiation. Defaults to preserving, so an unreadable or missing option can
-     * never cause data loss.
+     * Removes all plugin data unless the user opted to keep it (the default).
+     * The guard lives here, not in deleteAllPlatformsData(), because the
+     * "Delete All Data" button calls that method and must ignore the preference.
      *
      * @return void
      */
@@ -96,23 +86,24 @@ class UninstallHandler
             'wpsr_optimize_images'
         ];
 
-        // Remove all reviews and caches
         foreach ($tablesToDelete as $table) {
             $tableName = $wpdb->prefix . $table;
-            // Sanitize table name to prevent injection
+            
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Existence check before cleanup
+            if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($tableName))) !== $tableName) {
+                continue;
+            }
             $tableName = esc_sql($tableName);
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Required for plugin uninstall cleanup, table name is sanitized
             $wpdb->query("DELETE FROM `{$tableName}`;");
         }
 
-        // Remove all templates data and posts
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Required for plugin uninstall cleanup
         $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE %s;", '%_wpsr_template_config%'));
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Required for plugin uninstall cleanup
         $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->posts} WHERE post_type LIKE %s OR post_type = %s;", 'wpsr_%', 'wp_social_reviews'));
 
-        // Remove tables
         if ($isDeleteTable) {
             foreach ($tablesToDelete as $table) {
                 $wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}{$table}`;"); // phpcs:ignore

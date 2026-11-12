@@ -9,7 +9,7 @@
     </div>
 
     <!-- Table Content -->
-    <div v-else-if="total_items" class="wpsr-page-section">
+    <div v-else-if="total_items || lastFetchFiltered" class="wpsr-page-section">
       <!-- Header Section -->
       <div class="wpsr-table-header">
         <div class="wpsr-header-left">
@@ -59,64 +59,66 @@
           </div>
           <div class="wpsr-controls-right">
             <div class="wpsr-controls-bulk-actions">
-              <el-select class="wpsr-select-field-primary" v-model="bulkAction" :placeholder="$t('Bulk Action')" size="default" style="width: 160px;">
-                <el-option :label="$t('Bulk Actions')" value="">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><Plus /></el-icon>
-                    <span>{{ $t('Bulk Actions') }}</span>
-                  </span>
-                </el-option>
-                <el-option :label="$t('Approve')" value="enable">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><View /></el-icon>
-                    <span>{{ $t('Approve') }}</span>
-                  </span>
-                </el-option>
-                <el-option :label="$t('Disapprove')" value="disable">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><Hide /></el-icon>
-                    <span>{{ $t('Disapprove') }}</span>
-                  </span>
-                </el-option>
-                <el-option :label="$t('Mark as Spam')" value="mark-spam">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><WarningFilled /></el-icon>
-                    <span>{{ $t('Mark as Spam') }}</span>
-                  </span>
-                </el-option>
-                <el-option :label="$t('Not Spam')" value="not-spam">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><CircleCheck /></el-icon>
-                    <span>{{ $t('Not Spam') }}</span>
-                  </span>
-                </el-option>
-                <el-option :label="$t('Duplicate')" value="duplicate">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><DocumentCopy /></el-icon>
-                    <span>{{ $t('Duplicate') }}</span>
-                  </span>
-                </el-option>
-                <el-option :label="$t('Assign Category')" value="category">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><PriceTag /></el-icon>
-                    <span>{{ $t('Assign Category') }}</span>
-                  </span>
-                </el-option>
-                <el-option :label="$t('Delete')" value="delete">
-                  <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
-                    <el-icon><Delete /></el-icon>
-                    <span>{{ $t('Delete') }}</span>
-                  </span>
-                </el-option>
-              </el-select>
-              <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
-              <el-button v-if="canManageCategories" @click="show_manage_categories_modal = true">
+              <div class="wpsr-bulk-action-group">
+                <el-select class="wpsr-select-field-primary" v-model="bulkAction" :placeholder="$t('Bulk Action')" size="default" style="width: 160px;">
+                  <el-option :label="$t('Bulk Actions')" value="">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><Plus /></el-icon>
+                      <span>{{ $t('Bulk Actions') }}</span>
+                    </span>
+                  </el-option>
+                  <el-option :label="$t('Approve')" value="enable">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><View /></el-icon>
+                      <span>{{ $t('Approve') }}</span>
+                    </span>
+                  </el-option>
+                  <el-option :label="$t('Disapprove')" value="disable">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><Hide /></el-icon>
+                      <span>{{ $t('Disapprove') }}</span>
+                    </span>
+                  </el-option>
+                  <el-option :label="$t('Mark as Spam')" value="mark-spam">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><WarningFilled /></el-icon>
+                      <span>{{ $t('Mark as Spam') }}</span>
+                    </span>
+                  </el-option>
+                  <el-option :label="$t('Not Spam')" value="not-spam">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><CircleCheck /></el-icon>
+                      <span>{{ $t('Not Spam') }}</span>
+                    </span>
+                  </el-option>
+                  <el-option :label="$t('Duplicate')" value="duplicate">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><DocumentCopy /></el-icon>
+                      <span>{{ $t('Duplicate') }}</span>
+                    </span>
+                  </el-option>
+                  <el-option :label="$t('Assign Category')" value="category">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><PriceTag /></el-icon>
+                      <span>{{ $t('Assign Category') }}</span>
+                    </span>
+                  </el-option>
+                  <el-option :label="$t('Delete')" value="delete">
+                    <span class="wpsr-d-flex wpsr-flex-align-center wpsr-gap-8">
+                      <el-icon><Delete /></el-icon>
+                      <span>{{ $t('Delete') }}</span>
+                    </span>
+                  </el-option>
+                </el-select>
+                <el-button @click="applyBulkAction" :disabled="!selectedItems.length">{{ $t('Apply') }}</el-button>
+              </div>
+              <el-button v-if="canManageCategories" class="wpsr-manage-categories-btn" @click="show_manage_categories_modal = true">
                 <el-icon class="wpsr-mr-5"><PriceTag /></el-icon>
                 {{ $t('Manage Categories') }}
               </el-button>
             </div>
             <div class="wpsr-controls-filter">
-              <el-select class="wpsr-select-field-primary" v-model="filter_value" :placeholder="$t('Select Platform')" size="small" clearable v-if="Object.entries(validPlatforms).length" @change="getItems" style="width: 220px;">
+              <el-select class="wpsr-select-field-primary" v-model="filter_value" :placeholder="$t('Select Platform')" size="small" clearable v-if="Object.entries(validPlatforms).length" @change="getItems">
                 <el-option
                     v-for="item in validPlatforms"
                     :key="item.value"
@@ -127,11 +129,10 @@
               </el-select>
             </div>
             <el-input
-                class="wpsr-input-default"
+                class="wpsr-input-default wpsr-controls-search"
                 v-model="search_string"
                 placeholder="Search..."
                 size="default"
-                style="width: 200px;"
                 @keyup.enter="getItems()"
                 @clear="handleClear"
                 clearable>
@@ -144,7 +145,7 @@
 
         <div v-if="bulkAction === 'delete'" class="wpsr-alert wpsr-alert-info wpsr-d-flex wpsr-flex-align-center wpsr-mt-15">
           <el-icon size="18" color="var(--wpsr-svg-secondary-color)"><InfoFilled /></el-icon>
-          <p>You can delete reviews from WooCommerce, Fluent Forms, Native Form, Fluent Cart, and Custom Sources only. Reviews from other connected platforms are auto-synced, so deleting them will cause them to reappear. If you don’t want to show those reviews, simply disable them instead of deleting.</p>
+          <p>You can delete reviews from WooCommerce, Fluent Forms, Native Form, FluentCart, and Custom Sources only. Reviews from other connected platforms are auto-synced, so deleting them will cause them to reappear. If you don’t want to show those reviews, simply disable them instead of deleting.</p>
         </div>
         
       </div>
@@ -153,6 +154,7 @@
             ref="reviewsTable"
             class="wpsr-templates-table"
             :data="items"
+            :empty-text="$t('No reviews match these filters.')"
             @selection-change="handleSelectionChange"
             @sort-change="handleTableSort"
         >
@@ -175,7 +177,7 @@
 
           <el-table-column :label="$t('Review')" min-width="200">
             <template #default="scope">
-              <strong class="wpsr-item-title">{{ scope.row.review_title }}</strong>
+              <strong class="wpsr-item-title" dir="auto">{{ scope.row.review_title }}</strong>
               <ReviewContentModal
                   :content="scope.row.reviewer_text"
                   :title="scope.row.review_title"
@@ -195,7 +197,7 @@
                 <img class="wpsr-image-cell" v-if="scope.row.reviewer_img" :src="scope.row.reviewer_img" :height="80" :width="80"/>
                 <img class="wpsr-image-cell" v-else :src="assets_url+'/images/template/review-template/placeholder-image.png'"
                      :height="80" :width="80"/>
-                <span class="wpsr-platform-name wpsr-ml-10">{{ scope.row.reviewer_name }}</span>
+                <span class="wpsr-platform-name wpsr-ml-10" dir="auto">{{ scope.row.reviewer_name }}</span>
               </div>
             </template>
           </el-table-column>

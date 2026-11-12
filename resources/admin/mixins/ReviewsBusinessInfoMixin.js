@@ -62,8 +62,7 @@ export const ReviewsBusinessInfoMixin = {
             }
         },
         getPlatformIconUrl(platform) {
-            return platform.product_url ||
-                `${this.assets_url}/images/icon/icon-${platform.platform_name}-small.png`;
+            return platform.product_url || this.get_platform_icon(platform.platform_name, 'small');
         },
         formatPlatformName(name) {
             return this.$getFirstWord(name, true);

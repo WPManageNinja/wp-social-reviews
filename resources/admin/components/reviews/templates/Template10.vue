@@ -94,19 +94,8 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Row 3: Platform icon -->
-            <!-- <div class="wpsr-review-platform-row">
-                <div class="wpsr-review-platform-container">
-                    <ReviewPlatform
-                        :template_meta="template_meta"
-                        :platformName="review.platform_name"
-                    />
-                </div>
-            </div> -->
         </div>
     </div>
-<!--                      <img v-if="!Object.entries(reviews).length" class="wpsr-placeholder-image" :src="assets_url+ '/images/icon/placeholder-template.png'" alt="Placeholder Image">-->
 </div>
 </template>
 
@@ -142,7 +131,6 @@ export default {
         };
     },
     methods: {
-        // Removed getReviewerIconImage, now using from mixin
         expandContent(val) {
             this.$emit('contentExpand',true);
         },

@@ -16,11 +16,9 @@ if ($wpsr_layout_type === 'carousel') {
         'autoplay'               => $feed_settings['carousel_settings']['autoplay'],
         'autoplay_speed'         => $feed_settings['carousel_settings']['autoplay_speed'],
         'spaceBetween'           => Arr::get($feed_settings, 'carousel_settings.slides_space_between'),
-//        'rows'                   => intval($feed_settings['carousel_settings']['rows']),
         'responsive_slides_to_show'  => Arr::get($feed_settings, 'carousel_settings.responsive_slides_to_show'),
         'responsive_slides_to_scroll'  => Arr::get($feed_settings, 'carousel_settings.responsive_slides_to_scroll'),
         'navigation'             => $feed_settings['carousel_settings']['navigation'],
-//        'vertical'               => $feed_settings['carousel_settings']['vertical'],
     );
 }
 

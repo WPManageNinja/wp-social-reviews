@@ -127,7 +127,7 @@ export default {
     },
     renderUsername(){
         return (currentFeed.user.name && currentPopupSettings.author_name === 'true') ?
-            `<div class="wpsr-feed-popup-user-name">
+            `<div class="wpsr-feed-popup-user-name" dir="auto">
             <p>${currentFeed.user.name}</p>
             <a href="https://www.twitter.com/${currentFeed.user.username}" target="_blank" title="${currentFeed.user.username}">@${currentFeed.user.username}</a>
         </div>` : '';
@@ -136,7 +136,7 @@ export default {
         return `<div class="wpsr-feed-popup-comment">
             <div class="wpsr-feed-popup-comment-inner">
              ${currentPopupSettings.tweet_text === 'true' ?
-                `<div class="wpsr-feed-popup-comment-text">
+                `<div class="wpsr-feed-popup-comment-text" dir="auto">
                     <p>${window.wpsrHelper.formatText(currentFeed.text, 'https://twitter.com/hashtag/')}</p>
                 </div>` : ''
              }

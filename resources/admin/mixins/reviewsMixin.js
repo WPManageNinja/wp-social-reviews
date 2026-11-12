@@ -51,40 +51,34 @@ export const reviewsMixin = {
             });
         },
         getPlatformName(businessInfo) {
-            // Check if businessInfo has any platforms
             const platformKeys = Object.keys(businessInfo);
             if (platformKeys.length > 0) {
-                // Access the first platform using the first key
                 const firstPlatform = businessInfo[platformKeys[0]];
-                return firstPlatform.platform_name; // Return the platform name
+                return firstPlatform.platform_name;
             }
-            return ''; // Return an empty string if no platforms are found
+            return '';
         },
         filterPlatformName(platforms) {
-            const uniquePlatforms = new Map(); // Use a Map to store unique platforms
+            const uniquePlatforms = new Map();
 
-            // Iterate over the platforms object
             for (const key in platforms) {
                 const platform = platforms[key];
 
-                // Skip custom platforms
                 if (platform.platform_name === 'custom') {
                     continue;
                 }
 
-                // Check if the platform name is already in the Map
                 if (!uniquePlatforms.has(platform.platform_name)) {
-                    uniquePlatforms.set(platform.platform_name, platform); // Store the platform if it's unique
+                    uniquePlatforms.set(platform.platform_name, platform);
                 }else {
-                    // If platform already exists, check if current one has logo and existing doesn't
+                    // Prefer the entry that has a logo.
                     const existingPlatform = uniquePlatforms.get(platform.platform_name);
                     if (platform.logo && platform.logo !== '' && (!existingPlatform.logo || existingPlatform.logo === '')) {
-                        uniquePlatforms.set(platform.platform_name, platform); // Replace with platform that has logo
+                        uniquePlatforms.set(platform.platform_name, platform);
                     }
                 }
             }
 
-            // Convert the Map values back to an array
             return Array.from(uniquePlatforms.values());
         },
         allPlatforms(platforms) {
@@ -99,7 +93,7 @@ export const reviewsMixin = {
                 review.platform_name !== 'ai' ||
                 review.platform_name === 'google'||
                 review.platform_name === 'airbnb'||
-                review.platform_name === 'trustpilot'||
+                review.platform_name === this.appVars.tp_slug||
                 review.platform_name === 'yelp'||
                 review.platform_name === 'tripadvisor'||
                 review.platform_name === 'aliexpress'||

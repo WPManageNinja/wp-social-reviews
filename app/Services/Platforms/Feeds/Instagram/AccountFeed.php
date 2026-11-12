@@ -118,23 +118,43 @@ class AccountFeed
         ];
     }
 
+    /**
+     * Follows paging.next until the total, the last page, or a failed page. A failed page keeps
+     * the pages before it: a feed is display data.
+     */
     public function getNextPageUrlResponse($nextUrl, $response)
     {
         $posts   = $response;
-        $limit   =  apply_filters('wpsocialreviews/instagram_feeds_total_limit', 100);
-        $perPage = 100;
-        $pages = (int)($limit/$perPage);
+        $limit   = max(1, absint(apply_filters('wpsocialreviews/instagram_feeds_total_limit', 100)));
+        $data    = (array) Arr::get($response, 'data', []);
+        $visited = [];
 
-        $x = 1;
-        while($x < $pages){
-            $x++;
-            $nextUrlResponse = (new Common())->makeRequest($nextUrl);
-            $newData = Arr::get($nextUrlResponse, 'data', []);
-            $oldData = Arr::get($response, 'data', []);
-            $posts['data'] = array_merge($oldData, $newData);
+        while (!empty($nextUrl) && count($data) < $limit && !isset($visited[$nextUrl])) {
+            // The link carries the access token, so it is only ever sent to Graph.
+            if (!$this->isGraphUrl($nextUrl)) {
+                break;
+            }
+            $visited[$nextUrl] = true;
+
+            $page = (new Common())->makeRequest($nextUrl);
+            $rows = is_array($page) && !Arr::get($page, 'error') ? (array) Arr::get($page, 'data', []) : [];
+            if (empty($rows)) {
+                break;
+            }
+
+            $data    = array_merge($data, $rows);
+            $nextUrl = Arr::get($page, 'paging.next');
         }
 
+        $posts['data'] = array_slice($data, 0, $limit);
+
         return $posts;
+    }
+
+    private function isGraphUrl($url)
+    {
+        return wp_parse_url($url, PHP_URL_SCHEME) === 'https'
+            && in_array(wp_parse_url($url, PHP_URL_HOST), ['graph.facebook.com', 'graph.instagram.com'], true);
     }
 
     /**
@@ -157,33 +177,26 @@ class AccountFeed
 
         $feeds = Arr::get($resultWithoutComments, 'data', []);
 
-        // Filter out posts where is_shared_to_feed is false (trial reels not shared to feed)
         $feeds = $this->filterFeedsBySharedStatus($feeds);
 
-        // Process feeds only if not empty
         if (!empty($feeds) && is_array($feeds)) {
-            // we modify username if collab feed there
+            // A collab post can carry the collaborator's username.
             foreach ($feeds as $key => $feed) {
                 $feeds[$key]['username'] = $userName;
                 $feeds[$key]['accountId'] = $accountId;
                 $feeds[$key]['user_avatar'] = $user_avatar;
 
-                // Sanitize caption (user-generated content from post owner)
                 if (isset($feed['caption'])) {
                     $feeds[$key]['caption'] = Helper::sanitizeForStorage($feed['caption']);
                 }
             }
-
-            // Then batch process all feeds that need media URL fixing
-            //$feeds = (new SingleFeed())->batchFixMediaUrls($feeds);
         }
 
         return $feeds;
     }
 
     /**
-     * Filter out posts where is_shared_to_feed is false
-     * These are trial reels that are only visible in the Reels tab
+     * Drop posts with is_shared_to_feed false: trial reels that only show in the Reels tab.
      *
      * @param array $feeds Array of feed items
      * @return array Filtered feed items
@@ -195,7 +208,6 @@ class AccountFeed
         }
 
         $feeds = array_values(array_filter($feeds, function ($feedItem) {
-            // Exclude posts where is_shared_to_feed is explicitly false
             return !isset($feedItem['is_shared_to_feed']) || $feedItem['is_shared_to_feed'] !== false;
         }));
 
@@ -214,7 +226,6 @@ class AccountFeed
             $accessToken = (new RefreshToken())->getAccessToken($accountDetails);
             $accessToken = $dataProtector->decrypt($accessToken) ? $dataProtector->decrypt($accessToken) : $accessToken;
 
-            // return errors
             if (is_array($accessToken) && (new Common())->instagramError($accessToken)) {
                 return $accessToken;
             }

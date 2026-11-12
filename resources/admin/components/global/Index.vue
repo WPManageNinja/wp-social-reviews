@@ -79,12 +79,13 @@
         </div>
 
         <DashboardNotices
-            v-if="displayNotice || displayOptInNotice || displayProUpdateNotice || displayNewsletter || (customNotices && customNotices.length)"
+            v-if="displayNotice || displayOptInNotice || displayProUpdateNotice || displayNewsletter || (customNotices && customNotices.length) || ($route.name === 'platforms' && googleReconnectPlatforms.length)"
             :displayNotice="displayNotice"
             :displayOptInNotice="displayOptInNotice"
             :displayProUpdateNotice="displayProUpdateNotice"
             :displayNewsletter="displayNewsletter"
             :customNotices="customNotices"
+            :googleReconnectPlatforms="googleReconnectPlatforms"
             :userData="userData"
         />
 
@@ -129,6 +130,7 @@ import { applyFilters } from '@wordpress/hooks';
                 displayProUpdateNotice: false,
                 displayNewsletter: false,
                 customNotices: [],
+                googleReconnectPlatforms: [],
                 userData: {...userDataFields},
             }
         },
@@ -143,7 +145,7 @@ import { applyFilters } from '@wordpress/hooks';
                     classes.push('wpsr-tab-active', 'router-link-active', 'wpsr-tab', 'router-link-exact-active');
                 }
 
-                if (!this.$route.name.includes('platforms') &&
+                if (!this.$route.name?.includes('platforms') &&
                     ['templates', 'reviews', 'chat-widgets', 'custom-sources', 'testimonials'].includes(menuItem.route)) {
                     classes.push('router-link-exact-active');
                 }
@@ -226,6 +228,7 @@ import { applyFilters } from '@wordpress/hooks';
                       this.displayOptInNotice = response.data.displayOptInNotice;
                       this.displayNewsletter = response.data.displayNewsletter;
                       this.customNotices = response.data.customNotices !== undefined ? response.data.customNotices : [];
+                      this.googleReconnectPlatforms = Array.isArray(response.data.googleReconnectPlatforms) ? response.data.googleReconnectPlatforms : [];
                       this.userData = response.data.userData;
                     }
                   }).catch(errors => {

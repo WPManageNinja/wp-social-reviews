@@ -23,11 +23,45 @@ class Helper
     public static function getHeaderLayoutClass($feed_settings = [])
     {
         $layout = Arr::get($feed_settings, 'header_settings.header_layout', 'classic');
-        if (!in_array($layout, array('classic', 'minimal'), true)) {
+        if (!in_array($layout, array('classic', 'minimal', 'inline'), true)) {
             $layout = 'classic';
         }
 
+        if ($layout === 'inline') {
+            return 'wpsr-ig-header-layout-minimal wpsr-ig-header-layout-inline';
+        }
+
         return 'wpsr-ig-header-layout-' . $layout;
+    }
+
+    /**
+     * Templates 5 and 6 reuse the views and styles of templates 2 and 1, so they carry that class too.
+     *
+     * @param string $template
+     * @return string
+     */
+    public static function getTemplateClass($template = '')
+    {
+        $base_templates = array('template5' => 'template2', 'template6' => 'template1');
+        $class = 'wpsr-ig-feed-' . $template;
+
+        return isset($base_templates[$template]) ? 'wpsr-ig-feed-' . $base_templates[$template] . ' ' . $class : $class;
+    }
+
+    /**
+     * @param string $scheme
+     * @return string One of the colour schemes styled in _color-schemes.scss, 'light' otherwise.
+     */
+    public static function sanitizeColorScheme($scheme = '')
+    {
+        $schemes = array('light', 'dark', 'shadow', 'soft', 'bordered');
+
+        return in_array($scheme, $schemes, true) ? $scheme : 'light';
+    }
+
+    public static function getColorSchemeClass($feed_settings = [])
+    {
+        return 'wpsr-ig-scheme-' . static::sanitizeColorScheme(Arr::get($feed_settings, 'color_scheme', 'light'));
     }
 
     public static function getUserAccounts($settings)

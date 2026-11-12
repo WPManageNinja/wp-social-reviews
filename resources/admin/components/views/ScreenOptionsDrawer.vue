@@ -15,7 +15,7 @@
         <span>Loading options...</span>
       </div>
 
-      <!-- Content (only show when not loading and no errors) -->
+      <!-- Content -->
       <template v-if="!isLoading">
         <div class="wpsr-drawer-content">
           <!-- Social Feeds Section -->
@@ -94,7 +94,7 @@ export default {
           'booking.com': true,
           facebook: true,
           woocommerce: true,
-          trustpilot: true,
+          ...(this.appVars.tp_slug && this.appVars.tp_slug !== '_not_defined_yet_' ? { [this.appVars.tp_slug]: true } : {}),
           custom_sources: true,
           'fluent-cart': true
         },
@@ -108,7 +108,6 @@ export default {
   watch: {
     screenOptions: {
       handler(newVal) {
-        // Update local options when parent options change
         this.localScreenOptions = JSON.parse(JSON.stringify(newVal));
       },
       immediate: true,
@@ -116,32 +115,26 @@ export default {
     }
   },
   created() {
-    // Initialize local options from props
     this.localScreenOptions = JSON.parse(JSON.stringify(this.screenOptions));
-    // No need to fetch platform statuses here since we're getting them from props
   },
   mounted() {
     this.isLoadingShouldShow();
   },
   methods: {
     handleOptionChange(type, key, value) {
-      // Update the local option
       this.localScreenOptions[type][key] = value;
-      // Emit the update event with the entire updated options object
       this.emitUpdate();
     },
 
     selectAll(type, value) {
-      // Set all platforms in the specified type to the given value
       Object.keys(this.localScreenOptions[type]).forEach(key => {
         this.localScreenOptions[type][key] = value;
       });
-      // Emit the update event
       this.emitUpdate();
     },
 
     emitUpdate() {
-      // Create a deep copy to avoid reference issues when sending back to parent
+      // Deep copy so the parent never shares a reference with local state.
       const updatedOptions = JSON.parse(JSON.stringify(this.localScreenOptions));
       this.$emit('update', updatedOptions);
     },

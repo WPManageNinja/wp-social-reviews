@@ -36,7 +36,6 @@ jQuery(document).ready(function ($) {
                     .addClass('wpsr-active');
 
 
-                // Add loading state
                 const $activeContent = $(`.wpsr-social-wall-content.wpsr-${platform}.wpsr-active .wpsr_content`);
                 $activeContent.append(`
                     <div class="wpsr-loader wpsr-loading">
@@ -179,7 +178,6 @@ jQuery(document).ready(function ($) {
                     let $element = $(id);
                     let column = $(this).data("column");
 
-                    // Check if element exists before calling imagesLoaded
                     if ($element.length && typeof $element.imagesLoaded === 'function') {
                         $element.imagesLoaded(function () {
                             const $masonryContainer = $element.find('.wpsr-twitter-all-tweets, .wpsr-ig-all-feed, .wpsr-fb-all-feed, .wpsr-tt-all-feed');
@@ -201,9 +199,8 @@ jQuery(document).ready(function ($) {
             }
         },
         /**
-         * Append the next page of feed items
-         *
-         * parseHTML, not $(): a plain-message response would be read as a selector.
+         * Append the next page of feed items. parseHTML, not $(), because a
+         * plain-message response would be read as a selector.
          */
         fetchData($btn) {
             let templateId = $btn.data("template_id"),
@@ -224,7 +221,7 @@ jQuery(document).ready(function ($) {
                 return false;
             }
 
-            // Per-feed lock, so two feeds from the same template no longer block each other.
+            // Per-feed lock, so two feeds from the same template never block each other.
             const $stateWrap = $btn.closest('.wpsr-feed-wrap');
             const state = this.feedState($stateWrap.length ? $stateWrap : $btn);
 
@@ -330,7 +327,6 @@ jQuery(document).ready(function ($) {
         },
 
         initPro() {
-            // sliders
             const carousels = $(".wpsr-reviews-layout-slider, .wpsr-twitter-carousel, .wpsr-youtube-slider-activate, .wpsr-instagram-slider-activate, .wpsr-facebook-feed-slider-activate, .wpsr-tiktok-feed-slider-activate");
             if(carousels.length) {
                 let swipedUp = window.Swiper;
@@ -359,41 +355,31 @@ jQuery(document).ready(function ($) {
                     }, 2000);
 
                     if (sliderSettings.autoplay === 'true' && swiper) {
-
-                        // improve accessibility
                         let container = $(id).find('.swiper-container');
 
-                        // Set tabindex="0" for all slides initially
                         FeedPaginator.applySlideTabindex($this);
 
 
-                        // Pause autoplay when the container gains focus
                         container.on('focusin', function () {
                             swiper.autoplay.stop();
                         });
 
-                        // Resume autoplay when the container loses focus
                         container.on('focusout mouseleave', function () {
                             swiper.autoplay.start();
                         });
 
                         // Delegated from the container, which the toolbar never replaces, unlike the slides.
-                        // Pause autoplay when a slide gains focus
                         container.on('focusin', '.swiper-slide *', function (e) {
                             swiper.autoplay.stop();
                         });
 
-                        //
-                        // // Resume autoplay when a slide loses focus
-                        // container.on('focusout blur', '.swiper-slide', function () {
-                        //     swiper.autoplay.start();
-                        // });
-
-                        // Handle keyboard navigation for slides
                         container.on('keydown', '.swiper-slide', function (e) {
-                            if (e.key === 'ArrowLeft') {
+                            // In RTL the next slide sits to the left, so the arrow keys swap.
+                            const wpsrPrevKey = swiper.rtlTranslate ? 'ArrowRight' : 'ArrowLeft';
+                            const wpsrNextKey = swiper.rtlTranslate ? 'ArrowLeft' : 'ArrowRight';
+                            if (e.key === wpsrPrevKey) {
                                 swiper.slidePrev();
-                            } else if (e.key === 'ArrowRight') {
+                            } else if (e.key === wpsrNextKey) {
                                 swiper.slideNext();
                             }
                         });
@@ -401,16 +387,14 @@ jQuery(document).ready(function ($) {
                 });
             }
 
-            //activate reviews masonry layout
             $('.wpsr-active-masonry-layout').each((index, element) => {
                 wpsrInitMasonry($(element));
             });
 
-            //activate masonry layout
             let masonrySelector = $('.wpsr-twitter-masonry, .wpsr-instagram-masonry-activate, .wpsr-facebook-feed-masonry-activate, .wpsr-tiktok-feed-masonry-activate');
             this.activeMasonryLayout(masonrySelector);
 
-            // show hide write a review modal box (delegated for drawer support)
+            // Write-a-review modal, delegated so drawers work too.
             $(document).on("click", '.wpsr-write-review-modal-btn', function (e) {
                 e.preventDefault();
                 let templateId = $(this).parents('.wpsr-reviews-wrapper').attr('id');
@@ -426,9 +410,7 @@ jQuery(document).ready(function ($) {
                     return;
                 }
 
-                // Use closest() to find the overlay within the same wrapper context,
-                // avoiding duplicate ID issues when shortcode output appears in both
-                // the page and a drawer
+                // closest(), not an ID: the same shortcode output can be in both the page and a drawer.
                 var $wrapper = $(this).closest('.wpsr-reviews-wrapper');
                 var $overlay = $wrapper.find('.wpsr-reviews-form-popup-overlay');
 
@@ -445,7 +427,6 @@ jQuery(document).ready(function ($) {
                 var $overlay = $(this).closest('.wpsr-reviews-form-popup-overlay');
                 $overlay.removeClass('wpsr_has_fluent_forms_shortcode');
 
-                // Move overlay back to its original parent if it was relocated
                 var $originalParent = $overlay.data('wpsr-original-parent');
                 if ($originalParent && $originalParent.length) {
                     $overlay.appendTo($originalParent);
@@ -459,7 +440,6 @@ jQuery(document).ready(function ($) {
                 }
             });
 
-            // open fb feed share url in popup window
             $('.wpsr-fb-feed-btn-share').on('click', function (e){
                 e.preventDefault();
                 let url = $(this).attr('href');
@@ -498,7 +478,6 @@ jQuery(document).ready(function ($) {
         });
     }
 
-    // generate twitter cards
     TwitterCard.init();
 
     $('.wpsr-yt-prev-next .wpsr-pagi-prev, .wpsr-yt-prev-next .wpsr-pagi-next').on('click', function (e) {
@@ -663,7 +642,6 @@ jQuery(document).ready(function ($) {
 
     $('.wpsr-woocommerce-context.wpsr-woocommerce-reviews-form .woocommerce .wpsr-write-review').on('click', function (e) {
         e.preventDefault();
-        // Scroll to WooCommerce reviews form
         let $wooReviewsForm = $('#review_form_wrapper');
         
         if ($wooReviewsForm.length) {
@@ -675,23 +653,20 @@ jQuery(document).ready(function ($) {
 
     // Handle WooCommerce review link redirects when default form is hidden
     if (typeof window.wpsrWooSettings !== 'undefined' && window.wpsrWooSettings.reviewsForm !== 'woocommerce') {
-        // Handle review count/rating link clicks
         var reviewLinks = document.querySelectorAll('a[href*="#reviews"], .woocommerce-review-link, .star-rating a, .woocommerce-product-rating a');
 
         reviewLinks.forEach(function(link) {
-            // Skip links that open the review drawer — they have their own handler
+            // Drawer links have their own handler.
             if (link.hasAttribute('data-wpsr-action')) return;
             link.addEventListener("click", function(e) {
                 e.preventDefault();
 
                 if (window.wpsrWooSettings.reviewsWidgetPlacement === 'display_outside_tabs') {
-                    // If reviews are displayed outside tabs, scroll to that section
                     var reviewsSection = document.querySelector(".wpsr-reviews-outside-tabs");
                     if (reviewsSection) {
                         reviewsSection.scrollIntoView({ behavior: "smooth", block: "start" });
                     }
                 } else {
-                    // If reviews are inside tabs, activate the reviews tab
                     var reviewsTab = document.querySelector(".reviews_tab a, li[role='tab'] a[href*='reviews']");
                     if (reviewsTab) {
                         reviewsTab.click();
@@ -766,10 +741,10 @@ jQuery(document).ready(function ($) {
             return;
         }
 
-        e.preventDefault(); // prevent default if it’s a link/button
+        e.preventDefault();
 
         if (clickedVideo.paused) {
-            // Some browsers require the play() to be called after a user interaction
+            // Some browsers only allow play() after a user interaction.
             clickedVideo.play().catch((err) => {
             });
         } else {

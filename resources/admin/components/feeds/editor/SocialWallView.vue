@@ -162,7 +162,7 @@
   margin-left: 5px;
 }
 .tab i {
-  margin-right: 8px;
+  margin-inline-end: 8px;
 }
 .tab:hover {
   background-color: #eee;
@@ -276,7 +276,7 @@ export default {
         }
       ],
       selectedTemplate: null,
-      templates: {}, // Initialize the templates object here
+      templates: {},
       translations: [],
       responsiveBarDevice: 'desktop',
       socialWallActiveTab: this.savedSocialWallConfig ? this.savedSocialWallConfig.social_wall_list[0].name : 'instagram',
@@ -296,11 +296,11 @@ export default {
         image_settings: this.image_settings,
       };
       if (tab === 'facebook_feed' || tab === 'tiktok') {
-        props.feedConfig = this.feedConfig; // Use feedConfig for facebook_feed and tiktok
+        props.feedConfig = this.feedConfig;
       }
       if (tab === 'twitter') {
-        props.feedConfigs = this.feedConfig; // Use feedConfigs for twitter
-        props.loadingAction = this.loadingInChangeType; // Add loadingAction for twitter
+        props.feedConfigs = this.feedConfig;
+        props.loadingAction = this.loadingInChangeType;
       }
       return props;
     },
@@ -364,7 +364,6 @@ export default {
     },
     getSocialWallSettings(channel = '')
     {
-      //this.loading = true;
       let platform = channel ? channel : 'social_wall';
       this.platform_short = this.getPlatformShortName(platform)
       let feed_id = this.$route.params.template_id;
@@ -385,7 +384,6 @@ export default {
         this.handleError(error);
       }).always(() => {
         setTimeout(() => {
-         // this.loading = false;
         }, 500);
       });
     },
@@ -422,7 +420,6 @@ export default {
           this.selectedPlatform = {};
         }
         this.platformIndex = null;
-        //this.openPlatformModal = false;
       });
     },
     removePlatformTemplate(index) {
@@ -447,9 +444,9 @@ export default {
     },
     setActiveTab(tabName, templateId) {
       this.socialWallActiveTab = tabName;
-      this.selectedTemplate = templateId; // Store the selected template ID
+      this.selectedTemplate = templateId;
       if(this.savedSocialWallConfig && this.savedSocialWallConfig.social_wall_list && this.savedSocialWallConfig.social_wall_list.length) {
-        this.feedConfig = []; // Reset feedConfig before loading new data
+        this.feedConfig = [];
         this.getFeedSettings(this.socialWallActiveTab, 'post', templateId);
       }
     },
@@ -539,11 +536,10 @@ export default {
         let activeTab = this.socialWallActiveTab === 'facebook' ? 'facebook_feed' : this.socialWallActiveTab;
 
 
-        // Check if the template exists before assigning
         if (this.templates[activeTab] && this.templates[activeTab][val]) {
             this.component = this.templates[activeTab][val];
         } else if (this.templates['facebook'] && this.templates['facebook'][val]) { 
-            this.component = this.templates['facebook'][val]; // Use facebook key if exists
+            this.component = this.templates['facebook'][val];
         }
       },
       deep:true,
@@ -564,7 +560,6 @@ export default {
       return;
     }
     this.getSocialWallSettings();
-      // Dynamically set templates based on platforms
       this.platforms.forEach((platform, index) => {
       let platform_name = platform.name === 'facebook_feed' ? 'facebook' : platform.name;
 

@@ -11,13 +11,13 @@
                 </a>
             </div>
             <div class="wpsr-yt-header-info">
-                <div class="wpsr-yt-header-channel-name" v-if="settings.display_name === 'true'">
+                <div class="wpsr-yt-header-channel-name" dir="auto" v-if="settings.display_name === 'true'">
                     <a target="_blank" :href="'https://www.youtube.com/channel/'+header.items[0].id" :title="header.items[0].snippet.title">{{header.items[0].snippet.title}}</a>
                 </div>
                 <div v-if="header.items[0].statistics && has_pro" class="wpsr-yt-header-channel-statistics">
-                    <div class="wpsr-yt-header-statistic-item" v-if="settings.display_subscriber_counter === 'true'">{{shortNumberFormat(header.items[0].statistics.subscriberCount)}} {{$t('Subscribers')}}</div>
-                    <div class="wpsr-yt-header-statistic-item" v-if="settings.display_videos_counter === 'true'">{{shortNumberFormat(header.items[0].statistics.videoCount)}} {{$t('Videos')}}</div>
-                    <div class="wpsr-yt-header-statistic-item" v-if="settings.display_views_counter === 'true'">{{shortNumberFormat(header.items[0].statistics.viewCount)}} {{$t('Views')}}</div>
+                    <div class="wpsr-yt-header-statistic-item" v-if="settings.display_subscriber_counter === 'true'"><span dir="auto">{{shortNumberFormat(header.items[0].statistics.subscriberCount)}} {{$t('Subscribers')}}</span></div>
+                    <div class="wpsr-yt-header-statistic-item" v-if="settings.display_videos_counter === 'true'"><span dir="auto">{{shortNumberFormat(header.items[0].statistics.videoCount)}} {{$t('Videos')}}</span></div>
+                    <div class="wpsr-yt-header-statistic-item" v-if="settings.display_views_counter === 'true'"><span dir="auto">{{shortNumberFormat(header.items[0].statistics.viewCount)}} {{$t('Views')}}</span></div>
                 </div>
                 <div v-if="header.items[0].snippet.description && settings.display_description === 'true' && has_pro" class="wpsr-yt-header-channel-description">
                     <p>{{header.items[0].snippet.description}}</p>
@@ -48,7 +48,7 @@ import {ytMixin} from "../../../../../mixins/ytMixin";
         methods: {
           get_header_cover(account){
             let placeholder = this.assets_url + '/images/template/review-template/placeholder-image.png';
-            if(account.covers && account.covers.local_cover.length) {
+            if(account.covers && account.covers.local_cover && account.covers.local_cover.length) {
               return account.covers.local_cover;
             }
 

@@ -1,6 +1,6 @@
 <template>
     <div class="wpsr-reviewer-image" v-if="isImage === 'true'">
-        <a v-if="enableExternalLink === 'true'" class="wpsr-reviewer-image-url" :class="platformName !== 'amazon' && platformName !=='testimonial' && platformName !=='custom' && platformName !== 'fluent_forms' && image_settings.optimized_images === 'true' && imageUrl && !mediaUrl ? 'wpsr-reviewer-image-animation' : ''" :href="platformName === 'facebook' ? 'https://www.facebook.com/'+sourceId+'/reviews' : reviewerUrl" target="_blank">
+        <a v-if="enableExternalLink === 'true'" class="wpsr-reviewer-image-url" :class="platformName !== 'amazon' && platformName !=='testimonial' && platformName !=='custom' && platformName !== 'fluent_forms' && image_settings.optimized_images === 'true' && imageUrl && !mediaUrl ? 'wpsr-reviewer-image-animation' : ''" :href="platformName === 'facebook' ? 'https://www.facebook.com/'+sourceId+'/reviews' : safeReviewerUrl" target="_blank">
             <img v-if="imageUrl && platformName !== 'amazon'" class="wpsr-reviewer-avatar wpsr-reviewer-img" :src="platformName === 'fluent_forms' ? imageUrl : (mediaUrl || imageUrl)" />
             <img v-else class="wpsr-reviewer-avatar" :src="assets_url+'/images/template/review-template/placeholder-image.png'" />
         </a>
@@ -14,8 +14,15 @@
 
 <script type="text/babel">
 import { commonMixin } from '../../../../mixins/commonMixin';
+import { wpsrIsHttpUrl, wpsrTrimUrl } from '../../../../utils/videoUrl';
 export default {
   mixins: [commonMixin],
   props:['isImage','reviewerUrl','imageUrl', 'mediaUrl', 'sourceId', 'platformName', 'enableExternalLink', 'image_settings'],
+  computed: {
+    // Visitor-submitted URL: only http(s) may become an href; null drops the attribute.
+    safeReviewerUrl() {
+      return wpsrIsHttpUrl(this.reviewerUrl) ? wpsrTrimUrl(this.reviewerUrl) : null;
+    }
+  }
 }
 </script>

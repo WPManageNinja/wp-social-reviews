@@ -135,20 +135,17 @@ export default {
   },
   methods: {
     getFeatureTitle() {
-      // Priority: effective promotion > platform-specific config > default
       return this.effectivePromotionInfo?.subtitle ||
              this.getPlatformSpecificConfig('heading') ||
              'Unlock Pro Features';
     },
 
     getFeatureDescription() {
-      // Priority: effective promotion > platform-specific config > default
       return this.effectivePromotionInfo?.description ||
              this.getPlatformSpecificConfig('description') ||
              'Get access to all premium features and take your social media to the next level.';
     },
 
-    // Helper method to get platform and feature type specific configuration
     getPlatformSpecificConfig(property) {
 
       if (!this.platform || !this.feature_type) {
@@ -161,7 +158,6 @@ export default {
       }
 
 
-      // Return the specific property for the feature type
       if (!platformConfig) {
         return this.specificFeatureConfig.general.default[property] || null;
       }
@@ -215,20 +211,14 @@ export default {
     },
 
     upgradeNow() {
-      // A live offer needs no separate click tracking: the URL already carries it
-      // as utm_id, alongside the placement in utm_content.
+      // Any live offer is already in the URL as utm_id, so no separate click tracking.
       window.open(this.getBuyUrl(), '_blank');
     },
 
     /**
-     * Resolve the upgrade URL, most specific placement first.
-     *
-     * Every URL here is built in PHP and already carries a utm_content naming the
-     * exact locked feature, so the order below decides how precisely the click is
-     * attributed. It is written out rather than routed through
-     * getPlatformSpecificConfig(), which silently falls back to the generic
-     * "general.default" bucket and would otherwise shadow the more specific
-     * platform promotion.
+     * Most specific placement first: each PHP-built URL's utm_content names the locked feature.
+     * Not routed through getPlatformSpecificConfig(), whose general.default fallback would
+     * shadow the platform promotion.
      */
     getBuyUrl() {
       // 1. The exact platform + feature the user just hit, e.g. instagram/shoppable.

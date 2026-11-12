@@ -28,8 +28,6 @@ abstract class BaseImageOptimizationHandler
     ];
 
     /**
-     * Constructor
-     *
      * @param string $platform   Platform identifier
      */
     public function __construct($platform)
@@ -42,12 +40,10 @@ abstract class BaseImageOptimizationHandler
     abstract public function savePhotos();
 
     /**
-     * Whether this platform is allowed to store optimized copies at all.
+     * Whether this platform may store optimized copies at all.
      *
-     * Both resizer scripts are shared by the whole page, so a template whose
-     * platform has optimization off still receives a request as soon as any
-     * other template on that page loads the script. The request carries no
-     * proof that the caller was entitled to ask, so the setting is re-read here.
+     * The resizer scripts are page-wide, so any template on the page can trigger
+     * a request for this platform. The request proves nothing, so re-read the setting.
      *
      * @param string $platform 'reviews' for review templates, else the feed platform
      *
@@ -156,8 +152,8 @@ abstract class BaseImageOptimizationHandler
     public function resizeImage($imageUrl, $originalImage, $old_size, $image_size)
     {
         try {
-            // This runs only when no WP_Image_Editor was available, so GD may be
-            // absent too. Calling a missing GD function raises Error, not Exception.
+            // Runs only when no WP_Image_Editor exists, so GD may be missing too.
+            // Calling a missing GD function raises Error, not Exception.
             if (!function_exists('imagecreatetruecolor') || !function_exists('imagejpeg')) {
                 return false;
             }
@@ -188,24 +184,19 @@ abstract class BaseImageOptimizationHandler
             $selectedSizes = $sizes[$platform];
             $newWidth = $newHeight = $selectedSizes[$image_size] ?? $selectedSizes['full'];
 
-            // Create a new image object of the same type as the original image.
             $newImage = imagecreatetruecolor($newWidth, $newHeight);
 
-            // Copy the original image to the new image, resizing it as needed.
             imagecopyresampled($newImage, $image, 0, 0, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
 
             $tmpImage = $originalImage;
             $tmpImage = str_replace($old_size, $image_size, $tmpImage);
 
-            // Save the resized image to a file.
             imagejpeg($newImage, $tmpImage);
 
-            // Free the memory used by the images.
             imagedestroy($image);
             imagedestroy($newImage);
             return true;
         } catch (\Throwable $exception) {
-            //$exception->getMessage();
         }
 
         return false;
@@ -237,11 +228,10 @@ abstract class BaseImageOptimizationHandler
     }
     
     /**
-     * Download method used as fallback when WordPress default image save methods fail
+     * Fallback download for when the WordPress image save methods fail.
      *
-     * Every byte comes through RemoteMediaFetcher, so the URL is scheme-checked,
-     * address-checked, redirect-checked and confirmed to be a real image before
-     * anything is written into the uploads tree.
+     * Goes through RemoteMediaFetcher, so the URL, address, redirects and image
+     * type are all checked before anything is written to uploads.
      */
     public function download($url = '', $filepath = '', $image_size = '')
     {
@@ -277,7 +267,6 @@ abstract class BaseImageOptimizationHandler
 
         $wp_filesystem = $this->getWpFilesystem();
         if (!$wp_filesystem) {
-            //error_log('wpsn was unable to initialize WordPress filesystem');
             return false;
         }
 
@@ -289,7 +278,6 @@ abstract class BaseImageOptimizationHandler
         }
 
         if (!$wp_filesystem->put_contents($filepath, $bytes, FS_CHMOD_FILE)) {
-            //error_log('wpsn was unable to write the file: ' . $filepath);
             return false;
         }
 
@@ -361,10 +349,8 @@ abstract class BaseImageOptimizationHandler
     }
 
     /**
-     * How many images may be resized inside one window, and how long that
-     * window is in minutes. Both are filterable; a non-positive value falls
-     * back to the default. Raising them costs request time on the resize
-     * endpoint, which is why the ceiling exists.
+     * Rate limit for resizing: images per window, and window length in minutes.
+     * Both are filterable; a non-positive value falls back to the default.
      *
      * @return bool true when the window is full and resizing must wait
      */
@@ -407,7 +393,7 @@ abstract class BaseImageOptimizationHandler
         }
 
         if($this->shouldUpdateLastRequestedTime()) {
-            (new OptimizeImage())->updateLastRequestedTime($ids);
+            (new OptimizeImage())->updateLastRequestedTime($ids, $this->platform);
         }
     }
 
@@ -449,7 +435,7 @@ abstract class BaseImageOptimizationHandler
                 }
             }
 
-            $optimizer->deleteMedia($mediaId, $userName);
+            $optimizer->deleteMedia($mediaId, $userName, $platform_name);
         }
 
     }
@@ -484,15 +470,12 @@ abstract class BaseImageOptimizationHandler
     }
 
     /**
-     * Get WordPress filesystem instance
-     *
      * @return \WP_Filesystem_Base|false
      */
     protected function getWpFilesystem()
     {
         global $wp_filesystem;
 
-        // If the filesystem has not been instantiated yet, do it here.
         if (!$wp_filesystem) {
             if ( !function_exists('WP_Filesystem') ) {
                 require_once ABSPATH . '/wp-admin/includes/file.php';

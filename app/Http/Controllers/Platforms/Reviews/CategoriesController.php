@@ -8,22 +8,15 @@ use WPSocialReviews\App\Services\PermissionManager;
 use WPSocialReviews\Framework\Http\Request\Request;
 
 /**
- * Browse, rename and delete review categories.
- *
- * Deliberately no store() endpoint: categories are only ever born attached to
- * something — the per-review select, the bulk-assign modal, or a CSV import — so
- * a category with zero reviews is not a state the UI can produce.
+ * Browse, rename and delete review categories. There is no store(): categories are
+ * only created attached to something (review select, bulk assign, CSV import).
  */
 class CategoriesController extends Controller
 {
     /**
-     * Serves both the assign dropdowns and the management modal.
-     *
-     * The relationship counts span reviews and testimonials, so they are only included
-     * for a caller who holds both capabilities — the same predicate as
-     * CategoryManagementPolicy, and exactly who the count-showing management modal is
-     * gated to. A single-capability caller (this route sits under either policy) gets
-     * names only, so it cannot infer the other screen's usage totals.
+     * Serves the assign dropdowns and the management modal. Counts span reviews and
+     * testimonials, so only a caller with both capabilities (as CategoryManagementPolicy)
+     * gets them. Others get names only and can't infer the other screen's totals.
      */
     public function index(Request $request)
     {

@@ -84,7 +84,7 @@ export default {
                                         ${currentPopupSettings.display_caption === 'true' ?
                                             `<div class="wpsr-feed-popup-comment">
                                                 <div class="wpsr-feed-popup-comment-inner">
-                                                    <div class="wpsr-feed-popup-comment-text">
+                                                    <div class="wpsr-feed-popup-comment-text" dir="auto">
                                                         ${this.renderMessage()}
                                                     </div>
                                                 </div>
@@ -130,7 +130,7 @@ export default {
         let user_url = currentFeed.user ? currentFeed.user.profile_url : '';
 
         return currentPopupSettings.display_username === 'true' ?
-            `<div class="wpsr-feed-popup-user-name">
+            `<div class="wpsr-feed-popup-user-name" dir="auto">
                 <a href="${user_url}" target="_blank" title="${user_name}">${user_name}</a>
               </div>` : '';
     },

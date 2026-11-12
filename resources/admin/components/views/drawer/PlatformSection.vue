@@ -84,26 +84,10 @@ export default {
     }
   },
   methods: {
-    // getPlatformIcon(size, platform) {
-    //   let platformName = platform === 'facebook_feed' ? 'facebook' : platform === 'booking' ? 'booking.com' : platform;
-    //   let data = [
-    //       ...this.platforms,
-    //   { platform: 'facebook_feed', platform_title: 'Facebook', image: this.assets_url+'/images/icon/icon-facebook.png'},
-    //   { platform: 'instagram', platform_title: 'Instagram', image: this.assets_url+'/images/icon/icon-instagram.png' },
-    //   { platform: 'twitter', platform_title: 'Twitter', image: this.assets_url+'/images/icon/icon-twitter.png' },
-    //   { platform: 'tiktok', platform_title: 'TikTok', image: this.assets_url+'/images/icon/icon-tiktok.png' },
-    //   { platform: 'youtube', platform_title: 'YouTube', image: this.assets_url+'/images/icon/icon-youtube.png' },
-    //   { platform: 'allinone', platform_title: 'All-in-One Chat Widget', image: this.assets_url+'/images/icon/chats.png' },
-    //   ];
-    //   const matched = data.find(item => item.platform === platformName);
-    //   return matched ? matched.image : '';
-    // },
-
     updateOption(key, value) {
       this.$emit('update', this.type, key, value);
     },
     selectAll(value) {
-      // Emit select-all event with the value (true for enable all, false for disable all)
       this.$emit('select-all', value);
     },
     toggleAll(value) {
@@ -121,7 +105,7 @@ export default {
         facebook: 'Facebook Reviews',
         woocommerce: 'WooCommerce',
         'fluent-cart': 'FluentCart',
-        trustpilot: 'Trustpilot',
+        ...(this.appVars.tp_slug && this.appVars.tp_slug !== '_not_defined_yet_' ? { [this.appVars.tp_slug]: this.appVars.tp_title } : {}),
         instagram: 'Instagram',
         youtube: 'YouTube',
         twitter: 'X (Twitter)',

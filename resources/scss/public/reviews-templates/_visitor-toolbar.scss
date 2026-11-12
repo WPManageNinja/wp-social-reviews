@@ -36,6 +36,8 @@ $wpsr-vt-transition: 0.15s ease;
       font-weight: normal;
       line-height: 1;
       color: #606266;
+      // A right glyph turned to point down; mirroring the rotation would point it up.
+      /*!rtl:ignore*/
       transform: translateY(-50%) rotate(90deg);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;

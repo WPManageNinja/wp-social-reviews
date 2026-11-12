@@ -35,6 +35,6 @@ if (empty($settings[$wpsr_template]['chat_bubble']['cb_button_icon']) && count($
             </svg>
         </span>
         <?php } ?>
-        <span><?php echo esc_html($templateSettings['chat_bubble']['cb_button_text']); ?></span>
+        <span dir="auto"><?php echo esc_html($templateSettings['chat_bubble']['cb_button_text']); ?></span>
     </a>
 </div>

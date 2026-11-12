@@ -70,6 +70,7 @@
                             </template>
                             <el-collapse accordion v-model="activeNames">
                                 <div class="wpsr-styling-divider"/>
+                                <StyleResetButton :styles_config="feedConfig.styles_config" :default_styles="default_styles"/>
                                 <TiktokStyleEditor
                                     v-if="feedConfig.styles_config"
                                     :feed_config="feedConfig.styles_config"
@@ -102,6 +103,7 @@ import {templateMixin} from "../../../mixins/templateMixin";
 import {commonMixin} from "../../../mixins/commonMixin";
 import {jsLibraryMixin} from "../../../mixins/jsLibraryMixin";
 import TiktokStyleEditor from "./editor-ui/TiktokStyleEditor.vue";
+import StyleResetButton from "../../core-ui/editor/StyleResetButton.vue";
 import ResponsiveBar from '../../core-ui/editor/ResponsiveBar';
 import EditorViewInfoBar from '../../core-ui/editor/EditorViewInfoBar';
 import {helperStyle} from "../../../mixins/helperStyle";
@@ -129,6 +131,7 @@ export default {
         TiktokFeedEditor,
         EditorHeader,
         TiktokStyleEditor,
+        StyleResetButton,
         ResponsiveBar,
         EditorViewInfoBar,
         UpgradeToProButton,

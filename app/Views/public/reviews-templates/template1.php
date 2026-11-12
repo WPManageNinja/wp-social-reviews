@@ -12,6 +12,8 @@ if (!empty($reviews)) {
 
     foreach ($reviews as $wpsr_index => $wpsr_review) {
         $wpsr_source_id = Arr::get($wpsr_review, 'source_id', '');
+        // Only looked up for 'custom' sources: platformDisplayName() ignores this argument for every other platform.
+        $wpsr_custom_source_name = $wpsr_review->platform_name === 'custom' ? Arr::get(Helper::getCustomPlatformLogo($wpsr_review->platform_name, $wpsr_source_id), 'name', '') : '';
         $wpsr_media_id = Arr::get($wpsr_review, 'review_id', '');
         $wpsr_review_images  = Arr::get($wpsr_review, 'fields.review_images', '');
         $wpsr_product_name  = Arr::get($wpsr_review, 'fields.product_name', '');
@@ -33,21 +35,22 @@ if (!empty($reviews)) {
                  data-source_id="<?php echo esc_attr($wpsr_source_id); ?>"
                  data-media_id="<?php echo esc_attr($wpsr_media_id); ?>"
                  data-review_platform="<?php echo esc_attr($wpsr_review->platform_name); ?>"
+                 data-platform_label="<?php echo esc_attr(Helper::platformDisplayName($wpsr_review->platform_name, $wpsr_custom_source_name)); ?>"
                  data-product_thumbnail="<?php echo esc_attr($wpsr_product_thumbnail_url); ?>"
                  data-product_name="<?php echo esc_attr($wpsr_product_name); ?>"
                  data-image_resize="<?php echo esc_attr($wpsr_image_size)?>"
             >
                 <?php
-                /**
-                 * reviewer_image hook.
-                 *
-                 * @hooked ReviewsTemplateHandler::renderReviewerImageHtml 10
-                 * */
                 if (method_exists(Helper::class, 'shouldShowAISummaryIcon')) {
                     $wpsr_should_show_icon = Helper::shouldShowAISummaryIcon($wpsr_review, $wpsr_should_display_ai_summary_icon, $template_meta);
                 } else {
                     $wpsr_should_show_icon = $template_meta['reviewer_image'];
                 }
+                /**
+                 * reviewer_image hook.
+                 *
+                 * @hooked ReviewsTemplateHandler::renderReviewerImageHtml 10
+                 * */
                 do_action('wpsocialreviews/reviewer_image', $wpsr_should_show_icon,
                     $wpsr_reviewer_url, $wpsr_review->reviewer_img, $wpsr_review->reviewer_name, $wpsr_enable_external_link, $wpsr_review->media_url, $wpsr_review->platform_name);
                 ?>
@@ -83,12 +86,12 @@ if (!empty($reviews)) {
                             $wpsr_review);
                         
 
+                        $wpsr_rating = ($wpsr_review->category === 'ai_summary') ? $wpsr_average_rating : $wpsr_review->rating;
                         /**
                          * reviewer_rating hook.
                          *
                          * @hooked ReviewsTemplateHandler::renderReviewerRatingHtml 10
                          * */
-                        $wpsr_rating = ($wpsr_review->category === 'ai_summary') ? $wpsr_average_rating : $wpsr_review->rating;
                         do_action('wpsocialreviews/reviewer_rating', 
                             $template_meta['reviewerrating'],
                             $template_meta['rating_style'],

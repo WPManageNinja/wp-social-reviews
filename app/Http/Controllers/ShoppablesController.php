@@ -8,9 +8,11 @@ use WPSocialReviews\Framework\Support\Arr;
 
 class ShoppablesController extends Controller
 {
+    // The only post type storeTemplateSettings() may write to. Downstream writes run
+    // no check of their own, and shoppable settings only live on feed templates.
+    const ALLOWED_POST_TYPES = ['wp_social_reviews'];
 
     /**
-     *
      * Get all shoppable settings from options table.
      *
      * @param $request
@@ -21,7 +23,6 @@ class ShoppablesController extends Controller
      **/
     public function index(Request $request)
     {
-        // sanitize postType
         $postType = sanitize_text_field($request->get('postType', ''));
         $default = array(
             'instagram' => [],
@@ -45,7 +46,6 @@ class ShoppablesController extends Controller
     }
 
     /**
-     *
      * Update shoppable settings
      *
      * @param $request
@@ -73,7 +73,6 @@ class ShoppablesController extends Controller
     }
 
     /**
-     *
      * Delete shoppable settings
      *
      * @param $request
@@ -90,9 +89,8 @@ class ShoppablesController extends Controller
             $settingsPayload = $this->decodeJsonParam($settingsPayload) ?: [];
         }
 
-        // The surviving entries are a client-supplied replacement for the whole option,
-        // so they need the same sanitizer update() applies. No required-field rules:
-        // this endpoint removes entries and must not start rejecting stored shapes.
+        // The client sends the whole replacement option, so sanitize it like update().
+        // No extra validate rules are passed, since this endpoint only removes entries.
         $settingsPayload = $this->recursive_sanitize($settingsPayload);
 
         update_option('wpsr_global_shoppable_settings', $settingsPayload);
@@ -103,35 +101,47 @@ class ShoppablesController extends Controller
 
     public function storeTemplateSettings(Request $request, $postId)
     {
-        $postId = intval($postId);
+        $post = get_post(absint($postId));
+
+        if (!$post || !in_array($post->post_type, self::ALLOWED_POST_TYPES, true)) {
+            return $this->sendError([
+                'message' => __('Template not found.', 'wp-social-reviews')
+            ], 404);
+        }
+
         $platform = sanitize_key($request->get('platform', ''));
 
-        $json_data = $request->get('shoppable_fields');
-        $raw_data  = json_decode($json_data, true);
+        $raw_data = $this->decodeJsonParam($request->get('shoppable_fields'));
+
+        if (null === $raw_data) {
+            return $this->invalidJsonPayload();
+        }
 
         $sanitized_data = $this->recursive_sanitize($raw_data);
 
-        $settings_json = $request->get('settings');
-        if (is_string($settings_json)) {
-            $settings  = json_decode($settings_json, true);
-        } else {
-            $settings = $settings_json;
-        }
+        $feed = $this->decodeJsonParam($request->get('feed'));
 
-        $feed_json = $request->get('feed');
-        if (is_string($feed_json)) {
-            $feed  = json_decode($feed_json, true);
-        } else {
-            $feed = $feed_json;
-        }
-
-        // sanitize feed values used as array keys
+        // Used as array keys below.
         $feed_username = isset($feed['username']) ? sanitize_text_field($feed['username']) : '';
         $feed_id = isset($feed['id']) ? intval($feed['id']) : 0;
 
+        if ('' === $feed_username || $feed_id <= 0) {
+            return $this->invalidJsonPayload();
+        }
+
+        // Merge into the stored config, never the request body: this capability owns only
+        // the shoppable node. The rest of the template belongs to wpsn_manage_templates.
+        $settings = json_decode(get_post_meta($post->ID, '_wpsr_template_config', true), true);
+
+        if (!is_array($settings)) {
+            return $this->sendError([
+                'message' => __('Template not found.', 'wp-social-reviews')
+            ], 404);
+        }
+
         $settings['feed_settings']['shoppable_settings']['shoppable_feeds'][$feed_username][$feed_id] = $sanitized_data;
 
-        do_action('wpsocialreviews/update_editor_settings_' . $platform, $settings, $postId);
+        do_action('wpsocialreviews/update_editor_settings_' . $platform, $settings, $post->ID);
     }
 
     public function getPosts(Request $request)
@@ -171,7 +181,6 @@ class ShoppablesController extends Controller
                     ]);
                 }
             } else {
-                /*validate data*/
                 if(!empty($validate_rules) && array_key_exists($key, $validate_rules)) {
                     $this->validate($settings, [
                         $key => Arr::get($validate_rules, $key, '')
@@ -183,7 +192,6 @@ class ShoppablesController extends Controller
                     $settings['url'] = get_the_permalink($value);
                 }
 
-                /*sanitize data*/
                 $sanitize_rules = $this->get_sanitize_rules();
                 $value = $this->sanitize($value, Arr::get($sanitize_rules, $key, ''));
             }

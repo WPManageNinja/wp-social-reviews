@@ -107,7 +107,6 @@
 
 <script type="text/babel">
 import { ElTree } from 'element-plus';
-import 'element-plus/dist/index.css';
 import ChatEditorGroup from './../../../core-ui/editor/EditorGroup';
 import Remove from './../../../core-ui/editor/RemoveConfirm';
 import UpgradeToProButton from '../../../views/advertise/UpgradeToProButton';
@@ -387,7 +386,9 @@ export default {
               {
                 fieldKey: 'start_time',
                 type: 'time_picker',
-                title: this.$t('Start Time'),
+                title: this.$t('Start Time (Site Timezone)'),
+                tooltip: true,
+                tooltipText: 'Evaluated using your site\'s WordPress timezone (Settings &rarr; General &rarr; Timezone), not your browser\'s local time.',
                 condition: {
                   operator: 'multiple',
                   terms: [
@@ -405,7 +406,9 @@ export default {
               {
                 fieldKey: 'end_time',
                 type: 'time_picker',
-                title: this.$t('End Time'),
+                title: this.$t('End Time (Site Timezone)'),
+                tooltip: true,
+                tooltipText: 'Evaluated using your site\'s WordPress timezone (Settings &rarr; General &rarr; Timezone), not your browser\'s local time.',
                 condition: {
                   operator: 'multiple',
                   terms: [

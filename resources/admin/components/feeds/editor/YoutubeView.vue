@@ -63,6 +63,7 @@
                         </span>
                       </template>
                       <el-collapse accordion v-model="activeNames">
+                        <StyleResetButton :styles_config="feedConfig.styles_config" :default_styles="default_styles"/>
                         <YoutubeStyleEditor
                             v-if="feedConfig.styles_config"
                             :feed_config="feedConfig.styles_config"
@@ -87,6 +88,7 @@
 import UpgradeApp from "../../pieces/UpgradeApp";
 import YoutubeFeedEditor from './editor-ui/YoutubeFeedEditor';
 import YoutubeStyleEditor from './editor-ui/YoutubeStyleEditor';
+import StyleResetButton from "../../core-ui/editor/StyleResetButton.vue";
 import Template1 from './../templates/youtube/Template1';
 import Template2 from './../templates/youtube/Template2';
 import Template3 from './../templates/youtube/Template3';
@@ -122,6 +124,7 @@ export default {
         Template5,
         YoutubeFeedEditor,
         YoutubeStyleEditor,
+        StyleResetButton,
         ResponsiveBar,
         EditorViewInfoBar,
         UpgradeToProButton,

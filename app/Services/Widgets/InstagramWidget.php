@@ -184,6 +184,7 @@ class InstagramWidget extends Widget_Base {
                 'size_units' => ['px', 'em', '%'],
                 'selectors' => [
                     '{{WRAPPER}} .wpsr-ig-header-info .wpsr-ig-header-statistics .wpsr-ig-header-statistic-item' => 'margin-right: {{SIZE}}{{UNIT}};',
+                    'body.rtl {{WRAPPER}} .wpsr-ig-header-info .wpsr-ig-header-statistics .wpsr-ig-header-statistic-item' => 'margin-right: 0; margin-left: {{SIZE}}{{UNIT}};',
                 ],
             ]
         );
@@ -510,6 +511,7 @@ class InstagramWidget extends Widget_Base {
                 'size_units' => ['px', 'em', '%'],
                 'selectors' => [
                     '{{WRAPPER}} .wpsr-ig-post-info .wpsr-ig-post-statistics .wpsr-ig-post-single-statistic' => 'margin-right: {{SIZE}}{{UNIT}};',
+                    'body.rtl {{WRAPPER}} .wpsr-ig-post-info .wpsr-ig-post-statistics .wpsr-ig-post-single-statistic' => 'margin-right: 0; margin-left: {{SIZE}}{{UNIT}};',
                 ],
             ]
         );

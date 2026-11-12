@@ -114,11 +114,11 @@ class ChatHandler
     {
         wp_enqueue_style(
             'wpsocialreviews_chat',
-            WPSOCIALREVIEWS_URL . 'assets/css/social-review-chat.css',
+            WPSOCIALREVIEWS_URL . 'assets/css/social-review-chat' . (is_rtl() ? '-rtl' : '') . '.css',
             array(),
             WPSOCIALREVIEWS_VERSION
         );
-        wp_enqueue_script('wpsocialreviews_chat', WPSOCIALREVIEWS_URL . 'assets/js/chat.js', array('jquery'), WPSOCIALREVIEWS_VERSION, true);
+        wp_enqueue_script('wpsocialreviews_chat', WPSOCIALREVIEWS_URL . 'assets/js/chat.js', array(), WPSOCIALREVIEWS_VERSION, true);
     }
 
     public function availableTimeUpdate($config)

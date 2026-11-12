@@ -145,7 +145,7 @@ if (!empty($feeds) && is_array($feeds)) {
                          * */
                         do_action('wpsocialreviews/facebook_feed_template_content_wrapper_before', $template_meta, $wpsr_feed, $templateId, $wpsr_index);
                         /**
-                         * facebook_feed_eevents hook.
+                         * facebook_feed_events hook.
                          *
                          * @hooked render_facebook_feed_events 10
                          * */
@@ -160,9 +160,9 @@ if (!empty($feeds) && is_array($feeds)) {
                     <div class="wpsr-fb-feed-inner wpsr-single-album-feed">
                         <?php
                         /**
-                         * facebook_feed_videos hook.
+                         * facebook_feed_single_album_feed hook.
                          *
-                         * @hooked render_facebook_feed_videos 10
+                         * @hooked FacebookTemplateHandlerPro::renderFacebookFeedSingleAlbum 10
                          * */
                         do_action('wpsocialreviews/facebook_feed_single_album_feed', $wpsr_feed, $template_meta, $templateId, $pagination_settings, $wpsr_index);?>
                     </div>
@@ -172,9 +172,9 @@ if (!empty($feeds) && is_array($feeds)) {
 
                 if($wpsr_feed_type === 'album_feed') {
                     /**
-                     * facebook_feed_media hook.
+                     * facebook_feed_album hook.
                      *
-                     * @hooked FacebookFeedTemplateHandler::renderFeedMedia 10
+                     * @hooked FacebookTemplateHandlerPro::renderFacebookFeedAlbum 10
                      * */
                     do_action('wpsocialreviews/facebook_feed_album', $wpsr_feed, $template_meta, $templateId , $pagination_settings);
                 }

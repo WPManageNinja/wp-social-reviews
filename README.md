@@ -5,6 +5,8 @@
 - `npm install`
 - `npx mix watch` or `npm run watch`
 - `npx mix --production`
+- `npm run rtl` writes a `-rtl.css` beside every `assets/**/*.css`. Run it after a build when testing an RTL site.
+  `mix watch` doesn't regenerate them.
 
 ##### Run the tests
 If you don't have a testing database then please run the following command from your project root:
@@ -19,7 +21,10 @@ You can include or exclude your files in `phpunit.xml.dist` file.
 
 
 ### Build for release
-`sh ./build.sh --node-build --with-pro`
+`sh ./build.sh --node-build --rtl_css --with-pro`
+
+Always pass `--rtl_css`. RTL sites load the `-rtl.css` files instead of the normal ones, so a build without them
+leaves RTL sites unstyled. Writing RTL-safe CSS: `docs/solutions/best-practices/rtl-public-templates.md`.
 
 
 ### Bridge auth secrets (token refresh)

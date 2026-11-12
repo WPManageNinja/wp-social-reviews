@@ -12,12 +12,8 @@ if (!defined('ABSPATH')) {
 class OnboardingHelper
 {
     /**
-     * Apply onboarding settings to a template's configuration array.
-     *
-     * This method checks if a template was created from the onboarding wizard.
-     * If so, it retrieves the saved onboarding choices (like template, layout, feed type)
-     * and applies them to the settings array, including injecting the appropriate
-     * demo data for the initial view.
+     * Apply the onboarding wizard's choices (template, layout, feed type) and demo
+     * data to a template created from the wizard.
      *
      * @param int|null $templateId The template ID to get specific onboarding data
      * @param string $platform The platform identifier (e.g., 'facebook_feed', 'instagram', 'reviews').
@@ -29,24 +25,20 @@ class OnboardingHelper
      */
     public static function applyOnboardingSettings($templateId, $platform, &$settings, &$business_info = [], &$filtered_reviews = [], &$all_reviews = [])
     {
-        // Check if the template was created from the onboarding wizard
         $is_onboarding = false;
         if (isset($settings['feed_settings'])) {
             $is_onboarding = Arr::get($settings, 'feed_settings.created_from_onboarding', false);
 
-            // Get template ID from settings if not provided
             if (!$templateId) {
                 $templateId = Arr::get($settings, 'template_id');
             }
         } elseif (isset($settings['chat_settings'])) {
-            // Check for chat settings onboarding
             $is_onboarding = Arr::get($settings, 'chat_settings.created_from_onboarding', false);
         }
 
         if (!$is_onboarding || !$templateId) {
             return $settings;
         }
-        // Get template-specific onboarding data from sessions
         $allSessions = get_option('wpsr_onboarding_sessions', []);
         $onboardingStatus = Arr::get($allSessions, $templateId);
 
@@ -59,9 +51,7 @@ class OnboardingHelper
         $layoutType       = Arr::get($onboardingStatus, 'data.template.type', 'grid');
         $platformName     = Arr::get($onboardingStatus, 'data.platform_name', '');
 
-        // Set template and layout configuration
         if (isset($settings['feed_settings']) && ($postType !== 'reviews') && ($postType !== 'notifications')) {
-            // For Feed platforms (Facebook, Instagram, etc.)
             $source_settings_key = $platform === 'twitter' ? 'additional_settings' : 'source_settings';
             $settings['feed_settings'][$source_settings_key]['feed_type'] = $postType;
             $settings['feed_settings']['template'] = $templateName;
@@ -73,21 +63,17 @@ class OnboardingHelper
                 $settings['feed_settings']['shoppable_settings']['include_shoppable_by_hashtags'] = 'false';
             }
         } elseif (isset($settings['chat_settings']) && $platform === 'chats') {
-            // For Chat widgets
             $settings['chat_settings']['template'] = $templateName;
         } else if($postType === 'notifications') {
-            // For notifications
             $settings['template'] = $templateName;
             $settings['templateType'] = 'notification';
             $settings['platform'] = [$platformName];
         } else {
-            // For other platforms, set the template and layout type
             $settings['template'] = $templateName;
             $settings['templateType'] = $layoutType;
             $settings['platform'] = [$platformName];
         }
 
-        // Set demo data for the initial view
         $manager = new PlatformManager();
         if ($platform === 'reviews') {
             $isActivePlatform = (new PlatformManager())->isActivePlatform($platformName);
@@ -99,7 +85,6 @@ class OnboardingHelper
                 $business_info = Arr::get($demo_data, 'business_info', []);
             }
         } elseif ($platform === 'chats') {
-            // For chat widgets, set display onboarding info if needed
             $settings['chat_settings']['display_onboarding_info'] = true;
         } else {
             $isActive = (new PlatformManager())->isActivePlatform($platformName);
@@ -113,8 +98,8 @@ class OnboardingHelper
     }
 
     /**
-     * Remove template from onboarding sessions when it's edited
-     * This ensures edited templates use saved meta values instead of onboarding data
+     * Drop an edited template from the onboarding sessions, so it renders from its
+     * saved meta instead of the wizard data.
      *
      * @param int $templateId The template ID
      * @return void
