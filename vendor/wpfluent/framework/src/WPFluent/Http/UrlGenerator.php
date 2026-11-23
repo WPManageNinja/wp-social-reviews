@@ -53,13 +53,15 @@ class UrlGenerator
 
         $payload = $encrypter->encrypt(http_build_query($params));
 
-        $signature = hash_hmac('sha256', $payload, $encrypter->getKey());
+        $signature = hash_hmac('sha256', $this->signedTarget($url) . '|' . $payload, $encrypter->getKey());
 
         // URL-encode via http_build_query so payload/signature stay safe
         // even if their alphabet ever includes '+', '/', or '='. Old-style
         // URLs (raw values) keep verifying because parse_str on the verify
         // side decodes both forms identically.
-        return $baseUrl . '?' . http_build_query([
+        $separator = str_contains($baseUrl, '?') ? '&' : '?';
+
+        return $baseUrl . $separator . http_build_query([
             '_data' => $payload,
             '_signature' => $signature,
         ]);
@@ -73,22 +75,15 @@ class UrlGenerator
      */
     protected function normalizeUrl($url)
     {
-        if (preg_match('#^(http|https)://#', $url)) {
+        // Already a full URL: it starts with 'http://' or 'https://', in
+        // any case (i), so 'HTTPS://example.com' counts too.
+        if (preg_match('#^(http|https)://#i', $url)) {
             return $url;
         }
 
-        $config = App::config();
-        $slug = trim($config->get('app.slug'), '/');
-        $version = trim($config->get('app.rest_version'), '/');
-        $relative = ltrim($url, '/');
-
-        $base = rest_url();
-        
-        if (str_contains($base, 'index.php?rest_route=')) {
-            $base = site_url('/wp-json/');
-        }
-
-        return rtrim($base, '/') . '/' . $slug . '/' . $version . '/' . $relative;
+        return $this->buildRestBaseUrl()
+            . $this->buildNamespaceSegment()
+            . '/' . ltrim($url, '/');
     }
 
     /**
@@ -101,8 +96,18 @@ class UrlGenerator
     {
         $parts = parse_url($url);
 
-        $base = $parts['scheme'] . '://' . $parts['host'] . ($parts['path'] ?? '');
+        $base = $parts['scheme'] . '://' . $parts['host']
+            . (isset($parts['port']) ? ':' . $parts['port'] : '')
+            . ($parts['path'] ?? '');
+
         parse_str($parts['query'] ?? '', $query);
+
+        // Without pretty permalinks the route is in ?rest_route=: it stays
+        // in the URL, where WordPress reads it, instead of being signed.
+        if (isset($query['rest_route'])) {
+            $base .= '?rest_route=' . $query['rest_route'];
+            unset($query['rest_route']);
+        }
 
         return [$base, $query];
     }
@@ -174,7 +179,7 @@ class UrlGenerator
             return false;
         }
 
-        return $this->verifySignature($query['_data'], $query['_signature']);
+        return $this->verifySignature($query['_data'], $query['_signature'], $this->signedTarget($url));
     }
 
     /**
@@ -197,17 +202,44 @@ class UrlGenerator
     }
 
     /**
-     * Verify the signature.
+     * What a signature is made for besides the values: the URL's path and,
+     * with plain permalinks, its ?rest_route=, as in Laravel, so a link
+     * signed for one route is refused on another. Scheme, host and a
+     * trailing slash are left out, so a proxy or a www redirect doesn't
+     * break a link.
+     *
+     * @param  string $url
+     * @return string
+     */
+    protected function signedTarget($url)
+    {
+        $parts = parse_url($url);
+
+        $target = rtrim(rawurldecode($parts['path'] ?? ''), '/');
+
+        parse_str($parts['query'] ?? '', $query);
+
+        if (isset($query['rest_route']) && is_string($query['rest_route'])) {
+            $target .= '?rest_route=/' . trim($query['rest_route'], '/');
+        }
+
+        return $target;
+    }
+
+    /**
+     * Verify the signature, made for the target (signedTarget()) the URL
+     * is on.
      * 
-     * @param  array $data
+     * @param  string $data
      * @param  string $signature
+     * @param  string $target
      * @return mixed (bool or array)
      */
-    public function verifySignature($data, $signature)
+    public function verifySignature($data, $signature, $target = '')
     {
         $encrypter = $this->resolveEncrypter();
 
-        $expected = hash_hmac('sha256', $data, $encrypter->getKey());
+        $expected = hash_hmac('sha256', $target . '|' . $data, $encrypter->getKey());
 
         if (!hash_equals($expected, $signature)) return false;
 
@@ -280,13 +312,15 @@ class UrlGenerator
     }
 
     /**
-     * Get the base REST URL (e.g., https://wpfluent.org/wp-json).
+     * Get the base REST URL as WordPress gives it: https://example.com/wp-json
+     * with pretty permalinks, https://example.com/index.php?rest_route= without
+     * them, where /wp-json/ is a 404.
      *
      * @return string
      */
     protected function buildRestBaseUrl()
     {
-        return rtrim(site_url('/wp-json'), '/');
+        return rtrim(rest_url(), '/');
     }
 
     /**
@@ -314,6 +348,10 @@ class UrlGenerator
      */
     protected function buildPath($template, &$params)
     {
+        // Fill each {name} or {name?} placeholder with $params['name'], or
+        // with '' when it's missing: 'users/{id}/posts/{slug?}' with id 5
+        // -> 'users/5/posts/'. The name is everything up to the '}', so an
+        // optional name keeps its '?', which rtrim() then removes.
         $replaced = preg_replace_callback(
             '/\{([^}]+)\??\}/',
             function ($m) use (&$params) {
@@ -339,6 +377,8 @@ class UrlGenerator
             return $url;
         }
 
-        return $url . '?' . http_build_query($query);
+        $separator = str_contains($url, '?') ? '&' : '?';
+
+        return $url . $separator . http_build_query($query);
     }
 }

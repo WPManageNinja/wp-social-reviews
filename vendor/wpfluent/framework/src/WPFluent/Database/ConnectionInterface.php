@@ -4,6 +4,10 @@ namespace WPSocialReviews\Framework\Database;
 
 use Closure;
 
+/**
+ * @method bool isSqlite() Whether WordPress runs on the SQLite drop-in.
+ * @method bool usesSqliteTranslator() Whether that drop-in runs its old engine.
+ */
 interface ConnectionInterface
 {
     /**
@@ -175,4 +179,21 @@ interface ConnectionInterface
      * @return string
      */
     public function getDatabaseName();
+
+    /**
+     * Run a raw, unprepared query against the connection and return a cursor.
+     *
+     * @param  string  $query
+     * @param  array  $bindings
+     * @return \Generator
+     */
+    public function rawCursor($query, $bindings = []);
+
+    /**
+     * Set the transaction manager instance on the connection.
+     *
+     * @param  mixed  $manager
+     * @return $this
+     */
+    public function setTransactionManager($manager);
 }

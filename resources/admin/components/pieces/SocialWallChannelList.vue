@@ -17,7 +17,7 @@
           <span v-if="channel.template" class="wpsr-channel-credential">{{ channel.template.label }}</span>
         </div>
         <div class="wpsr-actions wpsr-jc-center">
-          <remove @on-confirm="removeChannel(key)"></remove>
+          <remove @confirm="removeChannel(key)"></remove>
         </div>
       </div>
 

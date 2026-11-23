@@ -717,14 +717,14 @@ class InstagramWidget extends Widget_Base {
     protected function render() {
 
         $settings = $this->get_settings_for_display();
-        extract($settings);
-        if(!empty($instagram_template_list)){
+        $wpsr_template_id = absint(Arr::get($settings, 'instagram_template_list'));
+        if(!empty($wpsr_template_id)){
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking for editor context, not processing sensitive form data
             $postId = absint(Arr::get($_REQUEST, 'editor_post_id'));
             if ($postId) {
                 Helper::saveTemplateMeta($postId, 'ig');
             }
-            echo do_shortcode('[wp_social_ninja id="' . $instagram_template_list . '" platform="instagram"]');
+            echo do_shortcode('[wp_social_ninja id="' . $wpsr_template_id . '" platform="instagram"]');
         }
     }
 }

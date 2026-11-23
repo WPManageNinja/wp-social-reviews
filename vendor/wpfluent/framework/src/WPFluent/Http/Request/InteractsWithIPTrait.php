@@ -66,38 +66,38 @@ trait InteractsWithIPTrait
             return $this->isValidIp($remoteAddr) ? $remoteAddr : '127.0.0.1';
         }
 
-        // Trusted proxy detected → check forwarded headers
+        // Behind trusted proxies, X-Forwarded-For is "client, proxy1, ...":
+        // each proxy appends the address it saw, and whatever is to the
+        // left of what the first trusted proxy appended is the client's own
+        // text. So the visitor is the rightmost address that isn't a
+        // trusted proxy.
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $chain = array_map('trim', explode(',', $this->sanitize($_SERVER['HTTP_X_FORWARDED_FOR'])));
 
-        // Cloudflare header
-        if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
-            $cfIp = $this->sanitize($_SERVER['HTTP_CF_CONNECTING_IP']);
-            if ($this->isValidIp($cfIp)) {
-                return $cfIp;
+            foreach (array_reverse($chain) as $ip) {
+                if (!$this->isValidIp($ip)) {
+                    break;
+                }
+
+                if (!$this->isTrustedProxy($ip)) {
+                    return $ip;
+                }
             }
         }
 
-        // X-Forwarded-For header (may contain multiple IPs)
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwarded = $this->sanitize($_SERVER['HTTP_X_FORWARDED_FOR']);
-            $ips = explode(',', $forwarded);
-            foreach ($ips as $ip) {
-                $ip = trim($ip);
+        // Without X-Forwarded-For, the single-address headers some proxies
+        // set (Cloudflare's, nginx's) instead.
+        foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP'] as $header) {
+            if (empty($_SERVER['HTTP_X_FORWARDED_FOR']) && !empty($_SERVER[$header])) {
+                $ip = $this->sanitize($_SERVER[$header]);
+
                 if ($this->isValidIp($ip)) {
                     return $ip;
                 }
             }
         }
 
-        // X-Real-IP fallback
-        if (!empty($_SERVER['HTTP_X_REAL_IP'])) {
-            $realIp = $this->sanitize($_SERVER['HTTP_X_REAL_IP']);
-            if ($this->isValidIp($realIp)) {
-                return $realIp;
-            }
-        }
-
-        // Fallback to REMOTE_ADDR
-        return $this->isValidIp($remoteAddr) ? $remoteAddr : '127.0.0.1';
+        return $remoteAddr;
     }
 
     /**
@@ -159,41 +159,47 @@ trait InteractsWithIPTrait
     }
 
     /**
-     * Check if an IPv4 address is within a CIDR range.
+     * Whether an address is a given one, or within a CIDR range: IPv4
+     * ("173.245.48.0/20") or IPv6 ("2001:db8::/32").
      *
-     * @param string $ip   IP address to check (e.g., "173.245.50.10")
-     * @param string $cidr CIDR range (e.g., "173.245.48.0/20")
-     * @return bool        True if IP is inside the range, false otherwise
+     * @param string $ip
+     * @param string $cidr
+     * @return bool
      */
     protected function ipInRange($ip, $cidr)
     {
-        // If there is no slash, treat CIDR as a single IP
         if (strpos($cidr, '/') === false) {
-            return $ip === $cidr;
+            return @inet_pton($ip) !== false && @inet_pton($ip) === @inet_pton($cidr);
         }
 
-        // Split CIDR into subnet and mask length
-        list($subnet, $maskLength) = explode('/', $cidr);
+        list($subnet, $bits) = explode('/', $cidr, 2);
 
-        // Convert IP and subnet to long integers (32-bit numbers)
-        $ipLong     = ip2long($ip);
-        $subnetLong = ip2long($subnet);
+        $ipBytes = @inet_pton($ip);
+        $subnetBytes = @inet_pton($subnet);
 
-        // If conversion fails (invalid IP), return false
-        if ($ipLong === false || $subnetLong === false) {
+        // Both addresses of one family, and a mask that fits it.
+        if ($ipBytes === false || $subnetBytes === false || strlen($ipBytes) !== strlen($subnetBytes)) {
             return false;
         }
 
-        // Create a netmask with $maskLength ones on the left
-        // Example: /20 → 11111111.11111111.11110000.00000000
-        $mask = -1 << (32 - (int) $maskLength);
+        $bits = (int) $bits;
 
-        // Apply netmask to subnet to get canonical network address
-        // Clears host bits to ensure proper comparison
-        $network = $subnetLong & $mask;
+        if ($bits < 0 || $bits > strlen($ipBytes) * 8) {
+            return false;
+        }
 
-        // Apply same mask to target IP and compare with network
-        // If equal → IP is inside the CIDR range
-        return ($ipLong & $mask) === $network;
+        $bytes = intdiv($bits, 8);
+
+        if (substr($ipBytes, 0, $bytes) !== substr($subnetBytes, 0, $bytes)) {
+            return false;
+        }
+
+        if ($bits % 8 === 0) {
+            return true;
+        }
+
+        $mask = (0xFF << (8 - $bits % 8)) & 0xFF;
+
+        return (ord($ipBytes[$bytes]) & $mask) === (ord($subnetBytes[$bytes]) & $mask);
     }
 }

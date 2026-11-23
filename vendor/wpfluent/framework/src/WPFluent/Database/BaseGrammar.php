@@ -5,7 +5,7 @@ namespace WPSocialReviews\Framework\Database;
 use RuntimeException;
 use WPSocialReviews\Framework\Support\Helper;
 use WPSocialReviews\Framework\Database\Schema;
-use WPSocialReviews\Framework\Support\MacroableTrait;
+use WPSocialReviews\Framework\Support\Concerns\MacroableTrait;
 use WPSocialReviews\Framework\Database\Query\Expression;
 
 abstract class BaseGrammar
@@ -27,18 +27,27 @@ abstract class BaseGrammar
     protected $connection;
 
     /**
-     * The base prefix frpm $wpdb.
+     * The base prefix, when there is no $wpdb to read it from.
      *
      * @var string
      */
     protected $basePrefix = '';
 
     /**
-     * The grammar table prefix.
+     * The table prefix, when there is no $wpdb to read it from.
      *
      * @var string
      */
     protected $tablePrefix = '';
+
+    /**
+     * WordPress's database object, whose prefixes are read as each query is
+     * compiled: switch_to_blog() changes them, and a query's tables are the
+     * site that is current when it runs, as $wpdb->posts is.
+     *
+     * @var \wpdb|null
+     */
+    protected $wpdb;
 
     /**
      * Check if the given table is a built-in table.
@@ -147,7 +156,7 @@ abstract class BaseGrammar
         }
         
         if (!is_multisite()) {
-            return $this->tablePrefix;
+            return $this->getTablePrefix();
         }
 
         $sharedTables = [
@@ -163,7 +172,7 @@ abstract class BaseGrammar
 
         return in_array(
             $table, $sharedTables
-        ) ? $this->basePrefix : $this->tablePrefix;
+        ) ? $this->getBasePrefix() : $this->getTablePrefix();
     }
 
     /**
@@ -174,6 +183,8 @@ abstract class BaseGrammar
      */
     protected function wrapAliasedValue($value)
     {
+        // Split around the word "as", in any case, with spaces on both
+        // sides: 'users.name as author' -> ['users.name', 'author'].
         $segments = preg_split('/\s+as\s+/i', $value);
 
         return $this->wrap(
@@ -189,6 +200,8 @@ abstract class BaseGrammar
      */
     protected function wrapAliasedTable($value)
     {
+        // Split around the word "as", in any case, with spaces on both
+        // sides: 'users.name as author' -> ['users.name', 'author'].
         $segments = preg_split('/\s+as\s+/i', $value);
 
         $this->alias[] = $alias = $this->wrapValue($segments[1]);
@@ -363,17 +376,31 @@ abstract class BaseGrammar
      */
     public function getTablePrefix()
     {
-        return $this->tablePrefix;
+        return $this->wpdb ? $this->wpdb->prefix : $this->tablePrefix;
     }
 
     /**
-     * Set the grammar's table prefix.
+     * Get the prefix of the tables a multisite's sites share (users,
+     * usermeta, ...).
+     *
+     * @return string
+     */
+    public function getBasePrefix()
+    {
+        return $this->wpdb ? $this->wpdb->base_prefix : $this->basePrefix;
+    }
+
+    /**
+     * Read the table prefixes from WordPress's database object, as each
+     * query is compiled.
      *
      * @param object $wpdb WordPress database object
      * @return $this
      */
     public function setTablePrefix($wpdb)
     {
+        $this->wpdb = $wpdb;
+
         $this->basePrefix = $wpdb->base_prefix;
 
         $this->tablePrefix = $wpdb->prefix;
@@ -395,12 +422,27 @@ abstract class BaseGrammar
     }
 
     /**
-     * Track table aliases.
-     * 
-     * @param void
+     * Compile with the query's table aliases known, on top of those of the
+     * queries it is part of (a subquery may name its parent's alias). They
+     * are forgotten when the compile ends, so an alias never unprefixes a
+     * table of the same name in another query.
+     *
+     * @param  \WPSocialReviews\Framework\Database\Query\Builder  $query
+     * @param  callable  $compile
+     * @return mixed
      */
-    public function addAlias($alias)
+    public function withAliasesOf($query, callable $compile)
     {
-        $this->alias[] = "`$alias`";
+        $outer = $this->alias;
+
+        foreach ($query->aliases as $alias) {
+            $this->alias[] = $this->wrapValue(trim($alias));
+        }
+
+        try {
+            return $compile();
+        } finally {
+            $this->alias = $outer;
+        }
     }
 }

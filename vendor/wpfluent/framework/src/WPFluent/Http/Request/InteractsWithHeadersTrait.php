@@ -107,7 +107,7 @@ trait InteractsWithHeadersTrait
         }
 
         if (isset($headers['AUTHORIZATION'])) {
-            return $headers;
+            return $this->headers = $headers;
         }
 
         // PHP_AUTH_USER/PHP_AUTH_PW

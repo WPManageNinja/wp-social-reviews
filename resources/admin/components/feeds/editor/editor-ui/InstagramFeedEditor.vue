@@ -467,15 +467,18 @@ export default {
                         }
                     ],
                     tooltip: true,
-                    tooltipText: this.$t(
-                        '<strong>Limitations</strong><br/><br/>' +
-                        'Popular and Recent Hashtag: <br/>' +
-                        '- Only returns public photos and videos. <br/>' +
-                        '- Will not return promoted/boosted/ads media. <br/>' +
-                        '- You can query a maximum of 30 unique hashtags within a 7 day period. <br/><br/>' +
-                        'Recent Hashtag: <br/>' +
-                        '- Only returns media objects published within 24 hours of query execution.'
-                    ),
+                    tooltipText: '<strong>' + this.$t('Limitations') + '</strong><br/><br/>' +
+                        this.$t('Popular and Recent Hashtag:') + '<br/>' +
+                        '- ' + this.$t('Only returns public photos and videos.') + '<br/>' +
+                        '- ' + this.$t('Will not return promoted/boosted/ads media.') + '<br/>' +
+                        '- ' + this.$t('You can query a maximum of 30 unique hashtags within a 7 day period.') + '<br/><br/>' +
+                        this.$t('Recent Hashtag:') + '<br/>' +
+                        '- ' + this.$t('Only returns media objects published within 24 hours of query execution.') + '<br/><br/>' +
+                        this.$t('Popular Hashtag, from February 16, 2027:') + '<br/>' +
+                        '- ' + this.$t('Returns at most 200 posts per hashtag.') + '<br/>' +
+                        '- ' + this.$t('May include related posts that do not use the hashtag.') + '<br/>' +
+                        '- ' + this.$t('Includes Reels.') + '<br/>' +
+                        '- ' + this.$t('Refreshes about once an hour, so new posts can take up to an hour to appear.'),
                     condition: {
                         'key': 'feed_type',
                         'selector': 'hashtag_feed'

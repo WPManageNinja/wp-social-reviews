@@ -326,3 +326,12 @@ if(defined('LSCWP_V')){
 if (defined('WP_CLI') && WP_CLI) {
     \WP_CLI::add_command('wpsocialninja', '\WPSocialReviews\App\Hooks\CLI\Commands');
 }
+
+// Feature modules (app/Modules/{Name}/routes.php).
+/** @var \WPSocialReviews\Framework\Foundation\Application $app */
+// Application's @property names a Router\Router class that doesn't exist.
+/** @var \WPSocialReviews\Framework\Http\Router $wpsr_router */
+$wpsr_router = $app->router;
+$wpsr_router->group(function ($router) {
+    require WPSOCIALREVIEWS_DIR . 'app/Modules/SystemTools/routes.php';
+});

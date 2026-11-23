@@ -7,7 +7,7 @@ use Exception;
 use Throwable;
 use InvalidArgumentException;
 use WPSocialReviews\Framework\Foundation\App;
-use WPSocialReviews\Framework\Support\HigherOrderTapProxy;
+use WPSocialReviews\Framework\Support\Proxies\HigherOrderTapProxy;
 
 class Helper
 {

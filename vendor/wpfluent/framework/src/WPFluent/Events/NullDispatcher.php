@@ -2,7 +2,7 @@
 
 namespace WPSocialReviews\Framework\Events;
 
-use WPSocialReviews\Framework\Support\ForwardsCalls;
+use WPSocialReviews\Framework\Support\Concerns\ForwardsCalls;
 use WPSocialReviews\Framework\Events\DispatcherInterface;
 
 class NullDispatcher implements DispatcherInterface

@@ -1,6 +1,7 @@
 <?php
 defined('ABSPATH') or die;
 
+use WPSocialReviews\App\Services\Helper as GlobalHelper;
 use WPSocialReviews\App\Services\Platforms\Feeds\Youtube\Helper as YoutubeHelper;
 use WPSocialReviews\App\Services\Integrations\FluentPlayer\FluentPlayerEmbed;
 use WPSocialReviews\Framework\Support\Arr;
@@ -37,13 +38,14 @@ $wpsr_column_gaps = isset($feed_settings['column_gaps']) && $wpsr_layout_type !=
 $wpsr_feed_type = Arr::get($feed_settings, 'source_settings.feed_type', '');
 
 $wpsr_yt_header_layout_class = YoutubeHelper::getHeaderLayoutClass($feed_settings);
+$wpsr_slider_pre_init_style  = $wpsr_layout_type === 'carousel' && defined('WPSOCIALREVIEWS_PRO') ? GlobalHelper::getSliderPreInitStyle($wpsr_slider_data) : '';
 
 do_action('wpsocialreviews/youtube_template_wrapper_start');
 
 FluentPlayerEmbed::primeAssets($feed_settings);
 
 echo '<div id="wpsr-yt-feed-' . esc_attr($templateId) . '" class="' . esc_attr(implode(' ', $wpsr_classes)) . '" ' . esc_attr(implode(' ',
-        $wpsr_data_attrs)) . '>';
+        $wpsr_data_attrs)) . ($wpsr_slider_pre_init_style ? ' style="' . esc_attr($wpsr_slider_pre_init_style) . '"' : '') . '>';
 
 echo '<div class="wpsr-container">';
 

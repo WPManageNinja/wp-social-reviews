@@ -4,7 +4,7 @@ namespace WPSocialReviews\Framework\Database\Orm\Relations;
 
 use Closure;
 use WPSocialReviews\Framework\Support\Helper;
-use WPSocialReviews\Framework\Support\ArrayableInterface;
+use WPSocialReviews\Framework\Support\Contracts\ArrayableInterface;
 use WPSocialReviews\Framework\Database\Orm\Builder;
 use WPSocialReviews\Framework\Database\Orm\Collection;
 use WPSocialReviews\Framework\Database\Orm\Model;
@@ -19,6 +19,8 @@ use WPSocialReviews\Framework\Database\UniqueConstraintViolationException;
  * @template TIntermediateModel of Model
  * @template TDeclaringModel of Model
  * @template TResult
+ *
+ * @extends Relation<TRelatedModel>
  */
 abstract class HasOneOrManyThrough extends Relation
 {

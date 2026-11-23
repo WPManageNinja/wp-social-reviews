@@ -5,6 +5,7 @@ namespace WPSocialReviews\Framework\Database\Concerns;
 use Closure;
 use Throwable;
 use RuntimeException;
+use WPSocialReviews\Framework\Database\DeadlockException;
 
 trait ManagesTransactions
 {
@@ -31,22 +32,16 @@ trait ManagesTransactions
                 continue;
             }
 
-            $levelBeingCommitted = $this->transactions;
-
             try {
-                $this->commit();
+                $levelBeingCommitted = $this->performCommit();
             } catch (Throwable $e) {
                 $this->handleCommitTransactionException($e, $currentAttempt, $attempts);
                 continue;
             }
 
-            if ($this->transactionsManager) {
-                $this->transactionsManager->commit(
-                    $this->getName(),
-                    $levelBeingCommitted,
-                    $this->transactions
-                );
-            }
+            // The after-commit callbacks run outside the try block, so an
+            // exception thrown by one is not mistaken for a failed commit.
+            $this->finishCommit($levelBeingCommitted);
 
             return $result;
         }
@@ -62,7 +57,13 @@ trait ManagesTransactions
             $this->transactions++;
 
             if ($this->queryGrammar->supportsSavepoints()) {
-                $this->createSavepoint();
+                try {
+                    $this->createSavepoint();
+                } catch (Throwable $e) {
+                    $this->transactions--;
+
+                    throw $e;
+                }
             }
 
             if ($this->transactionsManager) {
@@ -108,13 +109,15 @@ trait ManagesTransactions
         // mis-call from a subclass or refactor.
         if ($this->transactions === 1) {
             try {
-                if ($this->isSqlite()) {
-                    $this->unprepared('BEGIN;');
-                } else {
-                    $this->unprepared('START TRANSACTION;');
-                }
+                $this->transactionStatement('START TRANSACTION;');
             } catch (Throwable $e) {
-                $this->handleBeginTransactionException($e);
+                try {
+                    $this->handleBeginTransactionException($e);
+                } catch (Throwable $e) {
+                    $this->transactions--;
+
+                    throw $e;
+                }
             }
         }
     }
@@ -124,8 +127,14 @@ trait ManagesTransactions
      */
     protected function createSavepoint()
     {
+        if ($this->nestsTransactionsItself()) {
+            $this->transactionStatement('START TRANSACTION;');
+
+            return;
+        }
+
         $name = $this->getSavepointName($this->transactions);
-        $this->unprepared(
+        $this->transactionStatement(
             $this->queryGrammar->compileSavepoint($name) . ';'
         );
     }
@@ -139,15 +148,29 @@ trait ManagesTransactions
             return;
         }
 
+        $this->finishCommit($this->performCommit());
+    }
+
+    /**
+     * Issue the COMMIT or release the savepoint, and lower the level.
+     *
+     * @return int  The level that was committed.
+     */
+    protected function performCommit()
+    {
         if ($this->transactions === 1) {
 
             $this->fireConnectionEvent('committing');
-            $this->unprepared('COMMIT;');
+            $this->transactionStatement('COMMIT;');
+
+        } elseif ($this->nestsTransactionsItself()) {
+
+            $this->transactionStatement('COMMIT;');
 
         } elseif ($this->queryGrammar->supportsSavepoints()) {
 
             $name = $this->getSavepointName($this->transactions);
-            $this->unprepared(
+            $this->transactionStatement(
                 $this->queryGrammar->compileSavepointRelease($name) . ';'
             );
         }
@@ -157,6 +180,17 @@ trait ManagesTransactions
             max(0, $this->transactions - 1),
         ];
 
+        return $levelBeingCommitted;
+    }
+
+    /**
+     * Tell the transactions manager about a commit and fire the event.
+     *
+     * @param  int  $levelBeingCommitted
+     * @return void
+     */
+    protected function finishCommit($levelBeingCommitted)
+    {
         if ($this->transactionsManager) {
             $this->transactionsManager->commit(
                 $this->getName(),
@@ -181,10 +215,14 @@ trait ManagesTransactions
             return;
         }
 
+        // The level goes down even when the statement fails, so the count
+        // never drifts from what the caller left behind.
+        $failure = null;
+
         try {
             $this->performRollBack($toLevel);
         } catch (Throwable $e) {
-            $this->handleRollBackException($e);
+            $failure = $e;
         }
 
         $this->transactions = $toLevel;
@@ -197,6 +235,10 @@ trait ManagesTransactions
         }
 
         $this->fireConnectionEvent('rollingBack');
+
+        if ($failure) {
+            $this->handleRollBackException($failure);
+        }
     }
 
     /**
@@ -204,24 +246,25 @@ trait ManagesTransactions
      */
     protected function performRollBack($toLevel)
     {
+        // Each ROLLBACK closes one level there, the outermost included.
+        if ($this->nestsTransactionsItself()) {
+            for ($level = $this->transactions; $level > $toLevel; $level--) {
+                $this->transactionStatement('ROLLBACK;');
+            }
+
+            return;
+        }
+
         if ($toLevel === 0) {
 
-            // Defensive: only ROLLBACK if we actually have an active
-            // transaction, and only decrement the counter if the SQL
-            // succeeded — protects against counter drift if the
-            // ROLLBACK silently fails (e.g., connection drop).
             if ($this->inTransaction()) {
-                $transaction = $this->unprepared('ROLLBACK;');
-
-                if ($transaction !== false) {
-                    $this->transactions--;
-                }
+                $this->transactionStatement('ROLLBACK;');
             }
 
         } elseif ($this->queryGrammar->supportsSavepoints()) {
 
             $name = $this->getSavepointName($toLevel + 1);
-            $this->unprepared(
+            $this->transactionStatement(
                 $this->queryGrammar->compileSavepointRollBack($name) . ';'
             );
         }
@@ -232,7 +275,38 @@ trait ManagesTransactions
      */
     protected function handleTransactionException(Throwable $e, $currentAttempt, $maxAttempts)
     {
-        $this->rollBack();
+        // A deadlock undoes the whole transaction in MySQL, the outer one
+        // too, so a nested transaction can't run again on its own: the
+        // outer one decides whether to retry.
+        if ($this->causedByConcurrencyError($e) && $this->transactions > 1) {
+            $this->transactions--;
+
+            if ($this->transactionsManager) {
+                $this->transactionsManager->rollback(
+                    $this->getName(),
+                    $this->transactions
+                );
+            }
+
+            throw new DeadlockException(
+                $e->getMessage(), is_int($e->getCode()) ? $e->getCode() : 0, $e
+            );
+        }
+
+        // The callback's exception is what the caller needs, even when the
+        // rollback fails too: the database may have undone the work itself
+        // (SQLite drops a savepoint when a statement in it fails).
+        try {
+            $this->rollBack();
+        } catch (Throwable $rollBackFailure) {
+            //
+        }
+
+        // A lock clash may not happen again: run the callback once more.
+        if ($this->causedByConcurrencyError($e) && $currentAttempt < $maxAttempts) {
+            return;
+        }
+
         throw $e;
     }
 
@@ -242,6 +316,10 @@ trait ManagesTransactions
     protected function handleCommitTransactionException(Throwable $e, $currentAttempt, $maxAttempts)
     {
         $this->transactions = max(0, $this->transactions - 1);
+
+        if ($this->causedByConcurrencyError($e) && $currentAttempt < $maxAttempts) {
+            return;
+        }
 
         if ($this->causedByLostConnection($e)) {
             $this->transactions = 0;
@@ -255,11 +333,13 @@ trait ManagesTransactions
      */
     protected function handleBeginTransactionException(Throwable $e)
     {
-        if ($this->causedByLostConnection($e)) {
-            $this->reconnect();
-        } else {
+        if (! $this->causedByLostConnection($e)) {
             throw $e;
         }
+
+        $this->reconnect();
+
+        $this->transactionStatement('START TRANSACTION;');
     }
 
     /**

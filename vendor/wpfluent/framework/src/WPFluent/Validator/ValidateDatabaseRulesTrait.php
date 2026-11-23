@@ -25,13 +25,34 @@ trait ValidateDatabaseRulesTrait
 
         [$connection, $table] = $this->parseTable($parameters[0]);
         
-        $column = isset($parameters[1]) ? $parameters[1] : $attribute;
+        $column = $this->queryColumn($attribute, $parameters);
 
         $expected = is_array($value) ? count(array_unique($value)) : 1;
 
         return $this->getExistCount(
             $connection, $table, $column, $value, $parameters
         ) >= $expected;
+    }
+
+    /**
+     * The column exists and unique look in: the one the rule names, else
+     * the field's name. Rule::exists('users') names none ('NULL'), and a
+     * wildcard field items.0.email looks in email.
+     *
+     * @param  string  $attribute
+     * @param  array  $parameters
+     * @return string
+     */
+    protected function queryColumn($attribute, $parameters)
+    {
+        if (isset($parameters[1]) && $parameters[1] !== 'NULL') {
+            return $parameters[1];
+        }
+
+        $segments = explode('.', $attribute);
+        $last = end($segments);
+
+        return count($segments) > 1 && !is_numeric($last) ? $last : $attribute;
     }
 
     /**
@@ -214,7 +235,7 @@ trait ValidateDatabaseRulesTrait
 
         [$connection, $table, $idColumn] = $this->parseTable($parameters[0]);
 
-        $column = isset($parameters[1]) ? $parameters[1] : $attribute;
+        $column = $this->queryColumn($attribute, $parameters);
 
         $id = null;
 
@@ -259,6 +280,8 @@ trait ValidateDatabaseRulesTrait
      */
     protected function prepareUniqueId($id)
     {
+        // An id in brackets names a field whose value is the id:
+        // '[user_id]' -> the value of the user_id field.
         if (preg_match('/\[(.*)\]/', $id, $matches)) {
             $id = $this->getValue($matches[1]);
         }

@@ -5,10 +5,15 @@ namespace WPSocialReviews\Framework\Http\Request;
 use Closure;
 use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\Framework\Support\Helper;
-use WPSocialReviews\Framework\Support\MacroableTrait;
+use WPSocialReviews\Framework\Support\Concerns\MacroableTrait;
 use WPSocialReviews\Framework\Foundation\Application;
 use WPSocialReviews\Framework\Validator\ValidationException;
 
+/**
+ * @method mixed route(string|null $key = null) The current route, or one of
+ *     its values: route('id') is the {id} in the URL, as text; null when
+ *     the route has no such name.
+ */
 class Request
 {
     use InteractsWithCleaningTrait,
@@ -84,9 +89,17 @@ class Request
 
     /**
      * WP_REST_Request instance
-     * @var \WP_REST_Request
+     * @var \WP_REST_Request|false
      */
     protected $wpRestRequest = false;
+
+    /**
+     * The query and the form input PHP gave the request, before any REST
+     * request's input was merged in: each REST request starts from them.
+     *
+     * @var array{get: array, post: array}
+     */
+    protected $phpInput = ['get' => [], 'post' => []];
 
     /**
      * Validated data after validation has been passed
@@ -106,8 +119,8 @@ class Request
     /**
      * Construct the request instance
      * @param \WPSocialReviews\Framework\Foundation\Application $app
-     * @param $_GET $get
-     * @param $_POST $post
+     * @param array $get
+     * @param array $post
      */
     public function __construct(Application $app, $get, $post)
     {
@@ -119,6 +132,8 @@ class Request
             $this->get = $this->clean($get),
             $this->post = $this->clean($post)
         );
+
+        $this->phpInput = ['get' => $this->get, 'post' => $this->post];
     }
 
     /**
@@ -299,50 +314,181 @@ class Request
 
     /**
      * Check if current request is a Rest request
-     * 
+     *
+     * A REST request WordPress serves (REST_REQUEST, which
+     * wp_is_serving_rest_request() reads), or one dispatched inside another
+     * request with rest_do_request(): a batch item, a preload, a call from
+     * an admin-ajax handler. WordPress 6.5 and later tell that with
+     * wp_is_rest_endpoint() (other plugins may answer through its filter);
+     * on every supported version, the plugin's own route running counts.
+     *
+     * WordPress defines REST_REQUEST only once it routes the request, on
+     * parse_request, after plugins have loaded; until then, the request is a
+     * REST request when it has ?rest_route= or its path is under the REST
+     * prefix, below the site's own path: /wp-json/..., or /blog/wp-json/...
+     * for WordPress in a subfolder. After it, the constant decides.
+     *
      * @return boolean
      */
     public function isRest()
     {
-        $isRest = false;
-
-        if ($this->app->isUnitTesting()) {
-            return $isRest;
+        if ($this->isForEndpoints()) {
+            return false;
         }
 
-        $url = $this->url();
-
-        $niddle = $this->app->config->get(
-            'app.rest_namespace'
-        ).'/__endpoints';
-
-        if (str_contains($url, $niddle)) {
-            return $isRest;
+        if (defined('REST_REQUEST') && REST_REQUEST) {
+            return true;
         }
 
-        $isRest = defined('REST_REQUEST') && REST_REQUEST;
-
-        if (!$isRest) {
-            if (!get_option('permalink_structure')) {
-                $isRest = $this->query('rest_route', false);
-            } else {
-                $parsed = parse_url($url);
-                $path = isset($parsed['path']) ? $parsed['path'] : '';
-                $isRest = str_starts_with($path, '/wp-json');
-            }
+        if ($this->isOwnRouteRunning()) {
+            return true;
         }
 
-        return $isRest;
+        if (function_exists('wp_is_rest_endpoint') && wp_is_rest_endpoint()) {
+            return true;
+        }
+
+        // Once WordPress has parsed the request, REST_REQUEST is its answer:
+        // /wp-json/... with plain permalinks, say, is a page, not REST. It is
+        // defined during parse_request (rest_api_loaded, priority 10), so the
+        // URL still decides until that action is over.
+        if (did_action('parse_request') && !doing_action('parse_request')) {
+            return false;
+        }
+
+        return $this->restRoute() !== '';
     }
 
     /**
-     * Determine if the request is initiated by WordPress.
-     * 
-     * @return boolean
+     * Whether one of the plugin's routes is running its controller now,
+     * dispatched by WordPress or with rest_do_request().
+     *
+     * @return bool
+     */
+    protected function isOwnRouteRunning()
+    {
+        if (!$this->app->bound('route')) {
+            return false;
+        }
+
+        $route = $this->app->make('route');
+
+        // The plugin's REST route only: a package's routes (web pages)
+        // dispatch too, but aren't REST.
+        return $route instanceof \WPSocialReviews\Framework\Http\Route && $route->isDispatching();
+    }
+
+    /**
+     * Check if the request asks for the plugin's endpoint map.
+     *
+     * The admin app asks {rest_namespace}/{version}/__endpoints. Plugins
+     * made from the skeleton before 2026-02-25 ask for the namespace twice,
+     * {rest_namespace}/{version}/{rest_namespace}/__endpoints, so any route
+     * under the plugin's namespace that ends in /__endpoints counts.
+     *
+     * @param  string|null $route The REST route, e.g. /myplugin/v2/__endpoints;
+     *                            the current request's when null.
+     * @return bool
+     */
+    public function isForEndpoints($route = null)
+    {
+        $route = '/' . trim($route ?? $this->restRoute(), '/');
+
+        $namespace = '/' . trim(
+            (string) $this->app->config->get('app.rest_namespace'), '/'
+        ) . '/';
+
+        return str_starts_with($route, $namespace)
+            && str_ends_with($route, '/__endpoints');
+    }
+
+    /**
+     * Get the REST route a URL, or the request, asks for.
+     *
+     * @param  string|null $url A full URL; the current request's when null.
+     * @return string The route, e.g. /myplugin/v2/posts; '' when it is not
+     *                a REST request.
+     */
+    public function restRoute($url = null)
+    {
+        if ($url === null) {
+            $route = $this->query('rest_route');
+        } else {
+            parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+            $route = $query['rest_route'] ?? null;
+        }
+
+        if ($route && is_string($route)) {
+            return '/' . trim($route, '/');
+        }
+
+        // Where the REST API is, as get_rest_url() puts it: with plain
+        // permalinks only at ?rest_route= (/wp-json/... is a page then);
+        // with index permalinks (/index.php/%postname%/) at
+        // /index.php/wp-json/; otherwise at /wp-json/, unless a plugin
+        // changed the prefix.
+        $structure = (string) get_option('permalink_structure');
+
+        if ($structure === '') {
+            return '';
+        }
+
+        $prefix = '/' . trim(rest_get_url_prefix(), '/') . '/';
+
+        if (preg_match('#^/*index\.php#', $structure)) {
+            $prefix = '/index.php' . $prefix;
+        }
+
+        $path = $this->sitePath($url) . '/';
+
+        if (!str_starts_with($path, $prefix)) {
+            return '';
+        }
+
+        return '/' . trim(substr($path, strlen($prefix)), '/');
+    }
+
+    /**
+     * Get the path of a URL, or of the request, below the site's home:
+     * /shop/cart for http://example.com/blog/shop/cart when WordPress lives
+     * in /blog.
+     *
+     * @param  string|null $url A full URL; the current request's when null.
+     * @return string
+     */
+    public function sitePath($url = null)
+    {
+        $path = (string) parse_url(
+            $url ?? $this->server('REQUEST_URI', ''), PHP_URL_PATH
+        );
+
+        $home = rtrim((string) parse_url(home_url(), PHP_URL_PATH), '/');
+
+        if ($home !== '' && ($path === $home || str_starts_with($path, $home . '/'))) {
+            $path = substr($path, strlen($home));
+        }
+
+        return '/' . ltrim($path, '/');
+    }
+
+    /**
+     * Whether a REST request is being dispatched now: one WordPress serves,
+     * or one run inside another request with rest_do_request(). The
+     * plugin's own route running counts on every supported WordPress;
+     * WP_REST_Server::is_dispatching() only exists from 6.5. False without
+     * a REST server.
+     *
+     * @return bool
      */
     public function isInternal()
     {
-        return $GLOBALS['wp_rest_server']->is_dispatching();
+        if ($this->isOwnRouteRunning()) {
+            return true;
+        }
+
+        $server = $GLOBALS['wp_rest_server'] ?? null;
+
+        return is_object($server) && method_exists($server, 'is_dispatching') && $server->is_dispatching();
     }
 
     /**
@@ -532,7 +678,9 @@ class Request
      */
     public function getContent()
     {
-        if (!$this->content) {
+        // A REST request's body is its own, even when empty: in a batch,
+        // php://input is the batch's body.
+        if (is_null($this->content)) {
             $this->content = file_get_contents('php://input');
         }
 
@@ -540,25 +688,40 @@ class Request
     }
 
     /**
-     * Merges the input arrays from the WP_REST_Request.
-     * 
+     * Take the input of a WP_REST_Request.
+     *
+     * The request is one shared object, and several REST requests can run
+     * in one PHP process (the batch API, rest_do_request(), WP-CLI), so
+     * each starts from the input PHP gave and adds only its own: nothing
+     * from the REST request before it (input, JSON, body, headers, what
+     * was validated) is left over.
+     *
      * @param  \WP_REST_Request $wpRestRequest
      * @return void
      */
     public function mergeInputsFromRestRequest($wpRestRequest)
     {
-        $this->request = array_merge(
-            $this->request, $wpRestRequest->get_params()
-        );
-        
-        $this->post = array_merge(
-            $this->post, $wpRestRequest->get_body_params()
-        );
-
         $this->get = array_merge(
-            $this->get, $wpRestRequest->get_query_params()
+            $this->phpInput['get'], $wpRestRequest->get_query_params()
         );
 
+        $this->post = array_merge(
+            $this->phpInput['post'], $wpRestRequest->get_body_params()
+        );
+
+        $this->request = array_merge(
+            $this->phpInput['get'],
+            $this->phpInput['post'],
+            $wpRestRequest->get_params()
+        );
+
+        $this->json = [];
+        $this->content = $wpRestRequest->get_body();
+        $this->validated = [];
+        $this->safe = false;
+
+        $this->headers = [];
+        $this->setHeaders();
         $this->mergerHeaders($wpRestRequest);
 
         $this->wpRestRequest = true;
@@ -616,6 +779,26 @@ class Request
     }
 
     /**
+     * Remove query-string values from the request. A body field of the
+     * same name stays among the inputs.
+     *
+     * @param  string|string[] $keys
+     * @return self
+     */
+    public function forgetQuery($keys)
+    {
+        foreach ((array) $keys as $key) {
+            Arr::forget($this->get, $key);
+
+            if (!array_key_exists($key, $this->post)) {
+                Arr::forget($this->request, $key);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * Get all inputs
      * 
      * @return array
@@ -668,17 +851,27 @@ class Request
      */
     public function url()
     {
-        return preg_replace('/\?.*/', '', $this->getFullUrl());
+        // Cut off the query string, everything from the first '?', then a
+        // trailing slash, as in Laravel: '.../posts/?page=2' -> '.../posts'.
+        return rtrim(preg_replace('/\?.*/', '', $this->getFullUrl()), '/');
     }
 
     /**
-     * Get the full URL for the request.
+     * Get the full URL for the request: the site's scheme, host and port,
+     * and the path and query the browser asked for. REQUEST_URI already
+     * holds the folder WordPress lives in, so the site URL's own path is
+     * not added. Without a request (WP-CLI, cron), the site's origin.
      *
      * @return string
      */
     public function getFullUrl()
     {
-        return get_site_url() . rtrim($_SERVER['REQUEST_URI'], '/');
+        $site = wp_parse_url(get_site_url());
+
+        $origin = ($site['scheme'] ?? 'http') . '://' . ($site['host'] ?? '')
+            . (isset($site['port']) ? ':' . $site['port'] : '');
+
+        return $origin . rtrim($_SERVER['REQUEST_URI'] ?? '', '/');
     }
 
     /**
@@ -686,14 +879,17 @@ class Request
      *
      * @param  array $rules
      * @param  array $messages
+     * @param  array $attributes The names the messages give the fields.
      * @return mixed
      * @throws \WPSocialReviews\Framework\Validator\ValidationException
      */
-    public function validate(array $rules, array $messages = [])
+    public function validate(array $rules, array $messages = [], array $attributes = [])
     {
         $this->validator = $this->app->make('validator')->make(
-            $data = $this->all(), $rules, $messages
+            $this->withUploadsFor($rules), $rules, $messages, $attributes
         );
+
+        $data = $this->all();
 
         if ($this->validator->validate()->fails()) {
             throw new ValidationException(
@@ -702,6 +898,32 @@ class Request
         }
 
         $this->validated = $this->validator->validated();
+
+        return $data;
+    }
+
+    /**
+     * Get the inputs plus the uploads a rule names, so file rules can check
+     * them. Uploads are turned into File objects only when a rule asks.
+     *
+     * @param  array $rules
+     * @return array
+     */
+    protected function withUploadsFor(array $rules)
+    {
+        $data = $this->all();
+
+        foreach (array_keys($rules) as $key) {
+            $input = explode('.', $key)[0];
+
+            if (!isset($_FILES[$input]) && !isset($this->files[$input])) {
+                continue;
+            }
+
+            if (!is_null($upload = $this->files($input))) {
+                $data[$input] = $upload;
+            }
+        }
 
         return $data;
     }
@@ -812,9 +1034,10 @@ class Request
     }
 
     /**
-     * Retrieves the currently logged in user.
-     * 
-     * @return \WPSocialReviews\Framework\Http\Request\WPUserProxy
+     * WordPress's current user with a way through to the plugin's User model,
+     * the same object as $app->user(). Use exists() to tell a guest.
+     *
+     * @return \WPSocialReviews\Framework\Http\Request\CurrentUser
      */
     public function user()
     {
@@ -845,6 +1068,12 @@ class Request
         if ($this->app->bound('wprestrequest')) {
             // @phpstan-ignore-next-line
             if (!method_exists($this->app->wprestrequest, $method)) {
+                // Turn camelCase into snake_case: 'getURLParams' ->
+                // 'get_url_params'. The first pattern puts '_' between a
+                // lowercase letter or digit and a capital
+                // ('get_URLParams'), the second before a capital that is
+                // followed by a lowercase letter, when no '_' is there yet
+                // ('get_URL_Params'); strtolower() does the rest.
                 $method = strtolower(
                     preg_replace([
                         '/([a-z\d])([A-Z])/', '/([^_])([A-Z][a-z])/'

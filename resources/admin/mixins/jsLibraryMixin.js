@@ -125,6 +125,11 @@ export const jsLibraryMixin = {
             let id = jQuery(containerClass);
             let that = this;
             let el = document.querySelector(containerClass + " " + feedWrapperClass);
+            // Masonry built on a null element has no items, and its destroy() then throws.
+            if (!el) {
+                this.loading = false;
+                return;
+            }
 
             //let column = jQuery('.wpsr-active-masonry-layout').data("column");
             id.imagesLoaded(function () {

@@ -74,7 +74,7 @@
           <ReviewBody
               :review="review"
               :template_meta="template_meta"
-              @expandcontent="expandContent"
+              @expandContent="expandContent"
           />
       </div>
   </div>

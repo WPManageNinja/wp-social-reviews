@@ -2,31 +2,25 @@
 
 namespace WPSocialReviews\Framework\Http;
 
-use Closure;
-use Exception;
-use Throwable;
-use WP_Error;
-use WP_REST_Request;
-use WP_REST_Response;
-use ReflectionClass;
-use BadMethodCallException;
 use InvalidArgumentException;
-use WPSocialReviews\Framework\Support\Arr;
-use WPSocialReviews\Framework\Support\Str;
-use WPSocialReviews\Framework\Support\Pipeline;
-use WPSocialReviews\Framework\Http\Request\Request;
-use WPSocialReviews\Framework\Http\Request\WPUserProxy;
 use WPSocialReviews\Framework\Http\SubstituteParameters;
 use WPSocialReviews\Framework\Http\Middleware\RateLimiter;
-use WPSocialReviews\Framework\Validator\ValidationException;
-use WPSocialReviews\Framework\Database\Orm\ModelNotFoundException;
-use WPSocialReviews\Framework\Foundation\Exceptions\HttpException;
-use WPSocialReviews\Framework\Foundation\Exceptions\ExceptionHandler;
-use WPSocialReviews\Framework\Http\Response\Response as WPFluentResponse;
+use WPSocialReviews\Framework\Http\Concerns\ChecksPermissionTrait;
+use WPSocialReviews\Framework\Http\Concerns\DescribesRouteTrait;
+use WPSocialReviews\Framework\Http\Concerns\DispatchesActionTrait;
+use WPSocialReviews\Framework\Http\Concerns\RegistersRouteTrait;
+use WPSocialReviews\Framework\Http\Concerns\ResolvesPolicyTrait;
+use WPSocialReviews\Framework\Http\Concerns\ResolvesMiddlewareTrait;
 
 class Route
 {
-    use SubstituteParameters;
+    use SubstituteParameters,
+        RegistersRouteTrait,
+        DescribesRouteTrait,
+        ChecksPermissionTrait,
+        ResolvesPolicyTrait,
+        ResolvesMiddlewareTrait,
+        DispatchesActionTrait;
 
     /**
      * Application Instance
@@ -145,6 +139,9 @@ class Route
      * @var array
      */
     protected $predefinedNamedRegx = [
+        // Each value is one or more of: int, the digits 0-9 ('42'); alpha,
+        // the letters a-z and A-Z ('abc'); alpha_num, both ('a1');
+        // alpha_num_dash, both plus '-' and '_' ('my-slug_1').
         'int' => '[0-9]+',
         'alpha' => '[a-zA-Z]+',
         'alpha_num' => '[a-zA-Z0-9]+',
@@ -162,7 +159,29 @@ class Route
      *
      * @var null|array
      */
-    protected $substitutedParameters = [];
+    protected $substitutedParameters = null;
+
+    /**
+     * Whether the route's action is running.
+     *
+     * @var bool
+     */
+    protected $dispatching = false;
+
+    /**
+     * Whether an exception is reported through fluent_exception. Off while
+     * WordPress checks the route again to build the Allow header.
+     *
+     * @var bool
+     */
+    protected $reportExceptions = true;
+
+    /**
+     * The file the action asked to download, sent if it returns nothing.
+     *
+     * @var \WPSocialReviews\Framework\Http\Response\FileResponse|null
+     */
+    protected $download = null;
 
     /**
      * Is route signed
@@ -170,13 +189,6 @@ class Route
      * @var boolean
      */
     protected $signed = false;
-
-    /**
-     * Route signature.
-     * 
-     * @var array
-     */
-    protected $endpointSignature = [];
 
     /**
      * Response instance
@@ -201,94 +213,6 @@ class Route
         $this->uri = $uri;
         $this->handler = $handler;
         $this->method = $method;
-    }
-
-    /**
-     * Map the route to be used in front-end.
-     *
-     * @param mixed $handler
-     * @return self
-     */
-    public function preparefrontendHandlers()
-    {
-        $handler = $this->handler;
-
-        $endpointsUrl = $this->app->config->get('app.slug') . '/__endpoints';
-
-        if (get_option('permalink_structure')) {
-            $url = $this->app->request->url();
-        } else {
-            $url = $this->app->request->query('rest_route');
-        }
-
-        if (
-            !str_contains($url ?? '', $endpointsUrl)
-            || $handler instanceof Closure
-        ) {
-            return $this;
-        }
-
-        [$controller, $cb] = Str::parseCallback($this->parseAction($handler));
-
-        $this->endpointSignature = [$controller, "_{$cb}"];
-
-        $controller = str_replace('\\', '.', $controller);
-
-        // @phpstan-ignore-next-line
-        $endpoints = $this->app->endpoints;
-
-        $endpoints[$controller]["_{$cb}"] = [
-            'uri' => $this->uri,
-            'methods' => explode(',', $this->method),
-            'policy' => $this->getPolicyName()
-        ];
-
-        // @phpstan-ignore-next-line
-        $this->app->endpoints = $endpoints;
-
-        return $this;
-    }
-
-    /**
-     * Get a display name for the route's policy handler.
-     *
-     * @return string|null
-     */
-    protected function getPolicyName()
-    {
-        if (!$this->policyHandler) {
-            return null;
-        }
-
-        if ($this->policyHandler instanceof Closure) {
-            return 'Closure';
-        }
-
-        $name = $this->policyHandler;
-
-        if (is_string($name) && !$this->app->hasNamespace($name)) {
-            $name = $this->app->__namespace__ . '\\App\\Http\\Policies\\' . $name;
-        }
-
-        return $name;
-    }
-
-    /**
-     * Parse the action from the handler.
-     * 
-     * @param  mixed $handler
-     * @return string
-     */
-    protected function parseAction($handler)
-    {
-        $action = $this->app->parseRestHandler($handler, $this->namespace);
-        $action = trim($action, '\\');
-
-        if (!str_contains($action, '@')) {
-            $action .= '@__invoke';
-        }
-
-        return $action;
     }
 
     /**
@@ -323,18 +247,19 @@ class Route
     }
 
     /**
-     * Get route meta
+     * Get route meta: one value, null for a key the route doesn't have,
+     * or all of it without a key.
      *
      * @param string $key
      * @return mixed
      */
     public function getMeta($key = '')
     {
-        if (isset($this->meta[$key])) {
-            return $this->meta[$key];
+        if ($key === '' || $key === null) {
+            return $this->meta;
         }
 
-        return $this->meta;
+        return $this->meta[$key] ?? null;
     }
 
     /**
@@ -359,17 +284,19 @@ class Route
     }
 
     /**
-     * Get route action information
+     * Get route action information: one value, null for a key it doesn't
+     * have, or all of it without a key.
+     *
      * @param string $key
      * @return mixed
      */
     public function getAction($key = '')
     {
-        if ($key && array_key_exists($key, $this->actionInfo)) {
-            return $this->actionInfo[$key];
+        if ($key === '' || $key === null) {
+            return $this->actionInfo;
         }
 
-        return $this->actionInfo;
+        return $this->actionInfo[$key] ?? null;
     }
 
     /**
@@ -403,6 +330,7 @@ class Route
         $identifiers = is_array($identifiers) ? $identifiers : func_get_args();
 
         foreach ($identifiers as $identifier) {
+            // One or more digits: '42' passes, '4a' doesn't.
             $this->wheres[$identifier] = '[0-9]+';
         }
 
@@ -420,6 +348,7 @@ class Route
         $identifiers = is_array($identifiers) ? $identifiers : func_get_args();
 
         foreach ($identifiers as $identifier) {
+            // One or more ASCII letters: 'abc' passes, 'a1' doesn't.
             $this->wheres[$identifier] = '[a-zA-Z]+';
         }
 
@@ -437,6 +366,7 @@ class Route
         $identifiers = is_array($identifiers) ? $identifiers : func_get_args();
 
         foreach ($identifiers as $identifier) {
+            // One or more ASCII letters or digits: 'a1' passes, 'a-1' doesn't.
             $this->wheres[$identifier] = '[a-zA-Z0-9]+';
         }
 
@@ -454,6 +384,7 @@ class Route
         $identifiers = is_array($identifiers) ? $identifiers : func_get_args();
 
         foreach ($identifiers as $identifier) {
+            // One or more ASCII letters, digits, '-' or '_' ('my-slug_1').
             $this->wheres[$identifier] = '[a-zA-Z0-9-_]+';
         }
 
@@ -489,7 +420,14 @@ class Route
      */
     public function middleware($type = 'before', ...$middleware)
     {
-        if (is_array($middleware[0])) {
+        // An unknown type would drop the middleware without a word.
+        if (!in_array($type, ['before', 'after'], true)) {
+            throw new InvalidArgumentException(
+                "Middleware type must be 'before' or 'after'; use before(...) or after(...) to add middleware."
+            );
+        }
+
+        if ($middleware && is_array($middleware[0])) {
             $middleware = reset($middleware);
         }
 
@@ -514,6 +452,23 @@ class Route
     }
 
     /**
+     * Keep the route for visitors who aren't logged in, such as a login or
+     * registration page. A logged-in user is refused with a 403; on a web
+     * route, given a path or URL, they are sent there instead. It sets the
+     * route's policy, so withPolicy() after it replaces it.
+     *
+     * A closure decides for a logged-in visitor instead: its answer is the
+     * policy's, such as its own redirect, or an HttpException it throws.
+     *
+     * @param  string|\Closure|null  $redirectTo
+     * @return $this
+     */
+    public function guestOnly($redirectTo = null)
+    {
+        return $this->withPolicy(GuestOnly::policy($redirectTo));
+    }
+
+    /**
      * Set the route policy
      *
      * @param mixed $handler
@@ -522,7 +477,12 @@ class Route
      */
     public function withPolicy($handler, $method = null)
     {
-        if (is_array($handler = $method ? func_get_args() : $handler)) {
+        $handler = $method ? func_get_args() : $handler;
+
+        // [Policy::class, 'method'] is kept as 'Policy@method', which the
+        // route resolves in the plugin's policy namespace; an object in
+        // the array is already a callable and stays one.
+        if (is_array($handler) && is_string($handler[0] ?? null)) {
             $handler = implode('@', $handler);
         }
 
@@ -534,74 +494,7 @@ class Route
             );
         }
 
-        return $this->addRouteInfo($handler);
-    }
-
-    /**
-     * Check if the request is from CLI;
-     * 
-     * @return bool
-     */
-    protected function fromCli()
-    {
-        $hash = $this->app->request->header('X-From-CLI');
-
-        $slugHash = md5($this->app->config->get('app.slug'));
-
-        return $hash === $slugHash;
-    }
-
-    /**
-     * Add route information for CLI command.
-     * 
-     * @param mixed $handler
-     * @return self
-     */
-    protected function addRouteInfo($handler)
-    {
-        if (!$this->fromCli()) {
-            return $this;
-        }
-
-        if ($handler instanceof Closure) {
-            $policyHandler = 'Closure';
-        } else {
-            $policyHandler = $this->resolvePolicyHandler();
-            if (is_array($policyHandler)) {
-                $policyHandler = implode('@', $policyHandler);
-            }
-        }
-
-        $this->injectProp('policy', $policyHandler);
-
         return $this;
-    }
-
-    /**
-     * Inject property into route infio.
-     * 
-     * @param  string $key
-     * @param  mixed $value
-     * @return void
-     */
-    public function injectProp($key, $value)
-    {
-        if (!$this->endpointSignature) {
-            return;
-        }
-
-        [$controller, $cbKey] = $this->endpointSignature;
-
-        $controllerKey = str_replace('\\', '.', $controller);
-
-        // @phpstan-ignore-next-line
-        $endpoints = $this->app->endpoints;
-
-        if (isset($endpoints[$controllerKey][$cbKey])) {
-            $endpoints[$controllerKey][$cbKey][$key] = $value;
-            // @phpstan-ignore-next-line
-            $this->app->endpoints = $endpoints;
-        }
     }
 
     /**
@@ -694,11 +587,7 @@ class Route
      */
     public function rateLimit($limit, $interval)
     {
-        // Since the rate limiter is applied twice because
-        // WordPress sends an extra request for every
-        // request, so we need to double the limit.
-
-        $rateLimiter = new RateLimiter($limit * 2, $interval);
+        $rateLimiter = new RateLimiter($limit, $interval);
 
         $this->middleware('before', $rateLimiter);
 
@@ -739,43 +628,6 @@ class Route
     }
 
     /**
-     * Register the rest endpoint
-     *
-     * @return null
-     */
-    public function register()
-    {
-        $this->updateRouteOptions();
-
-        return register_rest_route(
-            $this->restNamespace,
-            $this->getRouteUri(),
-            $this->getOptions(),
-            $this->shouldOverride
-        );
-    }
-
-    /**
-     * Update route options before registering.
-     * 
-     * @return void
-     */
-    protected function updateRouteOptions()
-    {
-        $this->setOptions();
-    }
-
-    /**
-     * Get normalized uri for the current route.
-     * 
-     * @return string
-     */
-    protected function getRouteUri()
-    {
-        return '/' . trim($this->compileRoute($this->uri), '/');
-    }
-
-    /**
      * Mark this route to override any existing route at the same URI.
      *
      * @return $this
@@ -785,35 +637,6 @@ class Route
         $this->shouldOverride = true;
 
         return $this;
-    }
-
-    /**
-     * Set route options
-     *
-     * @return null
-     */
-    protected function setOptions()
-    {
-        $this->options = array_merge(
-            $this->options, $this->getDefaultOptions()
-        );
-    }
-
-    /**
-     * Get default options.
-     * 
-     * @return array
-     */
-    protected function getDefaultOptions()
-    {
-        return [
-            [
-                'methods' => $this->method,
-                'callback' => [$this, 'callback'],
-                'permission_callback' => [$this, 'permissionCallback'],
-                'args' => [],
-            ],
-        ];
     }
 
     /**
@@ -844,879 +667,12 @@ class Route
     }
 
     /**
-     * Compikle the rest route to regex
+     * Get one route parameter, or all of them.
      *
-     * @param string $uri
-     * @return string compiled rest endpoint
-     */
-    protected function compileRoute($uri)
-    {
-        $params = [];
-
-        $compiledUri = preg_replace_callback('#/{(.*?)}#', function ($match) use (&$params, $uri) {
-            // Default regx
-            $regx = '[^\s(?!/)]+';
-
-            $param = trim($match[1]);
-
-            if ($isOptional = strpos($param, '?')) {
-                $param = trim($param, '?');
-            }
-
-            if (in_array($param, $params)) {
-                throw new InvalidArgumentException(
-                    "Duplicate parameter name '{$param}' found in {$uri}.", 500
-                );
-            }
-
-            $params[] = $param;
-
-            if (isset($this->wheres[$param])) {
-                $regx = $this->wheres[$param];
-            }
-
-            $pattern = "/(?P<" . $param . ">" . $regx . ")";
-
-            if ($isOptional) {
-                $pattern = "(?:" . $pattern . ")?";
-            }
-
-            $this->options['args'][$param]['required'] = !$isOptional;
-
-            return $pattern;
-
-        }, $uri);
-
-        return $this->compiled = $compiledUri;
-    }
-
-    /**
-     * Route handler
+     * A name the route does not have is null, as in Laravel, so a request
+     * class shared by POST /things and PUT /things/{id} can read the id.
      *
-     * @return \WP_REST_Response
-     */
-    public function callback()
-    {
-        try {
-            $this->response = $this->handleAfterMiddleware(
-                $this->dispatchRouteAction()
-            );
-
-            return $this->handleResponse($this->response);
-
-        } catch (ValidationException $e) {
-            return $this->app->response->sendError(
-                $e->errors(), $e->getCode()
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->app->response->sendError([
-                'message' => $e->getMessage()
-            ], 404);
-        } catch (HttpException $e) {
-            return $this->renderHttpException($e);
-        } catch (Throwable $e) {
-            $headers = $this->response ? $this->response->get_headers() : [];
-
-            // Consult the plugin's ExceptionHandler registry BEFORE the
-            // production sanitizer. A registered renderable may return
-            // either an HttpException (rendered with full status + safe
-            // message) or a WP_REST_Response (returned verbatim). Null /
-            // no-match falls through to handleUnknownException — the
-            // sanitization default is preserved for any exception not
-            // explicitly opted in.
-            if ($mapped = $this->mapToHandlerResponse($e)) {
-                return $mapped;
-            }
-
-            return $this->handleUnknownException($e, $headers);
-        }
-    }
-
-    /**
-     * Run the bound `ExceptionHandler` over `$e` and convert its result
-     * to a `WP_REST_Response`, or `null` if the handler has nothing for
-     * this exception (in which case the caller falls through to the
-     * sanitizer).
-     *
-     * Returns an `HttpException` result through `renderHttpException()`
-     * so observability + headers + the `{code, message, data}` shape
-     * stay consistent with the dedicated `HttpException` catch arm.
-     * A `WP_REST_Response` is returned verbatim — the renderer claimed
-     * full control over the response shape; we still fire
-     * `fluent_exception` so observability listeners see the original
-     * exception.
-     *
-     * @param  \Throwable $e
-     * @return \WP_REST_Response|null
-     */
-    protected function mapToHandlerResponse(Throwable $e)
-    {
-        if (!$this->app->bound(ExceptionHandler::class)) {
-            return null;
-        }
-
-        $handler = $this->app->make(ExceptionHandler::class);
-
-        if (!$handler instanceof ExceptionHandler) {
-            return null;
-        }
-
-        $result = $handler->render($e, $this->app);
-
-        if ($result instanceof HttpException) {
-            return $this->renderHttpException($result);
-        }
-
-        if ($result instanceof WP_REST_Response) {
-            $this->fireExceptionEvent($e);
-            return $result;
-        }
-
-        return null;
-    }
-
-    /**
-     * Handle response from route.
-     * 
-     * @param  \WP_REST_Response $response
-     * @return \WP_REST_Response
-     */
-    protected function handleResponse($response)
-    {
-        return $response;
-    }
-
-    /**
-     * Throw an exception based on the status code.
-     * 
-     * @param  string $message
-     * @param  int $status
-     * @return null
-     * @throws \Exception
-     */
-    protected function throwException($message, $status)
-    {
-        $class = sprintf(
-            'WpOrg\Requests\Exception\Http\Status%d', $status
-        );
-        
-        if (!class_exists($class)) {
-            $class = 'WpOrg\Requests\Exception\Http';
-        }
-
-        throw new $class($message, $status);
-    }
-
-    /**
-     * Handle exception and send error response.
-     * 
-     * @param  Throwable $e
-     * @return \WP_REST_Response
-     */
-    protected function handleUnknownException(Throwable $e, $headers = [])
-    {
-        $data = [];
-
-        $this->fireExceptionEvent($e);
-
-        // Production sanitization: client-facing message must not leak
-        // PDO / HTTP-client / file-system internals. The real message
-        // ships to fluent_exception listeners (Night Watcher / bridge)
-        // via fireExceptionEvent above, so observability is preserved.
-        if ($this->app->isDebugOn()) {
-            $data = [
-                'file'  => $e->getFile(),
-                'line'  => $e->getLine(),
-            ];
-
-            $message = $e->getMessage();
-        } else {
-            $message = 'An internal error occurred.';
-        }
-
-        return $this->app->response->sendError([
-            'code'    => 'plugin_exception',
-            'data'    => $data,
-            'message' => $message,
-        ], $e->getCode() ?: 500, $headers);
-    }
-
-    /**
-     * Render an HttpException to a sanitization-free response.
-     *
-     * HttpException is the opt-in contract for "I authored this message,
-     * it is safe to ship to the client". Bypasses handleUnknownException's
-     * production sanitization but still fires fluent_exception for
-     * observability so listeners see every thrown HttpException.
-     *
-     * @param  HttpException $e
-     * @return \WP_REST_Response
-     */
-    protected function renderHttpException(HttpException $e)
-    {
-        $this->fireExceptionEvent($e);
-
-        return $this->app->response->sendError([
-            'code'    => $e->getErrorCode(),
-            'message' => $e->getMessage(),
-            'data'    => $e->getData(),
-        ], $e->getStatusCode(), $e->getHeaders());
-    }
-
-    /**
-     * Dispatch the route action.
-     *
-     * @return \WP_REST_Response
-     */
-    protected function dispatchRouteAction()
-    {
-        $response = $this->app->call(
-            $this->action, $this->getControllerParameters()
-        );
-
-        if ($response instanceof WPFluentResponse) {
-            $response = $response->toArray();
-        } elseif (!($response instanceof WP_REST_Response)) {
-            $response = !is_wp_error($response) ?
-                $this->app->response->sendSuccess($response) :
-                $this->app->response->wpErrorToResponse($response);
-        }
-
-        return $response;
-    }
-
-    /**
-     * Handle after middleware if any.
-     *
-     * @param mixed $response
-     * @return mixed
-     */
-    protected function handleAfterMiddleware($response)
-    {
-        if (!$this->skipMiddleware) {
-            $response = $this->app->make(Pipeline::class)
-                ->send(new WPFluentResponse($response))
-                ->through($this->collectMiddleWare('after'))
-                ->then(function($response) {
-                    return $this->normalize($response);
-                });
-
-            if (!$response) {
-                $response = $this->app->request->abort();
-            }
-        }
-
-        return $response;
-    }
-
-    /**
-     * Normalize the response.
-     * 
-     * @param  mixed $response
-     * @return mixed
-     */
-    protected function normalize($response)
-    {
-        if ($response instanceof WPFluentResponse) {
-            $response = $response->toArray();
-        }
-
-        if (!$response instanceof WP_REST_Response) {
-            return new WP_REST_Response($response);
-        }
-
-        return $response;
-    }
-
-    /**
-     * Fire exception action hook.
-     * 
-     * @param  Exception $exception
-     * @return void
-     */
-    protected function fireExceptionEvent($exception)
-    {
-        // Reentrancy guard: a fluent_exception listener that itself triggers
-        // an exception path must not re-enter this method and recurse. Reset
-        // in finally so subsequent (sequential) calls proceed normally.
-        static $firing = false;
-
-        if ($firing) {
-            return;
-        }
-
-        if ($this->app->isDebugOn() || defined('FLUENT_BRIDGE_SECRET')) {
-            $message = sprintf(
-                "%s in %s:%d\nStack trace:\n%s\n",
-                $exception->getMessage(),
-                $exception->getFile(),
-                $exception->getLine(),
-                $exception->getTraceAsString()
-            );
-
-            error_log($message);
-        }
-
-        $firing = true;
-
-        try {
-            $this->app->doAction('fluent_exception', $exception);
-        } catch (Throwable $listenerError) {
-            // Listener-throw isolation: a buggy fluent_exception listener
-            // (DB down, disk full) must not escape and crash the response.
-            // Log under the same gate; never re-fire fluent_exception here
-            // — that would be the cascade we are protecting against.
-            if ($this->app->isDebugOn() || defined('FLUENT_BRIDGE_SECRET')) {
-                error_log(
-                    'fluent_exception listener failed: ' . $listenerError->getMessage()
-                );
-            }
-        } finally {
-            $firing = false;
-        }
-    }
-
-    /**
-     * Permission callback for route
-     * @param \WP_REST_Request $wpRestRequest
-     * @return mixed
-     */
-    public function permissionCallback($wpRestRequest)
-    {
-        try {
-            $this->parameters = null;
-            $this->substitutedParameters = null;
-            $this->app->instance('route', $this);
-            $this->app->instance('wprestrequest', $wpRestRequest);
-            $this->app->request->mergeInputsFromRestRequest($wpRestRequest);
-            $this->prepareCallbacks($this->app->request);
-
-            if (!$this->isThisValidSignedRoute()) {
-                throw new Exception('Invalid Signature', 403);
-            }
-
-            $response = $this->app->make(Pipeline::class)
-                ->send($this->app->request)
-                ->through($this->collectMiddleWare('before'))
-                ->then(function ($request) {
-                    if ($request && $request instanceof Request) {
-                        return $this->dispatchPermissionHandler();
-                    }
-                });
-
-            if (is_wp_error($response)) {
-                throw new Exception(
-                    $response->get_error_message(),
-                    is_int($code = $response->get_error_code()) ? $code : 403
-                );
-            }
-
-            if ($response instanceof WP_REST_Response) {
-                $data = $response->get_data();
-
-                throw new Exception(
-                    $data['message'] ?? $response->get_status(),
-                    $response->get_status()
-                );
-            }
-
-            return $response;
-
-        } catch (Throwable $e) {
-            return new WP_Error(
-                'Permission Callback Error',
-                $e->getMessage(), [
-                    'status' => $e->getCode() ?: 403
-                ]
-            );
-        }
-    }
-
-    /**
-     * Checks if the route is signed and needs validation.
-     * 
-     * @return boolean [description]
-     */
-    protected function isThisValidSignedRoute()
-    {
-        if (!$this->signed) return true;
-
-        $request = $this->app->make('request');
-
-        if ($this->app->make('url')->validate($request->getFullUrl())) {
-            parse_str($this->app->make('encrypter')->decrypt(
-                $this->app->request->get('_data')
-            ), $query);
-
-            $this->app->request->merge(
-                Arr::except($query, ['expires_at'])
-            );
-
-            $this->app->request->forget('_data');
-
-            return true;
-        }
-    }
-
-    /**
-     * Dispatches the permission handler.
-     *
-     * @return bool|null
-     */
-    protected function dispatchPermissionHandler()
-    {
-        if (!$this->permissionHandler) {
-            return true;
-        }
-
-        $isValid = $this->app->call(
-            $this->permissionHandler,
-            $this->getControllerParameters()
-        );
-
-        if (is_object($isValid)) {
-            if ($this->isUser($isValid)) {
-                $isValid = $isValid->id();
-            } else {
-                $this->throwInvalidPolicy();
-            }
-        }
-
-        if (!is_bool($isValid) && !is_int($isValid) && !is_null($isValid)) {
-            $this->throwInvalidPolicy();
-        }
-
-        return (bool) $isValid;
-    }
-
-    /**
-     * Checks if the user is an instance of WPUserProxy.
-     * 
-     * @param  WPUserProxy  $user
-     * @return bool
-     */
-    protected function isUser($user)
-    {
-        return $user instanceof WPUserProxy;
-    }
-
-    /**
-     * Throw invalid policy handling exception.
-     * 
-     * @return InvalidArgumentException
-     */
-    protected function throwInvalidPolicy()
-    {
-        throw new InvalidArgumentException(
-            'The policy must return a boolean, integer, null, or a WPUserProxy instance.', 500
-        );
-    }
-
-    /**
-     * Gether route params after substituted the params
-     *
-     * @return array
-     */
-    protected function getControllerParameters()
-    {
-        $routeParameters = [];
-
-        if (!$this->substitutedParameters) {
-            if ($routeParameters = $this->getParameter()) {
-                $routeParameters = $this->substituteParameters($routeParameters);
-            }
-        } else {
-            $routeParameters = $this->substitutedParameters;
-        }
-
-        return $routeParameters;
-    }
-
-    /**
-     * Added the ability to add middleware so we can intercept
-     * the request without modifying the source code again
-     * and again. The middleware class will implement
-     * the handle method as given below:
-     *
-     * public function handle($request, $next)
-     *
-     * And must return $next($request) to handle the request.
-     * Otherwise return nothing to abort the request.
-     * Optionally, you may call the abort method:
-     * return $request->abort(code, message);
-     *
-     * @param string $type
-     * @return array
-     */
-    protected function collectMiddleWare($type = 'before')
-    {
-        $middleware = $this->app->bound('http.middleware')
-            ? $this->app['http.middleware']
-            : [];
-
-        $callableMiddleware = Arr::get($middleware, "global.{$type}", []);
-
-        $routeArray = [];
-
-        if (isset($middleware['route'])) {
-            $routeArray = $middleware['route'];
-            if (isset($routeArray[$type])) {
-                $routeArray = $routeArray[$type];
-            }
-        }
-
-        foreach ($this->middleware[$type] as $routeMiddleware) {
-
-            if (is_object($routeMiddleware)) {
-                $handler = $routeMiddleware;
-            } elseif (class_exists($routeMiddleware)) {
-                $handler = $this->resolveMiddlewareFrom($routeMiddleware);
-            } else {
-                $pieces = explode(':', $routeMiddleware);
-                $handler = Arr::get($routeArray, $key = reset($pieces));
-                if (isset($pieces[1])) {
-                    $handler = $this->resolveMiddleware($handler, $pieces);
-                }
-            }
-
-            if (isset($handler)) {
-                $this->addMiddlewareInTheStack($callableMiddleware, $handler);
-            } else {
-                if (isset($key)) {
-                    $mpath = 'app/Http/middleware.php route.' . $type;
-                    $msg = "No middleware is assigned for the key: {$key} in {$mpath} array.";
-                } else {
-                    $msg = "Could't resolve middleware.";
-                }
-
-                throw new InvalidArgumentException($msg);
-            }
-        }
-
-        return $callableMiddleware;
-    }
-
-    /**
-     * Resolve a middleware from a class.
-     * 
-     * @param  string $class
-     * @return \Closure
-     */
-    protected function resolveMiddlewareFrom($class)
-    {
-        return static function ($r, $next, ...$params) use ($class) {
-            return (new $class)->handle($r, $next, ...$params);
-        };
-    }
-
-    /**
-     * Resolve the middleware
-     *
-     * @param mixed $handler
-     * @param array $pieces
-     * @return object
-     */
-    protected function resolveMiddleware($handler, $pieces)
-    {
-        if (is_object($handler)) {
-            $handler = $this->wrapMiddleware($handler, $pieces);
-        } elseif (is_string($handler)) {
-            $handler = $handler . ':' . str_replace(' ', '', end($pieces));
-        }
-
-        return $handler;
-    }
-
-    /**
-     * Create a class to wrap the middleware
-     *
-     * @param mixed $handler
-     * @param array $pieces
-     * @return object
-     */
-    protected function wrapMiddleware($handler, $pieces)
-    {
-        $params = str_replace(' ', '', end($pieces));
-
-        $params = explode(',', $params);
-
-        return new class ($handler, $params) {
-            protected $handler, $params = null;
-
-            public function __construct($handler, $params) {
-                $this->handler = $handler;
-                $this->params = $params;
-            }
-
-            public function handle($r, $next) {
-                if (is_callable($this->handler)) {
-                    return ($this->handler)($r, $next, ...$this->params);
-                } else {
-                    if (!method_exists($this->handler, 'handle')) {
-                        $class = get_class($this->handler);
-                        throw new InvalidArgumentException(
-                            "The {$class} must implement the handle method."
-                        );
-                    }
-                    return $this->handler->handle($r, $next, ...$this->params);
-                }
-            }
-        };
-    }
-
-    /**
-     * Add the middleware in the stack
-     *
-     * @param array &$stack All callable middleware for the route
-     * @param string $middleware
-     * @return void
-     */
-    protected function addMiddlewareInTheStack(&$stack, $middleware)
-    {
-        if (!in_array($middleware, $stack)) {
-            $stack[] = $middleware;
-        }
-    }
-
-    /**
-     * Resolve the policy handler
-     *
-     * @param string $policyHandler
-     * @return mixed
-     */
-    protected function getPolicyHandler($policyHandler)
-    {
-        if (!$policyHandler) {
-            return [$this, 'defaultPolicyHandler'];
-        }
-
-        if (is_callable($policyHandler)) {
-            return $policyHandler;
-        }
-
-        if (is_string($policyHandler)) {
-
-            if (function_exists($policyHandler)) {
-                return $policyHandler;
-            }
-
-            $policyHandlerFunction = substr(
-                $policyHandler, strrpos($policyHandler, '\\') + 1
-            );
-
-            if (function_exists($policyHandlerFunction)) {
-                return $policyHandlerFunction;
-            }
-        }
-
-        if ($this->isPolicyHandlerParseable($policyHandler)) {
-            return $policyHandler;
-        }
-
-        if (is_string($policyHandler) && $this->handler instanceof Closure) {
-
-            if (class_exists($policyHandler)) {
-
-                $reflection = new ReflectionClass($policyHandler);
-
-                if ($reflection->hasMethod('verifyRequest')) {
-                    return $policyHandler . '@' . 'verifyRequest';
-                }
-            } elseif (function_exists($policyHandler)) {
-                return $policyHandler;
-            }
-
-            throw new InvalidArgumentException(
-                'Explicit policy handler is required while using a closure as route callback.'
-            );
-        }
-
-        if ($policyHandler && !function_exists($policyHandler)) {
-            [$_, $method] = is_array($this->handler)
-                ? [$this->handler[0], $this->handler[1] ?? '__invoke']
-                : Str::parseCallback($this->handler, '__invoke');
-
-            $policyHandler .= '@' . $method;
-        }
-
-        return $policyHandler ?: [$this, 'defaultPolicyHandler'];
-    }
-
-    /**
-     * Check if the policy handler is parseable.
-     * 
-     * @param  string  $policyHandler
-     * @return boolean
-     */
-    protected function isPolicyHandlerParseable($policyHandler)
-    {
-        return (strpos($policyHandler, '@') === true
-            || strpos($policyHandler, '::') === true);
-    }
-
-    /**
-     * Default/Fallback policy handler for the route
-     *
-     * @return bool
-     */
-    public function defaultPolicyHandler()
-    {
-        return true;
-    }
-
-    /**
-     * Parse the rest and permission/policy handlers
-     *
-     * @param \WP_REST_Request $request
-     * @return null
-     * @throws \BadMethodCallException
-     */
-    public function prepareCallbacks($request)
-    {
-        $handler = $this->app->parseRestHandler($this->handler, $this->namespace);
-
-        [$action, $controller] = $this->resolveHandlerDetails($handler);
-
-        $policyHandler = $this->resolvePolicyHandler();
-
-        $this->actionInfo = [
-            'handler'             => is_object($handler) ? $action : $handler,
-            'controller'          => $controller,
-            'method'              => $this->getMethodName($action, $handler),
-            'path'                => $this->uri,
-            'http_method'         => $request->get_method(),
-            'full_uri'            => $request->get_route(),
-            'permission_callback' => $policyHandler,
-            'compiled_url'        => $this->compiled
-        ];
-
-        $this->action = $handler;
-
-        if ($routeParameters = $this->getParameter()) {
-            $this->substitutedParameters = $this->substituteParameters($routeParameters);
-        }
-
-        return $this->action;
-    }
-
-    /**
-     * Get the method name to build action info.
-     * 
-     * @param  mixed $action
-     * @param  mixed $handler
-     * @return string|null
-     */
-    protected function getMethodName($action, $handler)
-    {
-        $method = is_array($action) ? $action[1] ?? '__invoke' : null;
-
-        if (is_null($method) && is_object($handler)) {
-            $method = '__invoke';
-        }
-
-        return $method;
-    }
-
-    /**
-     * Resolve the handler details.
-     * 
-     * @param  mixed $handler
-     * @return array
-     */
-    protected function resolveHandlerDetails($handler)
-    {
-        if ($handler instanceof Closure) {
-            return ['Closure', null];
-        }
-
-        if (is_object($handler)) {
-            $class = get_class($handler);
-            return [$class, $class];
-        }
-
-        $handler = trim($handler, '\\');
-        [$controller, $method] = Str::parseCallback($handler, '__invoke');
-        $controllerName = $this->extractControllerName($controller);
-
-        return [[$controller, $method], $controllerName];
-    }
-
-    /**
-     * Extract the controller name from the FQCN.
-     * 
-     * @param  string $fqcn
-     * @return string      
-     */
-    protected function extractControllerName($fqcn)
-    {
-        $parts = explode('\\', $fqcn);
-        return end($parts);
-    }
-
-    /**
-     * Parse and validate the policy handler.
-     * 
-     * @return array
-     */
-    protected function resolvePolicyHandler()
-    {
-        try {
-            $policyHandler = $this->app->parsePolicyHandler(
-                $this->getPolicyHandler($this->policyHandler)
-            );
-
-            if ($policyHandler) {
-                $this->permissionHandler = $policyHandler;
-
-                // Adjust method if explicitly given in string policy handler
-                if (is_string($this->policyHandler) && is_array($policyHandler) && isset($policyHandler[1])) {
-                    $pieces = explode('@', $this->policyHandler);
-                    if (isset($pieces[1])) {
-                        $this->permissionHandler[1] = $pieces[1];
-                    }
-                }
-
-                if (!is_callable($this->permissionHandler)) {
-                    throw new Exception;
-                }
-            }
-
-        } catch (Exception $e) {
-            throw $this->invalidPolicyHandlerException();
-        }
-
-        // Convert object controller to class string for endpoint metadata
-        if (is_array($policyHandler) && is_object($policyHandler[0])) {
-            $policyHandler[0] = get_class($policyHandler[0]);
-        }
-
-        return $policyHandler;
-    }
-
-    /**
-     * Build and throw an exception for invalid policy handlers.
-     * 
-     * @throws \BadMethodCallException
-     */
-    protected function invalidPolicyHandlerException()
-    {
-        $pHandler = $this->policyHandler;
-
-        if (is_array($this->permissionHandler) && $this->permissionHandler) {
-            $pHandler = is_object($this->permissionHandler[0])
-                ? get_class($this->permissionHandler[0]) . ':' . $this->permissionHandler[1]
-                : $this->permissionHandler[0] . ':' . $this->permissionHandler[1];
-        }
-
-        return new BadMethodCallException(
-            "The permission callback {$pHandler} is invalid or not callable."
-        );
-    }
-
-    /**
-     * Get one or more route parameters
-     * @param string $key
-     *
+     * @param  string|null  $key
      * @return mixed
      */
     public function getParameter($key = null)
@@ -1725,7 +681,7 @@ class Route
             $this->parameters = $this->app->request->get_url_params();
         }
 
-        return $key ? $this->parameters[$key] : $this->parameters;
+        return $key ? ($this->parameters[$key] ?? null) : $this->parameters;
     }
 
     /**

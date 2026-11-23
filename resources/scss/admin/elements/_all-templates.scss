@@ -267,11 +267,25 @@
         width: 28px;
         height: 28px;
       }
+      // A real link so Cmd/Ctrl/middle-click can open the editor in a new tab; drop the WP admin link look.
+      a.wpsr-item-editable{
+        color: var(--wpsr-heading-text, #0E121B);
+        text-decoration: none;
+        &:focus{
+          box-shadow: none;
+          outline: none;
+        }
+        &:focus-visible{
+          outline: 2px solid var(--wpsr-primary-btn-bg, #5525D9);
+          outline-offset: 2px;
+          border-radius: var(--wpsr-radius-sm, 4px);
+        }
+      }
       .wpsr-item-editable{
         cursor: pointer;
         text-transform: capitalize;
         &:hover,
-        &:focus {
+        &:focus-visible {
           text-decoration: underline;
           color: var(--wpsr-primary-btn-bg, #5525D9);
         }

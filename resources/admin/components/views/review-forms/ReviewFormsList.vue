@@ -65,11 +65,11 @@
               placeholder="Search..."
               size="default"
               style="width: 200px;"
-              @keyup.enter="getItems()"
+              @keyup.enter="applyListFilters()"
               @clear="handleClear"
               clearable>
             <template #prefix>
-              <el-icon class="el-input__icon" @click="getItems()"><Search /></el-icon>
+              <el-icon class="el-input__icon" @click="applyListFilters()"><Search /></el-icon>
             </template>
           </el-input>
         </div>
@@ -92,10 +92,10 @@
           <el-table-column show-overflow-tooltip :label="$t('Form Title')" min-width="250">
             <template #default="scope">
               <div class="wpsr-item-group wpsr-d-flex wpsr-flex-align-center">
-                <div @click.prevent="editForm(scope.row)" class="wpsr-item-editable wpsr-item-title wpsr-d-flex wpsr-flex-align-center">
+                <router-link :to="getEditLink(scope.row)" class="wpsr-item-editable wpsr-item-title wpsr-d-flex wpsr-flex-align-center">
                   <span dir="auto">{{ scope.row.title }}</span>
                   <el-icon class="wpsr-ml-5 wpsr-display-on-hover"><Edit /></el-icon>
-                </div>
+                </router-link>
               </div>
             </template>
           </el-table-column>
@@ -142,7 +142,7 @@
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="edit">
-                      <el-icon><Edit /></el-icon> {{ $t('Edit') }}
+                      <router-link class="wpsr-dropdown-link" :to="getEditLink(scope.row)" @click.stop><el-icon><Edit /></el-icon> {{ $t('Edit') }}</router-link>
                     </el-dropdown-item>
                     <el-dropdown-item command="duplicate">
                       <el-icon><CopyDocument /></el-icon> {{ $t('Duplicate') }}
@@ -269,8 +269,11 @@ export default {
           this.handleError(errors);
         });
     },
+    getEditLink(row) {
+      return { name: 'review-form-edit', params: { id: row.id } };
+    },
     editForm(row) {
-      this.$router.push({ name: 'review-form-edit', params: { id: row.id } });
+      this.$router.push(this.getEditLink(row));
     },
     handleRowAction(command, row) {
       switch (command) {
@@ -347,7 +350,7 @@ export default {
     },
     handleClear() {
       this.search_string = '';
-      this.getItems();
+      this.applyListFilters();
     }
   }
 }

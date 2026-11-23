@@ -175,7 +175,7 @@
                 placeholder="Select"
                 size="large"
                 filterable
-                @input="validateCollectionForm"
+                @change="validateCollectionForm"
               >
                 <el-option
                   v-for="(platform, index) in availablePlatforms"

@@ -19,7 +19,7 @@ use Throwable;
  * the opt-in escape hatch from the production message sanitization that
  * protects against leaking PDO / file-system / transport internals.
  */
-class HttpException extends Exception
+class HttpException extends Exception implements HttpExceptionInterface
 {
     /**
      * HTTP status code to report.

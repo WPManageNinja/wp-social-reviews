@@ -2,6 +2,8 @@
 
 namespace WPSocialReviews\Framework\Database\Query\Grammars;
 
+use InvalidArgumentException;
+use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\Framework\Support\Str;
 use WPSocialReviews\Framework\Support\Helper;
 use WPSocialReviews\Framework\Database\Query\Builder;
@@ -149,6 +151,12 @@ class MySqlGrammar extends Grammar
      */
     protected function compileIndexHint(Builder $query, $indexHint)
     {
+        foreach (array_map('trim', explode(',', $indexHint->index)) as $index) {
+            if (! preg_match('/^[a-zA-Z0-9_$]+$/', $index)) {
+                throw new InvalidArgumentException('Index name contains invalid characters.');
+            }
+        }
+
         switch ($indexHint->type) {
             case 'hint':
                 return "use index ({$indexHint->index})";
@@ -175,11 +183,19 @@ class MySqlGrammar extends Grammar
     /**
      * Determine whether to use a legacy group limit clause for MySQL < 8.0.
      *
+     * SQLite has window functions, whatever version WordPress's SQLite
+     * drop-in reports, and its translators pass them through; MySQL 5.7's
+     * user variables they don't take.
+     *
      * @param  \WPSocialReviews\Framework\Database\Query\Builder  $query
      * @return bool
      */
     public function useLegacyGroupLimit(Builder $query)
     {
+        if ($query->getConnection()->isSqlite()) {
+            return false;
+        }
+
         $version = $query->getConnection()->getServerVersion();
 
         return ! $query->getConnection()->isMaria() && version_compare(
@@ -345,7 +361,15 @@ class MySqlGrammar extends Grammar
      */
     public function compileRandom($seed)
     {
-        return 'RAND('.$seed.')';
+        if ($seed === '' || $seed === null) {
+            return 'RAND()';
+        }
+
+        if (! is_numeric($seed)) {
+            throw new InvalidArgumentException('The seed value must be numeric.');
+        }
+
+        return 'RAND('.(int) $seed.')';
     }
 
     /**
@@ -357,6 +381,12 @@ class MySqlGrammar extends Grammar
      */
     protected function compileLock(Builder $query, $value)
     {
+        // The SQLite drop-in's old engine knows no row locks, and SQLite
+        // locks the whole database for a write anyway.
+        if ($query->getConnection()->usesSqliteTranslator()) {
+            return '';
+        }
+
         if (! is_string($value)) {
             return $value ? 'for update' : 'lock in share mode';
         }
@@ -413,7 +443,7 @@ class MySqlGrammar extends Grammar
         array $uniqueBy,
         array $update
     ) {
-        $useUpsertAlias = $query->connection->getConfig('use_upsert_alias');
+        $useUpsertAlias = $this->useUpsertAlias($query);
 
         $sql = $this->compileInsert($query, $values);
 
@@ -434,6 +464,29 @@ class MySqlGrammar extends Grammar
         })->implode(', ');
 
         return $sql.$columns;
+    }
+
+    /**
+     * Determine whether the server takes a row alias in an upsert.
+     *
+     * MySQL 8.0.19 added INSERT ... AS alias, and 8.0.20 deprecated the
+     * VALUES() function it replaces; MariaDB and older MySQL only have
+     * VALUES(), and so do WordPress's SQLite drop-in's translators.
+     *
+     * @param  \WPSocialReviews\Framework\Database\Query\Builder  $query
+     * @return bool
+     */
+    protected function useUpsertAlias(Builder $query)
+    {
+        $connection = $query->getConnection();
+
+        if ($connection->isSqlite()) {
+            return false;
+        }
+
+        return ! $connection->isMaria() && version_compare(
+            $connection->getServerVersion(), '8.0.19'
+        ) >= 0;
     }
 
     /**
@@ -470,6 +523,116 @@ class MySqlGrammar extends Grammar
         [$field, $path] = $this->wrapJsonFieldAndPath($key);
 
         return "{$field} = json_set({$field}{$path}, {$value})";
+    }
+
+    /**
+     * Compile a date based where clause.
+     *
+     * WordPress's SQLite drop-in (3.x) gives day 1, month 1 and year 1970
+     * for a NULL date, where MySQL gives NULL, so there a row without a
+     * date is left out explicitly, as MySQL leaves it out.
+     *
+     * @param  string  $type
+     * @param  \WPSocialReviews\Framework\Database\Query\Builder  $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function dateBasedWhere($type, Builder $query, $where)
+    {
+        $sql = parent::dateBasedWhere($type, $query, $where);
+
+        if (in_array($type, ['day', 'month', 'year'], true) && $query->getConnection()->isSqlite()) {
+            return '('.$this->wrap($where['column']).' is not null and '.$sql.')';
+        }
+
+        return $sql;
+    }
+
+    /**
+     * Compile an update statement into SQL.
+     *
+     * The SQLite drop-in's 2.x engines take no join in an update or delete
+     * (the old one), or pass an order and a limit to SQLite, which takes
+     * them only when built to: there the rows are picked by a select of
+     * their rowid. Its 3.x engine translates them itself.
+     *
+     * @param  \WPSocialReviews\Framework\Database\Query\Builder  $query
+     * @param  array  $values
+     * @return string
+     */
+    public function compileUpdate(Builder $query, array $values)
+    {
+        if (! $this->picksRowsByRowid($query)) {
+            return parent::compileUpdate($query, $values);
+        }
+
+        // SQLite names an updated column without its table.
+        $columns = Helper::collect($values)->map(function ($value, $key) {
+            return $this->wrap(Helper::last(explode('.', $key))).' = '.$this->parameter($value);
+        })->implode(', ');
+
+        return 'update '.$this->wrapTable($query->from).' set '.$columns
+            .' where '.$this->wrap('rowid').' in ('.$this->compileRowidSelect($query).')';
+    }
+
+    /**
+     * Compile a delete statement into SQL, by rowid on the SQLite drop-in's
+     * 2.x engines when it has a join, order or limit (see compileUpdate()).
+     *
+     * @param  \WPSocialReviews\Framework\Database\Query\Builder  $query
+     * @return string
+     */
+    public function compileDelete(Builder $query)
+    {
+        if (! $this->picksRowsByRowid($query)) {
+            return parent::compileDelete($query);
+        }
+
+        return 'delete from '.$this->wrapTable($query->from)
+            .' where '.$this->wrap('rowid').' in ('.$this->compileRowidSelect($query).')';
+    }
+
+    /**
+     * Whether an update or delete picks its rows by rowid: on the SQLite
+     * drop-in's 2.x engines, when it has a join, an order or a limit.
+     *
+     * @param  \WPSocialReviews\Framework\Database\Query\Builder  $query
+     * @return bool
+     */
+    protected function picksRowsByRowid(Builder $query)
+    {
+        return (isset($query->joins) || ! empty($query->orders) || isset($query->limit))
+            && $this->runsOnSqliteTwo();
+    }
+
+    /**
+     * Whether WordPress runs on the SQLite drop-in's 2.x: its old engine
+     * (WP_SQLite_Translator) or, with WP_SQLITE_AST_DRIVER, its MySQL
+     * engine behind WP_SQLite_Driver. The grammar's queries all go through
+     * WordPress's one connection.
+     *
+     * @return bool
+     */
+    protected function runsOnSqliteTwo()
+    {
+        $dbh = $GLOBALS['wpdb']->dbh ?? null;
+
+        return is_a($dbh, 'WP_SQLite_Translator') || is_a($dbh, 'WP_SQLite_Driver');
+    }
+
+    /**
+     * The select of the rowids an update or delete changes.
+     *
+     * @param  \WPSocialReviews\Framework\Database\Query\Builder  $query
+     * @return string
+     */
+    protected function compileRowidSelect(Builder $query)
+    {
+        // The table's alias, or its name when it has none: 'posts as p'
+        // gives 'p', 'posts' gives 'posts'. "as" matches in any case.
+        $alias = Helper::last(preg_split('/\s+as\s+/i', $query->from));
+
+        return $this->compileSelect((clone $query)->select($alias.'.rowid'));
     }
 
     /**
@@ -512,6 +675,15 @@ class MySqlGrammar extends Grammar
         })->map(function ($value) {
             return is_array($value) ? json_encode($value) : $value;
         })->all();
+
+        // On the SQLite drop-in's 2.x engines a join comes after the values,
+        // in the rowid select (see compileUpdate()).
+        if ($this->runsOnSqliteTwo()) {
+            return array_values(array_merge(
+                Arr::flatten(array_map(fn ($value) => Helper::value($value), $values)),
+                Arr::flatten(Arr::except($bindings, 'select'))
+            ));
+        }
 
         return parent::prepareBindingsForUpdate($bindings, $values);
     }

@@ -343,6 +343,42 @@
 .wpsr_content .swiper-container {
   overflow: hidden;
 }
+// Until Swiper starts, lay feed slides out at their final width so posts show while the rest of the page loads.
+// Swiper's own stylesheet prints in the footer, so the row layout can't rely on it.
+:is(.wpsr-instagram-slider-activate, .wpsr-facebook-feed-slider-activate, .wpsr-youtube-slider-activate, .wpsr-tiktok-feed-slider-activate) {
+  .swiper-container:not(.swiper-initialized):not(.swiper-container-initialized) {
+    --wpsr-slides: var(--wpsr-slides-mobile, 1);
+    overflow: hidden;
+    > .swiper-wrapper {
+      display: flex;
+      gap: var(--wpsr-slide-gap, 20px);
+    }
+    > .swiper-wrapper > .swiper-slide {
+      flex-shrink: 0;
+      width: calc((100% - (var(--wpsr-slides) - 1) * var(--wpsr-slide-gap, 20px)) / var(--wpsr-slides));
+    }
+    :is(.wpsr-ig-post-media, .wpsr-fb-feed-image, .wpsr-yt-video-preview, .wpsr-tiktok-feed-video-preview) {
+      display: block;
+    }
+    // The empty shimmer overlay would cover the posts; Instagram's media carries the class itself, so it is not matched.
+    :is(.wpsr-fb-feed-image, .wpsr-yt-video-preview, .wpsr-tiktok-feed-image, .wpsr-tiktok-feed-video-preview) .wpsr-animated-background {
+      display: none;
+    }
+    // Read more trims captions only once JS runs; until then one long caption stretches every equal-height slide.
+    :is(.wpsr_add_read_more, .wpsr-tiktok-feed-content):not(.wpsr_more_added) {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 4;
+      overflow: hidden;
+    }
+    @media (min-width: 640px) {
+      --wpsr-slides: var(--wpsr-slides-tablet, 2);
+    }
+    @media (min-width: 1024px) {
+      --wpsr-slides: var(--wpsr-slides-desktop, 1);
+    }
+  }
+}
 .wpsr-visually-hidden{
   position: absolute;
   width: 1px;

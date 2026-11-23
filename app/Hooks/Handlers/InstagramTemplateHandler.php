@@ -267,7 +267,7 @@ class InstagramTemplateHandler
 
         $userAvatar = Arr::get($header, 'user_avatar');
         $globalSettings = get_option('wpsr_instagram_global_settings');
-        if (Arr::get($globalSettings, 'global_settings.optimized_images') === 'false' && !empty($userAvatar)) {
+        if (Arr::get($globalSettings, 'global_settings.optimized_images', 'false') === 'false' && !empty($userAvatar)) {
             return $userAvatar;
         }
 

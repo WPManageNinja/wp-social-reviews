@@ -5,7 +5,17 @@ namespace WPSocialReviews\Framework\Support;
 use ArrayAccess;
 use JsonSerializable;
 use WPSocialReviews\Framework\Support\Helper;
+use WPSocialReviews\Framework\Support\Contracts\ArrayableInterface;
+use WPSocialReviews\Framework\Support\Contracts\JsonableInterface;
 
+/**
+ * An object whose attributes are read and set as properties or array keys.
+ *
+ * @deprecated 2.19.0 Use an array, a Collection or a class of your own.
+ *             Support\Fluent will be removed in a release after 2026-11-05.
+ *             A Rule::when() closure gets a Validator\RuleInput, which keeps
+ *             the same methods.
+ */
 class Fluent implements ArrayableInterface, ArrayAccess, JsonableInterface, JsonSerializable
 {
     /**

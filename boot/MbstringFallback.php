@@ -1,4 +1,5 @@
 <?php
+defined('ABSPATH') or die;
 
 /**
  * Plain-PHP fallbacks for mb_* functions when mbstring extension is missing.

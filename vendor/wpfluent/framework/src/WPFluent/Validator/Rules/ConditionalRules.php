@@ -2,7 +2,7 @@
 
 namespace WPSocialReviews\Framework\Validator\Rules;
 
-use WPSocialReviews\Framework\Support\Fluent;
+use WPSocialReviews\Framework\Validator\RuleInput;
 
 class ConditionalRules
 {
@@ -51,7 +51,7 @@ class ConditionalRules
     public function passes(array $data = [])
     {
         return is_callable($this->condition)
-                    ? call_user_func($this->condition, new Fluent($data))
+                    ? call_user_func($this->condition, new RuleInput($data))
                     : $this->condition;
     }
 

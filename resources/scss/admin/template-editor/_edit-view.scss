@@ -14,6 +14,102 @@
     left: 36px;
   }
 }
+
+// The editor is pinned to the viewport: a WP admin menu taller than the editor makes the page
+// scroll, and that scroll must not move the editor. The preview and the sidebar scroll by themselves.
+body.is-wpsr-editor{
+  #wpfooter{
+    display: none;
+  }
+
+  .wpsr_editor{
+    position: fixed;
+    top: 32px;
+    right: 0;
+    bottom: 0;
+    left: 160px;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--wpsr-secondary-bg, #F5F7FA);
+
+    // position: fixed makes a stacking context, so a preview popup must lift the whole editor
+    // above the WP admin bar (99999) and menu. Element Plus overlays (100100) stay on top.
+    &:has(.wpsr-feed-popup-open, .wpsr-yt-popup-open){
+      z-index: 100000;
+    }
+
+    .wpsr_editor_wrapper{
+      flex: 1 1 auto;
+      min-height: 0;
+
+      > .el-container{
+        height: 100%;
+      }
+
+      .el-main{
+        overflow-y: auto;
+        overscroll-behavior: contain;
+
+        // .el-main is a column flex box: a child with overflow: hidden would shrink and clip instead of scrolling.
+        > *{
+          flex-shrink: 0;
+        }
+      }
+
+      .wpsr-editor-sidebar{
+        position: relative;
+        top: auto;
+        height: auto;
+        align-self: stretch;
+        overscroll-behavior: contain;
+      }
+
+      // Device frames fill the editor height instead of a fixed 720px / 1024px.
+      &.wpsr-view-port-active .el-container.is-mobile-active .el-main,
+      &.wpsr-view-port-active .el-container.is-tablet-active .el-main{
+        height: auto;
+        margin-bottom: 15px;
+      }
+    }
+  }
+
+  &.folded .wpsr_editor{
+    left: 36px;
+  }
+
+  // Same breakpoints as WP core's auto-folded (960px) and hidden (782px) admin menu.
+  @media screen and (max-width: 960px){
+    &.auto-fold .wpsr_editor{
+      left: 36px;
+    }
+  }
+
+  @media screen and (max-width: 782px){
+    &.auto-fold .wpsr_editor,
+    &.folded .wpsr_editor,
+    .wpsr_editor{
+      top: 46px;
+      left: 0;
+    }
+  }
+
+  &.wpsr_full_screen.wp-admin{
+    .wrap{
+      overflow: hidden;
+    }
+
+    .wpsr_editor{
+      top: 0;
+      left: 0;
+    }
+  }
+}
+
+// Editors without the fixed layout (Review Form editor): in full-screen mode .wrap is the scroller and has no admin bar above it.
+body.wpsr_full_screen:not(.is-wpsr-editor) .wpsr_editor .wpsr_editor_wrapper .wpsr-editor-sidebar{
+  top: 0;
+  height: 100vh;
+}
 .wpsr_editor{
   .wpsr_light_edit {
     color: #d0d0d0;
@@ -416,8 +512,11 @@
     .wpsr-editor-sidebar{
       //overflow: hidden;
       background-color: var(--wpsr-primary-bg, #FFF);
-      position: relative;
-      height: calc(100vh - 30px);
+      // Sticks below the WP admin bar (32px, 46px at <=782px, scrolls away at <=600px).
+      position: sticky;
+      top: 32px;
+      align-self: flex-start;
+      height: calc(100vh - 32px);
       overflow-y: auto;
       overflow-x: hidden;
       width: var(--wpsr-editor-sidebar-width) !important;
@@ -426,6 +525,14 @@
       flex: 0 0 var(--wpsr-editor-sidebar-width);
       border-left: 1px solid var(--wpsr-primary-border, #E1E4EA);
       transition: width .28s ease, min-width .28s ease, max-width .28s ease, flex-basis .28s ease;
+      @media screen and (max-width: 782px) {
+        top: 46px;
+        height: calc(100vh - 46px);
+      }
+      @media screen and (max-width: 600px) {
+        top: 0;
+        height: 100vh;
+      }
       &.sticky {
         .wpsr-inner-aside {
           position: fixed;

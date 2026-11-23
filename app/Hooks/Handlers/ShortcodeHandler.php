@@ -63,13 +63,13 @@ class ShortcodeHandler
         $product_id = absint(Arr::get($args, 'product_id', 0));
 
         if (empty($platform) || empty($args['id'])) {
-            return __('Please, set a template platform name or template id on your shortcode', 'wp-social-reviews');
+            return esc_html__('Please, set a template platform name or template id on your shortcode', 'wp-social-reviews');
         }
 
         $templateId = absint($args['id']);
 
         if (!in_array($platform, GlobalHelper::shortcodeAllowedPlatforms())) {
-            return __('Provided platform name is not valid.', 'wp-social-reviews');
+            return esc_html__('Provided platform name is not valid.', 'wp-social-reviews');
         }
 
         // Same visibility policy as the AJAX renderers: never render a draft, private,
@@ -829,7 +829,7 @@ class ShortcodeHandler
         do_action('wpsocialreviews/before_display_instagram_feed', $account_ids);
 
         if (!empty($template_meta['error_message'])) {
-            return apply_filters('wpsocialreviews/display_frontend_error_message', $platform, $template_meta['error_message']);
+            return wp_kses((string) apply_filters('wpsocialreviews/display_frontend_error_message', $platform, $template_meta['error_message']), GlobalHelper::frontendErrorAllowedHtml());
         }
 
         $feed = (new InstagramFeed())->getTemplateMeta($template_meta, $templateId);
@@ -910,9 +910,9 @@ class ShortcodeHandler
         $hashtags = Arr::get($settings, 'feed_settings.source_settings.hash_tags');
 
         if (Arr::get($error_message, 'error_message')) {
-            $html .= apply_filters('wpsocialreviews/display_frontend_error_message', $platform, $error_message['error_message'], $account_ids, $hashtags);
+            $html .= wp_kses((string) apply_filters('wpsocialreviews/display_frontend_error_message', $platform, $error_message['error_message'], $account_ids, $hashtags), GlobalHelper::frontendErrorAllowedHtml());
         } else {
-            $html .= apply_filters('wpsocialreviews/display_frontend_error_message', $platform, $error_message, $account_ids, $hashtags);
+            $html .= wp_kses((string) apply_filters('wpsocialreviews/display_frontend_error_message', $platform, $error_message, $account_ids, $hashtags), GlobalHelper::frontendErrorAllowedHtml());
         }
 
         $html .= $app->view->make('public.feeds-templates.instagram.header', array(
@@ -945,7 +945,7 @@ class ShortcodeHandler
 
                 // No renderer ran, so the filter handed back the array it was given.
                 $html .= is_string($wpsr_pro_html)
-                    ? $wpsr_pro_html
+                    ? wp_kses($wpsr_pro_html, GlobalHelper::feedTemplateAllowedHtml())
                     : $app->view->make($templateMapping['template1'], $template_body_data);
             } else {
                 $html .= $app->view->make($file, $template_body_data);
@@ -964,7 +964,7 @@ class ShortcodeHandler
                 'total' => $pagination_settings['total'],
         ));
 
-        return $html;
+        return wp_kses($html, GlobalHelper::feedTemplateAllowedHtml());
     }
 
     public function formatFeedSettings($feed = [], $platform = '')
@@ -1479,6 +1479,9 @@ class ShortcodeHandler
             ];
         } else {
             $content = apply_filters('wpsr_feed_items_by_page_' . $platform, '', $templateId, $page);
+            if ($platform === 'instagram') {
+                $content = wp_kses((string) $content, GlobalHelper::feedTemplateAllowedHtml());
+            }
         }
 
         wp_send_json(array_merge([

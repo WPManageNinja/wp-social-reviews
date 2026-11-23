@@ -233,6 +233,11 @@ class FeedFilters
                 $hidePostIds = array_map('trim', explode(",", $filterSettings['hide_posts_by_id']));
             }
 
+            $showPostIds = [];
+            if (!empty($filterSettings['show_posts_by_id'])) {
+                $showPostIds = array_values(array_filter(preg_split('/[\s,]+/', $filterSettings['show_posts_by_id'])));
+            }
+
             $totalPostsIterator = 0;
             $global_settings = get_option('wpsr_'.$this->platform.'_global_settings');
             $advanceSettings = (new GlobalSettings())->getGlobalSettings('advance_settings');
@@ -278,6 +283,12 @@ class FeedFilters
                     break;
                 }
                 $id = Arr::get($feed, 'id');
+
+                // Pro does the matching. Without Pro every post passes.
+                if (!empty($showPostIds) && !apply_filters('wpsocialreviews/show_feed', true, $showPostIds, $id)) {
+                    continue;
+                }
+
                 $postIds[] = $id;
 
                 $text_description = '';

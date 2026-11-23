@@ -852,6 +852,12 @@ class FacebookFeed extends BaseFeed
                 }
 
                 $errorMessage = $this->getErrorMessage($pages_data);
+
+                // Professional Dashboard playlists hold Reels, and Graph refuses them with code 100.
+                if ($feedType === 'video_playlist_feed' && (int) Arr::get($pages_response_data, 'error.code') === 100) {
+                    $errorMessage = __('Facebook couldn\'t load this playlist. Playlists made in the Professional Dashboard hold Reels, and Facebook doesn\'t share them with apps. Choose "All Videos" as the feed type, then add the videos you want under Filters → Show Only These Posts.', 'wp-social-reviews');
+                }
+
                 return ['error_message' => $errorMessage];
             }
 
@@ -1294,12 +1300,13 @@ class FacebookFeed extends BaseFeed
         }
 
         if(!empty($responseErrorCode) && !$this->hasEncryptionError($accessToken)){
+            // A transient error must not clear a critical one; only a successful fetch resets it.
             if(in_array( $responseErrorCode, $critical_codes, true )){
                 $connectedAccounts[$pageId]['error_message'] = Arr::get($response, 'error.message', '');
                 $connectedAccounts[$pageId]['error_code'] = $responseErrorCode;
+                $connectedAccounts[$pageId]['has_critical_error'] = true;
             }
 
-            $connectedAccounts[$pageId]['has_critical_error'] = in_array( $responseErrorCode, $critical_codes, true );
             $connectedAccounts[$pageId]['has_app_permission_error'] = $this->platfromData->isAppPermissionError($response);
         }
         $connectedAccounts[$pageId]['status'] = 'error';

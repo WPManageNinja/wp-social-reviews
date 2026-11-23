@@ -48,10 +48,10 @@ class Cookie
         $samesite = 'Lax'
     ) {
         $cookie = static::make(
-            $name, 
-            $value, 
-            $minutes, 
-            $path = '/', 
+            $name,
+            $value,
+            $minutes,
+            $path,
             $domain, 
             $secure, 
             $httponly, 
@@ -62,7 +62,7 @@ class Cookie
             $cookie['options']['expires'] = $minutes;
             static::setCookieInResponse($cookie);
         } else {
-            setcookie($cookie['name'], $cookie['value'], $cookie['options']);
+            static::sendCookie($cookie);
         }
     }
 
@@ -234,7 +234,7 @@ class Cookie
     public static function sendHeaders($wp)
     {
         foreach (static::$queue as $cookie) {
-            setcookie($cookie['name'], $cookie['value'], $cookie['options']);
+            static::sendCookie($cookie);
         }
 
         static::$queue = [];
@@ -345,6 +345,17 @@ class Cookie
         }
 
         throw new InvalidArgumentException('Invalid expiration time provided.');
+    }
+
+    /**
+     * Send a cookie made by make() with PHP's setcookie().
+     *
+     * @param  array  $cookie  ['name' => ..., 'value' => ..., 'options' => [...]]
+     * @return void
+     */
+    protected static function sendCookie(array $cookie)
+    {
+        setcookie($cookie['name'], $cookie['value'], $cookie['options']);
     }
 
     /**

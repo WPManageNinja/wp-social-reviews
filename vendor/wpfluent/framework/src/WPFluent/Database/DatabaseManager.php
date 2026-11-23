@@ -5,6 +5,9 @@ namespace WPSocialReviews\Framework\Database;
 use BadMethodCallException;
 use WPSocialReviews\Framework\Support\Arr;
 
+/**
+ * @mixin \WPSocialReviews\Framework\Database\Query\WPDBConnection
+ */
 class DatabaseManager
 {
     protected $resolver;

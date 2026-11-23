@@ -41,13 +41,12 @@ class Env
     }
 
     /**
-     * Get an environment variable.
+     * Get an environment variable, or the default when it is missing or
+     * null (KEY=null in the file), as in Laravel. false, '' and 0 are values.
      */
     public static function get(string $key, $default = null)
     {
-        return array_key_exists($key, static::$localStore)
-            ? static::$localStore[$key]
-            : $default;
+        return static::$localStore[$key] ?? $default;
     }
 
     /**
@@ -56,6 +55,22 @@ class Env
     public static function set(string $key, $value): void
     {
         static::$localStore[$key] = $value;
+    }
+
+    /**
+     * Determine whether a variable is in the store, null or not.
+     */
+    public static function has(string $key): bool
+    {
+        return array_key_exists($key, static::$localStore);
+    }
+
+    /**
+     * Remove a variable from the store.
+     */
+    public static function forget(string $key): void
+    {
+        unset(static::$localStore[$key]);
     }
 
     /**
@@ -90,20 +105,24 @@ class Env
 
         $trimmed = strtolower(trim($value));
 
+        // As in Laravel: only these words change; 1, 0 and any other text
+        // stay text, for the code that reads them to cast.
         switch ($trimmed) {
             case 'true':
             case '(true)':
-            case '1':
                 return true;
 
             case 'false':
             case '(false)':
-            case '0':
                 return false;
 
             case 'null':
             case '(null)':
                 return null;
+
+            case 'empty':
+            case '(empty)':
+                return '';
 
             default:
                 return $value;

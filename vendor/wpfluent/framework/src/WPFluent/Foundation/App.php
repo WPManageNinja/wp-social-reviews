@@ -5,16 +5,15 @@ namespace WPSocialReviews\Framework\Foundation;
 use WPSocialReviews\Framework\Container\Contracts\BindingResolutionException;
 
 /**
- * @method static db();
- * @method static view();
- * @method static events();
- * @method static config();
- * @method static request();
- * @method static response();
- * @method static encrypter();
- * @method static validator();
+ * @method static \WPSocialReviews\Framework\Database\DatabaseManager db()
+ * @method static \WPSocialReviews\Framework\View\View view()
+ * @method static \WPSocialReviews\Framework\Events\Dispatcher events()
+ * @method static \WPSocialReviews\Framework\Foundation\Config config()
+ * @method static \WPSocialReviews\Framework\Http\Request\Request request()
+ * @method static \WPSocialReviews\Framework\Http\Response\Response response()
+ * @method static \WPSocialReviews\Framework\Encryption\Encrypter encrypter()
+ * @method static \WPSocialReviews\Framework\Validator\Validator validator()
  */
-
 class App
 {
     /**

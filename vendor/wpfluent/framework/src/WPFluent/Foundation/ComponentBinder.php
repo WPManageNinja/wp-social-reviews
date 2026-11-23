@@ -26,7 +26,6 @@ use WPSocialReviews\Framework\Pagination\AbstractCursorPaginator;
 use WPSocialReviews\Framework\Pagination\AbstractPaginator;
 use WPSocialReviews\Framework\Pagination\CursorPaginator;
 use WPSocialReviews\Framework\Pagination\Cursor;
-use WpOrg\Requests\Exception\Http\Status401;
 
 class ComponentBinder
 {
@@ -110,8 +109,8 @@ class ComponentBinder
             
             $request->setRequestInstance($app->request);
 
-            if (method_exists($request, 'authorize')) {
-                if(!$request->authorize()) throw new Status401;
+            if (method_exists($request, 'authorize') && !$request->authorize()) {
+                $request->failedAuthorization();
             }
 
             $request->merge((array) $request->beforeValidation());
@@ -141,9 +140,7 @@ class ComponentBinder
      */
     protected function bindRequest()
     {
-        $method = $this->getBindingMethod('singleton');
-
-        $this->app->$method(Request::class, function ($app) {
+        $this->app->singleton(Request::class, function ($app) {
             return $this->resolveRequest($app);
         });
 
@@ -158,30 +155,13 @@ class ComponentBinder
      */
     protected function bindResponse()
     {
-        $method = $this->getBindingMethod('singleton');
-
-        $this->app->$method(Response::class, function($app) {
+        $this->app->singleton(Response::class, function($app) {
             return new Response($app);
         });
 
         $this->app->alias(Response::class, 'response');
         
         $this->addBackwardCompatibleAlias(Response::class);
-    }
-
-    /**
-     * Get the binding method to bind a component.
-     * In the testing environment, we use bind
-     * method instead of singleton method.
-     * 
-     * @param  string $original
-     * @return string
-     */
-    protected function getBindingMethod($original)
-    {
-        return str_starts_with(
-            $this->app->env(), 'testing'
-        ) ? 'bind' : $original;
     }
 
     /**
@@ -232,7 +212,7 @@ class ComponentBinder
     protected function bindEncrypter()
     {
         $this->app->singleton(Encrypter::class, function($app) {
-            return new Encrypter($app->config->get('app.key'));
+            return new Encrypter();
         });
 
         $this->app->alias(Encrypter::class, 'encrypter');
@@ -248,11 +228,10 @@ class ComponentBinder
         $connection = new WPDBConnection($GLOBALS['wpdb']);
 
         $resolver = new ConnectionResolver([
-            'mysql' => $connection,
-            'sqlite' => $connection,
+            $connection->getName() => $connection,
         ]);
 
-        $resolver->setDefaultConnection('mysql');
+        $resolver->setDefaultConnection($connection->getName());
 
         $resolver->connection()->setTransactionManager(
             $this->resolveDatabaseTransactionsManager()
@@ -265,6 +244,8 @@ class ComponentBinder
         $this->app->singletonIf('db', function($app) use ($resolver) {
             return new DatabaseManager($resolver);
         });
+
+        $this->app->alias('db', DatabaseManager::class);
     }
 
     /**
@@ -312,8 +293,14 @@ class ComponentBinder
      */
     protected function bindPaginator()
     {
+        // A REST response's page links go to the same route: rest_url()
+        // keeps ?rest_route= with plain permalinks, which url() drops.
         AbstractPaginator::currentPathResolver(function () {
-            return $this->app['request']->url();
+            $request = $this->app['request'];
+
+            $route = method_exists($request, 'restRoute') ? $request->restRoute() : '';
+
+            return $route !== '' ? rest_url(ltrim($route, '/')) : $request->url();
         });
         
         AbstractPaginator::currentPageResolver(function ($pageName = 'page') {
@@ -449,7 +436,7 @@ class ComponentBinder
      */
     protected function isRequestOfPlugin()
     {
-        if (str_starts_with($this->app->env(), 'testing')) {
+        if ($this->app->env() === 'testing') {
             return true;
         }
 

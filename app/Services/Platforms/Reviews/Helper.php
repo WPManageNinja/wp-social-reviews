@@ -1490,20 +1490,16 @@ class Helper
         if (!empty($conditions)) {
             $whereClause = implode(' OR ', $conditions);
 
-            // $whereClause holds only %s placeholders, matched one-to-one by $values.
-            // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- $whereClause contains only %s placeholders that are properly escaped by $wpdb->prepare() with matching $values
-            $query = $wpdb->prepare(
-                "SELECT rating, COUNT(*) as count 
-                 FROM `{$table_name}` 
-                 WHERE review_approved = 1 
+            $sql = "SELECT rating, COUNT(*) as count
+                 FROM `{$table_name}`
+                 WHERE review_approved = 1
                    AND rating BETWEEN 0 AND 5
-                   AND (" . $whereClause . ")
-                 GROUP BY rating",
-                $values
-            );
-            
-            // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- $query is prepared and escaped by $wpdb->prepare() above
-            $results = $wpdb->get_results($query);
+                   AND ({$whereClause})
+                 GROUP BY rating";
+
+            // $whereClause holds only %s placeholders, matched one-to-one by $values.
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+            $results = $wpdb->get_results($wpdb->prepare($sql, $values));
 
             if (!empty($results)) {
                 foreach ($results as $row) {

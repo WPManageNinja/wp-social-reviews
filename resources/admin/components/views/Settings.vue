@@ -23,7 +23,8 @@
                 </template>
                 <div class="wpsr-sub-menu-items">
                   <router-link v-for="(menuItem, itemKey) in menu.routes" :key="itemKey" active-class="wpsr-tab-active" exact :class="['wpsr-tab']" :to="{ name: menuItem.route }">
-                    <img :src="getMenuItemIcon(menuItem)" alt="" class="sub-menu-icon">
+                    <el-icon v-if="menuItem.iconComponent" class="sub-menu-icon" aria-hidden="true"><component :is="menuItem.iconComponent" /></el-icon>
+                    <img v-else :src="getMenuItemIcon(menuItem)" alt="" class="sub-menu-icon">
                     <span class="wpsr-menu-title wpsr-label-small">{{ truncateTitle(menuItem.title) }}</span>
                   </router-link>
                 </div>
@@ -57,6 +58,8 @@ import QrCodeIcon from '../pieces/icons/QrCodeIcon';
 import ShoppableIcon from '../pieces/icons/ShoppableIcon';
 import AdvancedSettingsIcon from '../pieces/icons/AdvancedSettingsIcon';
 import ProCrownIcon from '../pieces/icons/ProCrownIcon';
+import SettingsLineIcon from '../pieces/icons/SettingsLineIcon';
+import { Coin, Delete, Share, Timer } from '@element-plus/icons-vue';
 import {PlatformIconMixin} from '../../mixins/PlatformIconMixin';
 import {DarkModeMixin} from '../../mixins/DarkModeMixin';
 export default {
@@ -69,7 +72,12 @@ export default {
     QrCodeIcon,
     ShoppableIcon,
     AdvancedSettingsIcon,
-    ProCrownIcon
+    ProCrownIcon,
+    SettingsLineIcon,
+    Coin,
+    Delete,
+    Share,
+    Timer
   },
   data() {
     return {
@@ -184,8 +192,37 @@ export default {
             {
               route: 'advance-settings',
               title: 'Advanced Settings',
-              permission : ['wpsn_feeds_advance_settings', 'wpsn_full_access'],
-              icon: this.assets_url+'/images/icon/'+'icon-translation'+'.png'
+              permission : ['wpsn_feeds_advance_settings', 'wpsn_full_access']
+            }
+          ]
+        },
+        'system_admin_tools': {
+          'title': this.$t('System Admin Tools'),
+          'permission' : ['wpsn_full_access'],
+          'routes': [
+            {
+              route: 'cron-monitor',
+              title: this.$t('Cron Job Monitor'),
+              permission : ['wpsn_full_access'],
+              iconComponent: 'Timer'
+            },
+            {
+              route: 'connected-platforms',
+              title: this.$t('Connected Platforms'),
+              permission : ['wpsn_full_access'],
+              iconComponent: 'Share'
+            },
+            {
+              route: 'database-health',
+              title: this.$t('Database Health'),
+              permission : ['wpsn_full_access'],
+              iconComponent: 'Coin'
+            },
+            {
+              route: 'data-cleanup',
+              title: this.$t('Data Cleanup'),
+              permission : ['wpsn_full_access'],
+              iconComponent: 'Delete'
             }
           ]
         }
@@ -235,7 +272,8 @@ export default {
         'reviews': 'ReviewsIcon',
         'get_reviews_via_qr_code': 'QrCodeIcon',
         'shoppable_by_hashtags': 'ShoppableIcon',
-        'advance': 'AdvancedSettingsIcon'
+        'advance': 'AdvancedSettingsIcon',
+        'system_admin_tools': 'SettingsLineIcon'
       };
       
       return iconMap[menuKey] || '';

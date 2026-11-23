@@ -2,10 +2,16 @@
 
 namespace WPSocialReviews\Framework\Http;
 
-use Exception;
+use Throwable;
+use WP_HTTP_Response;
 use BadMethodCallException;
 use InvalidArgumentException;
 use WPSocialReviews\Framework\Foundation\App;
+use WPSocialReviews\Framework\Validator\ValidationException;
+use WPSocialReviews\Framework\Database\Orm\ModelNotFoundException;
+use WPSocialReviews\Framework\Foundation\Exceptions\HttpException;
+use WPSocialReviews\Framework\Foundation\Exceptions\ExceptionHandler;
+use WPSocialReviews\Framework\Foundation\Exceptions\HttpExceptionInterface;
 
 /**
  * Register AJAX handlers using HTTP-like method names.
@@ -16,17 +22,15 @@ use WPSocialReviews\Framework\Foundation\App;
  * The $handler can be a callable or "Class@method" string.
  * These dynamic methods delegate to the register() method.
  * 
- * @method $this get(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
- * @method $this post(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
- * @method $this put(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
- * @method $this patch(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
- * @method $this delete(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
+ * Each is static (`Ajax::post(...)`) and can be called on an instance too
+ * (`$ajax->post(...)`); `@method static void` says both to PHPStan. They
+ * register the handler and return nothing, so they do not chain.
  *
- * @method static get(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
- * @method static post(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
- * @method static put(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
- * @method static patch(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
- * @method static delete(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
+ * @method static void get(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
+ * @method static void post(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
+ * @method static void put(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
+ * @method static void patch(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
+ * @method static void delete(string $action, callable|string $handler, int|string|array $priority = 10, string $scope = "both")
  *
  * Usage Examples:
  *
@@ -121,12 +125,14 @@ class Ajax
 
 	    $callback = function () use ($method, $handler) {
 	        try {
-	            wp_send_json_success(
-	                $this->handle($method, $handler)
-	            );
-	        } catch (Exception $e) {
-	            wp_send_json_error($e->getMessage());
+	            $data = $this->toAjaxData($this->handle($method, $handler));
+	        } catch (Throwable $e) {
+	            $this->fail($e);
+
+	            return;
 	        }
+
+	        wp_send_json_success($data);
 	    };
 
 	    if ($scope === 'both') {
@@ -143,6 +149,85 @@ class Ajax
 	}
 
 	/**
+	 * Report an exception through the plugin's exception handler.
+	 *
+	 * @param  \Throwable $e
+	 * @param  \WPSocialReviews\Framework\Foundation\Exceptions\HttpExceptionInterface|null $renderedAs
+	 * @return void
+	 */
+	protected function report(Throwable $e, $renderedAs = null)
+	{
+		$this->app->make(ExceptionHandler::class)->report(
+			$e, $this->app, $renderedAs
+		);
+	}
+
+	/**
+	 * Report an exception and answer the request with an error.
+	 *
+	 * The plugin's exception handler is asked first how to answer it, as
+	 * a route asks it.
+	 *
+	 * @param  \Throwable $e
+	 * @return void
+	 */
+	protected function fail(Throwable $e)
+	{
+		$rendered = $this->app->make(ExceptionHandler::class)->render($e, $this->app);
+
+		$this->report(
+			$e, $rendered instanceof HttpExceptionInterface ? $rendered : null
+		);
+
+		[$data, $status] = $this->errorResponse($rendered ?: $e);
+
+		wp_send_json_error($data, $status);
+	}
+
+	/**
+	 * The error an exception is answered with, as [data, status]:
+	 *
+	 * 1. A response the plugin's handler made: its data and status.
+	 * 2. A failed validation: 422 with the message and the errors.
+	 * 3. A missing model: 404.
+	 * 4. An exception that says how it is answered (HttpException).
+	 * 5. Anything else: a server error, its message hidden outside debug.
+	 *
+	 * @param  \Throwable|\WP_HTTP_Response $error
+	 * @return array
+	 */
+	public function errorResponse($error)
+	{
+		if ($error instanceof WP_HTTP_Response) {
+			return [$error->get_data(), $error->get_status()];
+		}
+
+		if ($error instanceof ValidationException) {
+			return [[
+				'message' => $error->getMessage(),
+				'errors'  => $error->errors(),
+			], 422];
+		}
+
+		if ($error instanceof ModelNotFoundException) {
+			$named = $error->getModel() && !$this->app->shouldShowErrorDetails();
+
+			return [$named ? 'Not found.' : $error->getMessage(), 404];
+		}
+
+		if ($error instanceof HttpExceptionInterface) {
+			return [$error->getMessage(), $error->getStatusCode()];
+		}
+
+		$code = $error->getCode();
+
+		return [
+			$this->app->shouldShowErrorDetails() ? $error->getMessage() : 'An internal error occurred.',
+			is_int($code) && $code >= 400 && $code < 600 ? $code : 500,
+		];
+	}
+
+	/**
 	 * Handle an AJAX request.
 	 * 
 	 * @param  string $method
@@ -152,9 +237,7 @@ class Ajax
 	public function handle($method, $handler)
 	{
 		if ($_SERVER['REQUEST_METHOD'] !== strtoupper($method)) {
-			throw new BadMethodCallException(
-				"Invalid request method."
-			);
+			throw new HttpException(405, 'Invalid request method.');
 		}
 
 		check_ajax_referer($this->app->config->get('hook_prefix'));
@@ -162,6 +245,31 @@ class Ajax
 		return $this->app->call(
 			$this->app->parseHookHandler($handler)
 		);
+	}
+
+	/**
+	 * Turn a handler's redirect into where the page should go, since an
+	 * ajax call can't redirect the page itself: the script reads
+	 * data.redirect_to and navigates. Anything else is sent as it is.
+	 *
+	 * @param  mixed $result
+	 * @return mixed
+	 */
+	protected function toAjaxData($result)
+	{
+		if (!$result instanceof WP_HTTP_Response) {
+			return $result;
+		}
+
+		$status = $result->get_status();
+
+		$headers = array_change_key_case($result->get_headers());
+
+		if ($status >= 300 && $status < 400 && isset($headers['location'])) {
+			return ['redirect_to' => $headers['location']];
+		}
+
+		return $result;
 	}
 
 	/**

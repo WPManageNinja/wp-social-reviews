@@ -2,7 +2,8 @@
 
 namespace WPSocialReviews\Framework\Support;
 
-use Closure;
+use DateTimeInterface;
+use InvalidArgumentException;
 use WPSocialReviews\Framework\Support\DateTime;
 
 class Sanitizer
@@ -115,6 +116,26 @@ class Sanitizer
     public static function sanitizeInt($arg)
     {
         return intval($arg);
+    }
+
+    /**
+     * Sanitize a boolean the way PHP's FILTER_VALIDATE_BOOLEAN reads one.
+     *
+     * @param  mixed $arg
+     * @return bool|null TRUE for "1", "true", "on", "yes"; FALSE for "0",
+     *                   "false", "off", "no", ""; NULL for anything else.
+     */
+    public static function sanitizeBool($arg)
+    {
+        if (is_bool($arg)) {
+            return $arg;
+        }
+
+        if (!is_scalar($arg)) {
+            return null;
+        }
+
+        return filter_var($arg, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
     }
 
     /**
@@ -405,20 +426,31 @@ class Sanitizer
     }
 
     /**
-     * Returns a DateTime object.
+     * Returns a DateTime object, or null when the value is not a date.
      *
-     * @param  string       $key
+     * @param  string|\DateTimeInterface  $value
      * @param  string|null  $format
      * @param  string|null|\DateTimeZone  $tz
      * @return \WPSocialReviews\Framework\Support\DateTime|null
      */
     public static function sanitizeDate($value, $format, $tz)
     {
-        $result = is_null($format)
-            ? DateTime::parse($value, $tz)
-            : DateTime::createFromFormat($format, $value, $tz);
+        if ($value instanceof DateTimeInterface) {
+            return DateTime::parse($value, $tz);
+        }
 
-        return $result ?: null;
+        if (!is_string($value) && !is_numeric($value)) {
+            return null;
+        }
+
+        try {
+            return is_null($format)
+                ? DateTime::parse($value, $tz)
+                : DateTime::createFromFormat($format, $value, $tz);
+        } catch (InvalidArgumentException | \ValueError $e) {
+            // Not a date, or a NUL byte in it: no date.
+            return null;
+        }
     }
 
     /**
@@ -439,7 +471,10 @@ class Sanitizer
                 continue;
             }
 
-            $callbacks = is_array($callbacks) ? $callbacks : [$callbacks];
+            // [Class::class, 'method'] is one rule, not two rule names.
+            $callbacks = is_array($callbacks) && !static::isArrayCallable($callbacks)
+                ? $callbacks
+                : [$callbacks];
 
             if (str_contains($key, '*')) {
                 $expandedRules = array_merge(
@@ -542,18 +577,50 @@ class Sanitizer
      *
      * @param callable|string $callback
      * @return callable|null
+     * @throws \InvalidArgumentException If the rule resolves to nothing callable.
      */
     protected static function getCallback($callback)
     {
         if ($callback) {
-            if ($callback instanceof Closure) return $callback;
+            // Only a name can be one of the Sanitizer's own methods; an
+            // array callable or an invokable object is used as it is.
+            if (!is_string($callback)) {
+                if (is_callable($callback)) return $callback;
+
+                throw new InvalidArgumentException(sprintf(
+                    'Unknown sanitizer rule: %s.', gettype($callback)
+                ));
+            }
 
             if ($cb = static::methodExists($callback)) {
                 $callback = $cb;
+            } elseif (!is_callable($callback)) {
+                throw new InvalidArgumentException(sprintf(
+                    'Unknown sanitizer rule: %s.',
+                    is_string($callback) ? $callback : gettype($callback)
+                ));
             }
         }
-        
+
         return $callback;
+    }
+
+    /**
+     * Whether a rule is a single array callable, such as
+     * [Class::class, 'method'] or [$object, 'method'], rather than a
+     * list of rules.
+     *
+     * @param  mixed  $rule
+     * @return bool
+     */
+    protected static function isArrayCallable($rule)
+    {
+        return is_array($rule)
+            && count($rule) === 2
+            && array_keys($rule) === [0, 1]
+            && (is_object($rule[0]) || (is_string($rule[0]) && class_exists($rule[0])))
+            && is_string($rule[1])
+            && is_callable($rule);
     }
 
     /**

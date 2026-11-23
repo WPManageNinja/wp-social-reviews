@@ -4,7 +4,7 @@ namespace WPSocialReviews\Framework\Pagination;
 
 use UnexpectedValueException;
 use WPSocialReviews\Framework\Support\Collection;
-use WPSocialReviews\Framework\Support\ArrayableInterface;
+use WPSocialReviews\Framework\Support\Contracts\ArrayableInterface;
 
 class Cursor implements ArrayableInterface
 {
@@ -120,7 +120,11 @@ class Cursor implements ArrayableInterface
 
         $parameters = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $encodedString)), true);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        // Only an object the paginator wrote is a cursor: anything else
+        // (null, a number, a list, {}) from a changed URL is no cursor.
+        if (json_last_error() !== JSON_ERROR_NONE
+            || ! is_array($parameters)
+            || ! is_bool($parameters['_pointsToNextItems'] ?? null)) {
             return null;
         }
 

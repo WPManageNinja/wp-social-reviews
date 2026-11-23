@@ -40,6 +40,7 @@
       v-model="title_form_visible"
       title="Change Template Title"
       width="30%"
+      :append-to-body="true"
       class="wpsr-modal wpsr-connection-modal"
     >
       <template #header>

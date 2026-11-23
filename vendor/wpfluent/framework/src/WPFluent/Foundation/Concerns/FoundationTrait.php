@@ -2,7 +2,10 @@
 
 namespace WPSocialReviews\Framework\Foundation\Concerns;
 
-use WPSocialReviews\Framework\Http\Request\WPUserProxy;
+use RuntimeException;
+use InvalidArgumentException;
+use WPSocialReviews\Framework\Support\Str;
+use WPSocialReviews\Framework\Http\Request\CurrentUser;
 
 trait FoundationTrait
 {
@@ -19,6 +22,20 @@ trait FoundationTrait
     }
 
     /**
+     * Whether error responses carry the error's message, file and line:
+     * WP_DEBUG on and WP_DEBUG_DISPLAY not turned off, as WordPress shows
+     * errors. A site that only logs (WP_DEBUG_DISPLAY false or null) still
+     * writes them to the debug log, which follows WP_DEBUG alone.
+     *
+     * @return bool
+     */
+    public function shouldShowErrorDetails()
+    {
+        return $this->isDebugOn()
+            && (!defined('WP_DEBUG_DISPLAY') || WP_DEBUG_DISPLAY);
+    }
+
+    /**
      * Check whether multi-site or not.
      * 
      * @return boolean
@@ -29,19 +46,23 @@ trait FoundationTrait
     }
 
     /**
-     * Determine the environment.
-     * 
+     * The environment: config/app.php's env (dev, testing, production),
+     * production when none is set. On the command line WPF_ENV wins, as
+     * the test runner sets it. WP_DEBUG plays no part.
+     *
      * @return string
      */
     public function env()
     {
-        if (php_sapi_name() === 'cli' && isset($_ENV['WPF_ENV'])) {
-            $env = $_ENV['WPF_ENV'];
-        } else {
-            $env = $this->isDebugOn() ? 'dev' : '';
+        if (php_sapi_name() === 'cli') {
+            $env = $_ENV['WPF_ENV'] ?? getenv('WPF_ENV');
+
+            if (is_string($env) && $env !== '') {
+                return $env;
+            }
         }
-        
-        return $env ?: $this->config->get('app.env', 'prod');
+
+        return $this->config->get('app.env') ?: 'production';
     }
 
     /**
@@ -84,8 +105,19 @@ trait FoundationTrait
             }
 
             if (is_string($handler[0])) {
+                // [Controller::class, 'method'] names the class in full, in
+                // any group; a short name is in the group's namespace.
+                if ($this->hasNamespace($handler[0])) {
+                    return '\\' . ltrim($handler[0], '\\') . '@' . $handler[1];
+                }
+
                 $handler = $handler[0] . '@' . $handler[1];
             }
+        }
+
+        // A leading backslash: the class as written, outside any namespace.
+        if (is_string($handler) && strpos($handler, '\\') === 0) {
+            return '\\' . ltrim($handler, '\\');
         }
 
         if ($ns && str_contains($handler, $ns)) {
@@ -128,11 +160,20 @@ trait FoundationTrait
             }
 
         } else if (is_array($handler)) {
-            list($class, $method) = $handler;
+            [$class, $method] = $handler;
 
+            // A policy method is an instance method, so the class is built,
+            // as for 'Policy@method'; a short name is looked up in the
+            // plugin's policy namespace.
             if (is_string($class)) {
-                $handler = $this->getPolicyNamespace($handler) . '\\' . $class . '::' . $method;
+                $class = ltrim($class, '\\');
+
+                $namespace = $this->getPolicyNamespace($class);
+
+                $class = $this->make($namespace ? $namespace . '\\' . $class : $class);
             }
+
+            $handler = [$class, $method];
         }
 
         return $handler;
@@ -262,15 +303,21 @@ trait FoundationTrait
     }
 
     /**
-     * Checks if any action has been registered.
-     * 
+     * Check whether an action has callbacks, or has the given one.
+     *
+     * The callback is named as it was added: a handler class by
+     * 'Class@method', by the class alone or by [class, method] is found
+     * though the container built it. Like has_filter(), the answer is the
+     * callback's priority, or false; without a callback, whether the hook
+     * has any.
+     *
      * @param  string $action
      * @param  mixed $callback
-     * @return bool
+     * @return bool|int
      */
     public function hasAction($action, $callback = false)
-    {   
-        return has_action($action, $callback);
+    {
+        return $this->hasFilter($action, $callback);
     }
 
     /**
@@ -287,17 +334,23 @@ trait FoundationTrait
     }
 
     /**
-     * Checks if any custom action has been registered.
-     * 
+     * Check whether a custom (prefixed) action has callbacks, or has the given one.
+     *
+     * The callback is named as it was added: a handler class by
+     * 'Class@method', by the class alone or by [class, method] is found
+     * though the container built it. Like has_filter(), the answer is the
+     * callback's priority, or false; without a callback, whether the hook
+     * has any.
+     *
      * @param  string $action
      * @param  mixed $callback
-     * @return bool
+     * @return bool|int
      */
     public function hasCustomAction($action, $callback = false)
     {
         $prefix = $this->config->get('app.hook_prefix');
-        
-        return has_action($prefix.$action, $callback);
+
+        return $this->hasFilter($this->hook($prefix, $action), $callback);
     }
 
     /**
@@ -308,19 +361,31 @@ trait FoundationTrait
      */
     public function didFilter($action)
     {
+        $this->requireDidFilter(__FUNCTION__);
+
         return did_filter($action);
     }
 
     /**
-     * Checks if any action has been registered.
-     * 
+     * Check whether a filter has callbacks, or has the given one.
+     *
+     * The callback is named as it was added: a handler class by
+     * 'Class@method', by the class alone or by [class, method] is found
+     * though the container built it. Like has_filter(), the answer is the
+     * callback's priority, or false; without a callback, whether the hook
+     * has any.
+     *
      * @param  string $action
      * @param  mixed $callback
-     * @return bool
+     * @return bool|int
      */
     public function hasFilter($action, $callback = false)
-    {   
-        return has_filter($action, $callback);
+    {
+        $priority = $callback === false
+            ? null
+            : $this->findNamedHandler($action, $callback);
+
+        return $priority ?? has_filter($action, $callback);
     }
 
     /**
@@ -331,23 +396,61 @@ trait FoundationTrait
      */
     public function didCustomFilter($action)
     {
+        $this->requireDidFilter(__FUNCTION__);
+
         return did_filter(
             $this->config->get('app.hook_prefix') . $action
         );
     }
 
     /**
-     * Checks if any custom action has been registered.
-     * 
+     * Stop with a clear message on a WordPress without did_filter().
+     *
+     * WordPress added did_filter() in 6.1; before it, filters were not
+     * counted at all, so there is no number to give instead.
+     *
+     * @param  string  $method  The method that needs it.
+     * @return void
+     *
+     * @throws \RuntimeException
+     */
+    protected function requireDidFilter($method)
+    {
+        if (!$this->hasDidFilter()) {
+            throw new RuntimeException(
+                "{$method}() needs WordPress 6.1 or newer, which added did_filter()."
+            );
+        }
+    }
+
+    /**
+     * Determine whether this WordPress has did_filter().
+     *
+     * @return bool
+     */
+    protected function hasDidFilter()
+    {
+        return function_exists('did_filter');
+    }
+
+    /**
+     * Check whether a custom (prefixed) filter has callbacks, or has the given one.
+     *
+     * The callback is named as it was added: a handler class by
+     * 'Class@method', by the class alone or by [class, method] is found
+     * though the container built it. Like has_filter(), the answer is the
+     * callback's priority, or false; without a callback, whether the hook
+     * has any.
+     *
      * @param  string $action
      * @param  mixed $callback
-     * @return bool
+     * @return bool|int
      */
     public function hasCustomFilter($action, $callback = false)
     {
         $prefix = $this->config->get('app.hook_prefix');
-        
-        return has_filter($prefix.$action, $callback);
+
+        return $this->hasFilter($this->hook($prefix, $action), $callback);
     }
 
     /**
@@ -373,35 +476,71 @@ trait FoundationTrait
     }
 
     /**
-     * Parse a hookm handler
-     * @param  mixed $handler
+     * Parse a hook handler.
+     *
+     * @param mixed $handler
      * @return mixed
      */
     public function parseHookHandler($handler)
     {
         if (is_string($handler)) {
-
-            if (function_exists($handler)) return $handler;
-            
-            if (count($array = preg_split('/::|@/', $handler)) < 2) {
-                $array[] = 'handle';
+            if (function_exists($handler)) {
+                return $handler;
             }
 
-            list($class, $method) = $array;
+            // 'Class::method' is PHP's static callable, so WordPress calls
+            // it as written, without building the class.
+            if (strpos($handler, '::') !== false) {
+                return $handler;
+            }
+
+            // 'Handler@boot' builds Handler and calls boot(). Without a
+            // method, an invokable class is called itself, any other class
+            // gets handle().
+            [$class, $method] = Str::parseCallback($handler);
 
             $class = $this->makeInstance($class);
 
-            return is_callable($class) ? $class : [$class, $method];
+            if (!is_null($method)) {
+                return [$class, $method];
+            }
 
-        } else if (is_array($handler)) {
-            list($class, $method) = $handler;
+            return is_callable($class) ? $class : [$class, 'handle'];
+        }
+
+        if (is_array($handler)) {
+            // Rejected here, while the hook is registered: WordPress would
+            // only fail when the hook fires, far from the mistake.
+            if (!$this->isHookHandlerArray($handler)) {
+                throw new InvalidArgumentException(
+                    'A hook handler array must be [class or object, method].'
+                );
+            }
+
+            [$class, $method] = $handler;
+
             if (is_string($class)) {
                 $class = $this->makeInstance($class);
             }
+
             return [$class, $method];
         }
 
         return $handler;
+    }
+
+    /**
+     * Determine whether the value is a valid [class or object, method] handler.
+     *
+     * @param array $handler
+     * @return bool
+     */
+    protected function isHookHandlerArray(array $handler)
+    {
+        return array_keys($handler) === [0, 1]
+            && (is_string($handler[0]) || is_object($handler[0]))
+            && is_string($handler[1])
+            && $handler[1] !== '';
     }
 
     /**
@@ -460,6 +599,9 @@ trait FoundationTrait
      */
     public function makeInstance($class)
     {
+        // Container bindings are keyed without a leading backslash.
+        $class = ltrim($class, '\\');
+
         if ($this->hasNamespace($class)) {
             $instance = $this->make($class);
         } else {
@@ -480,38 +622,21 @@ trait FoundationTrait
     }
 
     /**
-     * Get the current authenticated user.
+     * WordPress's current user with a way through to the plugin's User model.
+     * The same object on every call. It's a guest before init, and a call
+     * that early is logged in debug mode.
      *
-     * Returns a WPUserProxy instance if the 'init' action has fired,
-     * otherwise logs a warning in debug mode and returns null.
-     * 
-     * @return mixed
+     * @return \WPSocialReviews\Framework\Http\Request\CurrentUser
      */
     public function user()
     {
-        if (!did_action('init')) {
-            if ($this->isDebugOn()) {
-                error_log("User not available—'init' action hasn't fired.");
-            }
-            
-            return new class {
-                public function __call($method, $args) {}
-            };
+        if (!did_action('init') && $this->isDebugOn()) {
+            error_log("User not available—'init' action hasn't fired.");
         }
 
-        $wpUser = wp_get_current_user();
-
-        if (!$wpUser->ID) {
-            return new class {
-                public function __call($method, $args) {}
-            };
-        }
-
-        $userModel = $this->__namespace__ . '\App\Models\User';
-
-        return class_exists($userModel)
-            ? ($userModel::find($wpUser->ID) ?? new WPUserProxy($wpUser))
-            : new WPUserProxy($wpUser);
+        return $this->currentUser ??= new CurrentUser(
+            $this->__namespace__ . '\App\Models\User'
+        );
     }
 
     public function enableApplicationPassword()

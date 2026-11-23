@@ -7,9 +7,9 @@ use WPSocialReviews\Framework\Foundation\App;
 use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\Framework\Support\Str;
 use WPSocialReviews\Framework\Support\Helper;
-use WPSocialReviews\Framework\Support\Tappable;
+use WPSocialReviews\Framework\Support\Concerns\Tappable;
 use WPSocialReviews\Framework\Support\Collection;
-use WPSocialReviews\Framework\Support\ForwardsCalls;
+use WPSocialReviews\Framework\Support\Concerns\ForwardsCalls;
 
 /**
  * @mixin \WPSocialReviews\Framework\Support\Collection
@@ -435,6 +435,8 @@ abstract class AbstractPaginator
      */
     public function setPath($path)
     {
+        // A path that doesn't start with http:// or https:// (any case) is
+        // relative: prefix it with the current request's URL.
         if (!preg_match('/^https?:\/\//i', $path)) {
             $path = App::make('request')->url() . '/' . trim($path, '/');
         }

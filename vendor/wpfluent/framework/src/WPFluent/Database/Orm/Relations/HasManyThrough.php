@@ -5,6 +5,11 @@ namespace WPSocialReviews\Framework\Database\Orm\Relations;
 use WPSocialReviews\Framework\Database\Orm\Collection;
 use WPSocialReviews\Framework\Database\Orm\Relations\Concerns\InteractsWithDictionary;
 
+/**
+ * @template TRelatedModel of \WPSocialReviews\Framework\Database\Orm\Model
+ *
+ * @extends HasOneOrManyThrough<TRelatedModel, \WPSocialReviews\Framework\Database\Orm\Model, \WPSocialReviews\Framework\Database\Orm\Model, mixed>
+ */
 class HasManyThrough extends HasOneOrManyThrough
 {
     use InteractsWithDictionary;

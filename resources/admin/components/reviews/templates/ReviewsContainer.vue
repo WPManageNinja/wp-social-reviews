@@ -44,7 +44,7 @@
                     :is="templates[template_meta.template]"
                     v-bind="skinProps"
                     :reviews="row"
-                    @expandContent="expandContent"
+                    @contentExpand="expandContent"
                 />
               </div>
             </div>
@@ -59,7 +59,7 @@
               :is="templates[template_meta.template]"
               v-bind="skinProps"
               :reviews="filteredReviews"
-              @expandContent="expandContent"
+              @contentExpand="expandContent"
           />
           <div v-if="has_pro && template_meta?.notification_settings?.display_read_all_reviews_btn === 'true' && Object.keys(businessInfo).length && template_meta.templateType === 'notification'"
                class="wpsr-reviews-footer-cta"
@@ -135,10 +135,11 @@ export default {
     }
   },
   mounted() {
-    window.addEventListener('scroll', this.onScroll);
+    // Capture phase: the editor preview scrolls inside .el-main, and element scroll events do not bubble.
+    document.addEventListener('scroll', this.onScroll, true);
   },
   beforeUnmount() {
-    window.removeEventListener('scroll', this.onScroll);
+    document.removeEventListener('scroll', this.onScroll, true);
   },
   computed:{
     reviewsWrapperClasses(){
@@ -296,8 +297,20 @@ export default {
     handleLoadMore() {
       this.$emit('load-more');
     },
-    onScroll() {
+    onScroll(event) {
       if (this.loadMoreLoading || !this.shouldShowLoadMore || this.template_meta.pagination_type === 'load_more') return;
+
+      // In the editor the preview pane is the scroller; page scroll there comes from the WP admin menu.
+      const wpsrPreviewPane = this.$el && this.$el.parentElement ? this.$el.parentElement.closest('.el-main') : null;
+      if (wpsrPreviewPane) {
+        if (!event || event.target !== wpsrPreviewPane) {
+          return;
+        }
+        if (wpsrPreviewPane.scrollTop + wpsrPreviewPane.clientHeight >= wpsrPreviewPane.scrollHeight - 100) {
+          this.handleLoadMore();
+        }
+        return;
+      }
 
       const scrollPosition = window.scrollY + window.innerHeight;
       const bottomOffset = document.documentElement.offsetHeight - 100;

@@ -1067,6 +1067,19 @@ input.readonly, input[readonly], textarea.readonly, textarea[readonly] {
 .wpsr-action-delete .el-icon{
   color: #FB3748 !important;
 }
+// Row-menu items that are real links (new-tab capable); the menu item keeps its own look.
+.el-dropdown-menu__item .wpsr-dropdown-link{
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+  &:hover,
+  &:focus{
+    color: inherit;
+    box-shadow: none;
+    outline: none;
+  }
+}
 .toplevel_page_wpsocialninja{
   #wpwrap{
     > #wpcontent{

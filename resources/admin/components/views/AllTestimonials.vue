@@ -119,11 +119,11 @@
               v-model="search_string"
               placeholder="Search..."
               size="default"
-              @keyup.enter="getItems()"
+              @keyup.enter="applyListFilters()"
               @clear="handleClear"
               clearable>
             <template #prefix>
-              <el-icon class="el-input__icon" @click="getItems()"><Search /></el-icon>
+              <el-icon class="el-input__icon" @click="applyListFilters()"><Search /></el-icon>
             </template>
           </el-input>
         </div>

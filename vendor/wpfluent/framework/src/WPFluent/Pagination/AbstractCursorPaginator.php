@@ -8,10 +8,10 @@ use ArrayAccess;
 use WPSocialReviews\Framework\Foundation\App;
 use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\Framework\Support\Str;
-use WPSocialReviews\Framework\Support\Tappable;
+use WPSocialReviews\Framework\Support\Concerns\Tappable;
 use WPSocialReviews\Framework\Database\Orm\Model;
 use WPSocialReviews\Framework\Support\Collection;
-use WPSocialReviews\Framework\Support\ForwardsCalls;
+use WPSocialReviews\Framework\Support\Concerns\ForwardsCalls;
 use WPSocialReviews\Framework\Database\Orm\Relations\Pivot;
 
 /**
@@ -471,6 +471,8 @@ abstract class AbstractCursorPaginator
      */
     public function setPath($path)
     {
+        // A path that doesn't start with http:// or https:// (any case) is
+        // relative: prefix it with the current request's URL.
         if (!preg_match('/^https?:\/\//i', $path)) {
             $path = App::make('request')->url() . '/' . trim($path, '/');
         }

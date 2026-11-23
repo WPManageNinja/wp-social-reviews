@@ -1013,6 +1013,8 @@
 
       .fluentform{
         padding: 20px;
+        max-height: calc(100vh - 240px);
+        overflow-y: auto;
         .frm-fluent-form{
           padding: 0;
         }

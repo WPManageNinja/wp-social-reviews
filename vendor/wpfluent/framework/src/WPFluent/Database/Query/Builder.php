@@ -12,16 +12,17 @@ use WPSocialReviews\Framework\Foundation\App;
 use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\Framework\Support\Str;
 use WPSocialReviews\Framework\Support\Helper;
-use WPSocialReviews\Framework\Support\MacroableTrait;
+use WPSocialReviews\Framework\Support\DebugLog;
+use WPSocialReviews\Framework\Support\Concerns\MacroableTrait;
 use WPSocialReviews\Framework\Support\Collection;
 use WPSocialReviews\Framework\Pagination\Paginator;
-use WPSocialReviews\Framework\Support\ForwardsCalls;
+use WPSocialReviews\Framework\Support\Concerns\ForwardsCalls;
 use WPSocialReviews\Framework\Support\LazyCollection;
 use WPSocialReviews\Framework\Database\Query\Expression;
 use WPSocialReviews\Framework\Database\Query\Grammars\Grammar;
 use WPSocialReviews\Framework\Database\Query\Processors\Processor;
 use WPSocialReviews\Framework\Database\Query\ConditionExpression;
-use WPSocialReviews\Framework\Support\ArrayableInterface;
+use WPSocialReviews\Framework\Support\Contracts\ArrayableInterface;
 use WPSocialReviews\Framework\Database\ConnectionInterface;
 use WPSocialReviews\Framework\Database\Concerns\BuildsQueries;
 use WPSocialReviews\Framework\Database\Concerns\BuildsWhereDateClauses;
@@ -113,9 +114,17 @@ class Builder
     /**
      * The table joins for the query.
      *
-     * @var array
+     * @var array|null
      */
     public $joins;
+
+    /**
+     * The table aliases the query declares (subqueries, "table as alias"):
+     * the grammar leaves them unprefixed while it compiles this query.
+     *
+     * @var string[]
+     */
+    public $aliases = [];
 
     /**
      * The where constraints for the query.
@@ -148,7 +157,7 @@ class Builder
     /**
      * The maximum number of records to return.
      *
-     * @var int
+     * @var int|null
      */
     public $limit;
 
@@ -162,9 +171,16 @@ class Builder
     /**
      * The number of records to skip.
      *
-     * @var int
+     * @var int|null
      */
     public $offset;
+
+    /**
+     * The page size the paginators use when given none, or one below 1.
+     *
+     * @var int
+     */
+    protected $perPage = 15;
 
     /**
      * The query union statements.
@@ -305,7 +321,7 @@ class Builder
      */
     public function selectSub($query, $as)
     {
-        $this->grammar->addAlias($as);
+        $this->aliases[] = $as;
 
         [$query, $bindings] = $this->createSub($query);
 
@@ -343,11 +359,11 @@ class Builder
      */
     public function fromSub($query, $as)
     {
-        $this->grammar->addAlias($as);
+        $this->aliases[] = $as;
 
         [$query, $bindings] = $this->createSub($query);
 
-        return $this->fromRaw('('.$query.') as '.$this->grammar->wrapTable($as), $bindings);
+        return $this->fromRaw('('.$query.') as '.$this->grammar->withAliasesOf($this, fn () => $this->grammar->wrapTable($as)), $bindings);
     }
 
     /**
@@ -487,7 +503,7 @@ class Builder
     {
         if (is_string($table) && stripos($table, ' as ') !== false) {
             [$table, $as] = explode(' as ', $table);
-            $this->grammar->addAlias($as);
+            $this->aliases[] = $as;
         }
 
         if ($this->isQueryable($table)) {
@@ -609,11 +625,11 @@ class Builder
      */
     public function joinSub($query, $as, $first, $operator = null, $second = null, $type = 'inner', $where = false)
     {
-        $this->grammar->addAlias($as);
+        $this->aliases[] = $as;
 
         [$query, $bindings] = $this->createSub($query);
 
-        $expression = '('.$query.') as '.$this->grammar->wrapTable($as);
+        $expression = '('.$query.') as '.$this->grammar->withAliasesOf($this, fn () => $this->grammar->wrapTable($as));
 
         $this->addBinding($bindings, 'join');
 
@@ -632,7 +648,7 @@ class Builder
     {
         [$query, $bindings] = $this->createSub($query);
 
-        $expression = '('.$query.') as '.$this->grammar->wrapTable($as);
+        $expression = '('.$query.') as '.$this->grammar->withAliasesOf($this, fn () => $this->grammar->wrapTable($as));
 
         $this->addBinding($bindings, 'join');
 
@@ -768,11 +784,11 @@ class Builder
      */
     public function crossJoinSub($query, $as)
     {
-        $this->grammar->addAlias($as);
+        $this->aliases[] = $as;
 
         [$query, $bindings] = $this->createSub($query);
 
-        $expression = '('.$query.') as '.$this->grammar->wrapTable($as);
+        $expression = '('.$query.') as '.$this->grammar->withAliasesOf($this, fn () => $this->grammar->wrapTable($as));
 
         $this->addBinding($bindings, 'join');
 
@@ -793,7 +809,7 @@ class Builder
     {
         if (stripos($table, ' as ') !== false) {
             [$_, $as] = explode(' as ', $table);
-            $this->grammar->addAlias($as);
+            $this->aliases[] = $as;
         }
         
         return new JoinClause($parentQuery, $type, $table);
@@ -884,6 +900,14 @@ class Builder
         // assume that the developer is just short-cutting the '=' operators and
         // we will set the operators to '=' and set the values appropriately.
         if ($this->invalidOperator($operator)) {
+            if (is_string($operator) && !is_null($value) && func_num_args() >= 3) {
+                DebugLog::warn(sprintf(
+                    "where('%s', '%s', …): '%s' is not an operator, so it was compared as the value "
+                    . 'and the third argument was ignored.',
+                    is_string($column) ? $column : 'column', $operator, $operator
+                ));
+            }
+
             [$value, $operator] = [$operator, '='];
         }
 
@@ -930,6 +954,16 @@ class Builder
         );
 
         if (! $value instanceof Expression) {
+            if (is_array($value) && count($items = Arr::flatten($value)) > 1) {
+                DebugLog::warn(sprintf(
+                    "where('%s', [%s]) compares with the first item only: use whereIn() for a list.",
+                    is_string($column) ? $column : 'column',
+                    implode(', ', array_map(function ($item) {
+                        return is_scalar($item) ? (string) $item : gettype($item);
+                    }, array_slice($items, 0, 5))) . (count($items) > 5 ? ', …' : '')
+                ));
+            }
+
             $this->addBinding($this->flattenValue($value), 'where');
         }
 
@@ -1311,43 +1345,6 @@ class Builder
     }
 
     /**
-     * Add a fuzzy "similar to" (Levenshtein edit-distance) clause.
-     *
-     * Matches values within $distance single-character edits, e.g. searching
-     * "collap" matches "collapse", "bll" matches "bill", "hera" matches "heera".
-     *
-     * Requires a LEVENSHTEIN() SQL function on the connection (a stored
-     * function on MySQL, a PHP-backed UDF on SQLite).
-     *
-     * @param  \WPSocialReviews\Framework\Database\Query\Expression|string  $column
-     * @param  string  $value
-     * @param  int  $distance
-     * @param  string  $boolean
-     * @return $this
-     */
-    public function whereSimilar($column, $value, $distance = 2, $boolean = 'and')
-    {
-        return $this->whereRaw(
-            $this->grammar->compileSimilar($column),
-            [$value, $distance],
-            $boolean
-        );
-    }
-
-    /**
-     * Add an "or" fuzzy "similar to" clause to the query.
-     *
-     * @param  \WPSocialReviews\Framework\Database\Query\Expression|string  $column
-     * @param  string  $value
-     * @param  int  $distance
-     * @return $this
-     */
-    public function orWhereSimilar($column, $value, $distance = 2)
-    {
-        return $this->whereSimilar($column, $value, $distance, 'or');
-    }
-
-    /**
      * Add a "where in" clause to the query.
      *
      * @param  string  $column
@@ -1435,7 +1432,7 @@ class Builder
      * Add a "where in raw" clause for integer values to the query.
      *
      * @param  string  $column
-     * @param  \WPSocialReviews\Framework\Support\ArrayableInterface|array  $values
+     * @param  \WPSocialReviews\Framework\Support\Contracts\ArrayableInterface|array  $values
      * @param  string  $boolean
      * @param  bool  $not
      * @return $this
@@ -1467,7 +1464,7 @@ class Builder
      * Add an "or where in raw" clause for integer values to the query.
      *
      * @param  string  $column
-     * @param  \WPSocialReviews\Framework\Support\ArrayableInterface|array  $values
+     * @param  \WPSocialReviews\Framework\Support\Contracts\ArrayableInterface|array  $values
      * @return $this
      */
     public function orWhereIntegerInRaw($column, $values)
@@ -1479,7 +1476,7 @@ class Builder
      * Add a "where not in raw" clause for integer values to the query.
      *
      * @param  string  $column
-     * @param  \WPSocialReviews\Framework\Support\ArrayableInterface|array  $values
+     * @param  \WPSocialReviews\Framework\Support\Contracts\ArrayableInterface|array  $values
      * @param  string  $boolean
      * @return $this
      */
@@ -1492,7 +1489,7 @@ class Builder
      * Add an "or where not in raw" clause for integer values to the query.
      *
      * @param  string  $column
-     * @param  \WPSocialReviews\Framework\Support\ArrayableInterface|array  $values
+     * @param  \WPSocialReviews\Framework\Support\Contracts\ArrayableInterface|array  $values
      * @return $this
      */
     public function orWhereIntegerNotInRaw($column, $values)
@@ -1694,6 +1691,13 @@ class Builder
             $value, $operator, func_num_args() === 2
         );
 
+        // If the given operator is not found in the list of valid operators we will
+        // assume that the developer is just short-cutting the '=' operators and
+        // we will set the operators to '=' and set the values appropriately.
+        if ($this->invalidOperator($operator)) {
+            [$value, $operator] = [$operator, '='];
+        }
+
         $value = $this->flattenValue($value);
 
         if ($value instanceof DateTimeInterface) {
@@ -1734,6 +1738,13 @@ class Builder
         [$value, $operator] = $this->prepareValueAndOperator(
             $value, $operator, func_num_args() === 2
         );
+
+        // If the given operator is not found in the list of valid operators we will
+        // assume that the developer is just short-cutting the '=' operators and
+        // we will set the operators to '=' and set the values appropriately.
+        if ($this->invalidOperator($operator)) {
+            [$value, $operator] = [$operator, '='];
+        }
 
         $value = $this->flattenValue($value);
 
@@ -1776,14 +1787,23 @@ class Builder
             $value, $operator, func_num_args() === 2
         );
 
+        // If the given operator is not found in the list of valid operators we will
+        // assume that the developer is just short-cutting the '=' operators and
+        // we will set the operators to '=' and set the values appropriately.
+        if ($this->invalidOperator($operator)) {
+            [$value, $operator] = [$operator, '='];
+        }
+
         $value = $this->flattenValue($value);
 
         if ($value instanceof DateTimeInterface) {
             $value = $value->format('d');
         }
 
+        // A number, as MySQL's DAY() gives: MySQL reads '01' as 1, SQLite
+        // (WordPress's drop-in) never takes a number and text as equal.
         if (! $value instanceof Expression) {
-            $value = sprintf('%02d', $value);
+            $value = (int) $value;
         }
 
         return $this->addDateBasedWhere('Day', $column, $operator, $value, $boolean);
@@ -1821,14 +1841,23 @@ class Builder
             $value, $operator, func_num_args() === 2
         );
 
+        // If the given operator is not found in the list of valid operators we will
+        // assume that the developer is just short-cutting the '=' operators and
+        // we will set the operators to '=' and set the values appropriately.
+        if ($this->invalidOperator($operator)) {
+            [$value, $operator] = [$operator, '='];
+        }
+
         $value = $this->flattenValue($value);
 
         if ($value instanceof DateTimeInterface) {
             $value = $value->format('m');
         }
 
+        // A number, as MySQL's MONTH() gives: MySQL reads '01' as 1, SQLite
+        // (WordPress's drop-in) never takes a number and text as equal.
         if (! $value instanceof Expression) {
-            $value = sprintf('%02d', $value);
+            $value = (int) $value;
         }
 
         return $this->addDateBasedWhere('Month', $column, $operator, $value, $boolean);
@@ -1865,6 +1894,13 @@ class Builder
         [$value, $operator] = $this->prepareValueAndOperator(
             $value, $operator, func_num_args() === 2
         );
+
+        // If the given operator is not found in the list of valid operators we will
+        // assume that the developer is just short-cutting the '=' operators and
+        // we will set the operators to '=' and set the values appropriately.
+        if ($this->invalidOperator($operator)) {
+            [$value, $operator] = [$operator, '='];
+        }
 
         $value = $this->flattenValue($value);
 
@@ -1996,7 +2032,7 @@ class Builder
      * @param  bool  $not
      * @return $this
      */
-    public function whereExists(Closure $callback, $boolean = 'and', $not = false)
+    public function whereExists($callback, $boolean = 'and', $not = false)
     {
         if ($callback instanceof Closure) {
             $query = $this->forSubQuery();
@@ -2081,6 +2117,10 @@ class Builder
     {
         if (count($columns) !== count($values)) {
             throw new InvalidArgumentException('The number of columns must match the number of values');
+        }
+
+        if ($this->invalidOperator($operator)) {
+            throw new InvalidArgumentException('Invalid operator passed to whereRowValues method.');
         }
 
         $type = 'RowValues';
@@ -2295,6 +2335,13 @@ class Builder
             $value, $operator, func_num_args() === 2
         );
 
+        // If the given operator is not found in the list of valid operators we will
+        // assume that the developer is just short-cutting the '=' operators and
+        // we will set the operators to '=' and set the values appropriately.
+        if ($this->invalidOperator($operator)) {
+            [$value, $operator] = [$operator, '='];
+        }
+
         $this->wheres[] = compact('type', 'column', 'operator', 'value', 'boolean');
 
         if (! $value instanceof Expression) {
@@ -2332,6 +2379,10 @@ class Builder
     {
         $finder = substr($method, 5);
 
+        // Split the method name at each And or Or that starts a new word,
+        // keeping them: 'NameAndEmailOrStatus' -> ['Name', 'And', 'Email',
+        // 'Or', 'Status']. (?=[A-Z]) checks the next letter is a capital
+        // without taking it, so 'OrderIdAndBrand' is not split at 'Or'.
         $segments = preg_split(
             '/(And|Or)(?=[A-Z])/', $finder, -1, PREG_SPLIT_DELIM_CAPTURE
         );
@@ -2834,7 +2885,12 @@ class Builder
             );
         }
 
-        if (!preg_match('/^[a-zA-Z0-9_\.]+$/', $column)) {
+        // A column given as text must be a column name: letters, digits, _
+        // and ., then an optional JSON path of -> parts ('users.created_at',
+        // 'meta->price', 'meta->items[0]'); 'created_at desc' fails. \z is
+        // the very end, so a trailing newline fails too. A closure, query
+        // or Expression is not text and is used as it is.
+        if (is_string($column) && !preg_match('/^[a-zA-Z0-9_.]+(?:->[\w\-\[\]]+)*\z/', $column)) {
             throw new LogicException("Invalid column name `$column`.");
         }
 
@@ -3226,9 +3282,7 @@ class Builder
      */
     public function toRawSql()
     {
-        return $this->grammar->substituteBindingsIntoRawSql(
-            $this->toSql(), $this->connection->prepareBindings($this->getBindings())
-        );
+        return $this->connection->toRawSql($this->toSql(), $this->getBindings());
     }
 
     /**
@@ -3369,7 +3423,7 @@ class Builder
     /**
      * Paginate the given query into a simple paginator.
      *
-     * @param  int  $perPage
+     * @param  int|null|\Closure  $perPage
      * @param  array  $columns
      * @param  string  $pageName
      * @param  int|null  $page
@@ -3377,7 +3431,7 @@ class Builder
      * @return \WPSocialReviews\Framework\Pagination\LengthAwarePaginatorInterface
      */
     public function paginate(
-        $perPage = 15,
+        $perPage = null,
         $columns = ['*'],
         $pageName = 'page',
         $page = null,
@@ -3387,7 +3441,9 @@ class Builder
 
         $total = Helper::value($total) ?? $this->getCountForPagination();
 
-        $perPage = $perPage instanceof Closure ? $perPage($total) : $perPage;
+        $perPage = $this->resolvePerPage(
+            $perPage instanceof Closure ? $perPage($total) : $perPage
+        );
 
         $results = $total
             ? $this->forPage($page, $perPage)->get($columns)
@@ -3404,20 +3460,22 @@ class Builder
      *
      * This is more efficient on larger data-sets, etc.
      *
-     * @param  int  $perPage
+     * @param  int|null  $perPage
      * @param  array  $columns
      * @param  string  $pageName
      * @param  int|null  $page
      * @return \WPSocialReviews\Framework\Pagination\PaginatorInterface
      */
     public function simplePaginate(
-        $perPage = 15,
+        $perPage = null,
         $columns = ['*'],
         $pageName = 'page',
         $page = null
     )
     {
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
+
+        $perPage = $this->resolvePerPage($perPage);
 
         $this->offset(($page - 1) * $perPage)->limit($perPage + 1);
 
@@ -3441,15 +3499,31 @@ class Builder
      * @return \WPSocialReviews\Framework\Pagination\CursorPaginatorInterface
      */
     public function cursorPaginate(
-        $perPage = 15,
+        $perPage = null,
         $columns = ['*'],
         $cursorName = 'cursor',
         $cursor = null
     )
     {
         return $this->paginateUsingCursor(
-            $perPage, $columns, $cursorName, $cursor
+            $this->resolvePerPage($perPage), $columns, $cursorName, $cursor
         );
+    }
+
+    /**
+     * Resolve the page size, falling back to $perPage for anything below 1.
+     *
+     * A negative size would otherwise be dropped by limit() while offset()
+     * still applies, and zero would divide by zero in the paginator.
+     *
+     * @param  mixed  $perPage
+     * @return int
+     */
+    protected function resolvePerPage($perPage)
+    {
+        $perPage = (int) $perPage;
+
+        return $perPage > 0 ? $perPage : $this->perPage;
     }
 
     /**
@@ -3678,6 +3752,9 @@ class Builder
             ? $this->grammar->getValue($column)
             : $column;
 
+        // Keep what follows " as " (any case) or, without an alias, what
+        // follows the last dot: 'users.name as author' -> 'author',
+        // 'users.email' -> 'email'.
         $separator = str_contains(strtolower($columnString), ' as ') ? ' as ' : '\.';
 
         return Helper::last(preg_split('~'.$separator.'~i', $columnString));
@@ -4109,7 +4186,7 @@ class Builder
             return ['value' => new Expression("({$query})"), 'bindings' => fn () => $bindings];
         });
 
-        $sql = $this->grammar->compileUpdate($this, $values->map(fn ($value) => $value['value'])->all());
+        $sql = $this->grammar->withAliasesOf($this, fn () => $this->grammar->compileUpdate($this, $values->map(fn ($value) => $value['value'])->all()));
 
         return $this->connection->update($sql, $this->cleanBindings(
             $this->grammar->prepareBindingsForUpdate($this->bindings, $values->map(fn ($value) => $value['bindings'])->all())
@@ -4203,7 +4280,7 @@ class Builder
         ));
 
         return $this->connection->affectingStatement(
-            $this->grammar->compileUpsert($this, $values, (array) $uniqueBy, $update),
+            $this->grammar->withAliasesOf($this, fn () => $this->grammar->compileUpsert($this, $values, (array) $uniqueBy, $update)),
             $bindings
         );
     }
@@ -4312,7 +4389,7 @@ class Builder
         $this->applyBeforeQueryCallbacks();
 
         return $this->connection->delete(
-            $this->grammar->compileDelete($this), $this->cleanBindings(
+            $this->grammar->withAliasesOf($this, fn () => $this->grammar->compileDelete($this)), $this->cleanBindings(
                 $this->grammar->prepareBindingsForDelete($this->bindings)
             )
         );
@@ -4330,6 +4407,30 @@ class Builder
         foreach ($this->grammar->compileTruncate($this) as $sql => $bindings) {
             $this->connection->statement($sql, $bindings);
         }
+    }
+
+    /**
+     * The query's limit, the union's when it has unions.
+     *
+     * @return int|null
+     */
+    public function getLimit()
+    {
+        $value = $this->unions ? $this->unionLimit : $this->limit;
+
+        return ! is_null($value) ? (int) $value : null;
+    }
+
+    /**
+     * The query's offset, the union's when it has unions.
+     *
+     * @return int|null
+     */
+    public function getOffset()
+    {
+        $value = $this->unions ? $this->unionOffset : $this->offset;
+
+        return ! is_null($value) ? (int) $value : null;
     }
 
     /**

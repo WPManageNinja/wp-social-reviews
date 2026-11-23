@@ -16,7 +16,7 @@ use WPSocialReviews\Framework\Validator\Rules\Exists;
 use WPSocialReviews\Framework\Validator\Rules\RequiredIf;
 use WPSocialReviews\Framework\Validator\Rules\Dimensions;
 use WPSocialReviews\Framework\Validator\Rules\ConditionalRules;
-use WPSocialReviews\Framework\Support\ArrayableInterface;
+use WPSocialReviews\Framework\Support\Contracts\ArrayableInterface;
 
 class Rule
 {
@@ -59,7 +59,7 @@ class Rule
     /**
      * Get an in constraint builder instance.
      *
-     * @param  \WPSocialReviews\Framework\Support\ArrayableInterface|array|string  $values
+     * @param  \WPSocialReviews\Framework\Support\Contracts\ArrayableInterface|array|string  $values
      * @return \WPSocialReviews\Framework\Validator\Rules\In
      */
     public static function in($values)
@@ -74,7 +74,7 @@ class Rule
     /**
      * Get a not_in constraint builder instance.
      *
-     * @param  \WPSocialReviews\Framework\Support\ArrayableInterface|array|string  $values
+     * @param  \WPSocialReviews\Framework\Support\Contracts\ArrayableInterface|array|string  $values
      * @return \WPSocialReviews\Framework\Validator\Rules\NotIn
      */
     public static function notIn($values)

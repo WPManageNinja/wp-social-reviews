@@ -7,7 +7,8 @@
   <div class="wpsr-tiktok-feed-wrapper wpsr-tiktok-masonry-activate wpsr-tiktok-feed-template2"
        :class="[
            'wpsr-tiktok-'+feedConfig.feed_settings.source_settings.feed_type,
-           'wpsr-tiktok-feed-template-'+this.$route.params.template_id
+           'wpsr-tiktok-feed-template-'+this.$route.params.template_id,
+           {'wpsr-tiktok-feed-masonry-activate': feedConfig.feed_settings.layout_type === 'masonry'}
        ]"
        v-if="feedConfig"
   >

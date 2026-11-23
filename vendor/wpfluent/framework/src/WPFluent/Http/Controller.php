@@ -59,13 +59,14 @@ abstract class Controller
      * @param  array $data
      * @param  array $rules
      * @param  array  $messages
+     * @param  array  $attributes The names the messages give the fields.
      * @return array     
      */
-    public function validate($data, $rules, $messages = [])
+    public function validate($data, $rules, $messages = [], $attributes = [])
     {
         try {
             // @phpstan-ignore-next-line
-            $validator = $this->app->validator->make($data, $rules, $messages);
+            $validator = $this->app->validator->make($data, $rules, $messages, $attributes);
 
             if ($validator->validate()->fails()) {
                 throw new ValidationException(
@@ -84,6 +85,17 @@ abstract class Controller
             };
 
             $this->app->doCustomAction('handle_exception', $e);
+
+            // A handle_exception listener may answer and end the request.
+            // If none did, stop here instead of running on invalid data.
+            if (wp_doing_ajax()) {
+                wp_send_json_error([
+                    'message' => $e->getMessage(),
+                    'errors'  => $e->errors(),
+                ], 422);
+            }
+
+            throw $e;
         }
     }
 

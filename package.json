@@ -11,6 +11,7 @@
     "production": "cross-env NODE_ENV=production mix",
     "rtl": "find assets -type f -name '*.css' ! -name '*-rtl.css' ! -name '*.rtl.css' -exec sh -c 'rtlcss \"$1\" \"${1%.css}-rtl.css\"' _ {} \\;",
     "extract-translations": "node extract-translations.js",
+    "sync:test-versions": "node dev/scripts/sync-test-versions.mjs",
     "test": "node dev/wp-browser/bin/run-suite.mjs Integration",
     "test:unit": "node dev/wp-browser/bin/run-suite.mjs Unit",
     "test:pro": "node dev/wp-browser/bin/run-suite.mjs IntegrationPro",

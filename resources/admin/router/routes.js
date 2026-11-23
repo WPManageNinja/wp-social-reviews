@@ -47,6 +47,10 @@ import Tools from '../components/views/Tools';
 
 //Advance settings
 import AdvanceSettings from "../components/views/settings/advance/Advance";
+import CronMonitor from "../Modules/Settings/SystemTools/CronMonitor";
+import ConnectedPlatforms from "../Modules/Settings/SystemTools/ConnectedPlatforms";
+import DatabaseHealth from "../Modules/Settings/SystemTools/DatabaseHealth";
+import DataCleanup from "../components/views/settings/advance/DataCleanup";
 
 const  globalSettingsViewChildrenRoutes =[
     {
@@ -207,6 +211,34 @@ const  globalSettingsViewChildrenRoutes =[
         meta: { title: 'Advance Settings' }
     },
     {
+        path: 'cron-monitor',
+        name: 'cron-monitor',
+        component: CronMonitor,
+
+        meta: { title: 'Cron Job Monitor' }
+    },
+    {
+        path: 'connected-platforms',
+        name: 'connected-platforms',
+        component: ConnectedPlatforms,
+
+        meta: { title: 'Connected Platforms' }
+    },
+    {
+        path: 'database-health',
+        name: 'database-health',
+        component: DatabaseHealth,
+
+        meta: { title: 'Database Health' }
+    },
+    {
+        path: 'data-cleanup',
+        name: 'data-cleanup',
+        component: DataCleanup,
+
+        meta: { title: 'Data Cleanup' }
+    },
+    {
         path: 'license-management',
         name: 'license-management',
         component: LicenseManagement,
@@ -336,70 +368,70 @@ export const routes = [
         ]
     },
     {
-        path: '/edit-template/:template_id',
+        path: '/edit-template/:template_id(\\d+)',
         name:'edit-template',
         component: EditTemplateView,
 
         meta: { title: 'Edit Review Template' }
     },
     {
-        path: '/edit-chat-widget/:widget_id',
+        path: '/edit-chat-widget/:widget_id(\\d+)',
         name:'edit-chat-widget',
         component: EditChatView,
 
         meta: { title: 'Edit Chat Widget' }
     },
     {
-        path: '/edit-twitter-template/:template_id',
+        path: '/edit-twitter-template/:template_id(\\d+)',
         name:'edit-twitter-template',
         component: EditTwitterFeedView,
 
         meta: { title: 'Edit X (Twitter) Template' }
     },
     {
-        path: '/edit-youtube-template/:template_id',
+        path: '/edit-youtube-template/:template_id(\\d+)',
         name:'edit-youtube-template',
         component: EditYoutubeFeedView,
 
         meta: { title: 'Edit Youtube Template' }
     },
     {
-        path: '/edit-instagram-template/:template_id',
+        path: '/edit-instagram-template/:template_id(\\d+)',
         name:'edit-instagram-template',
         component: EditInstagramFeedView,
 
         meta: { title: 'Edit Instagram Template' }
     },
     {
-        path: '/edit-facebook-feed-template/:template_id',
+        path: '/edit-facebook-feed-template/:template_id(\\d+)',
         name:'edit-facebook-feed-template',
         component: EditFacebookFeedView,
 
         meta: { title: 'Edit Facebook Template' }
     },
     {
-        path: '/edit-tiktok-template/:template_id',
+        path: '/edit-tiktok-template/:template_id(\\d+)',
         name:'edit-tiktok-template',
         component: EditTiktokFeedView,
 
         meta: { title: 'Edit TikTok Template' }
     },
     {
-        path: '/edit-social-wall-template/:template_id',
+        path: '/edit-social-wall-template/:template_id(\\d+)',
         name:'edit-social-wall-template',
         component: EditSocialWallView,
 
         meta: { title: 'Edit Social Wall Template' }
     },
     {
-        path: '/edit-custom-source/:template_id',
+        path: '/edit-custom-source/:template_id(\\d+)',
         name:'edit-custom-source',
         component: EditCustomSourceView,
 
         meta: { title: 'Edit Custom Source' }
     },
     {
-        path: '/review-forms/:id/edit',
+        path: '/review-forms/:id(\\d+)/edit',
         name: 'review-form-edit',
         component: ReviewFormEditor,
         meta: { title: 'Edit Review Form' }

@@ -56,15 +56,4 @@ class Util
 
         return esc_url_raw($url);
     }
-
-	/**
-	 * Get the user locale.
-	 * 
-	 * @param  int|null $userId
-	 * @return \WPSocialReviews\Framework\Support\Locale
-	 */
-	public static function getLocale($userId = null)
-	{
-		return Locale::init($userId);
-	}
 }

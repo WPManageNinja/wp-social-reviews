@@ -7,8 +7,8 @@ use ArrayAccess;
 use JsonSerializable;
 use IteratorAggregate;
 use WPSocialReviews\Framework\Support\Collection;
-use WPSocialReviews\Framework\Support\JsonableInterface;
-use WPSocialReviews\Framework\Support\ArrayableInterface;
+use WPSocialReviews\Framework\Support\Contracts\JsonableInterface;
+use WPSocialReviews\Framework\Support\Contracts\ArrayableInterface;
 use WPSocialReviews\Framework\Pagination\CursorPaginatorInterface;
 
 class CursorPaginator extends AbstractCursorPaginator implements ArrayableInterface, ArrayAccess, Countable, IteratorAggregate, JsonableInterface, JsonSerializable, CursorPaginatorInterface
@@ -86,6 +86,16 @@ class CursorPaginator extends AbstractCursorPaginator implements ArrayableInterf
     }
 
     /**
+     * Determine if the paginator is on the last page.
+     *
+     * @return bool
+     */
+    public function onLastPage()
+    {
+        return ! $this->hasMorePages();
+    }
+
+    /**
      * Determine if the paginator is on the first page.
      *
      * @return bool
@@ -106,7 +116,9 @@ class CursorPaginator extends AbstractCursorPaginator implements ArrayableInterf
             'data' => $this->items->toArray(),
             'path' => $this->path(),
             'per_page' => $this->perPage(),
+            'next_cursor' => ($next = $this->nextCursor()) ? $next->encode() : null,
             'next_page_url' => $this->nextPageUrl(),
+            'prev_cursor' => ($previous = $this->previousCursor()) ? $previous->encode() : null,
             'prev_page_url' => $this->previousPageUrl(),
         ];
     }

@@ -114,7 +114,7 @@
                   <instagram-config
                       v-if="feed.id === 'instagram' && instagramSettingModal"
                       :instagramModal="instagramSettingModal"
-                      :access_token.sync="verificationData"
+                      v-model:access_token="verificationData"
                       :credentials_type="credentialsType"
                       :expires_in="expiresIn"
                       @instagram_settings="instagramFeedModal"
@@ -122,7 +122,7 @@
                   />
                   <facebook-config
                       v-if="feed.id === 'facebook_feed' && showFacebookFeedModal"
-                      :access_token.sync="verificationData"
+                      :access_token="verificationData"
                       :facebookModal="showFacebookFeedModal"
                       @facebook_settings="facebookFeedModalSettings"
                       @findEnabledPlatforms="getEnabledPlatforms"
@@ -135,7 +135,7 @@
                   />
                   <tiktok-config
                       v-if="feed.id === 'tiktok' && showTiktokFeedModal"
-                      :access_token.sync="verificationData"
+                      :access_token="verificationData"
                       :tiktokModal="showTiktokFeedModal"
                       @tiktok_settings="tiktokFeedModalSettings"
                       @findEnabledPlatforms="getEnabledPlatforms"

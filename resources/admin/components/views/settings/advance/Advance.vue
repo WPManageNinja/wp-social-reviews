@@ -115,39 +115,6 @@
           </div>
         </div>
 
-        <div class="wpsr-settings-container" v-if="hasPermission(['wpsn_full_access'])">
-          <div class="wpsr-setting-section wpsr-mb-24">
-            <div class="wpsr-settings-header">
-              <h3 class="wpsr-feed-settings-title">
-                Manage Data
-              </h3>
-            </div>
-            <div class="wpsr-feed-settings-content">
-              <div class="wpsr-setting-row">
-                <div class="wpsr-setting-left">
-                  <h3 class="wpsr-setting-title">
-                    {{ $t("Delete all Platform Data?") }}
-                  </h3>
-                  <p class="wpsr-setting-description">
-                    Pressing this button will permanently erase all data from
-                    Facebook, Instagram and other platforms including connected
-                    accounts, optimized images, and cached posts.
-                  </p>
-                </div>
-
-                <div class="wpsr-setting-right">
-                  <RemoveConfirm
-                    @confirm="deletePlatformData"
-                    message="Would you like to delete all the Facebook, Instagram and other platforms data including all connected accounts, optimize images, cached posts?"
-                    submit_button_type="text"
-                    :displayRefreshLeft="'trash'"
-                    button_text="Delete All"
-                  ></RemoveConfirm>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
         <el-button
           class="wpsr_primary_btn"
           type="success"
@@ -161,12 +128,10 @@
 </template>
 
 <script>
-import RemoveConfirm from '../../../core-ui/editor/RemoveConfirm';
 import { InfoFilled } from '@element-plus/icons-vue';
 export default {
   name: "Advance",
   components: {
-    RemoveConfirm,
     InfoFilled
   },
   data() {
@@ -224,17 +189,6 @@ export default {
           }).always(() => {
             this.loading = false;
           });
-    },
-    deletePlatformData(){
-      this.$del('settings/delete-all-data').then(response => {
-        if (response) {
-          this.handleSuccess(response.message);
-        }
-      }).catch((errors) => {
-        this.handleError(errors);
-      }).always(() => {
-
-      });
     },
     getGDPRTooltipContent() {
       return `<p>

@@ -8,7 +8,7 @@ use WPSocialReviews\Framework\Container\Container;
 use WPSocialReviews\Framework\Support\Str;
 use WPSocialReviews\Framework\Support\Helper;
 use WPSocialReviews\Framework\Support\Collection;
-use WPSocialReviews\Framework\Support\Conditionable;
+use WPSocialReviews\Framework\Support\Concerns\Conditionable;
 use WPSocialReviews\Framework\Support\LazyCollection;
 use WPSocialReviews\Framework\Database\Orm\Builder;
 use WPSocialReviews\Framework\Database\Query\Expression;
@@ -40,18 +40,31 @@ trait BuildsQueries
     {
         $this->enforceOrderBy();
 
+        // The query's own offset and limit frame the rows chunked.
+        $skip = $this->getOffset();
+        $remaining = $this->getLimit();
+
         $page = 1;
 
         do {
-            // We'll execute the query for the given page and get the results. If there are
-            // no results we can just break and return from here. When there are results
-            // we will call the callback with the current chunk of these results here.
-            $results = $this->forPage($page, $count)->get();
+            $offset = (($page - 1) * $count) + (int) $skip;
+
+            $limit = is_null($remaining) ? $count : min($count, $remaining);
+
+            if ($limit == 0) {
+                break;
+            }
+
+            $results = $this->offset($offset)->limit($limit)->get();
 
             $countResults = $results->count();
 
             if ($countResults == 0) {
                 break;
+            }
+
+            if (! is_null($remaining)) {
+                $remaining = max($remaining - $countResults, 0);
             }
 
             // On each chunk result set, we will pass them to the callback and then let the
@@ -161,24 +174,41 @@ trait BuildsQueries
 
         $lastId = null;
 
+        $skip = $this->getOffset();
+        $remaining = $this->getLimit();
+
         $page = 1;
 
         do {
             $clone = clone $this;
 
+            if ($skip && $page > 1) {
+                $clone->offset(0);
+            }
+
+            $limit = is_null($remaining) ? $count : min($count, $remaining);
+
+            if ($limit == 0) {
+                break;
+            }
+
             // We'll execute the query for the given page and get the results. If there are
             // no results we can just break and return from here. When there are results
             // we will call the callback with the current chunk of these results here.
             if ($descending) {
-                $results = $clone->forPageBeforeId($count, $lastId, $column)->get();
+                $results = $clone->forPageBeforeId($limit, $lastId, $column)->get();
             } else {
-                $results = $clone->forPageAfterId($count, $lastId, $column)->get();
+                $results = $clone->forPageAfterId($limit, $lastId, $column)->get();
             }
 
             $countResults = $results->count();
 
             if ($countResults == 0) {
                 break;
+            }
+
+            if (! is_null($remaining)) {
+                $remaining = max($remaining - $countResults, 0);
             }
 
             // On each chunk result set, we will pass them to the callback and then let the

@@ -88,7 +88,8 @@ class Config
     }
 
     /**
-     * Get only specific items from the config array.
+     * Get only specific items from the config array: one value per key, in
+     * the order given, null for a missing key.
      *
      * @param  string|array $key ($key1, $key2 or [$key1, $key2])
      * @return array
@@ -106,7 +107,7 @@ class Config
             $result[] = Arr::get($this->data, $key);
         }
 
-        return array_values(array_filter($result));
+        return $result;
     }
 
     /**

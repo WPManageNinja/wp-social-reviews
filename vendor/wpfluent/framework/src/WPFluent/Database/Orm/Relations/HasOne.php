@@ -11,6 +11,11 @@ use WPSocialReviews\Framework\Database\Orm\SupportsPartialRelations;
 use WPSocialReviews\Framework\Database\Orm\Relations\Concerns\ComparesRelatedModels;
 use WPSocialReviews\Framework\Database\Orm\Relations\Concerns\SupportsDefaultModels;
 
+/**
+ * @template TRelatedModel of \WPSocialReviews\Framework\Database\Orm\Model
+ *
+ * @extends HasOneOrMany<TRelatedModel>
+ */
 class HasOne extends HasOneOrMany implements SupportsPartialRelations
 {
     use ComparesRelatedModels, CanBeOneOfMany, SupportsDefaultModels;

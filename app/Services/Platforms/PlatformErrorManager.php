@@ -344,8 +344,10 @@ class PlatformErrorManager
     public function hasCriticalErrors($platform)
     {
         if(!empty($platform)){
-            if( Arr::get($this->errors, $platform.'.connection') ){
-                foreach ($this->errors[$platform]['connection'] as $connection_error){
+            // Not a dot path: "booking.com" would split into "booking" and "com".
+            $connection_errors = Arr::get(Arr::get($this->errors, $platform, []), 'connection');
+            if( is_array($connection_errors) ){
+                foreach ($connection_errors as $connection_error){
                     if(Arr::get($connection_error, 'critical')){
                         return true;
                     }
@@ -358,7 +360,7 @@ class PlatformErrorManager
 
     public function getRevokedAccounts($platform)
     {
-        $accounts_revoked = Arr::get($this->errors, $platform.'.revoked');
+        $accounts_revoked = Arr::get(Arr::get($this->errors, $platform, []), 'revoked');
 
         if (empty($accounts_revoked)) {
             return null;

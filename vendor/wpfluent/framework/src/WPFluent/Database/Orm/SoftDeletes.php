@@ -49,6 +49,10 @@ trait SoftDeletes
      */
     public function forceDelete()
     {
+        if ($this->fireModelEvent('forceDeleting') === false) {
+            return false;
+        }
+
         $this->forceDeleting = true;
 
         return Helper::tap($this->delete(), function ($deleted) {
@@ -67,9 +71,7 @@ trait SoftDeletes
      */
     public function forceDeleteQuietly()
     {
-        return static::withoutEvents(function() {
-            $this->forceDelete();
-        });
+        return static::withoutEvents(fn () => $this->forceDelete());
     }
 
     /**
@@ -184,6 +186,16 @@ trait SoftDeletes
     }
 
     /**
+     * Restore a soft-deleted model instance without raising any events.
+     *
+     * @return bool
+     */
+    public function restoreQuietly()
+    {
+        return static::withoutEvents(fn () => $this->restore());
+    }
+
+    /**
      * Determine if the model instance has been soft-deleted.
      *
      * @return bool
@@ -224,6 +236,17 @@ trait SoftDeletes
     public static function restored($callback)
     {
         static::registerModelEvent('restored', $callback);
+    }
+
+    /**
+     * Register a "forceDeleting" model event callback with the dispatcher.
+     *
+     * @param  \Closure|string  $callback
+     * @return void
+     */
+    public static function forceDeleting($callback)
+    {
+        static::registerModelEvent('forceDeleting', $callback);
     }
 
     /**

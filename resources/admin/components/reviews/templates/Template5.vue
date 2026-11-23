@@ -50,7 +50,7 @@
                     <ReviewBody
                         :review="review"
                         :template_meta="template_meta"
-                        @expandcontent="expandContent"
+                        @expandContent="expandContent"
                     />
                     <ReviewRating
                         :isReviewerRating="template_meta.reviewerrating"
@@ -70,7 +70,7 @@
                     <ReviewBody
                         :review="review"
                         :template_meta="template_meta"
-                        @expandcontent="expandContent"
+                        @expandContent="expandContent"
                     />
                     <ReviewRating
                         :isReviewerRating="template_meta.reviewerrating"

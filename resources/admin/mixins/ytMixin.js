@@ -33,9 +33,22 @@ export const ytMixin = {
                 jQuery('.wpsr-yt-video').removeClass('wpsr-yt-gallery-active');
                 jQuery(e.currentTarget).closest('.wpsr-yt-video').addClass('wpsr-yt-gallery-active');
 
-                jQuery('html, body').animate({
-                    scrollTop: jQuery(".wpsr-yt-video-player-gallery").offset().top
-                }, 500);
+                let wpsrGalleryPlayer = jQuery('.wpsr-yt-video-player-gallery').first();
+                if (!wpsrGalleryPlayer.length) {
+                    return;
+                }
+                let wpsrPreviewPane = wpsrGalleryPlayer.closest('.el-main');
+                if (wpsrPreviewPane.length) {
+                    if (wpsrPreviewPane[0].scrollHeight > wpsrPreviewPane[0].clientHeight) {
+                        wpsrPreviewPane.animate({
+                            scrollTop: wpsrPreviewPane.scrollTop() + wpsrGalleryPlayer.offset().top - wpsrPreviewPane.offset().top
+                        }, 500);
+                    }
+                } else {
+                    jQuery('html, body').animate({
+                        scrollTop: wpsrGalleryPlayer.offset().top
+                    }, 500);
+                }
             } else if (playMode === 'youtube') {
                 let videoSelector = jQuery('.wpsr-yt-video-playmode');
                 let watchUrl = 'https://www.youtube.com/watch?v=' + videoId;

@@ -49,8 +49,8 @@ class Airbnb extends BaseReview
             $businessInfoName = Arr::get($businessInfo, $this->placeId . '.name');
             $businessInfoFailed = $reviewsFetched > 0 && empty($businessInfoName);
             if ($businessInfoFailed) {
-                // translators: %d is the number of reviews fetched.
                 $message = sprintf(
+                    // translators: %d is the number of reviews fetched.
                     __('%d reviews were fetched successfully, but the business information (name and rating) could not be retrieved. Please follow the Airbnb configuration documentation carefully to configure the business info credentials.', 'wp-social-reviews'),
                     $reviewsFetched
                 );

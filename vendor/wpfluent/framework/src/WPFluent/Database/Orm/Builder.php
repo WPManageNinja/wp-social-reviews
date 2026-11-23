@@ -11,9 +11,9 @@ use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\Framework\Support\Str;
 use WPSocialReviews\Framework\Support\Helper;
 use WPSocialReviews\Framework\Pagination\Paginator;
-use WPSocialReviews\Framework\Support\ForwardsCalls;
-use WPSocialReviews\Framework\Support\ArrayableInterface;
-use WPSocialReviews\Framework\Support\HelperFunctionsTrait;
+use WPSocialReviews\Framework\Support\Concerns\ForwardsCalls;
+use WPSocialReviews\Framework\Support\Contracts\ArrayableInterface;
+use WPSocialReviews\Framework\Support\Concerns\HelperFunctionsTrait;
 use WPSocialReviews\Framework\Database\Query\Expression;
 use WPSocialReviews\Framework\Database\Concerns\BuildsQueries;
 use WPSocialReviews\Framework\Database\RecordsNotFoundException;
@@ -35,6 +35,7 @@ class Builder
 {
     use HelperFunctionsTrait;
     
+    /** @use \WPSocialReviews\Framework\Database\Concerns\BuildsQueries<TModel> */
     use BuildsQueries, ForwardsCalls, QueriesRelationships {
         BuildsQueries::sole as baseSole;
     }
@@ -100,12 +101,8 @@ class Builder
         'average',
         'avg',
         'count',
-        'dd',
-        'ddrawsql',
         'doesntexist',
         'doesntexistor',
-        'dump',
-        'dumprawsql',
         'exists',
         'existsor',
         'explain',
@@ -179,7 +176,7 @@ class Builder
      * Create and return an un-saved model instance.
      *
      * @param  array  $attributes
-     * @return \WPSocialReviews\Framework\Database\Orm\Model|static
+     * @return TModel
      */
     public function make(array $attributes = [])
     {
@@ -361,7 +358,7 @@ class Builder
      * @param  mixed  $operator
      * @param  mixed  $value
      * @param  string  $boolean
-     * @return \WPSocialReviews\Framework\Database\Orm\Model|static|null
+     * @return TModel|null
      */
     public function firstWhere($column, $operator = null, $value = null, $boolean = 'and')
     {
@@ -486,7 +483,7 @@ class Builder
      *
      * @param  mixed  $id
      * @param  array  $columns
-     * @return \WPSocialReviews\Framework\Database\Orm\Model|\WPSocialReviews\Framework\Database\Orm\Collection|static[]|static|null
+     * @return ($id is (\WPSocialReviews\Framework\Support\Contracts\ArrayableInterface|array) ? \WPSocialReviews\Framework\Database\Orm\Collection|TModel[] : TModel|null)
      */
     public function find($id, $columns = ['*'])
     {
@@ -500,9 +497,9 @@ class Builder
     /**
      * Find multiple models by their primary keys.
      *
-     * @param  \WPSocialReviews\Framework\Support\ArrayableInterface|array  $ids
+     * @param  \WPSocialReviews\Framework\Support\Contracts\ArrayableInterface|array  $ids
      * @param  array  $columns
-     * @return \WPSocialReviews\Framework\Database\Orm\Collection
+     * @return \WPSocialReviews\Framework\Database\Orm\Collection|TModel[]
      */
     public function findMany($ids, $columns = ['*'])
     {
@@ -520,7 +517,7 @@ class Builder
      *
      * @param  mixed  $id
      * @param  array  $columns
-     * @return \WPSocialReviews\Framework\Database\Orm\Model|\WPSocialReviews\Framework\Database\Orm\Collection|static|static[]
+     * @return ($id is (\WPSocialReviews\Framework\Support\Contracts\ArrayableInterface|array) ? \WPSocialReviews\Framework\Database\Orm\Collection|TModel[] : TModel)
      *
      * @throws \WPSocialReviews\Framework\Database\Orm\ModelNotFoundException
      */
@@ -554,7 +551,7 @@ class Builder
      *
      * @param  mixed  $id
      * @param  array  $columns
-     * @return \WPSocialReviews\Framework\Database\Orm\Model|static
+     * @return TModel
      */
     public function findOrNew($id, $columns = ['*'])
     {
@@ -595,7 +592,7 @@ class Builder
      *
      * @param  array  $attributes
      * @param  array  $values
-     * @return \WPSocialReviews\Framework\Database\Orm\Model|static
+     * @return TModel
      */
     public function firstOrNew(array $attributes = [], array $values = [])
     {
@@ -611,7 +608,7 @@ class Builder
      *
      * @param  array  $attributes
      * @param  array  $values
-     * @return \WPSocialReviews\Framework\Database\Orm\Model|static
+     * @return TModel
      */
     public function firstOrCreate(array $attributes = [], array $values = [])
     {
@@ -645,7 +642,7 @@ class Builder
      *
      * @param  array  $attributes
      * @param  array  $values
-     * @return \WPSocialReviews\Framework\Database\Orm\Model|static
+     * @return TModel
      */
     public function updateOrCreate(array $attributes, array $values = [])
     {
@@ -660,7 +657,7 @@ class Builder
      * Execute the query and get the first result or throw an exception.
      *
      * @param  array  $columns
-     * @return \WPSocialReviews\Framework\Database\Orm\Model|static
+     * @return TModel
      *
      * @throws \WPSocialReviews\Framework\Database\Orm\ModelNotFoundException
      */
@@ -699,7 +696,7 @@ class Builder
      * Execute the query and get the first result if it's the sole matching record.
      *
      * @param  array|string  $columns
-     * @return \WPSocialReviews\Framework\Database\Orm\Model
+     * @return TModel
      *
      * @throws \WPSocialReviews\Framework\Database\Orm\ModelNotFoundException
      * @throws \WPSocialReviews\Framework\Database\MultipleRecordsFoundException
@@ -769,7 +766,7 @@ class Builder
      * Execute the query as a "select" statement.
      *
      * @param  array|string  $columns
-     * @return \WPSocialReviews\Framework\Database\Orm\Collection|static[]
+     * @return \WPSocialReviews\Framework\Database\Orm\Collection|TModel[]
      */
     public function get($columns = ['*'])
     {
@@ -791,7 +788,7 @@ class Builder
      * Get the hydrated models without eager loading.
      *
      * @param  array|string  $columns
-     * @return \WPSocialReviews\Framework\Database\Orm\Model[]|static[]
+     * @return TModel[]
      */
     public function getModels($columns = ['*'])
     {
@@ -1041,10 +1038,9 @@ class Builder
 
         $total = Helper::value($total) ?? $this->toBase()->getCountForPagination();
 
-        $perPage = ($perPage instanceof Closure
-            ? $perPage($total)
-            : $perPage
-        ) ?: $this->model->getPerPage();
+        $perPage = $this->resolvePerPage(
+            $perPage instanceof Closure ? $perPage($total) : $perPage
+        );
 
         $results = $total
             ? $this->forPage($page, $perPage)->get($columns)
@@ -1069,7 +1065,7 @@ class Builder
     {
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
 
-        $perPage = $perPage ?: $this->model->getPerPage();
+        $perPage = $this->resolvePerPage($perPage);
 
         // Next we will set the limit and offset for this query so that when we get the
         // results we get the proper section of results. Then, we'll create the full
@@ -1093,9 +1089,25 @@ class Builder
      */
     public function cursorPaginate($perPage = null, $columns = ['*'], $cursorName = 'cursor', $cursor = null)
     {
-        $perPage = $perPage ?: $this->model->getPerPage();
+        $perPage = $this->resolvePerPage($perPage);
 
         return $this->paginateUsingCursor($perPage, $columns, $cursorName, $cursor);
+    }
+
+    /**
+     * Resolve the page size, falling back to the model's for anything below 1.
+     *
+     * A negative size would otherwise be dropped by limit() while offset()
+     * still applies, and zero would divide by zero in the paginator.
+     *
+     * @param  mixed  $perPage
+     * @return int
+     */
+    protected function resolvePerPage($perPage)
+    {
+        $perPage = (int) $perPage;
+
+        return $perPage > 0 ? $perPage : $this->model->getPerPage();
     }
 
     /**
@@ -1136,7 +1148,7 @@ class Builder
      * Save a new model and return the instance.
      *
      * @param  array  $attributes
-     * @return \WPSocialReviews\Framework\Database\Orm\Model|$this
+     * @return TModel
      */
     public function create(array $attributes = [])
     {
@@ -1151,7 +1163,7 @@ class Builder
      * Save a new model and return the instance. Allow mass-assignment.
      *
      * @param  array  $attributes
-     * @return \WPSocialReviews\Framework\Database\Orm\Model|$this
+     * @return TModel
      */
     public function forceCreate(array $attributes)
     {
@@ -1284,13 +1296,13 @@ class Builder
             $values
         );
 
+        // Split the table around " as " (any case): 'wp_posts as p' gives
+        // ['wp_posts', 'p'], so the last piece is the alias or the table.
         $segments = preg_split('/\s+as\s+/i', $this->query->from);
         
         $tableAlias = end($segments);
         
-        $connectionName = $this->model->getConnection()->getName();
-
-        if ($connectionName === 'sqlite') {
+        if ($this->model->getConnection()->isSqlite()) {
             if (count($segments) > 1) {
                 $qualifiedColumn = $tableAlias . '.' . $column;
             } else {
@@ -1656,7 +1668,7 @@ class Builder
      * Create a new instance of the model being queried.
      *
      * @param  array  $attributes
-     * @return \WPSocialReviews\Framework\Database\Orm\Model|static
+     * @return TModel
      */
     public function newModelInstance($attributes = [])
     {
@@ -1858,6 +1870,26 @@ class Builder
     }
 
     /**
+     * The query's limit.
+     *
+     * @return int|null
+     */
+    public function getLimit()
+    {
+        return $this->query->getLimit();
+    }
+
+    /**
+     * The query's offset.
+     *
+     * @return int|null
+     */
+    public function getOffset()
+    {
+        return $this->query->getOffset();
+    }
+
+    /**
      * Get the underlying query builder instance.
      *
      * @return \WPSocialReviews\Framework\Database\Query\Builder
@@ -1949,7 +1981,7 @@ class Builder
     /**
      * Get the model instance being queried.
      *
-     * @return \WPSocialReviews\Framework\Database\Orm\Model|static
+     * @return TModel
      */
     public function getModel()
     {

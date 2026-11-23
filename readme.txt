@@ -4,7 +4,7 @@ Tags: Customer Reviews, Google Reviews, Social Reviews, Social Feeds,  Instagram
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.5.0
+Stable tag: 4.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -336,7 +336,25 @@ If you like this plugin, please give us [5 stars](https://wordpress.org/plugins/
 
 == Changelog ==
 
-4.5.0 ( Date: November 11, 2026 )
+4.5.1 ( Date: November 20, 2026 )
+- Added a "Show Only These Posts" filter for Facebook feeds. Paste post, video or reel links or IDs to show only those posts. (Pro)
+- Added System Admin Tools to the settings, with Cron Job Monitor, Connected Platforms, Database Health and Data Cleanup pages.
+- Improved Instagram, Facebook, YouTube and TikTok sliders to show posts on first load, before the carousel starts.
+- Improved the TikTok Masonry preview in the template editor to stagger tile heights, so it no longer looks the same as Grid.
+- Improved Facebook video playlist feeds to explain when Facebook refuses a playlist and what to use instead.
+- Improved the Instagram hashtag help text to explain Instagram's Most Popular hashtag changes from February 16, 2027.
+- Improved admin lists to keep filters, search and page after a reload, and let edit links open in a new tab.
+- Updated the core framework.
+- Fixed the Facebook feed editor showing "Source Invalid" for pages that are connected.
+- Fixed the Facebook feed editor preview crashing after switching between Masonry and Overlay Card.
+- Fixed the Fluent Forms chat widget overflowing the screen, and its only icon disappearing in the icons layout.
+- Fixed the Instagram header showing a placeholder avatar on fresh installs.
+- Fixed the template editor moving when the WP admin menu is taller than the page.
+- Fixed editor and admin inputs that stopped responding after the Vue 3 update.
+- Fixed WP Rocket script deferral when WordPress runs in a subdirectory or uses a custom plugins folder.
+- Fixed issues identified during the internal security audit.
+
+4.5.0 ( Date: November 13, 2026 )
 - Added Feature Grid, Score Slider, and Marquee review layouts, plus Review Spotlight and Rating Pulse notification popups. (Pro)
 - Added Badges 3 to 6: an avatar stack, a score strip, and circle and rounded-square stickers. (Pro)
 - Added List layout, Author Card and Author Bar templates, an Inline header layout, and Color Scheme presets for Instagram feeds.

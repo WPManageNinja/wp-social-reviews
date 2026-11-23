@@ -9,7 +9,7 @@ use WPSocialReviews\Framework\Support\Helper;
 use WPSocialReviews\Framework\Database\Orm\Model;
 use WPSocialReviews\Framework\Database\Orm\Builder;
 use WPSocialReviews\Framework\Database\Orm\Collection;
-use WPSocialReviews\Framework\Support\ArrayableInterface;
+use WPSocialReviews\Framework\Support\Contracts\ArrayableInterface;
 use WPSocialReviews\Framework\Database\Orm\ModelNotFoundException;
 use WPSocialReviews\Framework\Database\Query\Grammars\MySqlGrammar;
 use WPSocialReviews\Framework\Database\Orm\Relations\Concerns\AsPivot;
@@ -20,8 +20,9 @@ use WPSocialReviews\Framework\Database\Orm\Relations\Concerns\InteractsWithPivot
 /**
  * @template TRelatedModel of Model
  * @template TDeclaringModel of Model
+ *
+ * @extends Relation<TRelatedModel>
  */
-
 class BelongsToMany extends Relation
 {
     use InteractsWithDictionary, InteractsWithPivotTable;
@@ -704,7 +705,7 @@ class BelongsToMany extends Relation
     /**
      * Find multiple related models by their primary keys.
      *
-     * @param  \WPSocialReviews\Framework\Support\ArrayableInterface|array  $ids
+     * @param  \WPSocialReviews\Framework\Support\Contracts\ArrayableInterface|array  $ids
      * @param  array  $columns
      * @return \WPSocialReviews\Framework\Database\Orm\Collection<int, TRelatedModel>
      */
@@ -1471,12 +1472,18 @@ class BelongsToMany extends Relation
      */
     public function withTimestamps($createdAt = null, $updatedAt = null)
     {
-        $this->withTimestamps = true;
+        // false turns that column off.
+        $this->pivotCreatedAt = $createdAt !== false ? $createdAt : null;
+        $this->pivotUpdatedAt = $updatedAt !== false ? $updatedAt : null;
 
-        $this->pivotCreatedAt = $createdAt;
-        $this->pivotUpdatedAt = $updatedAt;
+        $pivots = array_filter([
+            $createdAt !== false ? $this->createdAt() : null,
+            $updatedAt !== false ? $this->updatedAt() : null,
+        ]);
 
-        return $this->withPivot($this->createdAt(), $this->updatedAt());
+        $this->withTimestamps = ! empty($pivots);
+
+        return $this->withTimestamps ? $this->withPivot($pivots) : $this;
     }
 
     /**
@@ -1486,7 +1493,9 @@ class BelongsToMany extends Relation
      */
     public function createdAt()
     {
-        return $this->pivotCreatedAt ?: $this->parent->getCreatedAtColumn();
+        // The pivot table has its own timestamps, even when the parent
+        // model has turned one of its own off.
+        return $this->pivotCreatedAt ?? $this->parent->getCreatedAtColumn() ?? Model::CREATED_AT;
     }
 
     /**
@@ -1496,7 +1505,7 @@ class BelongsToMany extends Relation
      */
     public function updatedAt()
     {
-        return $this->pivotUpdatedAt ?: $this->parent->getUpdatedAtColumn();
+        return $this->pivotUpdatedAt ?? $this->parent->getUpdatedAtColumn() ?? Model::UPDATED_AT;
     }
 
     /**

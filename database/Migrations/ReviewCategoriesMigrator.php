@@ -470,16 +470,16 @@ class ReviewCategoriesMigrator
         global $wpdb;
 
         $now = current_time('mysql');
-        $placeholders = [];
         $values = [$categoriesTable];
         foreach ($nameBySlug as $slug => $name) {
-            $placeholders[] = '(%s, %s, %s, %s)';
             array_push($values, $name, $slug, $now, $now);
         }
 
+        $placeholders = implode(', ', array_fill(0, count($nameBySlug), '(%s, %s, %s, %s)'));
+
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Required for one-time migration backfill
         $inserted = $wpdb->query($wpdb->prepare(
-            "INSERT IGNORE INTO %i (name, slug, created_at, updated_at) VALUES " . implode(', ', $placeholders),
+            "INSERT IGNORE INTO %i (name, slug, created_at, updated_at) VALUES $placeholders",
             $values
         ));
 

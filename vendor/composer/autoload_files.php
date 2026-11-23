@@ -6,5 +6,6 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    '6c475849da538134242f5be99200fc96' => $vendorDir . '/wpfluent/framework/src/WPFluent/Support/Polyfills/loader.php',
     '9680a2abca0f3f510cf2fd1b6d61afe6' => $baseDir . '/boot/globals.php',
 );

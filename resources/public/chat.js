@@ -8,6 +8,7 @@ let selectedChannelMessageContext = '';
 let selectedChannelMessageContextFormat = '';
 let selectedChannelPageMessageFormat = '';
 let selectedChannelProductInfo = null;
+let wpsrFormHeight = 0;
 let prefilledPlatformName = ['whatsapp', 'sms'];
 let wpsrChannelProtocols = {
     'microsoft-teams': ['https:', 'msteams:'],
@@ -410,6 +411,7 @@ function wpsrBindFluentFormChannelClicks() {
                             ffWrapper.style.height = formHeight + 'px';
                         }
 
+                        wpsrFormHeight = formHeight;
                         let innerHeight = window.innerHeight;
                         if (typeof adjustChatBoxHeight === 'function') {
                             adjustChatBoxHeight(innerHeight, formHeight);
@@ -571,7 +573,8 @@ function wpsrRunChatWidget() {
             selectedChannelMessageContextFormat = target.getAttribute('data-message-context-format') || '';
             selectedChannelPageMessageFormat = target.getAttribute('data-page-message-format') || '';
             selectedChannelProductInfo = wpsrParseProductInfo(wpsrGetElementProductInfo(target));
-            if (wpsrChatContainer) {
+            const wpsrIsLoneFormIcon = dataChannel === 'fluent_forms' && container.classList.contains('wpsr-channels-icon');
+            if (wpsrChatContainer && !wpsrIsLoneFormIcon) {
                 document.querySelectorAll('.wpsr-channels').forEach(function (el) { el.style.display = 'none'; });
                 document.querySelectorAll('.wpsr-fm-multiple-btn').forEach(function (el) { el.style.display = 'none'; });
                 if (prefilledPlatformName.includes(dataChannel)) {
@@ -786,6 +789,10 @@ function wpsrRunChatWidget() {
             if (chatBoxEl) {
                 chatBoxEl.classList.add('wpsr-fm-chat-box-display');
             }
+            // A lone icon has no bubble, so the icon itself toggles the form closed.
+            if (chatBoxEl && wrapper && el.closest('.wpsr-channels-icon') && !wrapper.classList.contains('wpsr-has-fluent-form')) {
+                chatBoxEl.classList.remove('wpsr-fm-chat-box-display');
+            }
 
             if (document.querySelector('.wpsr-has-fluent-form')) {
                 document.querySelectorAll('.wpsr-channel-label').forEach(function (e) { e.style.display = 'none'; });
@@ -800,7 +807,12 @@ function wpsrRunChatWidget() {
         });
     });
 
-    window.addEventListener('resize', adjustChatBoxHeight);
+    window.addEventListener('resize', function () {
+        if (!wpsrFormHeight || !document.querySelector('.wpsr-has-fluent-form')) {
+            return;
+        }
+        adjustChatBoxHeight(window.innerHeight, wpsrFormHeight);
+    });
 
     document.querySelectorAll('.wpsr-fm-chat-wrapper .wpsr-fm-chat-close').forEach(function (btn) {
         btn.addEventListener('click', function () {

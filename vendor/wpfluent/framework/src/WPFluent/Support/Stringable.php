@@ -6,10 +6,10 @@ use Closure;
 use ArrayAccess;
 use JsonSerializable;
 use WPSocialReviews\Framework\Support\DateTime;
-use WPSocialReviews\Framework\Support\Tappable;
-use WPSocialReviews\Framework\Support\Conditionable;
-use WPSocialReviews\Framework\Support\MacroableTrait;
-use WPSocialReviews\Framework\Support\HelperFunctionsTrait;
+use WPSocialReviews\Framework\Support\Concerns\Tappable;
+use WPSocialReviews\Framework\Support\Concerns\Conditionable;
+use WPSocialReviews\Framework\Support\Concerns\MacroableTrait;
+use WPSocialReviews\Framework\Support\Concerns\HelperFunctionsTrait;
 
 class Stringable implements JsonSerializable
 {
@@ -34,8 +34,8 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Makes an acronum from a string of words
-     * 
+     * Makes an acronym from a string of words
+     *
      * @param  string $delimiter
      * @return self
      */
@@ -159,17 +159,17 @@ class Stringable implements JsonSerializable
      * 
      * @return bool
      */
-    public function isSimilar($str, $accuracy = 50)
+    public function isSimilar($str, $accuracy = 60)
     {
         return Str::isSimilar($this->value, $str, $accuracy);
     }
 
     /**
-     * Checks if two words are similar
-     * 
+     * Gets the similarity of two words as a percentage.
+     *
      * @param string $str
-     * 
-     * @return bool
+     *
+     * @return float
      */
     public function similarityOf($str)
     {
@@ -424,11 +424,13 @@ class Stringable implements JsonSerializable
     /**
      * Determine if a given string is a valid UUID.
      *
+     * @param  int|null  $version Optional UUID version (e.g. 4 or 7) to
+     *                            require; null accepts any version.
      * @return bool
      */
-    public function isUuid()
+    public function isUuid($version = null)
     {
-        return Str::isUuid($this->value);
+        return Str::isUuid($this->value, $version);
     }
 
     /**

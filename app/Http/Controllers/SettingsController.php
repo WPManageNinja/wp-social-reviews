@@ -580,6 +580,13 @@ class SettingsController extends Controller
             return $denied;
         }
 
+        // UninstallHandler returns silently without it, which would report a wipe that never ran.
+        if (!current_user_can('manage_options')) {
+            return $this->sendError([
+                'message' => __('Only an administrator can delete all data.', 'wp-social-reviews')
+            ], 403);
+        }
+
         (new UninstallHandler())->deleteAllPlatformsData(false);
         return [
             'message'   =>  __('Successfully deleted all data!', 'wp-social-reviews')

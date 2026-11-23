@@ -58,20 +58,13 @@ export const commonMixin = {
         window.removeEventListener("beforeunload", this.preventNav);
     },
     beforeRouteLeave(to,from,next) {
-        const $body = jQuery('body');
-        let wasFullScreen = $body.hasClass('wpsr_full_screen');
-        let wasWpsrEditor= $body.hasClass('is-wpsr-editor');
-        if (wasWpsrEditor){
-            $body.removeClass('is-wpsr-editor');
-        }
-        if (wasFullScreen) {
-            $body.removeClass('wpsr_full_screen');
-        }
         if (this.isEditing) {
             if (!window.confirm("You have unsaved changes. If you leave now, your changes will be lost.")) {
+                next(false);
                 return;
             }
         }
+        jQuery('body').removeClass('is-wpsr-editor wpsr_full_screen');
         next();
     },
     mounted() {

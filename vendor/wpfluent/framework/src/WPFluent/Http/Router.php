@@ -3,6 +3,8 @@
 namespace WPSocialReviews\Framework\Http;
 
 use Closure;
+use InvalidArgumentException;
+use WPSocialReviews\Framework\Http\Middleware\RateLimiter;
 
 class Router
 {
@@ -13,49 +15,31 @@ class Router
     protected $app = null;
 
     /**
-     * Name for the route.
-     * @var array
-     */
-    protected $name = [];
-
-    /**
      * Mapping of named routes.
      * @var array
      */
     protected $namedRoutes = [];
-    
-    /**
-     * Prefix for the route
-     * @var array
-     */
-    protected $prefix = [];
-    
-    /**
-     * Controller/Handler namespace
-     * @var array
-     */
-    protected $namespace = [];
 
     /**
      * Registered routes collection
      * @var array
      */
     protected $routes = [];
-    
-    /**
-     * Route policy handler to pass to the route
-     * @var array
-     */
-    protected $policyHandler = [];
 
     /**
-     * Route middleware to pass to the route
+     * Attributes staged by chained calls (prefix(), name(),
+     * withPolicy(), before(), ...) that have not been claimed
+     * yet. The next group() or route declaration claims them.
      * @var array
      */
-    protected $middleware = [
-        'before' => [],
-        'after' => []
-    ];
+    protected $staged = [];
+
+    /**
+     * Effective attributes of the group whose callback is
+     * currently executing. Empty outside any group.
+     * @var array
+     */
+    protected $context = [];
 
     /**
      * Whether routes created by this router should override existing ones.
@@ -64,10 +48,10 @@ class Router
     protected $shouldOverride = false;
 
     /**
-     * Keep the track of number of group calls
-     * @var integer
+     * Weak references to groups pending execution.
+     * @var array
      */
-    protected $groupCount = 0;
+    protected $pendingGroups = [];
 
     /**
      * Construct the routet instance
@@ -76,18 +60,25 @@ class Router
     public function __construct($app)
     {
         $this->app = $app;
+        $this->staged = $this->newAttributes();
+        $this->context = $this->newAttributes();
     }
 
     /**
-     * Create a route group
-     * @param  array $attributes
+     * Create a route group.
+     *
+     * The group captures its effective attributes (the enclosing
+     * group's attributes merged with anything staged for it) at
+     * creation time, so its callback resolves the same routes no
+     * matter when it runs: at end of statement, or later from
+     * registerRoutes() when the instance was kept alive.
+     *
+     * @param  array|Closure $attributes
      * @param  Closure|null $callback
-     * @return null
+     * @return \WPSocialReviews\Framework\Http\Group
      */
     public function group($attributes = [], ?Closure $callback = null)
     {
-        $this->groupCount += 1;
-
         if ($attributes instanceof Closure) {
             $callback = $attributes;
             $attributes = [];
@@ -109,46 +100,73 @@ class Router
             $this->withPolicy($attributes['policy']);
         }
 
+        if (isset($attributes['rate_limit'])) {
+            $limit = array_values((array) $attributes['rate_limit']);
+            $this->rateLimit($limit[0], isset($limit[1]) ? $limit[1] : MINUTE_IN_SECONDS);
+        }
+
         if (isset($attributes['middleware'])) {
             $middleware = $attributes['middleware'];
+
+            // Only keyed middleware: a plain list would be left out.
+            if (!is_array($middleware) || array_diff_key($middleware, ['before' => 0, 'after' => 0])) {
+                throw new InvalidArgumentException(
+                    "A group's middleware must be given as ['before' => [...], 'after' => [...]]."
+                );
+            }
+
             if (isset($middleware['before'])) {
                 $this->middleware('before', $middleware['before']);
-            } elseif ($middleware['after']) {
+            }
+
+            if (isset($middleware['after'])) {
                 $this->middleware('after', $middleware['after']);
             }
         }
 
-        // If the current group doesn't have a policy handler
-        // but the parent group has then bring it in this group.
-        if (!isset($this->policyHandler[$this->groupCount])) {
-            if (isset($this->policyHandler[$this->groupCount - 1])) {
-                if ($policyHandler = $this->policyHandler[$this->groupCount - 1]) {
-                    $this->policyHandler[] = $policyHandler;
-                }
-            }
-        }
+        return new Group($this, $callback, $this->resolveAttributes());
+    }
 
-        // If the current group doesn't have a before middleware
-        // but the parent group has then bring it in this group.
-        if (!isset($this->middleware['before'][$this->groupCount])) {
-            if (isset($this->middleware['before'][$this->groupCount - 1])) {
-                if ($beforeMiddleware = $this->middleware['before'][$this->groupCount - 1]) {
-                    $this->middleware['before'][] = $beforeMiddleware;
-                }
-            }
-        }
+    /**
+     * A rate limit for the next group's routes, or the next route: each
+     * route counts it on its own, apart from a limit of its own.
+     *
+     * @param  int $limit Requests allowed in the interval.
+     * @param  int $interval Seconds.
+     * @return self
+     */
+    public function rateLimit($limit, $interval)
+    {
+        $this->staged['rate_limit'] = [(int) $limit, (int) $interval];
 
-        // If the current group doesn't have an after middleware
-        // but the parent group has then bring it in this group.
-        if (!isset($this->middleware['after'][$this->groupCount])) {
-            if (isset($this->middleware['after'][$this->groupCount - 1])) {
-                if ($afterMiddleware = $this->middleware['after'][$this->groupCount - 1]) {
-                    $this->middleware['after'][] = $afterMiddleware;
-                }
-            }
-        }
+        return $this;
+    }
 
-        return new Group($this, $callback);
+    /**
+     * @param  int $limit Requests allowed a minute.
+     * @return self
+     */
+    public function rateLimitPerMinute($limit)
+    {
+        return $this->rateLimit($limit, MINUTE_IN_SECONDS);
+    }
+
+    /**
+     * @param  int $limit Requests allowed an hour.
+     * @return self
+     */
+    public function rateLimitHourly($limit)
+    {
+        return $this->rateLimit($limit, HOUR_IN_SECONDS);
+    }
+
+    /**
+     * @param  int $limit Requests allowed a day.
+     * @return self
+     */
+    public function rateLimitDaily($limit)
+    {
+        return $this->rateLimit($limit, DAY_IN_SECONDS);
     }
 
     /**
@@ -159,7 +177,7 @@ class Router
      */
     public function name($name)
     {
-        $this->name[] = $name;
+        $this->staged['name'][] = $name;
 
         return $this;
     }
@@ -172,7 +190,7 @@ class Router
      */
     public function prefix($prefix)
     {
-        $this->prefix[] = $prefix;
+        $this->staged['prefix'][] = $prefix;
 
         return $this;
     }
@@ -185,7 +203,7 @@ class Router
      */
     public function namespace($ns)
     {
-        $this->namespace[] = $ns;
+        $this->staged['namespace'][] = $ns;
 
         return $this;
     }
@@ -204,6 +222,22 @@ class Router
     }
 
     /**
+     * Keep the routes of the next group or route for visitors who aren't
+     * logged in. A logged-in user is refused with a 403; on web routes,
+     * given a path or URL, they are sent there instead.
+     *
+     * A closure decides for a logged-in visitor instead: its answer is the
+     * policy's, such as its own redirect, or an HttpException it throws.
+     *
+     * @param  string|\Closure|null  $redirectTo
+     * @return $this
+     */
+    public function guestOnly($redirectTo = null)
+    {
+        return $this->withPolicy(GuestOnly::policy($redirectTo));
+    }
+
+    /**
      * Set the route policy
      * 
      * @param  mixed $handler
@@ -212,11 +246,16 @@ class Router
      */
     public function withPolicy($handler, $method = null)
     {
-        if (is_array($handler = $method ? func_get_args() : $handler)) {
+        $handler = $method ? func_get_args() : $handler;
+
+        // [Policy::class, 'method'] is kept as 'Policy@method', which the
+        // route resolves in the plugin's policy namespace; an object in
+        // the array is already a callable and stays one.
+        if (is_array($handler) && is_string($handler[0] ?? null)) {
             $handler = implode('@', $handler);
         }
 
-        $this->policyHandler[] = $handler;
+        $this->staged['policy'] = $handler;
 
         return $this;
     }
@@ -251,33 +290,90 @@ class Router
      */
     public function middleware($type = 'before', ...$middleware)
     {
-        if (is_array($middleware[0])) {
+        // An unknown type would drop the middleware without a word.
+        if (!in_array($type, ['before', 'after'], true)) {
+            throw new InvalidArgumentException(
+                "Middleware type must be 'before' or 'after'; use before(...) or after(...) to add middleware."
+            );
+        }
+
+        if ($middleware && is_array($middleware[0])) {
             $middleware = reset($middleware);
         }
 
-        $this->middleware[$type] = array_merge(
-            $this->middleware[$type], $middleware
+        $this->staged[$type] = array_merge(
+            $this->staged[$type], $middleware
         );
 
         return $this;
     }
 
     /**
-     * Execute the route group callback
-     * 
-     * @param  Closure $callback
-     * @return null
+     * Merge whatever is currently staged into the given attributes
+     * and clear the staging area. Used by Group to absorb calls
+     * chained after group() into its own attributes.
+     *
+     * @param  array $attributes
+     * @return array
      */
-    public function executeGroupCallback($callback)
+    public function absorbStaged(array $attributes)
     {
-        $callback($this);
-        $this->groupCount -= 1;
-        array_pop($this->name);
-        array_pop($this->prefix);
-        array_pop($this->namespace);
-        array_pop($this->middleware['before']);
-        array_pop($this->middleware['after']);
-        array_pop($this->policyHandler);
+        return $this->mergeAttributes($attributes, $this->takeStaged());
+    }
+
+    /**
+     * Track a group so any instance kept alive past its statement
+     * can still be executed before routes are registered. A weak
+     * reference keeps the destructor firing at end of statement.
+     *
+     * @param  Group $group
+     * @return void
+     */
+    public function trackGroup(Group $group)
+    {
+        if (class_exists(\WeakReference::class)) {
+            $this->pendingGroups[] = \WeakReference::create($group);
+        }
+    }
+
+    /**
+     * Execute any groups still pending execution because a
+     * reference to them was held beyond their statement.
+     *
+     * @return void
+     */
+    protected function executePendingGroups()
+    {
+        while ($this->pendingGroups) {
+            $reference = array_shift($this->pendingGroups);
+
+            if ($group = $reference->get()) {
+                $group->execute();
+            }
+        }
+    }
+
+    /**
+     * Execute a route group callback with the group's attributes
+     * as the active context. The previous context is restored
+     * afterwards, even if the callback throws, so execution is
+     * safe at any nesting depth and at any time.
+     *
+     * @param  Closure $callback
+     * @param  array $attributes
+     * @return void
+     */
+    public function executeGroupCallback($callback, array $attributes = [])
+    {
+        $previous = $this->context;
+
+        $this->context = $attributes + $this->newAttributes();
+
+        try {
+            $callback($this);
+        } finally {
+            $this->context = $previous;
+        }
     }
 
     /**
@@ -379,39 +475,123 @@ class Router
      */
     protected function newRoute($uri, $handler, $method)
     {
+        $attributes = $this->resolveAttributes();
+
         $route = Route::create(
             $this->app,
             $this->getRestNamespace(),
-            $this->buildUriWithPrefix($uri),
+            $this->buildUriWithPrefix($uri, $attributes['prefix']),
             $handler,
             $method
         );
 
-        if ($this->name) {
-            $route->withName($this->name);
+        if ($attributes['name']) {
+            $route->withName($attributes['name']);
         }
 
-        if ($this->namespace) {
-            $route->withNamespace($this->namespace);
+        if ($attributes['namespace']) {
+            $route->withNamespace($attributes['namespace']);
         }
 
-        if ($this->policyHandler) {
-            $route->withPolicy(end($this->policyHandler));
+        if ($attributes['policy']) {
+            $route->withPolicy($attributes['policy']);
         }
 
-        if ($this->middleware['before']) {
-            $route->before($this->middleware['before']);
+        // The group's limit, counted apart from one the route sets.
+        if ($attributes['rate_limit']) {
+            $route->middleware('before', new RateLimiter($attributes['rate_limit'][0], $attributes['rate_limit'][1], 'group'));
         }
 
-        if ($this->middleware['after']) {
-            $route->after($this->middleware['after']);
+        if ($attributes['before']) {
+            $route->before($attributes['before']);
+        }
+
+        if ($attributes['after']) {
+            $route->after($attributes['after']);
         }
 
         if ($this->shouldOverride) {
             $route->override();
         }
 
-        return $route->preparefrontendHandlers();
+        return $route;
+    }
+
+    /**
+     * An empty attribute set.
+     *
+     * @return array
+     */
+    protected function newAttributes()
+    {
+        return [
+            'name' => [],
+            'prefix' => [],
+            'namespace' => [],
+            'policy' => null,
+            'rate_limit' => null,
+            'before' => [],
+            'after' => [],
+        ];
+    }
+
+    /**
+     * Return the staged attributes and reset the staging area.
+     *
+     * @return array
+     */
+    protected function takeStaged()
+    {
+        $staged = $this->staged;
+
+        $this->staged = $this->newAttributes();
+
+        return $staged;
+    }
+
+    /**
+     * The effective attributes for a route or group declared right
+     * now: the current group context merged with the staged
+     * attributes, which are claimed in the process.
+     *
+     * @return array
+     */
+    protected function resolveAttributes()
+    {
+        return $this->mergeAttributes($this->context, $this->takeStaged());
+    }
+
+    /**
+     * Merge attribute sets, outermost first. List attributes
+     * accumulate; the policy of the innermost set that declares
+     * one wins, so nested groups inherit their parent's policy
+     * unless they declare their own.
+     *
+     * @param  array ...$sets
+     * @return array
+     */
+    protected function mergeAttributes(array ...$sets)
+    {
+        $merged = $this->newAttributes();
+
+        foreach ($sets as $set) {
+            foreach (['name', 'prefix', 'namespace', 'before', 'after'] as $key) {
+                if (!empty($set[$key])) {
+                    $merged[$key] = array_merge($merged[$key], $set[$key]);
+                }
+            }
+
+            if (isset($set['policy'])) {
+                $merged['policy'] = $set['policy'];
+            }
+
+            // The innermost group's limit, as its policy.
+            if (isset($set['rate_limit'])) {
+                $merged['rate_limit'] = $set['rate_limit'];
+            }
+        }
+
+        return $merged;
     }
 
     /**
@@ -434,15 +614,16 @@ class Router
      * Build the URI with the prefix
      * 
      * @param  string $uri
+     * @param  array $prefixes
      * @return string The URI
      */
-    protected function buildUriWithPrefix($uri)
+    protected function buildUriWithPrefix($uri, array $prefixes = [])
     {
         $uri = trim($uri, '/');
 
         $prefix = array_map(function($prefix) {
             return trim($prefix, '/');
-        }, $this->prefix);
+        }, $prefixes);
 
         $prefix = implode('/', $prefix);
 
@@ -464,11 +645,52 @@ class Router
     /**
      * Register all the routse in WordPress Rest Engine
      *
-     * @return null
+     * @return void
      */
     public function registerRoutes()
     {
-        foreach ($this->routes as $route) $route->register();
+        $this->executePendingGroups();
+
+        // A route that can't be registered is reported, and the rest still are.
+        foreach ($this->getRoutes() as $route) {
+            try {
+                $route->register();
+            } catch (InvalidArgumentException $e) {
+                $this->app->report($e);
+            }
+        }
+    }
+
+    /**
+     * Get the map of the routes, by controller and action, the admin app
+     * builds its resources from.
+     *
+     * Routes are registered on rest_api_init. Creating the REST server
+     * fires it, so the map is complete on any request, not only a REST
+     * one, without an HTTP request back to the site.
+     *
+     * Developer tools ask with details: each route's middleware, signing,
+     * rate limit and name, and the closure routes, under "Closure".
+     *
+     * @param  bool  $resolvePolicies  Name the policy method each route runs.
+     * @param  bool  $withDetails  Add what tools need; the admin app doesn't.
+     * @return array
+     */
+    public function endpoints($resolvePolicies = false, $withDetails = false)
+    {
+        rest_get_server();
+
+        $endpoints = [];
+
+        foreach ($this->getRoutes() as $route) {
+            if ($description = $route->describe($resolvePolicies, $withDetails)) {
+                [$controller, $action, $details] = $description;
+
+                $endpoints[$controller][$action] = $details;
+            }
+        }
+
+        return $endpoints;
     }
 
     /**

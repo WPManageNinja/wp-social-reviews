@@ -5,7 +5,7 @@ namespace WPSocialReviews\Framework\Database\Orm;
 use LogicException;
 use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\Framework\Support\Str;
-use WPSocialReviews\Framework\Support\ArrayableInterface;
+use WPSocialReviews\Framework\Support\Contracts\ArrayableInterface;
 use WPSocialReviews\Framework\Support\Collection as BaseCollection;
 use WPSocialReviews\Framework\Database\Orm\Relations\Concerns\InteractsWithDictionary;
 

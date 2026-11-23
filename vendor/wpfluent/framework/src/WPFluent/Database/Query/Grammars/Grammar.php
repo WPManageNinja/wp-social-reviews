@@ -58,6 +58,17 @@ class Grammar extends BaseGrammar
      */
     public function compileSelect(Builder $query)
     {
+        return $this->withAliasesOf($query, fn () => $this->compileSelectStatement($query));
+    }
+
+    /**
+     * Compile a select query, with its table aliases known.
+     *
+     * @param  \WPSocialReviews\Framework\Database\Query\Builder  $query
+     * @return string
+     */
+    protected function compileSelectStatement(Builder $query)
+    {
         if (($query->unions || $query->havings) && $query->aggregate) {
             return $this->compileUnionAggregate($query);
         }
@@ -90,7 +101,7 @@ class Grammar extends BaseGrammar
         );
 
         if ($query->unions) {
-            $sql = $this->wrapUnion($sql).' '.$this->compileUnions($query);
+            $sql = $this->compileUnionPart($query, $sql).' '.$this->compileUnions($query);
         }
 
         $query->columns = $original;
@@ -350,20 +361,6 @@ class Grammar extends BaseGrammar
     public function prepareSoundsLikeBinding($value)
     {
         return $value;
-    }
-
-    /**
-     * Compile the SQL for a fuzzy "similar to" (Levenshtein) comparison.
-     *
-     * Requires a LEVENSHTEIN() function on the connection (a stored function
-     * on MySQL, a PHP-backed UDF on SQLite).
-     *
-     * @param  \WPSocialReviews\Framework\Database\Query\Expression|string  $column
-     * @return string
-     */
-    public function compileSimilar($column)
-    {
-        return 'levenshtein(lower('.$this->wrap($column).'), lower(?)) <= ?';
     }
 
     /**
@@ -1136,7 +1133,29 @@ class Grammar extends BaseGrammar
      */
     protected function compileOffset(Builder $query, $offset)
     {
-        return 'offset '.(int) $offset;
+        return $this->compileOffsetAfterLimit($query, $query->limit, $offset);
+    }
+
+    /**
+     * Compile an offset that sits after the given limit.
+     *
+     * MySQL and SQLite both reject an OFFSET with no LIMIT before it, so a
+     * bare offset() gets the largest LIMIT both engines accept.
+     *
+     * @param  \WPSocialReviews\Framework\Database\Query\Builder  $query
+     * @param  int|null  $limit
+     * @param  int  $offset
+     * @return string
+     */
+    protected function compileOffsetAfterLimit(Builder $query, $limit, $offset)
+    {
+        $sql = 'offset '.(int) $offset;
+
+        if (isset($limit)) {
+            return $sql;
+        }
+
+        return $this->compileLimit($query, PHP_INT_MAX).' '.$sql;
     }
 
     /**
@@ -1149,8 +1168,8 @@ class Grammar extends BaseGrammar
     {
         $sql = '';
 
-        foreach ($query->unions as $union) {
-            $sql .= $this->compileUnion($union);
+        foreach ($query->unions as $position => $union) {
+            $sql .= $this->compileUnion($union, $position + 1);
         }
 
         if (! empty($query->unionOrders)) {
@@ -1162,7 +1181,9 @@ class Grammar extends BaseGrammar
         }
 
         if (isset($query->unionOffset)) {
-            $sql .= ' '.$this->compileOffset($query, $query->unionOffset);
+            $sql .= ' '.$this->compileOffsetAfterLimit(
+                $query, $query->unionLimit, $query->unionOffset
+            );
         }
 
         return ltrim($sql);
@@ -1172,13 +1193,52 @@ class Grammar extends BaseGrammar
      * Compile a single union statement.
      *
      * @param  array  $union
+     * @param  int  $position  The part's place in the union, 0 the first.
      * @return string
      */
-    protected function compileUnion(array $union)
+    protected function compileUnion(array $union, $position = 1)
     {
         $conjunction = $union['all'] ? ' union all ' : ' union ';
 
-        return $conjunction.$this->wrapUnion($union['query']->toSql());
+        $part = $union['query'];
+
+        return $conjunction.$this->compileUnionPart(
+            $part, $part->toSql(), ! empty($part->unions), $position
+        );
+    }
+
+    /**
+     * A union part's SQL, in parentheses only when the part has its own
+     * order, limit, offset, lock or unions, which MySQL needs them for.
+     * WordPress's SQLite drop-in takes no parenthesised union, so a plain
+     * union stays plain and runs on every database, and on SQLite such a
+     * part is read from a derived table instead, which the drop-in takes.
+     *
+     * @param  \WPSocialReviews\Framework\Database\Query\Builder  $query  The part.
+     * @param  string  $sql  The part's SQL.
+     * @param  bool  $hasUnions  Whether the part's SQL has unions of its own.
+     * @param  int  $position  The part's place in the union, 0 the first.
+     * @return string
+     */
+    protected function compileUnionPart(Builder $query, $sql, $hasUnions = false, $position = 0)
+    {
+        $needsParentheses = $hasUnions
+            || $query->orders
+            || isset($query->limit)
+            || isset($query->offset)
+            || $query->lock !== null;
+
+        if (! $needsParentheses) {
+            return $sql;
+        }
+
+        // Only on SQLite: MySQL refuses a derived table whose columns share
+        // a name, which a union part may have.
+        if ($query->getConnection()->isSqlite()) {
+            return 'select * from ('.$sql.') as '.$this->wrapValue('union_part_'.$position);
+        }
+
+        return $this->wrapUnion($sql);
     }
 
     /**
@@ -1480,12 +1540,26 @@ class Grammar extends BaseGrammar
     /**
      * Compile a truncate table statement into SQL.
      *
+     * In capitals: the SQLite drop-in's old engine only knows TRUNCATE in
+     * the form WordPress writes it. That engine also leaves SQLite's counter
+     * where it was, so the table's row in sqlite_sequence goes too and new
+     * rows are numbered from 1, as on MySQL (Schema::truncate() does the
+     * same).
+     *
      * @param  \WPSocialReviews\Framework\Database\Query\Builder  $query
      * @return array
      */
     public function compileTruncate(Builder $query)
     {
-        return ['truncate table '.$this->wrapTable($query->from) => []];
+        $statements = ['TRUNCATE TABLE '.$this->wrapTable($query->from) => []];
+
+        if ($query->getConnection()->usesSqliteTranslator()) {
+            $statements['DELETE FROM sqlite_sequence WHERE name = ?'] = [
+                $this->resolveTablePrefix($query->from).$query->from,
+            ];
+        }
+
+        return $statements;
     }
 
     /**
@@ -1597,6 +1671,9 @@ class Grammar extends BaseGrammar
      */
     protected function removeLeadingBoolean($value)
     {
+        // Remove the first "and " or "or " (any case) in the text, which
+        // here is the one it starts with: 'and `id` = ? or `name` = ?'
+        // becomes '`id` = ? or `name` = ?'.
         return preg_replace('/and |or /i', '', $value, 1);
     }
 

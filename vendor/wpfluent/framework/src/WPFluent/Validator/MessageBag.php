@@ -3,6 +3,7 @@
 namespace WPSocialReviews\Framework\Validator;
 
 use WPSocialReviews\Framework\Support\Arr;
+use WPSocialReviews\Framework\Support\Str;
 
 trait MessageBag
 {
@@ -12,12 +13,21 @@ trait MessageBag
      * @var array
      */
     protected $bag = [
+        'accepted'    => 'The :attribute field must be accepted.',
+        'after'       => 'The :attribute must be a date after :date.',
+        'after_or_equal' => 'The :attribute must be a date after or equal to :date.',
         'array'       => 'The :attribute must be an array.',
+        'before'      => 'The :attribute must be a date before :date.',
+        'before_or_equal' => 'The :attribute must be a date before or equal to :date.',
+        'boolean'     => 'The :attribute field must be true or false.',
         'alpha'       => 'The :attribute must contain only alphabetic characters.',
         'alphanum'    => 'The :attribute must contain only alphanumeric characters.',
         'alphadash'   => 'The :attribute must contain only alphanumeric and _- characters.',
         'email'       => 'The :attribute must be a valid email address.',
-        'date_format' => 'Unable to format the :attribute field from the :value format string.',
+        'date'        => 'The :attribute is not a valid date.',
+        'date_equals' => 'The :attribute must be a date equal to :date.',
+        'date_format' => 'The :attribute must match the format :format.',
+        'decimal'     => 'The :attribute must have :decimal decimal places.',
         'exists'      => 'The selected :attribute is invalid.',
         'gt'          => 'The :attribute must be greater than :value.',
         'lt'          => 'The :attribute must be less than :value.',
@@ -33,6 +43,8 @@ trait MessageBag
         ],
         'mimes'       => 'The :attribute must be a file of type: :values.',
         'mimetypes'   => 'The :attribute must be a file of type: :values.',
+        'file'        => 'The :attribute must be a file.',
+        'filled'      => 'The :attribute field must have a value.',
         'min'         => [
             'numeric' => 'The :attribute must be at least :min.',
             'file'    => 'The :attribute must be at least :min kilobytes.',
@@ -42,13 +54,16 @@ trait MessageBag
         'string'      => 'The :attribute must be a string.',
         'integer'     => 'The :attribute must be an integer.',
         'numeric'     => 'The :attribute must be a number.',
+        'present'     => 'The :attribute field must be present.',
+        'regex'       => 'The :attribute format is invalid.',
         'required'    => 'The :attribute field is required.',
         'required_array_keys'    => 'The :attribute must be an array and should contain :keys.',
         'required_if' => 'The :attribute field is required when :other is :value.',
+        'required_unless' => 'The :attribute field is required unless :other is in :values.',
         'required_with' => 'The :attribute field is required when the :other field is present.',
-        'required_with_all' => 'The :attribute field is required when the :other field is present.',
-        'required_without' => 'The :attribute field is required when the :other field is not present.',
-        'required_without_all' => 'The :attribute field is required when the :other fields are not present.',
+        'required_with_all' => 'The :attribute field is required when :other field(s) are present.',
+        'required_without' => 'The :attribute field is required when :other field(s) are not present.',
+        'required_without_all' => 'The :attribute field is required when :other field(s) are all missing.',
         'same'        => 'The :attribute and :other must match.',
         'size'        => [
             'numeric' => 'The :attribute must be :size.',
@@ -58,6 +73,7 @@ trait MessageBag
         ],
         'url'         => 'The :attribute format is invalid.',
         'unique'      => 'The :attribute attribute is already taken and must be unique.',
+        'dimensions'  => 'The :attribute has invalid image dimensions.',
         'digits'      => 'The :attribute must be :digits characters.'
     ];
 
@@ -85,9 +101,17 @@ trait MessageBag
 
         if ($this->hasMethod($method)) {
             return $this->$method($attribute, $parameters, $originalKey);
-        } else {
+        }
+
+        $text = $this->getReplacementText(
+            $attribute.'.'.$rule, $rule, $originalKey
+        );
+
+        if (!is_string($text) || $text === '') {
             return $this->generateDefaultMessage($attribute, $parameters);
         }
+
+        return str_replace(':attribute', $this->displayableAttribute($attribute), $text);
     }
 
     /**
@@ -111,6 +135,10 @@ trait MessageBag
     /**
      * Get the replacement text of the error message.
      *
+     * A custom message is looked up by the field and rule (hours.start.min),
+     * then by the rule's key as written (slots.*.start.min), then by any
+     * wildcard key that matches the field (hours.*.min), as in Laravel.
+     *
      * @param $customKey
      * @param $bagAccessor
      * @param $originalKey
@@ -125,7 +153,59 @@ trait MessageBag
             return $this->customMessages[$originalKey];
         }
 
+        foreach ($this->customMessages as $key => $message) {
+            if ($this->matchesWildcardKey($key, $customKey)) {
+                return $message;
+            }
+        }
+
         return Arr::get($this->bag, $bagAccessor, '');
+    }
+
+    /**
+     * Get the name a message gives a field.
+     *
+     * A name from the validator's attributes wins, on the exact field or on
+     * a wildcard key (items.*.name); otherwise the field reads as words, as
+     * in Laravel: support_email and supportEmail become "support email".
+     *
+     * @param  string  $attribute
+     * @return string
+     */
+    protected function displayableAttribute($attribute)
+    {
+        if (isset($this->customAttributes[$attribute])) {
+            return $this->customAttributes[$attribute];
+        }
+
+        foreach ($this->customAttributes as $key => $name) {
+            if ($this->matchesWildcardKey($key, $attribute)) {
+                return $name;
+            }
+        }
+
+        return str_replace('_', ' ', Str::snake($attribute));
+    }
+
+    /**
+     * Determine whether a wildcard key matches a dotted key.
+     *
+     * Each * stands for one key at its place: items.*.name matches
+     * items.1.name, but not items.1.meta.name.
+     *
+     * @param  string  $wildcard
+     * @param  string  $key
+     * @return bool
+     */
+    protected function matchesWildcardKey($wildcard, $key)
+    {
+        if (strpos($wildcard, '*') === false) {
+            return false;
+        }
+
+        $pattern = str_replace('\\*', '[^.]+', preg_quote($wildcard, '/'));
+
+        return (bool) preg_match('/^' . $pattern . '$/', $key);
     }
 
     /**
@@ -159,7 +239,7 @@ trait MessageBag
             $attribute.'.string', 'string', $originalKey
         );
 
-        return str_replace(':attribute', $attribute, $text);
+        return str_replace(':attribute', $this->displayableAttribute($attribute), $text);
     }
 
     /**
@@ -190,7 +270,7 @@ trait MessageBag
             $attribute.'.integer', 'integer', $originalKey
         );
 
-        return str_replace(':attribute', $attribute, $text);
+        return str_replace(':attribute', $this->displayableAttribute($attribute), $text);
     }
 
     /**
@@ -208,7 +288,7 @@ trait MessageBag
             $attribute.'.alpha', 'alpha',  $originalKey
         );
 
-        return str_replace(':attribute', $attribute, $text);
+        return str_replace(':attribute', $this->displayableAttribute($attribute), $text);
     }
 
     /**
@@ -226,7 +306,7 @@ trait MessageBag
             $attribute.'.alphanum', 'alphanum', $originalKey
         );
 
-        return str_replace(':attribute', $attribute, $text);
+        return str_replace(':attribute', $this->displayableAttribute($attribute), $text);
     }
 
     /**
@@ -244,7 +324,7 @@ trait MessageBag
             $attribute.'.alphadash', 'alphadash', $originalKey
         );
 
-        return str_replace(':attribute', $attribute, $text);
+        return str_replace(':attribute', $this->displayableAttribute($attribute), $text);
     }
 
     /**
@@ -262,7 +342,7 @@ trait MessageBag
             $attribute.'.required', 'required', $originalKey
         );
 
-        return str_replace(':attribute', $attribute, $text);
+        return str_replace(':attribute', $this->displayableAttribute($attribute), $text);
     }
 
     /**
@@ -276,9 +356,7 @@ trait MessageBag
      */
     protected function replaceRequiredIf($attribute, $parameters,  $originalKey)
     {
-        if (preg_match('/\.\d\./', $attribute, $matches)) {
-            $parameters[0] = str_replace(['.*.'], $matches, $parameters[0]);
-        }
+        $parameters[0] = $this->resolveWildcardIndexes($attribute, $parameters[0]);
 
         $text = $this->getReplacementText($attribute.'.required_if', 'required_if', $originalKey);
 
@@ -286,7 +364,33 @@ trait MessageBag
 
         return str_replace([
             ':attribute', ':other', ':value'],
-            [$attribute, $parameters[0], $value],
+            [$this->displayableAttribute($attribute), $this->displayableAttribute($parameters[0]), $value],
+            $text
+        );
+    }
+
+    /**
+     * Replace all place-holders for the required unless rule.
+     *
+     * @param $attribute
+     * @param $parameters
+     * @param $originalKey
+     *
+     * @return string
+     */
+    protected function replaceRequiredUnless($attribute, $parameters, $originalKey)
+    {
+        $parameters[0] = $this->resolveWildcardIndexes($attribute, $parameters[0]);
+
+        $text = $this->getReplacementText($attribute.'.required_unless', 'required_unless', $originalKey);
+
+        return str_replace(
+            [':attribute', ':other', ':values'],
+            [
+                $this->displayableAttribute($attribute),
+                $this->displayableAttribute($parameters[0]),
+                implode(', ', array_slice($parameters, 1)),
+            ],
             $text
         );
     }
@@ -302,11 +406,11 @@ trait MessageBag
      */
     protected function replaceRequiredWith($attribute, $parameters,  $originalKey)
     {
-        if (preg_match('/\.\d\./', $attribute, $matches)) {
-            $parameters[0] = str_replace(['.*.'], $matches, $parameters[0]);
-        }
+        $parameters[0] = $this->resolveWildcardIndexes($attribute, $parameters[0]);
 
         $text = $this->getReplacementText($attribute.'.required_with', 'required_with', $originalKey);
+
+        $parameters = array_map([$this, 'displayableAttribute'], $parameters);
 
         $other = '';
 
@@ -321,7 +425,7 @@ trait MessageBag
 
         return str_replace([
             ':attribute', ':other'],
-            [$attribute, $other],
+            [$this->displayableAttribute($attribute), $other],
             $text
         );
     }
@@ -337,11 +441,11 @@ trait MessageBag
      */
     protected function replaceRequiredWithAll($attribute, $parameters,  $originalKey)
     {
-        if (preg_match('/\.\d\./', $attribute, $matches)) {
-            $parameters[0] = str_replace(['.*.'], $matches, $parameters[0]);
-        }
+        $parameters[0] = $this->resolveWildcardIndexes($attribute, $parameters[0]);
 
         $text = $this->getReplacementText($attribute.'.required_with_all', 'required_with_all', $originalKey);
+
+        $parameters = array_map([$this, 'displayableAttribute'], $parameters);
 
         $other = '';
 
@@ -354,11 +458,9 @@ trait MessageBag
             $other = 'all ' . implode(', ', $parameters) . ' and ' . $last;
         }
 
-        $text = 'The :attribute field is required when :other field(s) are present.';
-
         return str_replace(
             [':attribute', ':other'],
-            [$attribute, $other],
+            [$this->displayableAttribute($attribute), $other],
             $text
         );
     }
@@ -373,11 +475,11 @@ trait MessageBag
      */
     protected function replaceRequiredWithout($attribute, $parameters, $originalKey)
     {
-        if (preg_match('/\.\d\./', $attribute, $matches)) {
-            $parameters[0] = str_replace(['.*.'], $matches, $parameters[0]);
-        }
+        $parameters[0] = $this->resolveWildcardIndexes($attribute, $parameters[0]);
 
         $text = $this->getReplacementText($attribute . '.required_without', 'required_without', $originalKey);
+
+        $parameters = array_map([$this, 'displayableAttribute'], $parameters);
 
         $other = '';
 
@@ -391,11 +493,9 @@ trait MessageBag
         }
 
         // Default message
-        $text = 'The :attribute field is required when :other field(s) are not present.';
-
         return str_replace(
             [':attribute', ':other'],
-            [$attribute, $other],
+            [$this->displayableAttribute($attribute), $other],
             $text
         );
     }
@@ -410,11 +510,11 @@ trait MessageBag
      */
     protected function replaceRequiredWithoutAll($attribute, $parameters, $originalKey)
     {
-        if (preg_match('/\.\d\./', $attribute, $matches)) {
-            $parameters[0] = str_replace(['.*.'], $matches, $parameters[0]);
-        }
+        $parameters[0] = $this->resolveWildcardIndexes($attribute, $parameters[0]);
 
         $text = $this->getReplacementText($attribute . '.required_without_all', 'required_without_all', $originalKey);
+
+        $parameters = array_map([$this, 'displayableAttribute'], $parameters);
 
         $other = '';
 
@@ -428,11 +528,9 @@ trait MessageBag
         }
 
         // Default message
-        $text = 'The :attribute field is required when :other field(s) are all missing.';
-
         return str_replace(
             [':attribute', ':other'],
-            [$attribute, $other],
+            [$this->displayableAttribute($attribute), $other],
             $text
         );
     }
@@ -452,9 +550,7 @@ trait MessageBag
         $originalKey
     )
     {
-        if (preg_match('/\.\d\./', $attribute, $matches)) {
-            $parameters[0] = str_replace(['.*.'], $matches, $parameters[0]);
-        }
+        $parameters[0] = $this->resolveWildcardIndexes($attribute, $parameters[0]);
 
         $text = $this->getReplacementText($attribute.'.required_array_keys', 'required_array_keys', $originalKey);
 
@@ -471,7 +567,7 @@ trait MessageBag
 
         return str_replace(
             [':attribute', ':keys'],
-            [$attribute, $other],
+            [$this->displayableAttribute($attribute), $other],
             $text
         );
     }
@@ -487,17 +583,15 @@ trait MessageBag
      */
     protected function replaceGt($attribute, $parameters,  $originalKey)
     {
-        if (preg_match('/\.\d\./', $attribute, $matches)) {
-            $parameters[0] = str_replace(['.*.'], $matches, $parameters[0]);
-        }
+        $parameters[0] = $this->resolveWildcardIndexes($attribute, $parameters[0]);
 
         $text = $this->getReplacementText($attribute.'.gt', 'gt', $originalKey);
 
-        $value = end($parameters);
+        $value = $this->comparedSize($attribute, $this->getValue($attribute), $parameters[0]) ?? $parameters[0];
 
         return str_replace([
             ':attribute', ':value'],
-            [$attribute, $value],
+            [$this->displayableAttribute($attribute), $value],
             $text
         );
     }
@@ -513,17 +607,15 @@ trait MessageBag
      */
     protected function replaceLt($attribute, $parameters,  $originalKey)
     {
-        if (preg_match('/\.\d\./', $attribute, $matches)) {
-            $parameters[0] = str_replace(['.*.'], $matches, $parameters[0]);
-        }
+        $parameters[0] = $this->resolveWildcardIndexes($attribute, $parameters[0]);
 
         $text = $this->getReplacementText($attribute.'.lt', 'lt', $originalKey);
 
-        $value = end($parameters);
+        $value = $this->comparedSize($attribute, $this->getValue($attribute), $parameters[0]) ?? $parameters[0];
 
         return str_replace([
             ':attribute', ':value'],
-            [$attribute, $value],
+            [$this->displayableAttribute($attribute), $value],
             $text
         );
     }
@@ -539,17 +631,15 @@ trait MessageBag
      */
     protected function replaceGte($attribute, $parameters,  $originalKey)
     {
-        if (preg_match('/\.\d\./', $attribute, $matches)) {
-            $parameters[0] = str_replace(['.*.'], $matches, $parameters[0]);
-        }
+        $parameters[0] = $this->resolveWildcardIndexes($attribute, $parameters[0]);
 
         $text = $this->getReplacementText($attribute.'.gte', 'gte', $originalKey);
 
-        $value = end($parameters);
+        $value = $this->comparedSize($attribute, $this->getValue($attribute), $parameters[0]) ?? $parameters[0];
 
         return str_replace([
             ':attribute', ':value'],
-            [$attribute, $value],
+            [$this->displayableAttribute($attribute), $value],
             $text
         );
     }
@@ -565,17 +655,15 @@ trait MessageBag
      */
     protected function replaceLte($attribute, $parameters,  $originalKey)
     {
-        if (preg_match('/\.\d\./', $attribute, $matches)) {
-            $parameters[0] = str_replace(['.*.'], $matches, $parameters[0]);
-        }
+        $parameters[0] = $this->resolveWildcardIndexes($attribute, $parameters[0]);
 
         $text = $this->getReplacementText($attribute.'.lte', 'lte', $originalKey);
 
-        $value = end($parameters);
+        $value = $this->comparedSize($attribute, $this->getValue($attribute), $parameters[0]) ?? $parameters[0];
 
         return str_replace([
             ':attribute', ':value'],
-            [$attribute, $value],
+            [$this->displayableAttribute($attribute), $value],
             $text
         );
     }
@@ -595,11 +683,149 @@ trait MessageBag
             $attribute.'.email', 'email', $originalKey
         );
 
-        return str_replace(':attribute', $attribute, $text);
+        return str_replace(':attribute', $this->displayableAttribute($attribute), $text);
     }
 
     /**
-     * Replace all place-holders for the email rule.
+     * Replace all place-holders for the after rule.
+     *
+     * @param $attribute
+     * @param $parameters
+     * @param $originalKey
+     *
+     * @return string
+     */
+    protected function replaceAfter($attribute, $parameters, $originalKey)
+    {
+        $text = $this->getReplacementText($attribute.'.after', 'after', $originalKey);
+
+        return str_replace(
+            [':attribute', ':date'],
+            [$this->displayableAttribute($attribute), $this->displayableDate($attribute, $parameters[0])],
+            $text
+        );
+    }
+
+    /**
+     * Replace all place-holders for the after_or_equal rule.
+     *
+     * @param $attribute
+     * @param $parameters
+     * @param $originalKey
+     *
+     * @return string
+     */
+    protected function replaceAfterOrEqual($attribute, $parameters, $originalKey)
+    {
+        $text = $this->getReplacementText($attribute.'.after_or_equal', 'after_or_equal', $originalKey);
+
+        return str_replace(
+            [':attribute', ':date'],
+            [$this->displayableAttribute($attribute), $this->displayableDate($attribute, $parameters[0])],
+            $text
+        );
+    }
+
+    /**
+     * Replace all place-holders for the before rule.
+     *
+     * @param $attribute
+     * @param $parameters
+     * @param $originalKey
+     *
+     * @return string
+     */
+    protected function replaceBefore($attribute, $parameters, $originalKey)
+    {
+        $text = $this->getReplacementText($attribute.'.before', 'before', $originalKey);
+
+        return str_replace(
+            [':attribute', ':date'],
+            [$this->displayableAttribute($attribute), $this->displayableDate($attribute, $parameters[0])],
+            $text
+        );
+    }
+
+    /**
+     * Replace all place-holders for the before_or_equal rule.
+     *
+     * @param $attribute
+     * @param $parameters
+     * @param $originalKey
+     *
+     * @return string
+     */
+    protected function replaceBeforeOrEqual($attribute, $parameters, $originalKey)
+    {
+        $text = $this->getReplacementText($attribute.'.before_or_equal', 'before_or_equal', $originalKey);
+
+        return str_replace(
+            [':attribute', ':date'],
+            [$this->displayableAttribute($attribute), $this->displayableDate($attribute, $parameters[0])],
+            $text
+        );
+    }
+
+    /**
+     * Replace all place-holders for the date_equals rule.
+     *
+     * @param $attribute
+     * @param $parameters
+     * @param $originalKey
+     *
+     * @return string
+     */
+    protected function replaceDateEquals($attribute, $parameters, $originalKey)
+    {
+        $text = $this->getReplacementText($attribute.'.date_equals', 'date_equals', $originalKey);
+
+        return str_replace(
+            [':attribute', ':date'],
+            [$this->displayableAttribute($attribute), $this->displayableDate($attribute, $parameters[0])],
+            $text
+        );
+    }
+
+    /**
+     * Get what a date rule's message shows for its parameter: the other
+     * field's name when it names a field, otherwise the date as written.
+     *
+     * @param  string  $attribute
+     * @param  string  $parameter
+     * @return string
+     */
+    protected function displayableDate($attribute, $parameter)
+    {
+        $field = $this->resolveWildcardIndexes($attribute, $parameter);
+
+        return Arr::has($this->data, $field)
+            ? $this->displayableAttribute($parameter)
+            : $parameter;
+    }
+
+    /**
+     * Replace all place-holders for the decimal rule.
+     *
+     * @param $attribute
+     * @param $parameters
+     * @param $originalKey
+     *
+     * @return string
+     */
+    protected function replaceDecimal($attribute, $parameters, $originalKey)
+    {
+        $text = $this->getReplacementText($attribute.'.decimal', 'decimal', $originalKey);
+
+        return str_replace(
+            [':attribute', ':decimal'], [$this->displayableAttribute($attribute), implode('-', $parameters)], $text
+        );
+    }
+
+    /**
+     * Replace all place-holders for the date_format rule.
+     *
+     * The format fills both :format, as in Laravel, and :value, the name
+     * older messages use.
      *
      * @param $attribute
      * @param $parameters
@@ -609,10 +835,12 @@ trait MessageBag
      */
     protected function replaceDateformat($attribute, $parameters, $originalKey)
     {
-        $text = $this->getReplacementText($attribute.'.date_format', 'date_format', $$originalKey);
+        $text = $this->getReplacementText($attribute.'.date_format', 'date_format', $originalKey);
 
         return str_replace(
-            [':attribute', ':value'], [$attribute, $parameters[0]], $text
+            [':attribute', ':format', ':value'],
+            [$this->displayableAttribute($attribute), $parameters[0], $parameters[0]],
+            $text
         );
     }
 
@@ -630,7 +858,7 @@ trait MessageBag
         $text = $this->getReplacementText($attribute.'.size', $this->makeBagKey($attribute, 'size'),  $originalKey);
 
         return str_replace(
-            [':attribute', ':size'], [$attribute, $parameters[0]], $text
+            [':attribute', ':size'], [$this->displayableAttribute($attribute), $parameters[0]], $text
         );
     }
 
@@ -648,7 +876,7 @@ trait MessageBag
         $text = $this->getReplacementText($attribute.'.min', $this->makeBagKey($attribute, 'min'),  $originalKey);
 
         return str_replace(
-            [':attribute', ':min'], [$attribute, $parameters[0]], $text
+            [':attribute', ':min'], [$this->displayableAttribute($attribute), $parameters[0]], $text
         );
     }
 
@@ -666,7 +894,7 @@ trait MessageBag
         $text = $this->getReplacementText($attribute.'.max', $this->makeBagKey($attribute, 'max'), $originalKey);
 
         return str_replace(
-            [':attribute', ':max'], [$attribute, $parameters[0]], $text
+            [':attribute', ':max'], [$this->displayableAttribute($attribute), $parameters[0]], $text
         );
     }
 
@@ -684,8 +912,24 @@ trait MessageBag
         $text = $this->getReplacementText($attribute.'.same', 'same', $originalKey);
 
         return str_replace(
-            [':attribute', ':other'], [$attribute, $parameters[0]], $text
+            [':attribute', ':other'], [$this->displayableAttribute($attribute), $this->displayableAttribute($parameters[0])], $text
         );
+    }
+
+    /**
+     * Replace all place-holders for the file rule.
+     *
+     * @param $attribute
+     * @param $parameters
+     * @param $originalKey
+     *
+     * @return string
+     */
+    protected function replaceFile($attribute, $parameters, $originalKey)
+    {
+        $text = $this->getReplacementText($attribute.'.file', 'file', $originalKey);
+
+        return str_replace(':attribute', $this->displayableAttribute($attribute), $text);
     }
 
     /**
@@ -701,7 +945,7 @@ trait MessageBag
     {
         $text = $this->getReplacementText($attribute.'.url', 'url', $originalKey);
 
-        return str_replace(':attribute', $attribute, $text);
+        return str_replace(':attribute', $this->displayableAttribute($attribute), $text);
     }
 
     /**
@@ -717,7 +961,7 @@ trait MessageBag
     {
         $text = $this->getReplacementText($attribute.'.numeric', 'numeric', $originalKey);
 
-        return str_replace(':attribute', $attribute, $text);
+        return str_replace(':attribute', $this->displayableAttribute($attribute), $text);
     }
 
     /**
@@ -733,7 +977,7 @@ trait MessageBag
     {
         $text = $this->getReplacementText($attribute.'.mimes', 'mimes', $originalKey);
 
-        return str_replace([':attribute', ':values'], [$attribute, implode(', ', $parameters)], $text);
+        return str_replace([':attribute', ':values'], [$this->displayableAttribute($attribute), implode(', ', $parameters)], $text);
     }
 
     /**
@@ -749,7 +993,7 @@ trait MessageBag
     {
         $text = $this->getReplacementText($attribute.'.mimetypes', 'mimetypes', $originalKey);
 
-        return str_replace([':attribute', ':values'], [$attribute, implode(', ', $parameters)], $text);
+        return str_replace([':attribute', ':values'], [$this->displayableAttribute($attribute), implode(', ', $parameters)], $text);
     }
 
     /**
@@ -765,7 +1009,7 @@ trait MessageBag
     {
         $text = $this->getReplacementText($attribute.'.unique', 'unique', $originalKey);
 
-        return str_replace(':attribute', $attribute, $text);
+        return str_replace(':attribute', $this->displayableAttribute($attribute), $text);
     }
 
     /**
@@ -781,7 +1025,7 @@ trait MessageBag
     {
         $text = $this->getReplacementText($attribute.'.digits', 'digits', $originalKey);
 
-        return str_replace([':attribute', ':digits'], [$attribute, $parameters[0]], $text);
+        return str_replace([':attribute', ':digits'], [$this->displayableAttribute($attribute), $parameters[0]], $text);
     }
 
     /**
@@ -797,7 +1041,7 @@ trait MessageBag
     {
         $text = $this->getReplacementText($attribute.'.array', 'array', $originalKey);
 
-        return str_replace([':attribute', ':array'], [$attribute], $text);
+        return str_replace([':attribute', ':array'], [$this->displayableAttribute($attribute)], $text);
     }
 
     /**
@@ -813,7 +1057,7 @@ trait MessageBag
     {
         $text = $this->getReplacementText($attribute.'.in', 'in', $originalKey);
 
-        return str_replace([':attribute', ':in'], [$attribute], $text);
+        return str_replace([':attribute', ':in'], [$this->displayableAttribute($attribute)], $text);
     }
 
     /**
@@ -829,7 +1073,7 @@ trait MessageBag
     {
         $text = $this->getReplacementText($attribute.'.not_in', 'not_in', $originalKey);
 
-        return str_replace([':attribute', ':not_in'], [$attribute], $text);
+        return str_replace([':attribute', ':not_in'], [$this->displayableAttribute($attribute)], $text);
     }
 
     /**
@@ -845,6 +1089,6 @@ trait MessageBag
     {
         $text = $this->getReplacementText($attribute.'.exists', 'exists', $originalKey);
 
-        return str_replace([':attribute', ':exists'], [$attribute], $text);
+        return str_replace([':attribute', ':exists'], [$this->displayableAttribute($attribute)], $text);
     }
 }

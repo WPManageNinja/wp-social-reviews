@@ -3,12 +3,18 @@
 namespace WPSocialReviews\Framework\Database\Orm\Relations;
 
 use WPSocialReviews\Framework\Database\Orm\Model;
+use WPSocialReviews\Framework\Http\Request\CurrentUser;
 use WPSocialReviews\Framework\Database\Orm\Builder;
 use WPSocialReviews\Framework\Database\Orm\Collection;
 use WPSocialReviews\Framework\Database\Orm\Relations\Concerns\ComparesRelatedModels;
 use WPSocialReviews\Framework\Database\Orm\Relations\Concerns\InteractsWithDictionary;
 use WPSocialReviews\Framework\Database\Orm\Relations\Concerns\SupportsDefaultModels;
 
+/**
+ * @template TRelatedModel of \WPSocialReviews\Framework\Database\Orm\Model
+ *
+ * @extends Relation<TRelatedModel>
+ */
 class BelongsTo extends Relation
 {
     use ComparesRelatedModels,
@@ -186,6 +192,10 @@ class BelongsTo extends Relation
      */
     public function associate($model)
     {
+        if ($model instanceof CurrentUser) {
+            $model = $model->forRelation();
+        }
+
         $ownerKey = $model instanceof Model ? $model->getAttribute(
             $this->ownerKey
         ) : $model;

@@ -2,29 +2,36 @@
 
 namespace WPSocialReviews\Framework\Randomizer;
 
-use Exception;
-use WPSocialReviews\Framework\Support\InvalidArgumentException;
-
 /**
  * An implementation of the Randomizer class.
  * @see https://www.php.net/manual/en/class.random-randomizer.php
  */
 if (class_exists('Random\Randomizer')) {
     /**
-     * Wrapper around the native PHP 8.2+ Random\Randomizer.
+     * Wrapper around the native PHP 8.2+ Random\Randomizer. PHP 8.2's
+     * lacks getBytesFromString(), getFloat() and nextFloat(), which
+     * came in 8.3, so there those three use Php83MethodsTrait.
      *
      * @method string getBytes(int $length)
      * @method int    getInt(int $min, int $max)
-     * @method float  getFloat(float $min, float $max)
      * @method int    nextInt()
-     * @method float  nextFloat()
      * @method array  pickArrayKeys(array $array, int $num)
      * @method array  shuffleArray(array $array)
      * @method string shuffleBytes(string $string)
+     *
+     * @deprecated 2.19.0 Moved to the wpfluent/randomizer package
+     *             (`wpf package:install randomizer`), as
+     *             Package\Randomizer\Randomizer. This copy will be removed
+     *             in a release after 2026-11-05.
      */
     final class Randomizer
     {
         use GetStringTrait;
+        use Php83MethodsTrait {
+            getBytesFromString as private fallbackGetBytesFromString;
+            getFloat as private fallbackGetFloat;
+            nextFloat as private fallbackNextFloat;
+        }
 
         private $randomizer;
 
@@ -36,7 +43,29 @@ if (class_exists('Random\Randomizer')) {
 
         public function getBytesFromString(string $string, int $length): string
         {
-            return $this->randomizer->getBytesFromString($string, $length);   
+            if (!method_exists($this->randomizer, 'getBytesFromString')) {
+                return $this->fallbackGetBytesFromString($string, $length);
+            }
+
+            return $this->randomizer->getBytesFromString($string, $length);
+        }
+
+        public function getFloat(float $min, float $max, ...$boundary)
+        {
+            if (!method_exists($this->randomizer, 'getFloat')) {
+                return $this->fallbackGetFloat($min, $max);
+            }
+
+            return $this->randomizer->getFloat($min, $max, ...$boundary);
+        }
+
+        public function nextFloat()
+        {
+            if (!method_exists($this->randomizer, 'nextFloat')) {
+                return $this->fallbackNextFloat();
+            }
+
+            return $this->randomizer->nextFloat();
         }
 
         public function __call($method, $args = [])
@@ -45,65 +74,30 @@ if (class_exists('Random\Randomizer')) {
         }
     }
 } else {
+    /**
+     * The Randomizer for PHP before 8.2, written in PHP.
+     *
+     * @deprecated 2.19.0 Moved to the wpfluent/randomizer package
+     *             (`wpf package:install randomizer`), as
+     *             Package\Randomizer\Randomizer. This copy will be removed
+     *             in a release after 2026-11-05.
+     */
     final class Randomizer
     {
         use GetStringTrait;
-
-        private $engine;
-
-        public function __construct()
-        {
-            $this->engine = $this->makeEngine();
-        }
+        use Php83MethodsTrait;
 
         public function getBytes(int $length)
         {
-            $result = '';
-
-            while (strlen($result) < $length) {
-                $result .= $this->engine->generate();
-            }
-
-            return substr($result, 0, $length);
-        }
-
-        public function getBytesFromString(string $string, int $length)
-        {
-            if ($length === 0) {
-                throw new InvalidArgumentException('Length cannot be zero.');
-            }
-
-            $sourceLength = strlen($string);
-            
-            if ($sourceLength === 0) {
-                throw new InvalidArgumentException(
-                    'Source string cannot be empty.'
+            if ($length < 1) {
+                $this->throwValueError(
+                    'getBytes', 'Argument #1 ($length) must be greater than 0'
                 );
             }
 
-            $result = [];
-
-            for ($i = 0; $i < $length; $i++) {
-                $index = $this->getInt(0, $sourceLength - 1);
-                $result[] = $string[$index];
-            }
-
-            return implode('', $result);
-        }
-
-        public function getFloat(float $min, float $max)
-        {
-            // Match native Random\Randomizer::getFloat — allow $min == $max
-            // (returns $min); only reject $min > $max.
-            if ($min > $max) {
-                $this->throwInvalidRange(
-                    'Argument #1 ($min) must be less than or equal to argument #2 ($max).'
-                );
-            }
-
-            // When $min == $max, the formula naturally returns $min
-            // (anything * 0 == 0), so no special case needed.
-            return $min + ($this->nextFloat() * ($max - $min));
+            // The source PHP's Random\Engine\Secure uses, with no fallback
+            // either: when it fails, random_bytes() throws, as PHP does.
+            return random_bytes($length);
         }
 
         public function getInt(int $min, int $max)
@@ -111,33 +105,13 @@ if (class_exists('Random\Randomizer')) {
             // Match native Random\Randomizer::getInt — throw on $min > $max
             // and delegate to random_int (which already handles the range
             // correctly, rejection-sampled, no manual offset arithmetic).
-            if ($min > $max) {
-                $this->throwInvalidRange(
-                    'Argument #1 ($min) must be less than or equal to argument #2 ($max).'
+            if ($max < $min) {
+                $this->throwValueError(
+                    'getInt', 'Argument #2 ($max) must be greater than or equal to argument #1 ($min)'
                 );
             }
 
             return random_int($min, $max);
-        }
-
-        /**
-         * Throw the same exception type the native Random\Randomizer would
-         * throw on bad range input. \ValueError landed in PHP 8.0; on older
-         * runtimes fall back to InvalidArgumentException so we always raise
-         * something meaningful.
-         */
-        private function throwInvalidRange(string $message)
-        {
-            if (class_exists('ValueError', false)) {
-                throw new \ValueError($message);
-            }
-
-            throw new InvalidArgumentException($message);
-        }
-
-        public function nextFloat()
-        {
-            return random_int(0, PHP_INT_MAX) / (PHP_INT_MAX + 1);
         }
 
         public function nextInt()
@@ -149,9 +123,15 @@ if (class_exists('Random\Randomizer')) {
         {
             $count = count($array);
 
+            if ($count === 0) {
+                $this->throwValueError(
+                    'pickArrayKeys', 'Argument #1 ($array) must not be empty'
+                );
+            }
+
             if ($num < 1 || $num > $count) {
-                throw new InvalidArgumentException(
-                    'Argument #2 ($num) must be between 1 and the number of elements in argument #1 ($array).'
+                $this->throwValueError(
+                    'pickArrayKeys', 'Argument #2 ($num) must be between 1 and the number of elements in argument #1 ($array)'
                 );
             }
 
@@ -180,6 +160,8 @@ if (class_exists('Random\Randomizer')) {
 
         public function shuffleArray(array $array)
         {
+            // Native returns a list; the keys are not kept.
+            $array = array_values($array);
             $count = count($array);
 
             if ($count < 2) {
@@ -204,25 +186,6 @@ if (class_exists('Random\Randomizer')) {
             $array = str_split($bytes);
             $shuffled = $this->shuffleArray($array);
             return implode('', $shuffled);
-        }
-
-        private function makeEngine()
-        {
-            return new class {
-                public function generate() {
-                    $length = 32;
-
-                    if (function_exists('random_bytes')) {
-                        return random_bytes($length);
-                    }
-
-                    if (function_exists('openssl_random_pseudo_bytes')) {
-                        return openssl_random_pseudo_bytes($length);
-                    }
-
-                    throw new Exception('No secure random source available.');
-                }
-            };
         }
     }
 }

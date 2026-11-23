@@ -2,6 +2,7 @@
 
 namespace WPSocialReviews\Framework\Database\Migration;
 
+use InvalidArgumentException;
 use WPSocialReviews\Framework\Database\Schema;
 
 class ColumnDefinition
@@ -23,7 +24,32 @@ class ColumnDefinition
 
     public function __construct($name)
     {
+        static::assertUsableName($name);
+
         $this->name = $name;
+    }
+
+    /**
+     * Refuse a column name that dbDelta reads as an index: it treats a
+     * line starting with key, index, unique, primary, fulltext or spatial
+     * as an index, backticked or not, so the next migration run would try
+     * to add a broken index to the table.
+     *
+     * @param  string  $name
+     * @return void
+     * @throws \InvalidArgumentException
+     */
+    public static function assertUsableName($name)
+    {
+        $words = ['key', 'index', 'unique', 'primary', 'fulltext', 'spatial'];
+
+        if (in_array(strtolower(trim($name, '`')), $words, true)) {
+            throw new InvalidArgumentException(
+                "A column can't be named {$name}: dbDelta reads a line that starts with it "
+                . 'as an index, so the next migration run would break the table. Use another '
+                . "name, such as {$name}_name."
+            );
+        }
     }
 
     // ── Type Methods ─────────────────────────────────────────
@@ -286,6 +312,19 @@ class ColumnDefinition
         return $this->name;
     }
 
+    /**
+     * Wrap a column or index name in backticks, so a name that is an SQL
+     * keyword (order, group, desc) is read as a name. dbDelta reads a
+     * backticked column line as well as a bare one.
+     *
+     * @param  string  $name
+     * @return string
+     */
+    public static function wrap($name)
+    {
+        return '`' . str_replace('`', '``', trim($name, '`')) . '`';
+    }
+
     public function isUnique()
     {
         return $this->isUnique;
@@ -302,7 +341,7 @@ class ColumnDefinition
      */
     public function toSql()
     {
-        $parts = [$this->name, $this->type];
+        $parts = [static::wrap($this->name), $this->type];
 
         if ($this->isUnsigned && !str_contains($this->type, 'unsigned')) {
             $parts[] = 'unsigned';
@@ -339,18 +378,15 @@ class ColumnDefinition
     }
 
     /**
-     * For ALTER TABLE ADD COLUMN.
+     * For ALTER TABLE ADD COLUMN. A unique() or index() column gets its
+     * index from a statement of its own: SQLite refuses ADD COLUMN … UNIQUE.
      */
     public function toAlterAddSql()
     {
         $sql = 'ADD COLUMN ' . $this->toSql();
 
-        if ($this->isUnique) {
-            $sql .= ' UNIQUE';
-        }
-
         if ($this->afterColumn && !Schema::isSqlite()) {
-            $sql .= ' AFTER ' . $this->afterColumn;
+            $sql .= ' AFTER ' . static::wrap($this->afterColumn);
         }
 
         return $sql;
@@ -362,13 +398,13 @@ class ColumnDefinition
     public function toAlterModifySql()
     {
         if (Schema::isSqlite()) {
-            return 'CHANGE COLUMN ' . $this->name . ' ' . $this->toSql();
+            return 'CHANGE COLUMN ' . static::wrap($this->name) . ' ' . $this->toSql();
         }
 
         $sql = 'MODIFY COLUMN ' . $this->toSql();
 
         if ($this->afterColumn) {
-            $sql .= ' AFTER ' . $this->afterColumn;
+            $sql .= ' AFTER ' . static::wrap($this->afterColumn);
         }
 
         return $sql;

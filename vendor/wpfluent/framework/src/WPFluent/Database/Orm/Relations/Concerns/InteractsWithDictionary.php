@@ -2,7 +2,7 @@
 
 namespace WPSocialReviews\Framework\Database\Orm\Relations\Concerns;
 
-use WPSocialReviews\Framework\Support\InvalidArgumentException;
+use InvalidArgumentException;
 
 trait InteractsWithDictionary
 {
@@ -12,7 +12,7 @@ trait InteractsWithDictionary
      * @param  mixed  $attribute
      * @return mixed
      *
-     * @throws \WPSocialReviews\Framework\Support\InvalidArgumentException
+     * @throws \InvalidArgumentException
      */
     protected function getDictionaryKey($attribute)
     {

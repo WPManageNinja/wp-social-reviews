@@ -250,6 +250,7 @@
             <el-select
                 v-if="field.type === 'select'"
                 v-model="localValue"
+                @change="handleChange"
                 placeholder="Select"
                 size="small"
                 :filterable="field.isFilterable ? true : false"
@@ -283,6 +284,7 @@
         <div class="wpsr-editor-inside-right" v-if="field.type === 'multiple_select'">
             <el-select
                 v-model="localValue"
+                @change="field.pro_handler && setAccount($event)"
                 placeholder="Select"
                 size="large"
                 :disabled="field.disabled"
@@ -317,6 +319,7 @@
         <div class="wpsr-editor-inside-right" v-if="field.type === 'dynamic_select'">
         <el-select
             v-model="localValue"
+            @change="handleChange"
             placeholder="Select"
             size="small"
             :multiple="field.multiple"
@@ -588,28 +591,6 @@ export default {
 
         handleDevice(val, activeDevice) {
             this.$emit('handleDevice', val, activeDevice);
-        },
-
-        handleSelectChange(val) {
-            this.$emit('update:modelValue', val);
-            if (this.field.event === 'on_change') {
-                this.$emit('on-change');
-            }
-        },
-
-        handleMultipleSelectChange(val) {
-            if (this.field.pro_handler) {
-                this.setAccount(val);
-            } else {
-                this.$emit('update:modelValue', val);
-            }
-        },
-
-        handleDynamicSelectChange(val) {
-            this.$emit('update:modelValue', val);
-            if (this.field.event === 'on_change') {
-                this.$emit('on-change');
-            }
         }
     },
 

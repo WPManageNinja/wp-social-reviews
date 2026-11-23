@@ -36,6 +36,17 @@ router.beforeEach((to, from, next) => {
     next();
 });
 
+// Editors set these body classes in mounted() and re-add them on entry. vue-router 4 ignores commonMixin's
+// beforeRouteLeave (guards are read from the route component, not its mixins), so clear them on leaving an editor.
+router.afterEach((to, from) => {
+    const wpsrToView = to.matched[to.matched.length - 1]?.components?.default;
+    const wpsrFromView = from.matched[from.matched.length - 1]?.components?.default;
+    if (wpsrToView === wpsrFromView) {
+        return;
+    }
+    jQuery('body').removeClass('is-wpsr-editor wpsr_full_screen');
+});
+
 const app = createApp(App);
 
 app.use(ElementPlus);

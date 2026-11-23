@@ -39,13 +39,14 @@ $wpsr_classes[] = Helper::generatePhotoAlbumFeedClass($feed_settings);
 $wpsr_classes[] = Arr::get($feed_settings, 'post_settings.equal_height') === 'true' ? 'wpsr-has-equal-height' : '';
 $wpsr_classes[] = !$wpsr_is_mosaic && $feed_settings['layout_type'] === 'timeline' ? 'wpsr-fb-feed-layout-standard' : '';
 $wpsr_desktop_column_number   = Arr::get($feed_settings, 'responsive_column_number.desktop');
+$wpsr_slider_pre_init_style   = $wpsr_is_carousel ? GlobalHelper::getSliderPreInitStyle($wpsr_slider_data) : '';
 
 $wpsr_header_settings = $feed_settings['header_settings'];
 $wpsr_profile_photo_hide_class = $wpsr_header_settings['display_profile_photo'] === 'false' ? 'wpsr-fb-feed-profile-pic-hide' : '';
 $wpsr_fb_header_layout_class = Helper::getHeaderLayoutClass($feed_settings);
 
 echo '<div  id="wpsr-fb-feed-' . esc_attr($templateId) . '" class="' . esc_attr(implode(' ', $wpsr_classes)) . '" ' . esc_attr(implode(' ',
-        $wpsr_data_attrs)) . '  data-column="' . esc_attr($wpsr_desktop_column_number) . '">';
+        $wpsr_data_attrs)) . '  data-column="' . esc_attr($wpsr_desktop_column_number) . '"' . ($wpsr_slider_pre_init_style ? ' style="' . esc_attr($wpsr_slider_pre_init_style) . '"' : '') . '>';
 echo '<div class="wpsr-loader">
         <div class="wpsr-spinner-animation"></div>
     </div>';

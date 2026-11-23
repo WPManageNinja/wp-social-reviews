@@ -73,11 +73,11 @@
                 placeholder="Search..."
                 size="default"
                 style="width: 200px;"
-                @keyup.enter.native="getItems"
+                @keyup.enter.native="applyListFilters"
                 @clear="handleClear"
                 clearable>
               <template #prefix>
-                <el-icon class="el-input__icon" @click="getItems" slot="append"><Search /></el-icon>
+                <el-icon class="el-input__icon" @click="applyListFilters" slot="append"><Search /></el-icon>
               </template>
             </el-input>
           </div>
@@ -97,7 +97,7 @@
 
             <el-table-column label="ID" width="70" prop="ID" sortable>
               <template #default="scope">
-                <span class="wpsr-item-id wpsr-item-editable" @click.prevent="handleRowAction('edit', scope.row)">#{{ scope.row.ID }}</span>
+                <router-link class="wpsr-item-id wpsr-item-editable" :to="getEditLink(scope.row)">#{{ scope.row.ID }}</router-link>
               </template>
             </el-table-column>
 
@@ -107,12 +107,12 @@
                 show-overflow-tooltip
             >
               <template #default="scope" >
-                <div class="wpsr-item-title-cell wpsr-item-editable" @click.prevent="handleRowAction('edit', scope.row)">
+                <router-link class="wpsr-item-title-cell wpsr-item-editable" :to="getEditLink(scope.row)">
                   <strong class="wpsr-item-title wpsr-d-flex wpsr-flex-align-center">
                     <span dir="auto">{{ $trimWords(scope.row.post_title, 3, true) }}</span>
                     <el-icon class="wpsr-ml-5 wpsr-display-on-hover"><Edit /></el-icon>
                   </strong>
-                </div>
+                </router-link>
               </template>
             </el-table-column>
 
@@ -151,7 +151,7 @@
                   <template #dropdown>
                     <el-dropdown-menu>
                       <el-dropdown-item command="edit">
-                        <el-icon><Edit /></el-icon> Edit
+                        <router-link class="wpsr-dropdown-link" :to="getEditLink(scope.row)" @click.stop><el-icon><Edit /></el-icon> Edit</router-link>
                       </el-dropdown-item>
                       <el-dropdown-item command="duplicate">
                         <el-icon><DocumentCopy /></el-icon> Duplicate
@@ -354,10 +354,13 @@ export default {
         handleSelectionChange(selection) {
           this.selectedItems = selection;
         },
+        getEditLink(row) {
+          return { name: 'edit-chat-widget', params: { widget_id: row.ID } };
+        },
         handleRowAction(command, row) {
           switch(command) {
             case 'edit':
-              this.$router.push({ name: 'edit-chat-widget', params: {widget_id: row.ID} })
+              this.$router.push(this.getEditLink(row))
               break;
             case 'duplicate':
               this.duplicateItem(row);

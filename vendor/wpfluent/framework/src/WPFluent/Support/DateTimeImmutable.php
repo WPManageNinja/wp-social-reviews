@@ -8,6 +8,7 @@ use DateInterval;
 use DateTimeInterface;
 use InvalidArgumentException;
 use DateTimeImmutable as PHPDateTimeImmutable;
+use WPSocialReviews\Framework\Support\Concerns\DateTimeHelpersTrait;
 
 /**
  * @mixin \DateTimeImmutable
@@ -49,14 +50,12 @@ use DateTimeImmutable as PHPDateTimeImmutable;
  * @method self subDecade(int $value = 1)
  * @method self subDecades(int $value = 1)
  *
- * @method int getYear()
- * @method int getMonth()
- * @method int getDay()
- * @method int getHour()
- * @method int getMinute()
- * @method int getSecond()
- * @method int getQuarter()
- * @method int getDecade()
+ * @method string getYear()
+ * @method string getMonth()
+ * @method string getDay()
+ * @method string getHour()
+ * @method string getMinute()
+ * @method string getSecond()
  *
  * @method self setYear(int $value)
  * @method self setMonth(int $value)
@@ -67,6 +66,8 @@ use DateTimeImmutable as PHPDateTimeImmutable;
  */
 class DateTimeImmutable extends PHPDateTimeImmutable
 {
+    use DateTimeHelpersTrait;
+
     /** @var string[] Singular time units */
     protected const SINGULAR_UNITS = [
         'year', 'month', 'week', 'day', 'hour',
@@ -91,30 +92,47 @@ class DateTimeImmutable extends PHPDateTimeImmutable
             $timezone = new DateTimeZone($timezone);
         }
 
-        $timezone ??= static::getDefaultTimezone();
-
+        // A date object keeps its moment and timezone, as PHP's
+        // createFromInterface() does; a given timezone converts it.
         if ($datetime instanceof DateTimeInterface) {
-            $datetime = $datetime->format('Y-m-d H:i:s.u');
-        } elseif (
+            $timezone ??= $datetime->getTimezone();
+
+            $moment = (new \DateTime(
+                static::utcTime($datetime), new DateTimeZone('UTC')
+            ))->setTimezone($timezone);
+
+            parent::__construct($moment->format('Y-m-d H:i:s.u'), $timezone);
+
+            // In the hour a DST change repeats, the clock time names two
+            // moments and PHP takes the first; the offset names the other.
+            if ($this->getTimestamp() !== $moment->getTimestamp()) {
+                parent::__construct($moment->format('Y-m-d H:i:s.uP'));
+            }
+
+            return;
+        }
+
+        if (
         	is_numeric($datetime)
         	|| str_starts_with((string) $datetime, '@')
         ) {
             $datetime = '@' . ltrim((string) $datetime, '@');
         }
 
-        parent::__construct($datetime, $timezone);
+        parent::__construct(
+            $datetime, $timezone ?? static::getDefaultTimezone()
+        );
     }
 
     /**
-     * Gets the WordPress default timezone.
+     * Get the default timezone: the plugin's configured one, else the
+     * site's.
      *
      * @return DateTimeZone
      */
     public static function getDefaultTimezone()
     {
-        $tz = wp_timezone();
-
-        return $tz instanceof DateTimeZone ? $tz : new DateTimeZone($tz);
+        return static::configuredTimezone();
     }
 
     /**
@@ -127,47 +145,34 @@ class DateTimeImmutable extends PHPDateTimeImmutable
      * @throws \InvalidArgumentException
      */
     public static function create($time = null, $tz = null)
-	{
-	    if (is_null($tz)) {
-	        $timezone = (new static)->getDefaultTimezone();
-	    } else {
-	        $timezone = is_string($tz) ? new DateTimeZone($tz) : $tz;
-	        if (!$timezone instanceof DateTimeZone) {
-	            throw new InvalidArgumentException('Invalid timezone.');
-	        }
-	    }
+    {
+        if (func_num_args() > 2) {
+            return static::createFromDate(...func_get_args());
+        }
 
-	    // Handle DateTimeInterface directly
-	    if ($time instanceof DateTimeInterface) {
-	        $dateTime = new static(
-	        	$time->format('Y-m-d H:i:s.u'), $time->getTimezone()
-	        );
+        if (is_null($tz)) {
+            $timezone = static::getDefaultTimezone();
+        } else {
+            $timezone = is_string($tz) ? new DateTimeZone($tz) : $tz;
+        }
 
-	        // Override timezone if explicitly provided
-	        if ($tz !== null) {
-	            $dateTime = $dateTime->setTimezone($timezone);
-	        }
+        if (!$timezone instanceof DateTimeZone) {
+            throw new InvalidArgumentException('Invalid timezone.');
+        }
 
-	        return $dateTime;
-	    }
+        // A date object keeps its own timezone unless one is given.
+        if ($time instanceof DateTimeInterface) {
+            return new static($time, is_null($tz) ? null : $timezone);
+        }
 
-	    // Handle numeric timestamps
-	    if (is_numeric($time)) {
-	        // Treat small numbers as offsets from now (optional)
-	        if ($time <= 31556952) { // ~seconds in a year
-	            $time += time();
-	        }
+        // A number is a Unix timestamp, as in PHP.
+        if (is_numeric($time)) {
+            return (new static('@' . $time))->setTimezone($timezone);
+        }
 
-	        // create from timestamp
-	        $dateTime = new static('@' . $time);
-	        return $dateTime->setTimezone($timezone);
-	    }
-
-	    // Fallback: treat as string or null ('now')
-	    $dateTime = new static($time ?: 'now', $timezone);
-
-	    return $dateTime;
-	}
+        // A string without its own timezone is read in $timezone.
+        return new static($time ?? 'now', $timezone);
+    }
 
     /**
      * Creates a new instance for the current time.
@@ -346,15 +351,23 @@ class DateTimeImmutable extends PHPDateTimeImmutable
     }
 
     /**
-     * Creates a new instance from a formatted string.
+     * Creates a new instance from a formatted string. As Carbon's, it
+     * throws where PHP's returns false, with PHP's own parse errors as the
+     * message, and a NUL byte is PHP 8's ValueError on every PHP version.
+     * The parts the format leaves out below its smallest unit start at
+     * their lowest value instead of the current time: Y-m-d is midnight,
+     * Y-m the 1st, Y January 1st.
      *
      * @param string $format
      * @param string $datetimeString
      * @param string|DateTimeZone|null $timezone
      *
      * @return static
-     * @throws \InvalidArgumentException
+     * @throws \InvalidArgumentException When the string doesn't match the
+     *                                   format, or the timezone isn't one.
+     * @throws \ValueError               For a NUL byte in $datetimeString.
      */
+    #[\ReturnTypeWillChange]
     public static function createFromFormat(
     	$format,
     	$datetimeString,
@@ -362,7 +375,7 @@ class DateTimeImmutable extends PHPDateTimeImmutable
     )
     {
         if (is_null($timezone)) {
-            $timezone = (new static)->getDefaultTimezone();
+            $timezone = static::getDefaultTimezone();
         } else {
             $timezone = is_string($timezone)
             	? new DateTimeZone($timezone)
@@ -373,63 +386,45 @@ class DateTimeImmutable extends PHPDateTimeImmutable
             throw new InvalidArgumentException('Invalid timezone.');
         }
 
-        $dateTime = PHPDateTimeImmutable::createFromFormat(
-        	$format, $datetimeString
-        );
-        
-        if ($dateTime !== false) {
-            
-            if (!$dateTime instanceof static) {
-                return new static(
-                    $dateTime->format(ltrim($format, '!')), $timezone
-                );
-            }
-
-            $dateTime->setTimezone($timezone);
-
-            return $dateTime;
-        }
-
-        throw new InvalidArgumentException(
-            "Unable to create datetime from: {$datetimeString}."
-        );
-    }
-
-    /**
-     * Creates a new instance from date parts.
-     *
-     * @param int $year
-     * @param int $month
-     * @param int $day
-     * @param int $hour
-     * @param int $minute
-     * @param int $second
-     * @param string|DateTimeZone|null $tz
-     *
-     * @return static
-     * @throws \InvalidArgumentException
-     */
-    public static function createFromDate(
-        int $year,
-        int $month,
-        int $day,
-        int $hour = 0,
-        int $minute = 0,
-        int $second = 0,
-        $tz = null
-    ) {
-        if (
-            !checkdate($month, $day, $year)
-            || $hour < 0 || $hour > 23
-            || $minute < 0 || $minute > 59
-            || $second < 0 || $second > 59
-        ) {
-            throw new InvalidArgumentException(
-                sprintf("Invalid date '%04d-%02d-%02d %02d:%02d:%02d'", $year, $month, $day, $hour, $minute, $second)
+        // PHP 8 throws this for a NUL byte, and PHP 7.4 would cut the string
+        // at it; every version gets PHP 8's error (ValueError is polyfilled).
+        if (str_contains((string) $datetimeString, "\0")) {
+            throw new \ValueError(
+                'DateTimeImmutable::createFromFormat(): Argument #2 ($datetime) must not contain any null bytes'
             );
         }
 
-        return new static(sprintf('%04d-%02d-%02d %02d:%02d:%02d', $year, $month, $day, $hour, $minute, $second), $tz);
+        $dateTime = PHPDateTimeImmutable::createFromFormat(
+            $format, $datetimeString, $timezone
+        );
+
+        // As Carbon: a string the format cannot read throws, with PHP's own
+        // reasons as the message ("A four digit year could not be found").
+        if ($dateTime === false) {
+            throw new InvalidArgumentException(
+                static::parseErrorsOf($datetimeString)
+            );
+        }
+
+        $parsed = date_parse_from_format($format, $datetimeString);
+
+        // PHP fills a missing day with today's, which can roll the month
+        // over (Feb 30 becomes Mar 2), so the month comes from $parsed.
+        if ($parsed['day'] === false && $parsed['month'] !== false) {
+            $dateTime = $dateTime->setDate(
+                (int) $dateTime->format('Y'), $parsed['month'], 1
+            );
+        } elseif ($parsed['day'] === false && $parsed['year'] !== false) {
+            $dateTime = $dateTime->setDate($parsed['year'], 1, 1);
+        }
+
+        if ($parsed['hour'] === false) {
+            $dateTime = $dateTime->setTime(0, 0);
+        }
+
+        return new static(
+            $dateTime->format('Y-m-d H:i:s.u'), $dateTime->getTimezone()
+        );
     }
 
     /**
@@ -444,14 +439,23 @@ class DateTimeImmutable extends PHPDateTimeImmutable
     	string $format = 'Y-m-d H:i:s'
     )
     {
-        $gmtDate = get_date_from_gmt($dateString, $format);
-        return new static($gmtDate, static::getDefaultTimezone());
+        $localString = get_date_from_gmt($dateString, $format);
+
+        // WordPress gives the site's clock time, so it is read in the
+        // site's timezone whatever the plugin's default is. Read it back
+        // with the format that wrote it; the constructor takes formats
+        // createFromFormat() can't read, such as 'c'.
+        try {
+            return static::createFromFormat($format, $localString, wp_timezone());
+        } catch (InvalidArgumentException $e) {
+            return new static($localString, wp_timezone());
+        }
     }
 
     /**
      * Parses a datetime string and returns a new instance.
      *
-     * @param string $datetimeString
+     * @param string|\DateTimeInterface $datetimeString
      * @param string|DateTimeZone|null $timezone
      *
      * @return static
@@ -472,13 +476,18 @@ class DateTimeImmutable extends PHPDateTimeImmutable
      * Adds an interval to the instance.
      *
      * @param DateInterval|string $interval
-     * @return self
+     * @return static
      * @throws \InvalidArgumentException
      */
+    #[\ReturnTypeWillChange]
     public function add($interval)
     {
         if ($interval instanceof DateInterval) {
             return parent::add($interval);
+        }
+
+        if (func_num_args() === 2) {
+            return $this->addOrSub('add', func_get_args());
         }
 
         if (!is_string($interval) || trim($interval) === '') {
@@ -492,20 +501,25 @@ class DateTimeImmutable extends PHPDateTimeImmutable
      * Subtracts an interval from the instance.
      *
      * @param DateInterval|string $interval
-     * @return self
+     * @return static
      * @throws \InvalidArgumentException
      */
+    #[\ReturnTypeWillChange]
     public function sub($interval)
     {
         if ($interval instanceof DateInterval) {
             return parent::sub($interval);
         }
 
+        if (func_num_args() === 2) {
+            return $this->addOrSub('sub', func_get_args());
+        }
+
         if (!is_string($interval) || trim($interval) === '') {
             throw new InvalidArgumentException('Invalid interval string.');
         }
 
-        return $this->modify('-' . $interval);
+        return $this->subRelative($interval);
     }
 
     /**
@@ -525,7 +539,7 @@ class DateTimeImmutable extends PHPDateTimeImmutable
      */
     public function __toString()
     {
-        return $this->format('Y-m-d H:i:s');
+        return $this->format($this->getDateFormat());
     }
 
     /**
@@ -541,21 +555,11 @@ class DateTimeImmutable extends PHPDateTimeImmutable
     /**
      * Sets the time to the beginning of the day.
      *
-     * @return self
+     * @return static
      */
     public function startOfDay()
     {
     	return $this->setTime(0, 0, 0, 0);
-    }
-
-    /**
-     * Sets the time to the end of the day.
-     *
-     * @return self
-     */
-    public function endOfDay()
-    {
-    	return $this->setTime(23, 59, 59, 999999);
     }
 
     /**
@@ -604,44 +608,6 @@ class DateTimeImmutable extends PHPDateTimeImmutable
     }
 
     /**
-     * Sets the date to the beginning of the week.
-     *
-     * @return self
-     */
-    public function startOfWeek()
-    {
-        $start = max(0, min(6, (int)get_option('start_of_week')));
-        
-        $day = (int)$this->format('w');
-        
-        $diff = $day - $start;
-        
-        if ($diff < 0) $diff += 7;
-
-        return $this->sub(new DateInterval("P{$diff}D"))->startOfDay();
-    }
-
-    /**
-     * Sets the date to the end of the week.
-     *
-     * @return self
-     */
-    public function endOfWeek()
-    {
-        $start = max(0, min(6, (int)get_option('start_of_week')));
-
-        $day = (int)$this->format('w');
-
-        $end = ($start + 6) % 7;
-
-        $diff = $end - $day;
-
-        if ($diff < 0) $diff += 7;
-
-        return $this->add(new DateInterval("P{$diff}D"))->endOfDay();
-    }
-
-    /**
      * Sets the date to the beginning of the month.
      *
      * @return self
@@ -679,26 +645,6 @@ class DateTimeImmutable extends PHPDateTimeImmutable
         return $this->setDate(
         	(int)$this->format('Y'), $startMonth, 1
         )->startOfDay();
-    }
-
-    /**
-     * Sets the date to the end of the quarter.
-     *
-     * @return self
-     */
-    public function endOfQuarter()
-    {
-        $month = (int)$this->format('m');
-
-        $endMonth = $month <= 3 ? 3 : ($month <= 6 ? 6 : ($month <= 9 ? 9 : 12));
-
-        $lastDay = (int)date('t', strtotime(
-        	"{$this->format('Y')}-{$endMonth}-01"
-        ));
-
-        return $this->setDate(
-        	(int)$this->format('Y'), $endMonth, $lastDay
-        )->endOfDay();
     }
 
     /**
@@ -750,56 +696,60 @@ class DateTimeImmutable extends PHPDateTimeImmutable
     }
 
     /**
-     * Magic setter for time units.
+     * Check if the instance is the same day as another date.
+     *
+     * @param DateTimeInterface $other
+     * @return bool
+     */
+    public function isSameDay(DateTimeInterface $other)
+    {
+        return $this->format('Y-m-d') === $other->format('Y-m-d');
+    }
+
+    /**
+     * The instance is immutable, so its units can't be assigned; like
+     * a readonly property, this throws. setYear() and friends return
+     * a changed copy instead.
      *
      * @param string $key
      * @param mixed $value
-     * @return self
-     * @throws \InvalidArgumentException
+     * @return void
+     * @throws \Error
      */
     public function __set($key, $value)
     {
-        $new = clone $this;
-        switch ($key) {
-            case 'year': return $new->setDate(
-            	(int)$value,
-            	(int)$this->format('m'),
-            	(int)$this->format('d')
-            );
+        $property = static::class . '::$' . $key;
 
-            case 'month': return $new->setDate(
-            	(int)$this->format('Y'),
-            	(int)$value,
-            	(int)$this->format('d')
-            );
+        if (in_array($key, ['year', 'month', 'day', 'hour', 'minute', 'second'], true)) {
+            throw new \Error("Cannot modify readonly property {$property}");
+        }
 
-            case 'day': return $new->setDate(
-            	(int)$this->format('Y'),
-            	(int)$this->format('m'),
-            	(int)$value
-            );
+        throw new \Error("Cannot create dynamic property {$property}");
+    }
 
-            case 'hour': return $new->setTime(
-            	(int)$value,
-            	(int)$this->format('i'),
-            	(int)$this->format('s')
-            );
+    /**
+     * Return a copy with one unit changed.
+     *
+     * @param string $unit
+     * @param mixed $value
+     * @return static
+     */
+    private function withUnit($unit, $value)
+    {
+        $y = (int) $this->format('Y');
+        $m = (int) $this->format('m');
+        $d = (int) $this->format('d');
+        $h = (int) $this->format('H');
+        $i = (int) $this->format('i');
+        $sec = (int) $this->format('s');
 
-            case 'minute': return $new->setTime(
-            	(int)$this->format('H'),
-            	(int)$value,
-            	(int)$this->format('s')
-            );
-
-            case 'second': return $new->setTime(
-            	(int)$this->format('H'),
-            	(int)$this->format('i'),
-            	(int)$value
-            );
-
-            default: throw new InvalidArgumentException(
-            	"Cannot set unknown property '{$key}'."
-            );
+        switch ($unit) {
+            case 'year': return $this->setDate((int) $value, $m, $d);
+            case 'month': return $this->setDate($y, (int) $value, $d);
+            case 'day': return $this->setDate($y, $m, (int) $value);
+            case 'hour': return $this->setTime((int) $value, $i, $sec);
+            case 'minute': return $this->setTime($h, (int) $value, $sec);
+            default: return $this->setTime($h, $i, (int) $value);
         }
     }
 
@@ -813,30 +763,26 @@ class DateTimeImmutable extends PHPDateTimeImmutable
      */
     public function __call($method, $params)
     {
+        $units = ['year', 'month', 'day', 'hour', 'minute', 'second'];
+
         // set* methods
         if (strpos($method, 'set') === 0) {
             $unit = lcfirst(substr($method, 3));
-            if ($params && in_array($unit, static::SINGULAR_UNITS, true)) {
-                return $this->__set($unit, reset($params));
+            if ($params && in_array($unit, $units, true)) {
+                return $this->withUnit($unit, reset($params));
             }
         }
 
-        // get* methods
+        // get* methods, the same strings DateTime returns
         if (strpos($method, 'get') === 0) {
             $unit = lcfirst(substr($method, 3));
-            switch ($unit) {
-                case 'year': return (int)$this->format('Y');
-                case 'month': return (int)$this->format('m');
-                case 'day': return (int)$this->format('d');
-                case 'hour': return (int)$this->format('H');
-                case 'minute': return (int)$this->format('i');
-                case 'second': return (int)$this->format('s');
-                case 'quarter': return (int)(ceil((int)$this->format('m') / 3));
-                case 'decade': return (int)floor((int)$this->format('Y') / 10) * 10;
-                default: throw new InvalidArgumentException(
-                	"Call to undefined method {$method}."
-                );
+            if (in_array($unit, $units, true)) {
+                return $this->__get($unit);
             }
+
+            throw new InvalidArgumentException(
+                "Call to undefined method {$method}."
+            );
         }
 
         // add*/sub* methods

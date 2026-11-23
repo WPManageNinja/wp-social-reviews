@@ -12,6 +12,8 @@ use WPSocialReviews\Framework\Database\Orm\Relations\Concerns\SupportsInverseRel
 
 /**
  * @template TRelatedModel of Model
+ *
+ * @extends Relation<TRelatedModel>
  */
 abstract class HasOneOrMany extends Relation
 {

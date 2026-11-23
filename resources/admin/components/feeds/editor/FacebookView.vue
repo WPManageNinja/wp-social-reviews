@@ -236,6 +236,16 @@ export default {
       }
     },
     runMasonry() {
+      // The column and gap watchers call this directly, before layoutType has caught up with the setting,
+      // so check the saved layout itself and repeat handleLayout's Template 4 guard.
+      if (!this.feedConfig || this.feedConfig.feed_settings.layout_type !== 'masonry') {
+        return;
+      }
+      if (this.feedConfig
+          && this.feedConfig.feed_settings.template === 'template4'
+          && canRenderFacebookProTemplate('template4', this.facebook_pro_templates)) {
+        return;
+      }
       let that = this;
       this.loading = true;
       let containerClass = '.wpsr-facebook-masonry-activate', feedWrapperClass = '.wpsr-fb-all-feed';

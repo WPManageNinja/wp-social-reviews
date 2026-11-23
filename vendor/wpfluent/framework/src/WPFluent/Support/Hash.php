@@ -2,6 +2,13 @@
 
 namespace WPSocialReviews\Framework\Support;
 
+/**
+ * Hashing with PHP's password functions.
+ *
+ * @deprecated 2.19.0 Call PHP's functions directly: password_hash(),
+ *             password_verify(), password_needs_rehash() and hash_equals().
+ *             Support\Hash will be removed in a release after 2026-11-05.
+ */
 class Hash
 {
     /**

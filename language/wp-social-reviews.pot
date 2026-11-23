@@ -1,20 +1,23 @@
+# Copyright (C) 2026 WPManageNinja LLC
+# This file is distributed under the GPLv2 or later.
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: WP Social Reviews\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-05 11:36+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Project-Id-Version: WP Social Ninja 4.5.1\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-social-"
+"reviews\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: \n"
-"Language: \n"
-"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-11-20 13:01+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: Loco https://localise.biz/\n"
-"X-Loco-Version: 2.5.2; wp-5.7.2\n"
-"X-Domain: wp-social-reviews"
+"X-Domain: wp-social-reviews\n"
+"\n"
+"Language: \n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;"
 
 #. Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
 #: app/Services/Platforms/Feeds/Instagram/InstagramFeed.php:406
@@ -26,7 +29,7 @@ msgstr ""
 msgid " Feed"
 msgstr ""
 
-#: app/Services/Platforms/PlatformErrorManager.php:412
+#: app/Services/Platforms/PlatformErrorManager.php:414
 msgid ""
 " is currently experiencing an error that may prevent your feeds from "
 "updating. This issue is likely caused by the following reasons:"
@@ -46,6 +49,12 @@ msgstr ""
 
 #: app/Models/Post.php:216 app/Http/Controllers/TemplatesController.php:95
 msgid " Template"
+msgstr ""
+
+#. %s: scheduled task name, for example "Refresh feeds and reviews"
+#: app/Modules/SystemTools/SystemToolsController.php:89
+#, php-format
+msgid "\"%s\" ran successfully."
 msgstr ""
 
 #. %1$d is the number of notifications, %2$s is the status (published/draft/etc.)
@@ -94,7 +103,8 @@ msgid_plural "%d notifications have been successfully duplicated"
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:654
+#. %d is the number of reviews.
+#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:655
 msgid "%d review has been marked as spam"
 msgid_plural "%d reviews have been marked as spam"
 msgstr[0] ""
@@ -114,7 +124,8 @@ msgid_plural "%d reviews have been successfully duplicated"
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:667
+#. %d is the number of reviews.
+#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:669
 msgid "%d review has been unmarked as spam"
 msgid_plural "%d reviews have been unmarked as spam"
 msgstr[0] ""
@@ -163,13 +174,15 @@ msgid_plural "%d widgets have been successfully updated"
 msgstr[0] ""
 msgstr[1] ""
 
+#. %s: time span, for example "5 mins"
 #. %s: Human-readable time difference.
 #. Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
 #. %s: Human-readable time difference, e.g. "3 days".
+#: app/Modules/SystemTools/CronMonitor.php:174
 #: app/Hooks/Handlers/ShortcodeHandler.php:872
 #: app/Hooks/Handlers/ShortcodeHandler.php:876
 #: app/Hooks/Handlers/InstagramTemplateHandler.php:236
-#: app/Services/Platforms/Feeds/Common/FeedFilters.php:267
+#: app/Services/Platforms/Feeds/Common/FeedFilters.php:272
 #: app/Views/public/reviews-templates/elements/review-date.php:5
 #: app/Views/public/feeds-templates/twitter/elements/tweet-time.php:14
 #, php-format
@@ -183,7 +196,7 @@ msgid "%s reviews fetched successfully!!"
 msgstr ""
 
 #. Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
-#: app/Services/Platforms/PlatformErrorManager.php:406
+#: app/Services/Platforms/PlatformErrorManager.php:408
 #, php-format
 msgid "(%1$s account data will delete in %2$s)"
 msgstr ""
@@ -200,7 +213,7 @@ msgstr ""
 msgid "1 Year"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:853
+#: app/Services/DashboardNotices.php:864
 msgid "4 Different Layout variation"
 msgstr ""
 
@@ -208,7 +221,7 @@ msgstr ""
 msgid "5 min"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:856
+#: app/Services/DashboardNotices.php:867
 #: app/Hooks/Handlers/AdminMenuHandler.php:682
 msgid "9+ templates"
 msgstr ""
@@ -264,7 +277,7 @@ msgstr ""
 msgid "Access code should not be empty!"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:621
+#: app/Services/DashboardNotices.php:632
 msgid "Access to all future Pro modules"
 msgstr ""
 
@@ -286,7 +299,7 @@ msgstr ""
 msgid "Account(%1$s): There has been a problem with your account(%1$s) %2$s."
 msgstr ""
 
-#: app/Services/DashboardNotices.php:655
+#: app/Services/DashboardNotices.php:666
 msgid "Accurately capture customer sentiment and key points"
 msgstr ""
 
@@ -297,24 +310,24 @@ msgid "Action Required Within 7 Days"
 msgstr ""
 
 #. Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
-#: app/Services/Platforms/PlatformErrorManager.php:418
+#: app/Services/Platforms/PlatformErrorManager.php:420
 #, php-format
 msgid "Action required within 7 days %s"
 msgstr ""
 
-#: app/Services/Widgets/TwitterWidget.php:708
+#: app/Services/Widgets/TwitterWidget.php:710
 #: app/Services/Widgets/Oxygen/TwitterWidget.php:361
 #: app/Services/Widgets/Beaver/Twitter/TwitterWidget.php:277
 msgid "Actions"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:680
+#: app/Services/DashboardNotices.php:691
 msgid ""
 "Add a chat widget in minutes—no coding needed! Let visitors reach you "
 "through Messenger, WhatsApp, and more to boost trust, support, and sales."
 msgstr ""
 
-#: app/Services/DashboardNotices.php:683
+#: app/Services/DashboardNotices.php:694
 msgid "Add an eye-catching chat widget in minutes"
 msgstr ""
 
@@ -322,11 +335,11 @@ msgstr ""
 msgid "Add chat widgets to your website"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:531
+#: app/Services/DashboardNotices.php:542
 msgid "Add custom call-to-action buttons (Buy Now, View Product, etc.)"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:778
+#: app/Services/DashboardNotices.php:789
 msgid ""
 "Add Tripadvisor reviews any where on your website to improve your brand's "
 "social media marketing."
@@ -338,19 +351,19 @@ msgid ""
 "social media marketing."
 msgstr ""
 
-#: app/Services/DashboardNotices.php:606
+#: app/Services/DashboardNotices.php:617
 msgid "Advanced feed customization options"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:604
+#: app/Services/DashboardNotices.php:615
 msgid "Advanced filtering (rating, keywords, source, etc.)"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:521
+#: app/Services/DashboardNotices.php:532
 msgid "Advanced grid, carousel, and layout styles"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:638
+#: app/Services/DashboardNotices.php:649
 msgid "Advanced Review Filters Made Easy"
 msgstr ""
 
@@ -373,11 +386,11 @@ msgstr ""
 msgid "AI-Generated Summary"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:651
+#: app/Services/DashboardNotices.php:662
 msgid "AI-Powered Review Summaries"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:608
+#: app/Services/DashboardNotices.php:619
 msgid "AI-powered review summaries"
 msgstr ""
 
@@ -388,12 +401,12 @@ msgstr ""
 msgid "Airbnb"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:758
+#: app/Services/DashboardNotices.php:769
 #: app/Hooks/Handlers/AdminMenuHandler.php:457
 msgid "Airbnb Reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:867
+#: app/Services/DashboardNotices.php:878
 #: app/Hooks/Handlers/AdminMenuHandler.php:697
 msgid "Ajax Load More Pagination"
 msgstr ""
@@ -432,13 +445,13 @@ msgstr ""
 msgid "AliExpress"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:794
+#: app/Services/DashboardNotices.php:805
 #: app/Hooks/Handlers/AdminMenuHandler.php:551
 msgid "AliExpress Reviews"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:344
-#: app/Services/Widgets/YoutubeWidget.php:544
+#: app/Services/Widgets/YoutubeWidget.php:345
+#: app/Services/Widgets/YoutubeWidget.php:546
 #: app/Services/Widgets/ReviewsWidget.php:224
 #: app/Services/Widgets/ReviewsWidget.php:314
 #: app/Services/Widgets/ReviewsWidget.php:404
@@ -460,7 +473,7 @@ msgstr ""
 msgid "All Platforms"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:605
+#: app/Services/DashboardNotices.php:616
 msgid "All premium templates"
 msgstr ""
 
@@ -470,7 +483,7 @@ msgstr ""
 msgid "Amazon"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:785
+#: app/Services/DashboardNotices.php:796
 #: app/Hooks/Handlers/AdminMenuHandler.php:528
 msgid "Amazon Reviews"
 msgstr ""
@@ -489,7 +502,7 @@ msgid ""
 msgstr ""
 
 #. Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
-#: app/Services/Platforms/PlatformErrorManager.php:424
+#: app/Services/Platforms/PlatformErrorManager.php:426
 #, php-format
 msgid ""
 "An account (\"%1$s\") admin has deauthorized the WP Social Ninja app used to "
@@ -501,7 +514,7 @@ msgid ""
 msgstr ""
 
 #. Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
-#: app/Services/Platforms/PlatformErrorManager.php:421
+#: app/Services/Platforms/PlatformErrorManager.php:423
 #, php-format
 msgid ""
 "An account (\"%1$s\") lost access to the WP Social Ninja app used to power "
@@ -592,6 +605,11 @@ msgstr ""
 msgid "Anguilla"
 msgstr ""
 
+#: app/Modules/SystemTools/SystemToolsController.php:76
+msgid ""
+"Another scheduled task is still running. Please wait a moment and try again."
+msgstr ""
+
 #: app/Services/Includes/CountryNames.php:1038
 msgid "Antarctica"
 msgstr ""
@@ -671,21 +689,26 @@ msgstr ""
 msgid "Author Card"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:614
+#: app/Services/DashboardNotices.php:625
 msgid "Auto-refresh and scheduling options"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:558
+#: app/Services/DashboardNotices.php:569
 msgid "Auto-refresh with new playlist videos"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:546
+#: app/Services/DashboardNotices.php:557
 msgid "Automatic syncing with your latest videos"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:866
+#: app/Services/DashboardNotices.php:877
 #: app/Hooks/Handlers/AdminMenuHandler.php:691
 msgid "Automatically syncing reviews"
+msgstr ""
+
+#: app/Modules/SystemTools/Environment.php:30
+#: app/Modules/SystemTools/Environment.php:31
+msgid "Available"
 msgstr ""
 
 #: app/Services/Platforms/Chats/Helper.php:229
@@ -700,24 +723,24 @@ msgstr ""
 msgid "Azerbaijan"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:656
-#: app/Services/Widgets/YoutubeWidget.php:732
-#: app/Services/Widgets/InstagramWidget.php:555
-#: app/Services/Widgets/InstagramWidget.php:644
+#: app/Services/Widgets/YoutubeWidget.php:658
+#: app/Services/Widgets/YoutubeWidget.php:734
+#: app/Services/Widgets/InstagramWidget.php:557
+#: app/Services/Widgets/InstagramWidget.php:646
 #: app/Services/Widgets/FacebookFeedWidget.php:120
 #: app/Services/Widgets/FacebookFeedWidget.php:785
-#: app/Services/Widgets/TwitterWidget.php:845
-#: app/Services/Widgets/TwitterWidget.php:934
+#: app/Services/Widgets/TwitterWidget.php:848
+#: app/Services/Widgets/TwitterWidget.php:937
 #: app/Services/Widgets/ReviewsWidget.php:710
 #: app/Services/Widgets/ReviewsWidget.php:788
 msgid "Background"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:276
-#: app/Services/Widgets/InstagramWidget.php:306
+#: app/Services/Widgets/YoutubeWidget.php:277
+#: app/Services/Widgets/InstagramWidget.php:307
 #: app/Services/Widgets/FacebookFeedWidget.php:220
 #: app/Services/Widgets/FacebookFeedWidget.php:705
-#: app/Services/Widgets/TwitterWidget.php:434
+#: app/Services/Widgets/TwitterWidget.php:435
 #: app/Services/Widgets/ReviewsWidget.php:156
 #: app/Services/Widgets/ReviewsWidget.php:642
 #: app/Services/Widgets/Oxygen/InstagramWidget.php:227
@@ -805,7 +828,7 @@ msgstr ""
 msgid "Based on {total_reviews} Reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:574
+#: app/Services/DashboardNotices.php:585
 msgid "Beautiful Facebook Album Feeds"
 msgstr ""
 
@@ -851,28 +874,28 @@ msgstr ""
 msgid "Booking.com"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:803
+#: app/Services/DashboardNotices.php:814
 #: app/Hooks/Handlers/AdminMenuHandler.php:574
 msgid "Booking.com Reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:522
+#: app/Services/DashboardNotices.php:533
 msgid "Boost brand visibility with targeted content"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:534
+#: app/Services/DashboardNotices.php:545
 msgid "Boost product visibility through curated shoppable galleries"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:662
+#: app/Services/DashboardNotices.php:673
 msgid "Boost Trust Instantly with Review Popups"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:634
+#: app/Services/DashboardNotices.php:645
 msgid "Boost trust, engagement, and visual appeal"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:657
+#: app/Services/DashboardNotices.php:668
 msgid "Boosts user engagement and conversion rates"
 msgstr ""
 
@@ -923,18 +946,18 @@ msgstr ""
 msgid "Border Hover Color:"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:309
-#: app/Services/Widgets/YoutubeWidget.php:698
-#: app/Services/Widgets/YoutubeWidget.php:774
-#: app/Services/Widgets/InstagramWidget.php:339
-#: app/Services/Widgets/InstagramWidget.php:597
-#: app/Services/Widgets/InstagramWidget.php:686
+#: app/Services/Widgets/YoutubeWidget.php:310
+#: app/Services/Widgets/YoutubeWidget.php:700
+#: app/Services/Widgets/YoutubeWidget.php:776
+#: app/Services/Widgets/InstagramWidget.php:340
+#: app/Services/Widgets/InstagramWidget.php:599
+#: app/Services/Widgets/InstagramWidget.php:688
 #: app/Services/Widgets/FacebookFeedWidget.php:162
 #: app/Services/Widgets/FacebookFeedWidget.php:738
 #: app/Services/Widgets/FacebookFeedWidget.php:827
-#: app/Services/Widgets/TwitterWidget.php:467
-#: app/Services/Widgets/TwitterWidget.php:887
-#: app/Services/Widgets/TwitterWidget.php:976
+#: app/Services/Widgets/TwitterWidget.php:468
+#: app/Services/Widgets/TwitterWidget.php:890
+#: app/Services/Widgets/TwitterWidget.php:979
 #: app/Services/Widgets/ReviewsWidget.php:189
 #: app/Services/Widgets/ReviewsWidget.php:752
 #: app/Services/Widgets/ReviewsWidget.php:830
@@ -1001,10 +1024,10 @@ msgstr ""
 msgid "Bouvet Island"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:267
-#: app/Services/Widgets/InstagramWidget.php:297
+#: app/Services/Widgets/YoutubeWidget.php:268
+#: app/Services/Widgets/InstagramWidget.php:298
 #: app/Services/Widgets/FacebookFeedWidget.php:696
-#: app/Services/Widgets/TwitterWidget.php:425
+#: app/Services/Widgets/TwitterWidget.php:426
 #: app/Services/Widgets/Oxygen/InstagramWidget.php:256
 #: app/Services/Widgets/Oxygen/TwitterWidget.php:278
 #: app/Services/Widgets/Oxygen/YouTubeWidget.php:187
@@ -1041,7 +1064,7 @@ msgstr ""
 msgid "Brunei"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:666
+#: app/Services/DashboardNotices.php:677
 msgid "Build trust instantly with live review popups"
 msgstr ""
 
@@ -1070,9 +1093,9 @@ msgstr ""
 msgid "Business search is not available for this platform."
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:246
-#: app/Services/Widgets/InstagramWidget.php:276
-#: app/Services/Widgets/TwitterWidget.php:404
+#: app/Services/Widgets/YoutubeWidget.php:247
+#: app/Services/Widgets/InstagramWidget.php:277
+#: app/Services/Widgets/TwitterWidget.php:405
 #: app/Services/Widgets/ReviewsWidget.php:143
 #: app/Services/Platforms/Feeds/Youtube/Config.php:352
 msgid "Button Background Color"
@@ -1081,11 +1104,11 @@ msgstr ""
 #: app/Services/Platforms/Feeds/Twitter/TwitterFeed.php:560
 #: app/Services/Platforms/Feeds/Instagram/InstagramFeed.php:1083
 #: app/Services/Platforms/Feeds/Youtube/YoutubeFeed.php:1182
-#: app/Services/Platforms/Feeds/Facebook/FacebookFeed.php:1251
+#: app/Services/Platforms/Feeds/Facebook/FacebookFeed.php:1257
 msgid "Cache cleared successfully!"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:861
+#: app/Services/DashboardNotices.php:872
 #: app/Hooks/Handlers/AdminMenuHandler.php:695
 msgid "Call to Action button"
 msgstr ""
@@ -1138,7 +1161,7 @@ msgstr ""
 msgid "Carousel"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:616
+#: app/Services/DashboardNotices.php:627
 msgid "Carousel and masonry layouts"
 msgstr ""
 
@@ -1147,7 +1170,7 @@ msgid "Carousel layout for X (Twitter) feed"
 msgstr ""
 
 #. %d is the number of reviews the category was assigned to
-#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:798
+#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:800
 msgid "Category assigned to %d review"
 msgid_plural "Category assigned to %d reviews"
 msgstr[0] ""
@@ -1166,7 +1189,7 @@ msgid "Category name is required"
 msgstr ""
 
 #. %d is the number of reviews the category was removed from
-#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:810
+#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:812
 msgid "Category removed from %d review"
 msgid_plural "Category removed from %d reviews"
 msgstr[0] ""
@@ -1176,8 +1199,8 @@ msgstr[1] ""
 msgid "Cayman Islands"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:352
-#: app/Services/Widgets/YoutubeWidget.php:552
+#: app/Services/Widgets/YoutubeWidget.php:353
+#: app/Services/Widgets/YoutubeWidget.php:554
 #: app/Services/Widgets/ReviewsWidget.php:232
 #: app/Services/Widgets/ReviewsWidget.php:322
 #: app/Services/Widgets/ReviewsWidget.php:412
@@ -1245,15 +1268,15 @@ msgstr ""
 msgid "Choose a template style"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:690
+#: app/Services/DashboardNotices.php:701
 msgid "Choose exactly where the chat appears on your site"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:567
+#: app/Services/DashboardNotices.php:578
 msgid "Choose from multiple event layouts"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:672
+#: app/Services/DashboardNotices.php:683
 msgid "Choose where popups display on your site"
 msgstr ""
 
@@ -1285,6 +1308,10 @@ msgstr ""
 msgid "Classic Tweet"
 msgstr ""
 
+#: app/Modules/SystemTools/CronMonitor.php:137
+msgid "Clean up unused review form uploads"
+msgstr ""
+
 #: app/Services/Onboarding/OnboardingService.php:512
 msgid "Clean X (Twitter) feed template"
 msgstr ""
@@ -1305,18 +1332,18 @@ msgstr ""
 msgid "Colombia"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:370
-#: app/Services/Widgets/YoutubeWidget.php:460
-#: app/Services/Widgets/YoutubeWidget.php:570
+#: app/Services/Widgets/YoutubeWidget.php:371
+#: app/Services/Widgets/YoutubeWidget.php:461
+#: app/Services/Widgets/YoutubeWidget.php:572
 #: app/Services/Widgets/FacebookFeedWidget.php:579
 #: app/Services/Widgets/FacebookFeedWidget.php:627
 #: app/Services/Widgets/FacebookFeedWidget.php:675
 #: app/Services/Widgets/TwitterWidget.php:107
 #: app/Services/Widgets/TwitterWidget.php:155
 #: app/Services/Widgets/TwitterWidget.php:265
-#: app/Services/Widgets/TwitterWidget.php:361
-#: app/Services/Widgets/TwitterWidget.php:499
-#: app/Services/Widgets/TwitterWidget.php:542
+#: app/Services/Widgets/TwitterWidget.php:362
+#: app/Services/Widgets/TwitterWidget.php:500
+#: app/Services/Widgets/TwitterWidget.php:543
 #: app/Services/Widgets/ReviewsWidget.php:250
 #: app/Services/Widgets/ReviewsWidget.php:340
 #: app/Services/Widgets/ReviewsWidget.php:430
@@ -1357,11 +1384,11 @@ msgstr ""
 msgid "Color"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:517
+#: app/Services/DashboardNotices.php:528
 msgid "Combine multiple hashtags in one feed"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:862
+#: app/Services/DashboardNotices.php:873
 #: app/Hooks/Handlers/AdminMenuHandler.php:684
 msgid "Combine multiple platform"
 msgstr ""
@@ -1384,7 +1411,7 @@ msgstr ""
 msgid "Configuration Modal"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:859
+#: app/Services/DashboardNotices.php:870
 #: app/Hooks/Handlers/AdminMenuHandler.php:683
 msgid "Connect multiple businesses"
 msgstr ""
@@ -1410,9 +1437,9 @@ msgstr ""
 msgid "Contact Us"
 msgstr ""
 
-#: app/Services/Widgets/InstagramWidget.php:366
+#: app/Services/Widgets/InstagramWidget.php:367
 #: app/Services/Widgets/FacebookFeedWidget.php:277
-#: app/Services/Widgets/TwitterWidget.php:632
+#: app/Services/Widgets/TwitterWidget.php:634
 #: app/Services/Widgets/ReviewsWidget.php:486
 #: app/Services/Widgets/Oxygen/InstagramWidget.php:299
 #: app/Services/Widgets/Oxygen/TwitterWidget.php:342
@@ -1427,11 +1454,11 @@ msgstr ""
 msgid "Continue"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:519
+#: app/Services/DashboardNotices.php:530
 msgid "Control what shows with keyword rules"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:670
+#: app/Services/DashboardNotices.php:681
 msgid "Control when and how often popups appear"
 msgstr ""
 
@@ -1464,7 +1491,7 @@ msgstr ""
 msgid "Create a template first"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:555
+#: app/Services/DashboardNotices.php:566
 msgid "Create and manage video playlists easily"
 msgstr ""
 
@@ -1484,6 +1511,10 @@ msgstr ""
 msgid "Cura&ccedil;ao"
 msgstr ""
 
+#: app/Modules/SystemTools/Environment.php:29
+msgid "cURL"
+msgstr ""
+
 #: app/Hooks/Handlers/AdminMenuHandler.php:654
 #: app/Services/Platforms/Reviews/ReviewsTrait.php:18
 #: app/Services/Platforms/Reviews/Helper.php:352
@@ -1500,15 +1531,15 @@ msgstr ""
 msgid "Custom Feed for TikTok Plugin activated successfully"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:556
+#: app/Services/DashboardNotices.php:567
 msgid "Custom playlist layout styles"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:612
+#: app/Services/DashboardNotices.php:623
 msgid "Custom review layouts and grid controls"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:830
+#: app/Services/DashboardNotices.php:841
 #: app/Hooks/Handlers/AdminMenuHandler.php:668
 msgid "Custom Reviews"
 msgstr ""
@@ -1517,7 +1548,7 @@ msgstr ""
 msgid "Custom Sources"
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:625
+#: app/Http/Controllers/SettingsController.php:632
 msgid "Custom URL cannot be empty."
 msgstr ""
 
@@ -1525,19 +1556,19 @@ msgstr ""
 msgid "Customer support focused chat widget"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:630
+#: app/Services/DashboardNotices.php:641
 msgid "Customizable colors, font size, and elements"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:656
+#: app/Services/DashboardNotices.php:667
 msgid "Customizable summary length and tone to match your brand"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:685
+#: app/Services/DashboardNotices.php:696
 msgid "Customize chat widget style to match your brand"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:669
+#: app/Services/DashboardNotices.php:680
 msgid "Customize popup style to match your brand"
 msgstr ""
 
@@ -1585,9 +1616,9 @@ msgstr ""
 msgid "Denmark"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:194
-#: app/Services/Widgets/YoutubeWidget.php:536
-#: app/Services/Widgets/InstagramWidget.php:224
+#: app/Services/Widgets/YoutubeWidget.php:195
+#: app/Services/Widgets/YoutubeWidget.php:538
+#: app/Services/Widgets/InstagramWidget.php:225
 #: app/Services/Widgets/FacebookFeedWidget.php:619
 #: app/Services/Widgets/TwitterWidget.php:196
 #: app/Services/Widgets/Oxygen/InstagramWidget.php:174
@@ -1638,6 +1669,7 @@ msgid "Description Typography"
 msgstr ""
 
 #: app/Services/TranslationString.php:51
+#: app/Modules/SystemTools/Environment.php:29
 msgid "Disabled"
 msgstr ""
 
@@ -1645,7 +1677,7 @@ msgstr ""
 msgid "Display Airbnb property reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:760
+#: app/Services/DashboardNotices.php:771
 #: app/Hooks/Handlers/AdminMenuHandler.php:458
 msgid ""
 "Display Airbnb reviews & engage with your customers post purchasing to hook "
@@ -1672,7 +1704,7 @@ msgstr ""
 msgid "Display Facebook page posts"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:613
+#: app/Services/DashboardNotices.php:624
 msgid "Display feeds from Facebook, Instagram, YouTube, TikTok & more"
 msgstr ""
 
@@ -1680,7 +1712,7 @@ msgstr ""
 msgid "Display Google Business Profile reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:516
+#: app/Services/DashboardNotices.php:527
 msgid "Display Instagram posts by hashtags"
 msgstr ""
 
@@ -1692,11 +1724,11 @@ msgstr ""
 msgid "Display photos from a specific Facebook album"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:607
+#: app/Services/DashboardNotices.php:618
 msgid "Display reviews from unlimited platforms"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:603
+#: app/Services/DashboardNotices.php:614
 msgid "Display reviews from unlimited sources"
 msgstr ""
 
@@ -1728,7 +1760,7 @@ msgstr ""
 msgid "Display WooCommerce product reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:769
+#: app/Services/DashboardNotices.php:780
 #: app/Hooks/Handlers/AdminMenuHandler.php:482
 msgid ""
 "Display Yelp reviews on your website & take on board your potential "
@@ -1739,7 +1771,7 @@ msgstr ""
 msgid "Display your feed in a widget"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:576
+#: app/Services/DashboardNotices.php:587
 msgid ""
 "Display your photo albums in elegant grids or sliders, perfect for galleries,"
 " campaigns, or visual storytelling."
@@ -1817,7 +1849,7 @@ msgstr ""
 msgid "El Salvador"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:627
+#: app/Services/DashboardNotices.php:638
 msgid ""
 "Elevate the look and feel of your social feeds or review displays with "
 "professionally crafted templates — fully customizable and built for "
@@ -1844,15 +1876,16 @@ msgstr ""
 msgid "Embed videos from any YouTube channel directly"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:687
+#: app/Services/DashboardNotices.php:698
 msgid "Enable a smooth popup chat experience"
 msgstr ""
 
 #: app/Services/TranslationString.php:50
+#: app/Modules/SystemTools/Environment.php:29
 msgid "Enabled"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:540
+#: app/Services/DashboardNotices.php:551
 msgid "Engaging Facebook Video Feeds"
 msgstr ""
 
@@ -1953,7 +1986,7 @@ msgid "Error finding key. Please try again."
 msgstr ""
 
 #. Please retain the placeholders (%s, %d, etc.) and ensure they are correctly used in context.
-#: app/Services/Platforms/PlatformErrorManager.php:416
+#: app/Services/Platforms/PlatformErrorManager.php:418
 #, php-format
 msgid "Error in Account %s:"
 msgstr ""
@@ -2042,7 +2075,7 @@ msgstr ""
 msgid "Excellent"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:643
+#: app/Services/DashboardNotices.php:654
 msgid "Exclude reviews without text for cleaner display"
 msgstr ""
 
@@ -2054,11 +2087,11 @@ msgstr ""
 msgid "Expires: "
 msgstr ""
 
-#: app/Services/DashboardNotices.php:618
+#: app/Services/DashboardNotices.php:629
 msgid "Export import reviews, chats and templates"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:863
+#: app/Services/DashboardNotices.php:874
 #: app/Hooks/Handlers/AdminMenuHandler.php:690
 msgid "Extensive Style Option"
 msgstr ""
@@ -2072,6 +2105,14 @@ msgstr ""
 #: app/Services/Platforms/Feeds/Facebook/FacebookFeed.php:90
 #: tests/lint/fixtures/facebook-paging-host/fixed/app/Services/Helper.php:8
 msgid "Facebook access token is missing."
+msgstr ""
+
+#: app/Services/Platforms/Feeds/Facebook/FacebookFeed.php:858
+msgid ""
+"Facebook couldn't load this playlist. Playlists made in the Professional "
+"Dashboard hold Reels, and Facebook doesn't share them with apps. Choose "
+"\"All Videos\" as the feed type, then add the videos you want under Filters "
+"→ Show Only These Posts."
 msgstr ""
 
 #: app/Services/Onboarding/OnboardingService.php:880
@@ -2095,14 +2136,14 @@ msgid ""
 "enable the optimize images option."
 msgstr ""
 
-#: app/Services/DashboardNotices.php:812
+#: app/Services/DashboardNotices.php:823
 #: app/Services/Onboarding/OnboardingService.php:870
 #: app/Hooks/Handlers/AdminMenuHandler.php:583
 #: app/Hooks/Handlers/AdminMenuHandler.php:599
 msgid "Facebook Reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:551
+#: app/Services/DashboardNotices.php:562
 msgid "Facebook Video Playlists on Your Site"
 msgstr ""
 
@@ -2126,7 +2167,11 @@ msgstr ""
 msgid "Faroe Islands"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:617
+#: app/Modules/SystemTools/DatabaseHealth.php:28
+msgid "Feed and Review Caches"
+msgstr ""
+
+#: app/Services/DashboardNotices.php:628
 msgid "Feed caching for faster load times"
 msgstr ""
 
@@ -2147,7 +2192,7 @@ msgstr ""
 msgid "Feeds"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:805
+#: app/Services/DashboardNotices.php:816
 #: app/Hooks/Handlers/AdminMenuHandler.php:575
 msgid ""
 "Fetch & display your Booking.com reviews to connect with your audiences "
@@ -2160,14 +2205,14 @@ msgid ""
 "without wasting any time."
 msgstr ""
 
-#: app/Services/DashboardNotices.php:823
+#: app/Services/DashboardNotices.php:834
 #: app/Hooks/Handlers/AdminMenuHandler.php:623
 msgid ""
 "Fetch & display your WooCommerce reviews to connect with your audiences "
 "without wasting any time."
 msgstr ""
 
-#: app/Services/DashboardNotices.php:787
+#: app/Services/DashboardNotices.php:798
 #: app/Hooks/Handlers/AdminMenuHandler.php:529
 msgid ""
 "Fetch & exhibit Amazon reviews on your website & reach out to larger "
@@ -2192,20 +2237,20 @@ msgstr ""
 msgid "Fiji"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:578
+#: app/Services/DashboardNotices.php:589
 msgid "Filter and select specific albums"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:857
+#: app/Services/DashboardNotices.php:868
 #: app/Hooks/Handlers/AdminMenuHandler.php:688
 msgid "Filter by minimum rating"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:647
+#: app/Services/DashboardNotices.php:658
 msgid "Filter reviews by business or product categories"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:641
+#: app/Services/DashboardNotices.php:652
 msgid "Filter reviews by minimum rating threshold"
 msgstr ""
 
@@ -2256,8 +2301,8 @@ msgstr ""
 msgid "Follow"
 msgstr ""
 
-#: app/Services/Widgets/InstagramWidget.php:254
-#: app/Services/Widgets/TwitterWidget.php:382
+#: app/Services/Widgets/InstagramWidget.php:255
+#: app/Services/Widgets/TwitterWidget.php:383
 #: app/Services/Widgets/Oxygen/InstagramWidget.php:204
 #: app/Services/Widgets/Oxygen/TwitterWidget.php:230
 msgid "Follow Button"
@@ -2298,7 +2343,7 @@ msgstr ""
 msgid "Followers"
 msgstr ""
 
-#: app/Views/public/feeds-templates/facebook/header.php:102
+#: app/Views/public/feeds-templates/facebook/header.php:103
 msgid "followers"
 msgstr ""
 
@@ -2393,7 +2438,7 @@ msgstr ""
 msgid "Full-bleed photo cards with the author over the image"
 msgstr ""
 
-#: app/Services/Widgets/InstagramWidget.php:194
+#: app/Services/Widgets/InstagramWidget.php:195
 #: app/Services/Widgets/Beaver/Twitter/TwitterWidget.php:175
 msgid "FullName"
 msgstr ""
@@ -2408,11 +2453,11 @@ msgstr ""
 msgid "FullName Color"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:568
+#: app/Services/DashboardNotices.php:579
 msgid "Fully responsive and mobile-ready design"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:631
+#: app/Services/DashboardNotices.php:642
 msgid "Fully responsive on all devices"
 msgstr ""
 
@@ -2445,7 +2490,7 @@ msgstr ""
 msgid "Germany"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:600
+#: app/Services/DashboardNotices.php:611
 msgid ""
 "Get access to all premium features and take your social media to the next "
 "level."
@@ -2495,7 +2540,7 @@ msgstr ""
 msgid "Google Business Profile Template"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:610
+#: app/Services/DashboardNotices.php:621
 msgid "Google Rich Snippet support for SEO"
 msgstr ""
 
@@ -2511,7 +2556,7 @@ msgstr ""
 msgid "Greenland"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:686
+#: app/Services/DashboardNotices.php:697
 msgid "Greet visitors with a personalized welcome message"
 msgstr ""
 
@@ -2576,12 +2621,12 @@ msgid ""
 "to us. Take ♥ from the team!"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:615
+#: app/Services/DashboardNotices.php:626
 msgid "Hashtag and keyword-based feed filtering"
 msgstr ""
 
-#: app/Services/Widgets/InstagramWidget.php:386
-#: app/Services/Widgets/TwitterWidget.php:652
+#: app/Services/Widgets/InstagramWidget.php:387
+#: app/Services/Widgets/TwitterWidget.php:654
 #: app/Services/Widgets/Oxygen/InstagramWidget.php:304
 #: app/Services/Widgets/Oxygen/TwitterWidget.php:346
 #: app/Services/Widgets/Beaver/Twitter/TwitterWidget.php:257
@@ -2653,19 +2698,19 @@ msgid ""
 "Hi there👋 Quick question - How do you like our WP Social Ninja plugin so far?"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:691
+#: app/Services/DashboardNotices.php:702
 msgid "Hide Chat on Desktop or Mobile"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:646
+#: app/Services/DashboardNotices.php:657
 msgid "Hide reviews with unwanted keywords"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:586
+#: app/Services/DashboardNotices.php:597
 msgid "Highlight a Single Facebook Album"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:668
+#: app/Services/DashboardNotices.php:679
 msgid "Highlight happy customers without disrupting the user experience"
 msgstr ""
 
@@ -2682,8 +2727,8 @@ msgid ""
 "Horizontal grid showing YouTube videos with title, views, and description."
 msgstr ""
 
-#: app/Services/Widgets/TwitterWidget.php:510
-#: app/Services/Widgets/TwitterWidget.php:555
+#: app/Services/Widgets/TwitterWidget.php:511
+#: app/Services/Widgets/TwitterWidget.php:556
 #: app/Services/Widgets/ReviewsWidget.php:596
 #: app/Services/Widgets/Beaver/Twitter/TwitterWidget.php:189
 #: app/Services/Widgets/Beaver/Twitter/TwitterWidget.php:223
@@ -2733,9 +2778,9 @@ msgstr ""
 msgid "Iceland"
 msgstr ""
 
-#: app/Services/Widgets/InstagramWidget.php:462
+#: app/Services/Widgets/InstagramWidget.php:463
 #: app/Services/Widgets/FacebookFeedWidget.php:208
-#: app/Services/Widgets/TwitterWidget.php:728
+#: app/Services/Widgets/TwitterWidget.php:730
 #: app/Services/Widgets/Beaver/Twitter/TwitterWidget.php:291
 msgid "Icon Color"
 msgstr ""
@@ -2744,11 +2789,11 @@ msgstr ""
 msgid "Icon Height"
 msgstr ""
 
-#: app/Services/Widgets/TwitterWidget.php:740
+#: app/Services/Widgets/TwitterWidget.php:742
 msgid "Icon Hover Background Color"
 msgstr ""
 
-#: app/Services/Widgets/TwitterWidget.php:752
+#: app/Services/Widgets/TwitterWidget.php:754
 msgid "Icon Hover Color"
 msgstr ""
 
@@ -2768,6 +2813,10 @@ msgid ""
 "the same Facebook page will not raise the limit."
 msgstr ""
 
+#: app/Modules/SystemTools/Environment.php:30
+msgid "Image editor (GD or Imagick)"
+msgstr ""
+
 #: app/Services/Platforms/ReviewImageOptimizationHandler.php:61
 #: app/Services/Platforms/ImageOptimizationHandler.php:70
 msgid "Image optimization is turned off."
@@ -2777,20 +2826,26 @@ msgstr ""
 msgid "Images reset successfully!"
 msgstr ""
 
+#. %s: time span, for example "5 mins"
+#: app/Modules/SystemTools/CronMonitor.php:170
+#, php-format
+msgid "in %s"
+msgstr ""
+
 #: app/Services/Platforms/Chats/Helper.php:230
 msgid "In stock"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:858
+#: app/Services/DashboardNotices.php:869
 #: app/Hooks/Handlers/AdminMenuHandler.php:694
 msgid "In-depth header settings"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:644
+#: app/Services/DashboardNotices.php:655
 msgid "Include or exclude specific reviews with ease"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:609 app/Services/DashboardNotices.php:860
+#: app/Services/DashboardNotices.php:620 app/Services/DashboardNotices.php:871
 #: app/Hooks/Handlers/AdminMenuHandler.php:689
 msgid "Include/exclude specific reviews"
 msgstr ""
@@ -2837,11 +2892,11 @@ msgstr ""
 msgid "Instagram Successfully Connected!"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:654
+#: app/Services/DashboardNotices.php:665
 msgid "Instantly condense long reviews into digestible highlights"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:632
+#: app/Services/DashboardNotices.php:643
 msgid "Interactive elements like hover effects"
 msgstr ""
 
@@ -2854,7 +2909,7 @@ msgid "interested"
 msgstr ""
 
 #: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:647
-#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:739
+#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:741
 msgid "Invalid action value"
 msgstr ""
 
@@ -2931,7 +2986,7 @@ msgstr ""
 msgid "Invalid template."
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:635
+#: app/Http/Controllers/SettingsController.php:642
 msgid "Invalid URL format. Please provide a valid URL."
 msgstr ""
 
@@ -2965,10 +3020,10 @@ msgstr ""
 msgid "Italy"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:723
-#: app/Services/Widgets/InstagramWidget.php:623
+#: app/Services/Widgets/YoutubeWidget.php:725
+#: app/Services/Widgets/InstagramWidget.php:625
 #: app/Services/Widgets/FacebookFeedWidget.php:764
-#: app/Services/Widgets/TwitterWidget.php:913
+#: app/Services/Widgets/TwitterWidget.php:916
 #: app/Services/Widgets/Oxygen/InstagramWidget.php:396
 #: app/Services/Widgets/Oxygen/TwitterWidget.php:443
 #: app/Services/Widgets/Oxygen/YouTubeWidget.php:295
@@ -3020,7 +3075,7 @@ msgstr ""
 msgid "Kazakhstan"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:565
+#: app/Services/DashboardNotices.php:576
 msgid ""
 "Keep your audience in the loop by displaying Facebook events with sleek, "
 "customizable layouts."
@@ -3058,8 +3113,8 @@ msgstr ""
 msgid "Lebanon"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:348
-#: app/Services/Widgets/YoutubeWidget.php:548
+#: app/Services/Widgets/YoutubeWidget.php:349
+#: app/Services/Widgets/YoutubeWidget.php:550
 #: app/Services/Widgets/ReviewsWidget.php:228
 #: app/Services/Widgets/ReviewsWidget.php:318
 #: app/Services/Widgets/ReviewsWidget.php:408
@@ -3109,7 +3164,7 @@ msgstr ""
 msgid "Like and Share Button"
 msgstr ""
 
-#: app/Services/Platforms/Feeds/Config.php:541
+#: app/Services/Platforms/Feeds/Config.php:542
 msgid "Like Page"
 msgstr ""
 
@@ -3124,7 +3179,7 @@ msgid "Likes"
 msgstr ""
 
 #: app/Hooks/Handlers/ShortcodeHandler.php:1271
-#: app/Views/public/feeds-templates/facebook/header.php:92
+#: app/Views/public/feeds-templates/facebook/header.php:93
 msgid "likes"
 msgstr ""
 
@@ -3182,7 +3237,7 @@ msgstr ""
 msgid "Link Hover Color"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:530
+#: app/Services/DashboardNotices.php:541
 msgid "Link Instagram posts to WooCommerce or external products"
 msgstr ""
 
@@ -3209,7 +3264,7 @@ msgstr ""
 #: app/Services/Platforms/Feeds/Config.php:42
 #: app/Services/Platforms/Feeds/Config.php:262
 #: app/Services/Platforms/Feeds/Config.php:401
-#: app/Services/Platforms/Feeds/Config.php:551
+#: app/Services/Platforms/Feeds/Config.php:552
 #: app/Services/Platforms/Reviews/Helper.php:243
 msgid "Load More"
 msgstr ""
@@ -3287,7 +3342,7 @@ msgstr ""
 msgid "Manage Notification Popup"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:593
+#: app/Services/DashboardNotices.php:604
 msgid "Manage photos with built-in moderation tools"
 msgstr ""
 
@@ -3323,27 +3378,27 @@ msgstr ""
 msgid "Manage Translation Settings"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:869
+#: app/Services/DashboardNotices.php:880
 #: app/Hooks/Handlers/AdminMenuHandler.php:692
 msgid "Manually syncing reviews"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:391
-#: app/Services/Widgets/YoutubeWidget.php:501
-#: app/Services/Widgets/YoutubeWidget.php:591
-#: app/Services/Widgets/YoutubeWidget.php:665
-#: app/Services/Widgets/YoutubeWidget.php:741
-#: app/Services/Widgets/InstagramWidget.php:407
-#: app/Services/Widgets/InstagramWidget.php:483
-#: app/Services/Widgets/InstagramWidget.php:564
-#: app/Services/Widgets/InstagramWidget.php:653
+#: app/Services/Widgets/YoutubeWidget.php:392
+#: app/Services/Widgets/YoutubeWidget.php:503
+#: app/Services/Widgets/YoutubeWidget.php:593
+#: app/Services/Widgets/YoutubeWidget.php:667
+#: app/Services/Widgets/YoutubeWidget.php:743
+#: app/Services/Widgets/InstagramWidget.php:408
+#: app/Services/Widgets/InstagramWidget.php:484
+#: app/Services/Widgets/InstagramWidget.php:566
+#: app/Services/Widgets/InstagramWidget.php:655
 #: app/Services/Widgets/FacebookFeedWidget.php:129
 #: app/Services/Widgets/FacebookFeedWidget.php:794
-#: app/Services/Widgets/TwitterWidget.php:597
-#: app/Services/Widgets/TwitterWidget.php:673
-#: app/Services/Widgets/TwitterWidget.php:773
-#: app/Services/Widgets/TwitterWidget.php:854
-#: app/Services/Widgets/TwitterWidget.php:943
+#: app/Services/Widgets/TwitterWidget.php:599
+#: app/Services/Widgets/TwitterWidget.php:675
+#: app/Services/Widgets/TwitterWidget.php:775
+#: app/Services/Widgets/TwitterWidget.php:857
+#: app/Services/Widgets/TwitterWidget.php:946
 #: app/Services/Widgets/ReviewsWidget.php:271
 #: app/Services/Widgets/ReviewsWidget.php:361
 #: app/Services/Widgets/ReviewsWidget.php:451
@@ -3404,7 +3459,7 @@ msgstr ""
 msgid "Media First"
 msgstr ""
 
-#: app/Services/Widgets/TwitterWidget.php:534
+#: app/Services/Widgets/TwitterWidget.php:535
 #: app/Services/Widgets/Oxygen/TwitterWidget.php:322
 #: app/Services/Widgets/Beaver/Twitter/TwitterWidget.php:209
 msgid "Meta"
@@ -3449,27 +3504,27 @@ msgstr ""
 msgid "Missing refresh token. Please reconnect your account."
 msgstr ""
 
-#: app/Services/DashboardNotices.php:675
+#: app/Services/DashboardNotices.php:686
 msgid "Mobile-friendly and lightweight performance"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:545
+#: app/Services/DashboardNotices.php:556
 msgid "Mobile-friendly and responsive design"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:591
+#: app/Services/DashboardNotices.php:602
 msgid "Mobile-optimized and responsive design"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:582
+#: app/Services/DashboardNotices.php:593
 msgid "Moderate album visibility and order"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:559
+#: app/Services/DashboardNotices.php:570
 msgid "Moderate and sort videos effortlessly"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:570
+#: app/Services/DashboardNotices.php:581
 msgid "Moderate events for clean presentation"
 msgstr ""
 
@@ -3497,8 +3552,8 @@ msgstr ""
 msgid "Montserrat"
 msgstr ""
 
-#: app/Services/Helper.php:736
-#: app/Services/Platforms/PlatformErrorManager.php:426
+#: app/Services/Helper.php:773
+#: app/Services/Platforms/PlatformErrorManager.php:428
 msgid "More Information"
 msgstr ""
 
@@ -3514,15 +3569,15 @@ msgstr ""
 msgid "msteams:/l/chat/0/0?users=email@example.com"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:579
+#: app/Services/DashboardNotices.php:590
 msgid "Multiple album display layouts"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:544
+#: app/Services/DashboardNotices.php:555
 msgid "Multiple custom video layouts"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:629
+#: app/Services/DashboardNotices.php:640
 msgid "Multiple modern layout styles"
 msgstr ""
 
@@ -3532,6 +3587,10 @@ msgstr ""
 
 #: app/Services/Includes/CountryNames.php:1276
 msgid "Myanmar"
+msgstr ""
+
+#: app/Modules/SystemTools/Environment.php:26
+msgid "MySQL version"
 msgstr ""
 
 #: app/Services/Platforms/Chats/SocialChat.php:191
@@ -3552,17 +3611,17 @@ msgstr ""
 msgid "N/A"
 msgstr ""
 
-#: app/Services/Widgets/TwitterWidget.php:492
+#: app/Services/Widgets/TwitterWidget.php:493
 #: app/Services/Widgets/Oxygen/TwitterWidget.php:313
 #: app/Services/Widgets/Beaver/Reviews/ReviewsWidget.php:133
 msgid "Name"
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:612
+#: app/Http/Controllers/SettingsController.php:619
 msgid "Name cannot be empty."
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:618
+#: app/Http/Controllers/SettingsController.php:625
 msgid "Name cannot be more than 25 characters."
 msgstr ""
 
@@ -3618,6 +3677,10 @@ msgstr ""
 msgid "Niue"
 msgstr ""
 
+#: app/Modules/SystemTools/Environment.php:32
+msgid "No"
+msgstr ""
+
 #: app/Http/Controllers/Platforms/Feeds/ConfigsController.php:51
 #: app/Http/Controllers/Platforms/Feeds/ConfigsController.php:76
 #: app/Http/Controllers/Platforms/Reviews/ConfigsController.php:91
@@ -3637,7 +3700,11 @@ msgstr ""
 msgid "No handler is registered for this request."
 msgstr ""
 
-#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:769
+#: app/Modules/SystemTools/Environment.php:48
+msgid "No limit"
+msgstr ""
+
+#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:771
 msgid "No matching reviews were found for this action"
 msgstr ""
 
@@ -3647,7 +3714,7 @@ msgstr ""
 msgid "No notifications selected"
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:748
+#: app/Http/Controllers/SettingsController.php:755
 msgid "No platforms found!"
 msgstr ""
 
@@ -3667,7 +3734,7 @@ msgstr ""
 #: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:514
 #: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:580
 #: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:642
-#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:733
+#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:735
 msgid "No reviews selected"
 msgstr ""
 
@@ -3719,6 +3786,15 @@ msgstr ""
 msgid "Norway"
 msgstr ""
 
+#: app/Modules/SystemTools/Environment.php:30
+#: app/Modules/SystemTools/Environment.php:31
+msgid "Not available"
+msgstr ""
+
+#: app/Modules/SystemTools/Environment.php:23
+msgid "Not installed"
+msgstr ""
+
 #: app/Services/Onboarding/OnboardingService.php:77
 #: app/Hooks/Handlers/AdminMenuHandler.php:113
 msgid "Notification Popups"
@@ -3729,7 +3805,7 @@ msgstr ""
 msgid "Number Color"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:532
+#: app/Services/DashboardNotices.php:543
 msgid "Offer a seamless in-feed shopping experience"
 msgstr ""
 
@@ -3757,6 +3833,10 @@ msgstr ""
 msgid "Onboarding skipped successfully!"
 msgstr ""
 
+#: app/Modules/SystemTools/CronMonitor.php:155
+msgid "Once"
+msgstr ""
+
 #: app/Services/Onboarding/OnboardingService.php:458
 msgid "One post per row, photo beside the caption"
 msgstr ""
@@ -3766,15 +3846,23 @@ msgstr ""
 msgid "Online Event"
 msgstr ""
 
+#: app/Http/Controllers/SettingsController.php:586
+msgid "Only an administrator can delete all data."
+msgstr ""
+
 #: app/Services/Platforms/Feeds/Twitter/TwitterApi.php:262
 msgid "Oops, Somethings wrong. "
 msgstr ""
 
-#: app/Services/DashboardNotices.php:580
+#: app/Services/DashboardNotices.php:591
 msgid "Optimized for all screen sizes"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:553
+#: app/Modules/SystemTools/DatabaseHealth.php:29
+msgid "Optimized Images"
+msgstr ""
+
+#: app/Services/DashboardNotices.php:564
 msgid ""
 "Organize your video content into engaging playlists and deliver a Netflix-"
 "style experience right on your website."
@@ -3790,25 +3878,25 @@ msgstr ""
 msgid "Overlay Card"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:289
-#: app/Services/Widgets/YoutubeWidget.php:409
-#: app/Services/Widgets/YoutubeWidget.php:519
-#: app/Services/Widgets/YoutubeWidget.php:609
-#: app/Services/Widgets/YoutubeWidget.php:677
-#: app/Services/Widgets/YoutubeWidget.php:753
-#: app/Services/Widgets/InstagramWidget.php:319
-#: app/Services/Widgets/InstagramWidget.php:425
-#: app/Services/Widgets/InstagramWidget.php:576
-#: app/Services/Widgets/InstagramWidget.php:665
+#: app/Services/Widgets/YoutubeWidget.php:290
+#: app/Services/Widgets/YoutubeWidget.php:410
+#: app/Services/Widgets/YoutubeWidget.php:521
+#: app/Services/Widgets/YoutubeWidget.php:611
+#: app/Services/Widgets/YoutubeWidget.php:679
+#: app/Services/Widgets/YoutubeWidget.php:755
+#: app/Services/Widgets/InstagramWidget.php:320
+#: app/Services/Widgets/InstagramWidget.php:426
+#: app/Services/Widgets/InstagramWidget.php:578
+#: app/Services/Widgets/InstagramWidget.php:667
 #: app/Services/Widgets/FacebookFeedWidget.php:141
 #: app/Services/Widgets/FacebookFeedWidget.php:260
 #: app/Services/Widgets/FacebookFeedWidget.php:718
 #: app/Services/Widgets/FacebookFeedWidget.php:806
-#: app/Services/Widgets/TwitterWidget.php:447
-#: app/Services/Widgets/TwitterWidget.php:615
-#: app/Services/Widgets/TwitterWidget.php:691
-#: app/Services/Widgets/TwitterWidget.php:866
-#: app/Services/Widgets/TwitterWidget.php:955
+#: app/Services/Widgets/TwitterWidget.php:448
+#: app/Services/Widgets/TwitterWidget.php:617
+#: app/Services/Widgets/TwitterWidget.php:693
+#: app/Services/Widgets/TwitterWidget.php:869
+#: app/Services/Widgets/TwitterWidget.php:958
 #: app/Services/Widgets/ReviewsWidget.php:169
 #: app/Services/Widgets/ReviewsWidget.php:289
 #: app/Services/Widgets/ReviewsWidget.php:379
@@ -3856,7 +3944,7 @@ msgstr ""
 msgid "Page"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:619
+#: app/Services/DashboardNotices.php:630
 msgid "Page builder integrations (Elementor, Beaver Builder, etc.)"
 msgstr ""
 
@@ -3868,10 +3956,10 @@ msgstr ""
 msgid "PageName Typography"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:626
-#: app/Services/Widgets/InstagramWidget.php:525
+#: app/Services/Widgets/YoutubeWidget.php:628
+#: app/Services/Widgets/InstagramWidget.php:527
 #: app/Services/Widgets/FacebookFeedWidget.php:90
-#: app/Services/Widgets/TwitterWidget.php:815
+#: app/Services/Widgets/TwitterWidget.php:818
 #: app/Services/Widgets/ReviewsWidget.php:680
 #: app/Services/Widgets/Oxygen/InstagramWidget.php:352
 #: app/Services/Widgets/Oxygen/TwitterWidget.php:402
@@ -3932,6 +4020,18 @@ msgstr ""
 msgid "Photo tiles with the author and post time on each"
 msgstr ""
 
+#: app/Modules/SystemTools/Environment.php:28
+msgid "PHP max execution time"
+msgstr ""
+
+#: app/Modules/SystemTools/Environment.php:27
+msgid "PHP memory limit"
+msgstr ""
+
+#: app/Modules/SystemTools/Environment.php:25
+msgid "PHP version"
+msgstr ""
+
 #: app/Http/Controllers/OnboardingController.php:176
 msgid "Pick your preferred platform"
 msgstr ""
@@ -3952,9 +4052,9 @@ msgstr ""
 msgid "Platform Background Color"
 msgstr ""
 
-#: app/Services/Widgets/InstagramWidget.php:631
+#: app/Services/Widgets/InstagramWidget.php:633
 #: app/Services/Widgets/FacebookFeedWidget.php:772
-#: app/Services/Widgets/TwitterWidget.php:921
+#: app/Services/Widgets/TwitterWidget.php:924
 msgid "Platform Icon Color"
 msgstr ""
 
@@ -3967,7 +4067,7 @@ msgstr ""
 msgid "Platforms"
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:755
+#: app/Http/Controllers/SettingsController.php:762
 msgid "Platforms BusinessInfo"
 msgstr ""
 
@@ -4077,11 +4177,11 @@ msgstr ""
 msgid "Please select a review platform"
 msgstr ""
 
-#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:790
+#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:792
 msgid "Please select an existing category or provide a new category name"
 msgstr ""
 
-#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:789
+#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:791
 msgid "Please select an existing category to remove"
 msgstr ""
 
@@ -4118,7 +4218,7 @@ msgstr ""
 msgid "Poor"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:865
+#: app/Services/DashboardNotices.php:876
 msgid "Popular page builder widget"
 msgstr ""
 
@@ -4126,7 +4226,7 @@ msgstr ""
 msgid "Popular page builder widget ready"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:611
+#: app/Services/DashboardNotices.php:622
 msgid "Popup notifications for latest reviews"
 msgstr ""
 
@@ -4168,11 +4268,11 @@ msgstr ""
 msgid "Posts"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:626
+#: app/Services/DashboardNotices.php:637
 msgid "Premium Template Designs"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:674
+#: app/Services/DashboardNotices.php:685
 msgid "Preview your popup in real-time"
 msgstr ""
 
@@ -4184,7 +4284,7 @@ msgstr ""
 msgid "Price"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:620
+#: app/Services/DashboardNotices.php:631
 msgid "Priority customer support"
 msgstr ""
 
@@ -4220,7 +4320,7 @@ msgstr ""
 msgid "Profile Photo"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:563
+#: app/Services/DashboardNotices.php:574
 msgid "Promote Events with Facebook Feeds"
 msgstr ""
 
@@ -4241,23 +4341,23 @@ msgstr ""
 msgid "Qatar"
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:729
+#: app/Http/Controllers/SettingsController.php:736
 msgid "QR code deleted successfully!"
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:665
+#: app/Http/Controllers/SettingsController.php:672
 msgid "QR code generated successfully!"
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:686
+#: app/Http/Controllers/SettingsController.php:693
 msgid "QR code not found."
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:708
+#: app/Http/Controllers/SettingsController.php:715
 msgid "QR code updated successfully!"
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:603
+#: app/Http/Controllers/SettingsController.php:610
 msgid "QR codes retrieved successfully!"
 msgstr ""
 
@@ -4265,7 +4365,7 @@ msgstr ""
 msgid "Quick Builder"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:633
+#: app/Services/DashboardNotices.php:644
 msgid "Quick template switching with live preview"
 msgstr ""
 
@@ -4330,19 +4430,19 @@ msgstr ""
 msgid "Read our {reviews_count} Reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:581
+#: app/Services/DashboardNotices.php:592
 msgid "Real-time syncing with Facebook albums"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:520
+#: app/Services/DashboardNotices.php:531
 msgid "Real-time syncing with the latest hashtag posts"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:592
+#: app/Services/DashboardNotices.php:603
 msgid "Real-time updates from the selected album"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:569
+#: app/Services/DashboardNotices.php:580
 msgid "Real-time updates from your Facebook page"
 msgstr ""
 
@@ -4354,7 +4454,11 @@ msgstr ""
 msgid "recommends"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:622
+#: app/Modules/SystemTools/CronMonitor.php:24
+msgid "Refresh feeds and reviews"
+msgstr ""
+
+#: app/Services/DashboardNotices.php:633
 msgid "Regular updates"
 msgstr ""
 
@@ -4370,11 +4474,11 @@ msgstr ""
 msgid "Reset Error Logs successfully!"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:557
+#: app/Services/DashboardNotices.php:568
 msgid "Responsive design for all devices"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:854
+#: app/Services/DashboardNotices.php:865
 #: app/Hooks/Handlers/AdminMenuHandler.php:687
 msgid "Responsive query"
 msgstr ""
@@ -4388,11 +4492,20 @@ msgstr ""
 msgid "Review Box"
 msgstr ""
 
+#: app/Modules/SystemTools/DatabaseHealth.php:31
+msgid "Review Categories"
+msgstr ""
+
+#: app/Modules/SystemTools/DatabaseHealth.php:32
+msgid "Review Category Assignments"
+msgstr ""
+
 #: app/Services/Widgets/ReviewsWidget.php:396
 #: app/Services/Widgets/Oxygen/ReviewsWidget.php:118
 msgid "Review Date"
 msgstr ""
 
+#: app/Modules/SystemTools/DatabaseHealth.php:30
 #: app/Hooks/Handlers/AdminMenuHandler.php:89
 msgid "Review Forms"
 msgstr ""
@@ -4422,6 +4535,7 @@ msgstr ""
 msgid "Reviewer Name"
 msgstr ""
 
+#: app/Modules/SystemTools/DatabaseHealth.php:27
 #: app/Hooks/Handlers/AdminMenuHandler.php:81
 #: app/Services/Widgets/Oxygen/OxygenWidget.php:44
 msgid "Reviews"
@@ -4460,8 +4574,8 @@ msgstr ""
 msgid "Rigel"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:356
-#: app/Services/Widgets/YoutubeWidget.php:556
+#: app/Services/Widgets/YoutubeWidget.php:357
+#: app/Services/Widgets/YoutubeWidget.php:558
 #: app/Services/Widgets/ReviewsWidget.php:236
 #: app/Services/Widgets/ReviewsWidget.php:326
 #: app/Services/Widgets/ReviewsWidget.php:416
@@ -4473,7 +4587,7 @@ msgstr ""
 msgid "Romania"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:673
+#: app/Services/DashboardNotices.php:684
 msgid "Rotate multiple reviews in a single popup"
 msgstr ""
 
@@ -4549,7 +4663,7 @@ msgstr ""
 msgid "Saudi Arabia"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:864
+#: app/Services/DashboardNotices.php:875
 #: app/Hooks/Handlers/AdminMenuHandler.php:696
 msgid "Schema snippet"
 msgstr ""
@@ -4558,7 +4672,7 @@ msgstr ""
 msgid "Screen Options"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:658
+#: app/Services/DashboardNotices.php:669
 msgid "Seamless real-time updates as new reviews arrive"
 msgstr ""
 
@@ -4617,7 +4731,7 @@ msgstr ""
 msgid "Select a template"
 msgstr ""
 
-#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:746
+#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:748
 msgid "Select an existing category to remove"
 msgstr ""
 
@@ -4648,6 +4762,10 @@ msgstr ""
 msgid "Select which social network to connect and embed."
 msgstr ""
 
+#: app/Modules/SystemTools/CronMonitor.php:28
+msgid "Send email reports"
+msgstr ""
+
 #: app/Services/Includes/CountryNames.php:1379
 msgid "Senegal"
 msgstr ""
@@ -4662,11 +4780,11 @@ msgstr ""
 msgid "Serbia"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:671
+#: app/Services/DashboardNotices.php:682
 msgid "Set smart delay to capture user attention at the right time"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:688
+#: app/Services/DashboardNotices.php:699
 msgid "Set your availability with chat scheduling"
 msgstr ""
 
@@ -4692,7 +4810,7 @@ msgstr ""
 msgid "Seychelles"
 msgstr ""
 
-#: app/Services/Platforms/Feeds/Config.php:546
+#: app/Services/Platforms/Feeds/Config.php:547
 msgid "Share"
 msgstr ""
 
@@ -4700,21 +4818,21 @@ msgstr ""
 msgid "Shoppable Feed"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:526
+#: app/Services/DashboardNotices.php:537
 msgid "Shoppable Instagram Feeds"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:868
+#: app/Services/DashboardNotices.php:879
 #: app/Hooks/Handlers/AdminMenuHandler.php:686
 msgid "Shortcode integration"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:855
+#: app/Services/DashboardNotices.php:866
 #: app/Hooks/Handlers/AdminMenuHandler.php:693
 msgid "Shorten longer reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:689
+#: app/Services/DashboardNotices.php:700
 msgid "Show a friendly waiting message when offline"
 msgstr ""
 
@@ -4734,15 +4852,15 @@ msgstr ""
 msgid "Show Instagram posts and stories"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:645
+#: app/Services/DashboardNotices.php:656
 msgid "Show reviews containing targeted keywords"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:667
+#: app/Services/DashboardNotices.php:678
 msgid "Show reviews from Google, Facebook, and more"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:796
+#: app/Services/DashboardNotices.php:807
 #: app/Hooks/Handlers/AdminMenuHandler.php:552
 msgid ""
 "Show the best AliExpress reviews on your website to promote your brand with "
@@ -4765,20 +4883,20 @@ msgstr ""
 msgid "Show your social media content feeds"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:814
+#: app/Services/DashboardNotices.php:825
 #: app/Hooks/Handlers/AdminMenuHandler.php:600
 msgid ""
 "Showcase Facebook reviews on your WordPress website & prove your business "
 "credibility to another level."
 msgstr ""
 
-#: app/Services/DashboardNotices.php:542
+#: app/Services/DashboardNotices.php:553
 msgid ""
 "Showcase Facebook video content in stunning layouts with full control and "
 "seamless performance to boost engagement."
 msgstr ""
 
-#: app/Services/DashboardNotices.php:588
+#: app/Services/DashboardNotices.php:599
 msgid ""
 "Showcase one selected Facebook album with full layout control and auto-"
 "updating content."
@@ -4790,7 +4908,7 @@ msgid ""
 "caption."
 msgstr ""
 
-#: app/Services/DashboardNotices.php:514
+#: app/Services/DashboardNotices.php:525
 msgid ""
 "Showcase stunning Instagram content by hashtags! Curate visual stories that "
 "match your brand using smart filters, real-time updates, and full control "
@@ -4855,7 +4973,7 @@ msgstr ""
 msgid "Slovenia"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:518
+#: app/Services/DashboardNotices.php:529
 msgid "Smart filtering and visual moderation tools"
 msgstr ""
 
@@ -4907,7 +5025,7 @@ msgstr ""
 msgid "Social Reviews"
 msgstr ""
 
-#: app/Http/Controllers/Platforms/PlatformController.php:107
+#: app/Http/Controllers/Platforms/PlatformController.php:113
 msgid "Social Wall"
 msgstr ""
 
@@ -4927,7 +5045,7 @@ msgstr ""
 msgid "Some Enabled"
 msgstr ""
 
-#: app/Services/Platforms/Feeds/Facebook/FacebookFeed.php:1104
+#: app/Services/Platforms/Feeds/Facebook/FacebookFeed.php:1110
 msgid "Something went wrong"
 msgstr ""
 
@@ -4947,15 +5065,15 @@ msgstr ""
 msgid "Sorry! License could not be retrieved. Please try again"
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:733
+#: app/Http/Controllers/SettingsController.php:740
 msgid "Sorry! QR code could not be deleted. Please try again"
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:671
+#: app/Http/Controllers/SettingsController.php:678
 msgid "Sorry! QR code could not be generated. Please try again"
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:714
+#: app/Http/Controllers/SettingsController.php:721
 msgid "Sorry! QR code could not be updated. Please try again"
 msgstr ""
 
@@ -4973,7 +5091,7 @@ msgstr ""
 msgid "Sorry, Something went wrong!"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:642
+#: app/Services/DashboardNotices.php:653
 msgid "Sort reviews ascending, descending, or randomly"
 msgstr ""
 
@@ -5003,12 +5121,12 @@ msgid "Spacing"
 msgstr ""
 
 #: app/Services/Widgets/YoutubeWidget.php:174
-#: app/Services/Widgets/YoutubeWidget.php:481
+#: app/Services/Widgets/YoutubeWidget.php:482
 #: app/Services/Widgets/InstagramWidget.php:175
-#: app/Services/Widgets/InstagramWidget.php:501
+#: app/Services/Widgets/InstagramWidget.php:502
 #: app/Services/Widgets/TwitterWidget.php:334
-#: app/Services/Widgets/TwitterWidget.php:577
-#: app/Services/Widgets/TwitterWidget.php:791
+#: app/Services/Widgets/TwitterWidget.php:578
+#: app/Services/Widgets/TwitterWidget.php:793
 #: app/Services/Widgets/Oxygen/InstagramWidget.php:118
 #: app/Services/Widgets/Oxygen/InstagramWidget.php:333
 #: app/Services/Widgets/Oxygen/TwitterWidget.php:213
@@ -5058,14 +5176,14 @@ msgstr ""
 msgid "Start Chat with:"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:679
+#: app/Services/DashboardNotices.php:690
 msgid "Start Conversations with Visitors Instantly"
 msgstr ""
 
 #: app/Services/Widgets/YoutubeWidget.php:145
-#: app/Services/Widgets/YoutubeWidget.php:426
+#: app/Services/Widgets/YoutubeWidget.php:427
 #: app/Services/Widgets/InstagramWidget.php:146
-#: app/Services/Widgets/InstagramWidget.php:442
+#: app/Services/Widgets/InstagramWidget.php:443
 #: app/Services/Widgets/Oxygen/InstagramWidget.php:88
 #: app/Services/Widgets/Oxygen/InstagramWidget.php:320
 #: app/Services/Widgets/Oxygen/TwitterWidget.php:183
@@ -5083,7 +5201,7 @@ msgstr ""
 msgid "Statistics Color"
 msgstr ""
 
-#: app/Services/Widgets/TwitterWidget.php:353
+#: app/Services/Widgets/TwitterWidget.php:354
 msgid "Statistics Count"
 msgstr ""
 
@@ -5099,7 +5217,7 @@ msgstr ""
 msgid "Statistics Label Color"
 msgstr ""
 
-#: app/Http/Controllers/Platforms/PlatformController.php:170
+#: app/Http/Controllers/Platforms/PlatformController.php:176
 msgid "Statuses updated successfully!"
 msgstr ""
 
@@ -5107,7 +5225,7 @@ msgstr ""
 msgid "Stock"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:832
+#: app/Services/DashboardNotices.php:843
 #: app/Hooks/Handlers/AdminMenuHandler.php:669
 msgid ""
 "Store & display your Custom reviews to connect with your audiences without "
@@ -5122,7 +5240,7 @@ msgstr ""
 msgid "Style"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:590
+#: app/Services/DashboardNotices.php:601
 msgid "Stylish layout options for a single album"
 msgstr ""
 
@@ -5130,7 +5248,7 @@ msgstr ""
 msgid "SUBSCRIBE"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:224
+#: app/Services/Widgets/YoutubeWidget.php:225
 #: app/Services/Widgets/Oxygen/YouTubeWidget.php:138
 #: app/Services/Platforms/Feeds/Youtube/Config.php:116
 #: app/Services/Platforms/Feeds/Youtube/Config.php:333
@@ -5174,7 +5292,7 @@ msgstr ""
 msgid "Successfully Connected!"
 msgstr ""
 
-#: app/Http/Controllers/SettingsController.php:585
+#: app/Http/Controllers/SettingsController.php:592
 msgid "Successfully deleted all data!"
 msgstr ""
 
@@ -5206,7 +5324,7 @@ msgstr ""
 msgid "Support"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:684
+#: app/Services/DashboardNotices.php:695
 msgid "Supports multiple chat platforms"
 msgstr ""
 
@@ -5230,15 +5348,21 @@ msgstr ""
 msgid "Switzerland"
 msgstr ""
 
+#. %s: platform name, for example "Google"
+#: app/Modules/SystemTools/CronMonitor.php:146
+#, php-format
+msgid "Sync %s"
+msgstr ""
+
 #: app/Services/Includes/CountryNames.php:1424
 msgid "Syria"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:533
+#: app/Services/DashboardNotices.php:544
 msgid "Tag products directly in Instagram feed items"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:639
+#: app/Services/DashboardNotices.php:650
 msgid ""
 "Tailor your review display with smart filters that highlight exactly what "
 "matters to your audience."
@@ -5310,26 +5434,26 @@ msgstr ""
 
 #: app/Services/Widgets/YoutubeWidget.php:105
 #: app/Services/Widgets/YoutubeWidget.php:153
-#: app/Services/Widgets/YoutubeWidget.php:203
-#: app/Services/Widgets/YoutubeWidget.php:233
-#: app/Services/Widgets/YoutubeWidget.php:643
+#: app/Services/Widgets/YoutubeWidget.php:204
+#: app/Services/Widgets/YoutubeWidget.php:234
+#: app/Services/Widgets/YoutubeWidget.php:645
 #: app/Services/Widgets/InstagramWidget.php:106
 #: app/Services/Widgets/InstagramWidget.php:154
-#: app/Services/Widgets/InstagramWidget.php:203
-#: app/Services/Widgets/InstagramWidget.php:233
-#: app/Services/Widgets/InstagramWidget.php:263
-#: app/Services/Widgets/InstagramWidget.php:374
-#: app/Services/Widgets/InstagramWidget.php:450
-#: app/Services/Widgets/InstagramWidget.php:542
+#: app/Services/Widgets/InstagramWidget.php:204
+#: app/Services/Widgets/InstagramWidget.php:234
+#: app/Services/Widgets/InstagramWidget.php:264
+#: app/Services/Widgets/InstagramWidget.php:375
+#: app/Services/Widgets/InstagramWidget.php:451
+#: app/Services/Widgets/InstagramWidget.php:544
 #: app/Services/Widgets/FacebookFeedWidget.php:98
 #: app/Services/Widgets/FacebookFeedWidget.php:196
 #: app/Services/Widgets/FacebookFeedWidget.php:393
 #: app/Services/Widgets/TwitterWidget.php:205
 #: app/Services/Widgets/TwitterWidget.php:313
-#: app/Services/Widgets/TwitterWidget.php:391
-#: app/Services/Widgets/TwitterWidget.php:640
-#: app/Services/Widgets/TwitterWidget.php:716
-#: app/Services/Widgets/TwitterWidget.php:832
+#: app/Services/Widgets/TwitterWidget.php:392
+#: app/Services/Widgets/TwitterWidget.php:642
+#: app/Services/Widgets/TwitterWidget.php:718
+#: app/Services/Widgets/TwitterWidget.php:835
 #: app/Services/Widgets/ReviewsWidget.php:130
 #: app/Services/Widgets/ReviewsWidget.php:697
 #: app/Services/Widgets/Oxygen/InstagramWidget.php:92
@@ -5455,9 +5579,13 @@ msgid ""
 "The reviews could not be duplicated. Nothing was changed, please try again."
 msgstr ""
 
-#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:689
+#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:691
 msgid ""
 "The reviews could not be updated. Nothing was changed, please try again."
+msgstr ""
+
+#: app/Modules/SystemTools/SystemToolsController.php:130
+msgid "The scheduled tasks are scheduled again."
 msgstr ""
 
 #: app/Http/Controllers/SettingsController.php:481
@@ -5470,7 +5598,7 @@ msgstr ""
 msgid "The selected AI platform is not available."
 msgstr ""
 
-#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:776
+#: app/Http/Controllers/Platforms/Reviews/RecommendationsController.php:778
 msgid "The selected category no longer exists"
 msgstr ""
 
@@ -5570,6 +5698,10 @@ msgid ""
 "Page%3$s of the WP Social Ninja plugin on your website."
 msgstr ""
 
+#: app/Modules/SystemTools/SystemToolsController.php:70
+msgid "This scheduled task cannot be run from here."
+msgstr ""
+
 #: app/Services/Platforms/Chats/Config.php:84
 msgid "Thursday"
 msgstr ""
@@ -5605,7 +5737,7 @@ msgstr ""
 msgid "Timor-Leste"
 msgstr ""
 
-#: app/Services/Widgets/YoutubeWidget.php:336
+#: app/Services/Widgets/YoutubeWidget.php:337
 #: app/Services/Widgets/ReviewsWidget.php:306
 #: app/Services/Widgets/Oxygen/YouTubeWidget.php:226
 #: app/Services/Platforms/Feeds/Youtube/Config.php:192
@@ -5721,7 +5853,7 @@ msgstr ""
 msgid "Top Spacing"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:652
+#: app/Services/DashboardNotices.php:663
 msgid ""
 "Transform detailed customer reviews into clear, compelling summaries that "
 "highlight key insights and build trust—automatically and in real time."
@@ -5740,7 +5872,7 @@ msgstr ""
 msgid "Tripadvisor"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:776
+#: app/Services/DashboardNotices.php:787
 #: app/Hooks/Handlers/AdminMenuHandler.php:504
 msgid "Tripadvisor Reviews"
 msgstr ""
@@ -5765,13 +5897,13 @@ msgstr ""
 msgid "Turks and Caicos Islands"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:528
+#: app/Services/DashboardNotices.php:539
 msgid ""
 "Turn your Instagram posts into powerful sales tools by linking them directly "
 "to your products — boost conversions with style and simplicity."
 msgstr ""
 
-#: app/Services/DashboardNotices.php:663
+#: app/Services/DashboardNotices.php:674
 msgid ""
 "Turn your top reviews into eye-catching notifications that build instant "
 "trust, boost credibility, and grab visitor attention — all without any setup "
@@ -5784,6 +5916,10 @@ msgstr ""
 
 #: app/Services/TranslationString.php:24
 msgid "Tweets"
+msgstr ""
+
+#: app/Modules/SystemTools/CronMonitor.php:36
+msgid "Twice-daily tasks"
 msgstr ""
 
 #: app/Services/Platforms/Feeds/Twitter/TwitterFeed.php:209
@@ -5810,20 +5946,20 @@ msgstr ""
 
 #: app/Services/Widgets/YoutubeWidget.php:118
 #: app/Services/Widgets/YoutubeWidget.php:166
-#: app/Services/Widgets/YoutubeWidget.php:216
-#: app/Services/Widgets/YoutubeWidget.php:259
-#: app/Services/Widgets/YoutubeWidget.php:383
-#: app/Services/Widgets/YoutubeWidget.php:473
-#: app/Services/Widgets/YoutubeWidget.php:583
-#: app/Services/Widgets/YoutubeWidget.php:635
+#: app/Services/Widgets/YoutubeWidget.php:217
+#: app/Services/Widgets/YoutubeWidget.php:260
+#: app/Services/Widgets/YoutubeWidget.php:384
+#: app/Services/Widgets/YoutubeWidget.php:474
+#: app/Services/Widgets/YoutubeWidget.php:585
+#: app/Services/Widgets/YoutubeWidget.php:637
 #: app/Services/Widgets/InstagramWidget.php:119
 #: app/Services/Widgets/InstagramWidget.php:167
-#: app/Services/Widgets/InstagramWidget.php:216
-#: app/Services/Widgets/InstagramWidget.php:246
-#: app/Services/Widgets/InstagramWidget.php:289
-#: app/Services/Widgets/InstagramWidget.php:399
-#: app/Services/Widgets/InstagramWidget.php:475
-#: app/Services/Widgets/InstagramWidget.php:534
+#: app/Services/Widgets/InstagramWidget.php:217
+#: app/Services/Widgets/InstagramWidget.php:247
+#: app/Services/Widgets/InstagramWidget.php:290
+#: app/Services/Widgets/InstagramWidget.php:400
+#: app/Services/Widgets/InstagramWidget.php:476
+#: app/Services/Widgets/InstagramWidget.php:536
 #: app/Services/Widgets/FacebookFeedWidget.php:111
 #: app/Services/Widgets/FacebookFeedWidget.php:233
 #: app/Services/Widgets/FacebookFeedWidget.php:306
@@ -5841,13 +5977,13 @@ msgstr ""
 #: app/Services/Widgets/TwitterWidget.php:230
 #: app/Services/Widgets/TwitterWidget.php:278
 #: app/Services/Widgets/TwitterWidget.php:326
-#: app/Services/Widgets/TwitterWidget.php:374
-#: app/Services/Widgets/TwitterWidget.php:417
-#: app/Services/Widgets/TwitterWidget.php:522
-#: app/Services/Widgets/TwitterWidget.php:569
-#: app/Services/Widgets/TwitterWidget.php:665
-#: app/Services/Widgets/TwitterWidget.php:765
-#: app/Services/Widgets/TwitterWidget.php:824
+#: app/Services/Widgets/TwitterWidget.php:375
+#: app/Services/Widgets/TwitterWidget.php:418
+#: app/Services/Widgets/TwitterWidget.php:523
+#: app/Services/Widgets/TwitterWidget.php:570
+#: app/Services/Widgets/TwitterWidget.php:667
+#: app/Services/Widgets/TwitterWidget.php:767
+#: app/Services/Widgets/TwitterWidget.php:827
 #: app/Services/Widgets/ReviewsWidget.php:263
 #: app/Services/Widgets/ReviewsWidget.php:353
 #: app/Services/Widgets/ReviewsWidget.php:443
@@ -5937,11 +6073,15 @@ msgstr ""
 msgid "Unknown authentication provider."
 msgstr ""
 
-#: app/Services/DashboardNotices.php:512
+#: app/Modules/SystemTools/Environment.php:47
+msgid "Unlimited"
+msgstr ""
+
+#: app/Services/DashboardNotices.php:523
 msgid "Unlock Instagram Hashtag Magic"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:599
+#: app/Services/DashboardNotices.php:610
 msgid "Unlock Pro Features"
 msgstr ""
 
@@ -5949,39 +6089,39 @@ msgstr ""
 msgid "Untitled"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:759
+#: app/Services/DashboardNotices.php:770
 msgid "Update to Pro to Display Airbnb Reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:795
+#: app/Services/DashboardNotices.php:806
 msgid "Update to Pro to Display AliExpress Reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:786
+#: app/Services/DashboardNotices.php:797
 msgid "Update to Pro to Display Amazon Reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:804
+#: app/Services/DashboardNotices.php:815
 msgid "Update to Pro to Display Booking.com Reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:831
+#: app/Services/DashboardNotices.php:842
 msgid "Update to Pro to Display Custom Reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:813
+#: app/Services/DashboardNotices.php:824
 msgid "Update to Pro to Display Facebook Reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:777
+#: app/Services/DashboardNotices.php:788
 msgid "Update to Pro to Display Tripadvisor Reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:822
+#: app/Services/DashboardNotices.php:833
 msgid "Update to Pro to Display WooCommerce Reviews"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:768
+#: app/Services/DashboardNotices.php:779
 msgid "Update to Pro to Display Yelp Reviews"
 msgstr ""
 
@@ -5989,9 +6129,13 @@ msgstr ""
 msgid "Upgrade To Pro"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:417 app/Services/DashboardNotices.php:430
-#: app/Services/DashboardNotices.php:724 app/Hooks/filters.php:155
+#: app/Services/DashboardNotices.php:428 app/Services/DashboardNotices.php:441
+#: app/Services/DashboardNotices.php:735 app/Hooks/filters.php:155
 msgid "Upgrade to Pro"
+msgstr ""
+
+#: app/Modules/SystemTools/Environment.php:32
+msgid "Upload folder writable"
 msgstr ""
 
 #: app/Services/Platforms/Reviews/Airbnb.php:97
@@ -6078,7 +6222,7 @@ msgstr ""
 msgid "Video Grid"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:547
+#: app/Services/DashboardNotices.php:558
 msgid "Video moderation and visibility control"
 msgstr ""
 
@@ -6126,8 +6270,16 @@ msgstr ""
 msgid "We didn't find any business location from this email address"
 msgstr ""
 
+#: app/Modules/SystemTools/Environment.php:31
+msgid "WebP support"
+msgstr ""
+
 #: app/Services/Platforms/Chats/Config.php:83
 msgid "Wednesday"
+msgstr ""
+
+#: app/Modules/SystemTools/CronMonitor.php:32
+msgid "Weekly cleanup"
 msgstr ""
 
 #: app/Http/Controllers/OnboardingController.php:170
@@ -6156,13 +6308,17 @@ msgstr ""
 msgid "WooCommerce"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:821
+#: app/Services/DashboardNotices.php:832
 #: app/Hooks/Handlers/AdminMenuHandler.php:622
 msgid "WooCommerce Reviews"
 msgstr ""
 
 #: app/Models/Post.php:214 app/Http/Controllers/TemplatesController.php:103
 msgid "WooCommerce Template"
+msgstr ""
+
+#: app/Modules/SystemTools/Environment.php:24
+msgid "WordPress version"
 msgstr ""
 
 #: app/Services/TranslationString.php:58
@@ -6189,6 +6345,14 @@ msgstr ""
 
 #: app/Http/Controllers/Platforms/Reviews/MetaController.php:207
 msgid "WP Social Ninja Pro is required to enable AI summary."
+msgstr ""
+
+#: app/Modules/SystemTools/Environment.php:23
+msgid "WP Social Ninja Pro version"
+msgstr ""
+
+#: app/Modules/SystemTools/Environment.php:22
+msgid "WP Social Ninja version"
 msgstr ""
 
 #. Author of the plugin
@@ -6235,13 +6399,17 @@ msgstr ""
 msgid "Yelp"
 msgstr ""
 
-#: app/Services/DashboardNotices.php:767
+#: app/Services/DashboardNotices.php:778
 #: app/Hooks/Handlers/AdminMenuHandler.php:481
 msgid "Yelp Reviews"
 msgstr ""
 
 #: app/Services/Includes/CountryNames.php:1488
 msgid "Yemen"
+msgstr ""
+
+#: app/Modules/SystemTools/Environment.php:32
+msgid "Yes"
 msgstr ""
 
 #: app/Http/Controllers/TemplatesController.php:288
@@ -6307,7 +6475,7 @@ msgid ""
 msgstr ""
 
 #. %1$s is a link to the documentation for fixing the decryption issue.
-#: app/Services/Helper.php:740
+#: app/Services/Helper.php:777
 #, php-format
 msgid ""
 "Your access token could not be decrypted on this website. Need help? Visit "

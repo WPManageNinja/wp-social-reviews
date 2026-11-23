@@ -4,6 +4,11 @@ namespace WPSocialReviews\Framework\Database\Orm\Relations;
 
 use WPSocialReviews\Framework\Database\Orm\Collection;
 
+/**
+ * @template TRelatedModel of \WPSocialReviews\Framework\Database\Orm\Model
+ *
+ * @extends HasOneOrMany<TRelatedModel>
+ */
 class HasMany extends HasOneOrMany
 {
     /**

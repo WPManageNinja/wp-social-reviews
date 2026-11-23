@@ -316,7 +316,7 @@ export default {
             }
           ],
           tooltip: true,
-          tooltipText: this.$t("If you paste the URL of the playlist, it will automatically extract the ID."),
+          tooltipText: this.$t("If you paste the URL of the playlist, it will automatically extract the ID.") + '<br>' + this.$t("Facebook doesn't share playlists made in the Professional Dashboard. For those, use All Videos with Filters → Show Only These Posts."),
         },
         {
           fieldKey: 'selected_account',
@@ -1389,6 +1389,16 @@ export default {
           disabled: !this.has_pro,
           tooltip: true,
           tooltipText: this.$t('You can use this setting to hide posts that contain certain specific words or hashtags in the caption.') + '<br>' + this.$t('Separate multiple words or hashtags using commas. ex: #hashtag1,word1,#hashtag2,word2')
+        },
+        {
+          fieldKey: 'show_posts_by_id',
+          type: 'textarea',
+          title: this.$t('Show Only These Posts'),
+          placeholder: this.$t('Paste post, video or reel links, separated by commas'),
+          disabled: !this.has_pro,
+          autosize: {minRows: 2, maxRows: 4},
+          tooltip: true,
+          tooltipText: this.$t('Only the posts listed here are shown. Paste a post, video or reel link, or its ID.') + '<br>' + this.$t("To show a Facebook playlist, open it and copy each reel's link. A post must be within the Total Feed count to appear.") + '<br>ex: https://www.facebook.com/reel/907926116533217'
         },
         {
           fieldKey: 'hide_posts_by_id',

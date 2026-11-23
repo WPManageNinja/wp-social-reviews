@@ -4,7 +4,7 @@ namespace WPSocialReviews\Framework\Validator;
 
 use Countable;
 use Exception;
-use ValueError;
+use Throwable;
 use DateTimeInterface;
 use InvalidArgumentException;
 use WPSocialReviews\Framework\Support\Str;
@@ -35,6 +35,37 @@ trait ValidatesAttributes
                 "Validation rule $rule requires at least $count parameters."
             );
         }
+    }
+
+    /**
+     * Put the list indexes from an attribute's name into the '*' parts of
+     * another field's name, in order: for the attribute
+     * 'items.10.tags.2.name', 'items.*.tags.*.type' becomes
+     * 'items.10.tags.2.type'.
+     *
+     * @param  string  $attribute
+     * @param  string  $other
+     * @return string
+     */
+    protected function resolveWildcardIndexes($attribute, $other)
+    {
+        // Each whole number that sits between two dots: 'items.10.tags.2.name'
+        // gives 10 and 2. (?<=\.) and (?=\.) check for the dots without
+        // taking them, so neighbouring indexes such as '.1.2.' both count.
+        preg_match_all('/(?<=\.)\d+(?=\.|$)/', $attribute, $indexes);
+
+        // Each '*' segment of the other field, in order, takes the next
+        // index: items.*.tags.* for items.1.tags.2.name is items.1.tags.2.
+        $segments = explode('.', $other);
+        $indexes = $indexes[0];
+
+        foreach ($segments as $i => $segment) {
+            if ($segment === '*' && $indexes) {
+                $segments[$i] = array_shift($indexes);
+            }
+        }
+
+        return implode('.', $segments);
     }
 
     /**
@@ -94,7 +125,7 @@ trait ValidatesAttributes
      */
     protected function guessType($value, $attribute)
     {
-        if ($attribute && in_array('string', $this->rules[$attribute])) {
+        if ($attribute && in_array('string', $this->rules[$attribute] ?? [], true)) {
             return 'string';
         }
 
@@ -109,7 +140,28 @@ trait ValidatesAttributes
      */
     protected function shouldConvertToBoolean($parameter)
     {
-        return in_array('boolean', Arr::get($this->rules, $parameter, []));
+        return in_array('boolean', Arr::get($this->rules, $parameter, []), true);
+    }
+
+    /**
+     * Determine whether another field's value is one of the given values.
+     *
+     * "true" and "false" stand for booleans when the other field holds a
+     * boolean or carries the boolean rule, so required_if:flag,false
+     * matches a false sent as JSON and required_if:flag,true a form's "1".
+     *
+     * @param  string  $field
+     * @param  mixed  $other
+     * @param  array  $values
+     * @return bool
+     */
+    protected function matchesAnyValue($field, $other, array $values)
+    {
+        if (is_bool($other) || $this->shouldConvertToBoolean($field)) {
+            $values = $this->convertValuesToBoolean($values);
+        }
+
+        return in_array($other, $values);
     }
 
     /**
@@ -181,23 +233,82 @@ trait ValidatesAttributes
     {
         $this->requireParameterCount(2, $parameters, 'required_if');
         
-        if (preg_match('/\.\d\./', $attribute, $matches)) {
-            $parameters[0] = str_replace(['.*.'], $matches, $parameters[0]);
-        }
+        $parameters[0] = $this->resolveWildcardIndexes($attribute, $parameters[0]);
 
         $other = Arr::get($this->data, $parameters[0]);
 
         $values = array_slice($parameters, 1);
 
-        if (is_bool($other)) {
-            $values = $this->convertValuesToBoolean($values);
-        }
-
-        if (in_array($other, $values)) {
+        if ($this->matchesAnyValue($parameters[0], $other, $values)) {
             return $this->validateRequired($attribute, $value);
         }
 
         return true;
+    }
+
+    /**
+     * Validate that an attribute exists unless another attribute has one
+     * of the given values: required_unless:status,closed,resolved. "true",
+     * "false" and "null" stand for those values, as in Laravel.
+     *
+     * @param string $attribute
+     * @param mixed $value
+     * @param mixed $parameters
+     *
+     * @return bool
+     */
+    protected function validateRequiredUnless($attribute, $value, $parameters)
+    {
+        $this->requireParameterCount(2, $parameters, 'required_unless');
+
+        $parameters[0] = $this->resolveWildcardIndexes($attribute, $parameters[0]);
+
+        $other = Arr::get($this->data, $parameters[0]);
+
+        $values = array_slice($parameters, 1);
+
+        if (is_null($other)) {
+            $values = $this->convertValuesToNull($values);
+        }
+
+        if (!$this->matchesAnyValue($parameters[0], $other, $values)) {
+            return $this->validateRequired($attribute, $value);
+        }
+
+        return true;
+    }
+
+    /**
+     * Validate that an attribute, when it is present, is not empty.
+     *
+     * @param string $attribute
+     * @param mixed $value
+     *
+     * @return bool
+     */
+    protected function validateFilled($attribute, $value)
+    {
+        if ($this->validatePresent($attribute, $value)) {
+            return $this->validateRequired($attribute, $value);
+        }
+
+        return true;
+    }
+
+    /**
+     * Validate that an attribute was accepted: yes, on, 1, true or "true".
+     *
+     * @param string $attribute
+     * @param mixed $value
+     *
+     * @return bool
+     */
+    protected function validateAccepted($attribute, $value)
+    {
+        $acceptable = ['yes', 'on', '1', 1, true, 'true'];
+
+        return $this->validateRequired($attribute, $value)
+            && in_array($value, $acceptable, true);
     }
 
     /**
@@ -213,10 +324,8 @@ trait ValidatesAttributes
     {
         $this->requireParameterCount(1, $parameters, 'required_with');
 
-        foreach ($parameters as $field) {
-            if ($this->isPresent($field) && !$this->isPresent($attribute)) {
-                return $this->validateRequired($attribute, $value);
-            }
+        if (! $this->allFailingRequired($attribute, $parameters)) {
+            return $this->validateRequired($attribute, $value);
         }
 
         return true;
@@ -235,16 +344,7 @@ trait ValidatesAttributes
     {
         $this->requireParameterCount(1, $parameters, 'required_with_all');
 
-        $allPresent = true;
-
-        foreach ($parameters as $field) {
-            if (!$this->isPresent($field)) {
-                $allPresent = false;
-                break;
-            }
-        }
-
-        if ($allPresent && !$this->isPresent($attribute)) {
+        if (! $this->anyFailingRequired($attribute, $parameters)) {
             return $this->validateRequired($attribute, $value);
         }
 
@@ -264,10 +364,8 @@ trait ValidatesAttributes
     {
         $this->requireParameterCount(1, $parameters, 'required_without');
 
-        foreach ($parameters as $field) {
-            if (!$this->isPresent($field) && !$this->isPresent($attribute)) {
-                return $this->validateRequired($attribute, $value);
-            }
+        if ($this->anyFailingRequired($attribute, $parameters)) {
+            return $this->validateRequired($attribute, $value);
         }
 
         return true;
@@ -286,20 +384,52 @@ trait ValidatesAttributes
     {
         $this->requireParameterCount(1, $parameters, 'required_without_all');
 
-        $allMissing = true;
-
-        foreach ($parameters as $field) {
-            if ($this->isPresent($field)) {
-                $allMissing = false;
-                break;
-            }
-        }
-
-        if ($allMissing && !$this->isPresent($attribute)) {
+        if ($this->allFailingRequired($attribute, $parameters)) {
             return $this->validateRequired($attribute, $value);
         }
 
         return true;
+    }
+
+    /**
+     * Whether none of the other fields has a value. On a wildcard field the
+     * others are the same item's: items.0.qty reads items.0.price.
+     *
+     * @param  string  $attribute
+     * @param  array  $fields
+     * @return bool
+     */
+    protected function allFailingRequired($attribute, array $fields)
+    {
+        foreach ($fields as $field) {
+            $field = $this->resolveWildcardIndexes($attribute, $field);
+
+            if ($this->validateRequired($field, $this->getValue($field))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Whether any of the other fields has no value.
+     *
+     * @param  string  $attribute
+     * @param  array  $fields
+     * @return bool
+     */
+    protected function anyFailingRequired($attribute, array $fields)
+    {
+        foreach ($fields as $field) {
+            $field = $this->resolveWildcardIndexes($attribute, $field);
+
+            if (! $this->validateRequired($field, $this->getValue($field))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -322,6 +452,35 @@ trait ValidatesAttributes
     }
 
     /**
+     * Get the size an attribute is compared with by gt, gte, lt and lte.
+     *
+     * The parameter names another field when the data has it: that field's
+     * size, which must be of the same kind (number, string, array or file).
+     * Otherwise it is a number. Null means the comparison cannot be made.
+     *
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @param  string  $parameter
+     * @return int|float|null
+     */
+    protected function comparedSize($attribute, $value, $parameter)
+    {
+        $field = $this->resolveWildcardIndexes($attribute, $parameter);
+
+        if (Arr::has($this->data, $field)) {
+            $other = Arr::get($this->data, $field);
+
+            if ($this->deduceType($value, $attribute) !== $this->deduceType($other, $field)) {
+                return null;
+            }
+
+            return $this->getSize($field, $other);
+        }
+
+        return is_numeric($parameter) ? $parameter + 0 : null;
+    }
+
+    /**
      * Validate that an attribute is greater than value.
      *
      * @param string $attribute
@@ -333,11 +492,9 @@ trait ValidatesAttributes
     {
         $this->requireParameterCount(1, $parameters, 'gt');
 
-        if (!is_numeric($value) || !is_numeric($parameters[0])) {
-            return false;
-        }
+        $compared = $this->comparedSize($attribute, $value, $parameters[0]);
 
-        return $value > $parameters[0];
+        return !is_null($compared) && $this->getSize($attribute, $value) > $compared;
     }
 
     /**
@@ -352,11 +509,9 @@ trait ValidatesAttributes
     {
         $this->requireParameterCount(1, $parameters, 'gte');
 
-        if (!is_numeric($value) || !is_numeric($parameters[0])) {
-            return false;
-        }
+        $compared = $this->comparedSize($attribute, $value, $parameters[0]);
 
-        return $value >= $parameters[0];
+        return !is_null($compared) && $this->getSize($attribute, $value) >= $compared;
     }
 
     /**
@@ -371,11 +526,9 @@ trait ValidatesAttributes
     {
         $this->requireParameterCount(1, $parameters, 'lt');
 
-        if (!is_numeric($value) || !is_numeric($parameters[0])) {
-            return false;
-        }
+        $compared = $this->comparedSize($attribute, $value, $parameters[0]);
 
-        return $value < $parameters[0];
+        return !is_null($compared) && $this->getSize($attribute, $value) < $compared;
     }
 
     /**
@@ -390,11 +543,9 @@ trait ValidatesAttributes
     {
         $this->requireParameterCount(1, $parameters, 'lte');
 
-        if (!is_numeric($value) || !is_numeric($parameters[0])) {
-            return false;
-        }
+        $compared = $this->comparedSize($attribute, $value, $parameters[0]);
 
-        return $value <= $parameters[0];
+        return !is_null($compared) && $this->getSize($attribute, $value) <= $compared;
     }
 
     /**
@@ -471,7 +622,7 @@ trait ValidatesAttributes
     {
         $this->requireParameterCount(1, $parameters, 'same');
 
-        $other = @$this->data[$parameters[0]];
+        $other = Arr::get($this->data, $this->resolveWildcardIndexes($attribute, $parameters[0]));
 
         return $value === $other;
     }
@@ -516,13 +667,17 @@ trait ValidatesAttributes
     /**
      * Validate that an attribute is a integer.
      *
+     * Checks the value, not the PHP type: query strings and form posts always
+     * arrive as strings, so "5" must pass. Booleans are excluded because
+     * filter_var() reads true as 1.
+     *
      * @param  string  $attribute
      * @param  mixed  $value
      * @return bool
      */
     protected function validateInteger($attribute, $value)
     {
-        return is_int($value);
+        return ! is_bool($value) && filter_var($value, FILTER_VALIDATE_INT) !== false;
     }
 
     /**
@@ -543,7 +698,10 @@ trait ValidatesAttributes
 
         $matches = [];
 
-        if (preg_match('/^[+-]?\d*\.?(\d*)$/', $value, $matches) !== 1) {
+        // An optional sign, digits, an optional '.', then the decimals,
+        // which are captured: '1.25' -> '25', '-3' -> '', '1e5' fails. \z is
+        // the very end, so a trailing newline fails too (unlike $).
+        if (preg_match('/^[+-]?\d*\.?(\d*)\z/', $value, $matches) !== 1) {
             return false;
         }
 
@@ -596,6 +754,181 @@ trait ValidatesAttributes
     }
 
     /**
+     * Validate that an attribute is a date after the given date or field.
+     *
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @param  array  $parameters
+     * @return bool
+     */
+    protected function validateAfter($attribute, $value, $parameters)
+    {
+        return $this->compareDates($attribute, $value, $parameters, 'after', '>');
+    }
+
+    /**
+     * Validate that an attribute is a date after or equal to the given date
+     * or field.
+     *
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @param  array  $parameters
+     * @return bool
+     */
+    protected function validateAfterOrEqual($attribute, $value, $parameters)
+    {
+        return $this->compareDates($attribute, $value, $parameters, 'after_or_equal', '>=');
+    }
+
+    /**
+     * Validate that an attribute is a date before the given date or field.
+     *
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @param  array  $parameters
+     * @return bool
+     */
+    protected function validateBefore($attribute, $value, $parameters)
+    {
+        return $this->compareDates($attribute, $value, $parameters, 'before', '<');
+    }
+
+    /**
+     * Validate that an attribute is a date before or equal to the given date
+     * or field.
+     *
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @param  array  $parameters
+     * @return bool
+     */
+    protected function validateBeforeOrEqual($attribute, $value, $parameters)
+    {
+        return $this->compareDates($attribute, $value, $parameters, 'before_or_equal', '<=');
+    }
+
+    /**
+     * Validate that an attribute is the same date as the given date or field.
+     *
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @param  array  $parameters
+     * @return bool
+     */
+    protected function validateDateEquals($attribute, $value, $parameters)
+    {
+        return $this->compareDates($attribute, $value, $parameters, 'date_equals', '==');
+    }
+
+    /**
+     * Compare an attribute's date with another field's or a given date.
+     *
+     * The parameter names another field when the data has it; otherwise it
+     * is a date, such as 2026-01-01 or today. Either side that is not a date
+     * fails the rule.
+     *
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @param  array  $parameters
+     * @param  string  $rule
+     * @param  string  $operator
+     * @return bool
+     */
+    protected function compareDates($attribute, $value, $parameters, $rule, $operator)
+    {
+        $this->requireParameterCount(1, $parameters, $rule);
+
+        $date = $this->toDate($value, $this->dateFormatsOf($attribute));
+
+        $field = $this->resolveWildcardIndexes($attribute, $parameters[0]);
+
+        $compared = Arr::has($this->data, $field)
+            ? $this->toDate(Arr::get($this->data, $field), $this->dateFormatsOf($field))
+            : $this->toDate($parameters[0], $this->dateFormatsOf($attribute), true);
+
+        if (!$date || !$compared) {
+            return false;
+        }
+
+        $difference = $date->getTimestamp() - $compared->getTimestamp();
+
+        switch ($operator) {
+            case '>':
+                return $difference > 0;
+            case '>=':
+                return $difference >= 0;
+            case '<':
+                return $difference < 0;
+            case '<=':
+                return $difference <= 0;
+            default:
+                return $difference === 0;
+        }
+    }
+
+    /**
+     * Read a value as a date in the plugin's timezone.
+     *
+     * With date_format rules the value is read with those formats, so
+     * 01/02/2026 in d/m/Y is the 1st of February. A given date (the rule's
+     * parameter) may also be anything PHP understands, such as tomorrow.
+     *
+     * @param  mixed  $value
+     * @param  array  $formats
+     * @param  bool  $isParameter
+     * @return \WPSocialReviews\Framework\Support\DateTime|null
+     */
+    protected function toDate($value, array $formats = [], $isParameter = false)
+    {
+        if ($value instanceof DateTimeInterface) {
+            return DateTime::create($value);
+        }
+
+        if (!is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        foreach ($formats as $format) {
+            try {
+                $date = DateTime::createFromFormat('!' . $format, $value);
+            } catch (Throwable $e) {
+                continue;
+            }
+
+            if ($date->format($format) === $value) {
+                return $date;
+            }
+        }
+
+        if ($formats && !$isParameter) {
+            return null;
+        }
+
+        try {
+            return DateTime::create($value);
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get the formats an attribute's date_format rule names.
+     *
+     * @param  string  $attribute
+     * @return array
+     */
+    protected function dateFormatsOf($attribute)
+    {
+        foreach ($this->rules[$attribute] ?? [] as $rule) {
+            if (is_string($rule) && strpos($rule, 'date_format:') === 0) {
+                return explode(',', substr($rule, strlen('date_format:')));
+            }
+        }
+
+        return [];
+    }
+
+    /**
      * Validate that an attribute matches a date format.
      *
      * @param  string  $attribute
@@ -613,17 +946,31 @@ trait ValidatesAttributes
 
         foreach ($parameters as $format) {
             try {
-                $date = DateTime::createFromFormat('!'.$format, $value);
+                $date = DateTime::createFromFormat('!'.$format, (string) $value);
+            } catch (InvalidArgumentException | \ValueError $e) {
+                // Not in this format; a NUL byte: not a date at all.
+                continue;
+            }
 
-                if ($date && $date->format($format) == $value) {
-                    return true;
-                }
-            } catch (ValueError $e) {
-                return false;
+            if ($date->format($format) == $value) {
+                return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Validate that an attribute is a boolean: true, false, 1, 0, "1" or "0".
+     *
+     * @param string $attribute
+     * @param mixed $value
+     *
+     * @return bool
+     */
+    protected function validateBoolean($attribute, $value)
+    {
+        return in_array($value, [true, false, 1, 0, '1', '0'], true);
     }
 
     /**
@@ -636,7 +983,10 @@ trait ValidatesAttributes
      */
     protected function validateAlpha($attribute, $value)
     {
-        return is_string($value) && preg_match('/^[\pL\pM]+$/u', $value);
+        // Only letters in any language (\pL) and the accent marks that
+        // attach to them (\pM), at least one: 'naïve' passes, 'abc1' fails.
+        // \z is the very end, so "abc\n" fails too (unlike $).
+        return is_string($value) && preg_match('/^[\pL\pM]+\z/u', $value);
     }
 
     /**
@@ -653,7 +1003,10 @@ trait ValidatesAttributes
             return false;
         }
 
-        return preg_match('/^[\pL\pM\pN]+$/u', $value) > 0;
+        // Letters in any language (\pL), accent marks (\pM) and numbers in
+        // any script (\pN), at least one: 'abc1' passes, 'a_b-c' fails.
+        // \z is the very end, so "abc\n" fails too (unlike $).
+        return preg_match('/^[\pL\pM\pN]+\z/u', $value) > 0;
     }
 
     /**
@@ -670,7 +1023,10 @@ trait ValidatesAttributes
             return false;
         }
 
-        return preg_match('/^[\pL\pM\pN_-]+$/u', $value) > 0;
+        // Letters in any language (\pL), accent marks (\pM), numbers in any
+        // script (\pN), '_' and '-', at least one: 'a_b-c' passes. \z is
+        // the very end, so "a_b\n" fails too (unlike $).
+        return preg_match('/^[\pL\pM\pN_-]+\z/u', $value) > 0;
     }
 
     /**
@@ -695,8 +1051,19 @@ trait ValidatesAttributes
         /**
          * @var $value \WPSocialReviews\Framework\Validator\Contracts\File
          */
-        return $value->getPath() != '' && in_array(
-            $value->guessExtension(), $parameters
+        // wp_check_filetype() matches case-insensitively but returns the
+        // extension in the filename's own case ("clip.MOV" => "MOV"), so a
+        // case-sensitive compare rejects valid uploads. Fold both sides.
+        // Casts guard the false (no match) and [null] (bare "mimes:" via
+        // str_getcsv) cases, and avoid strtolower(null) on PHP 8.1+.
+        $extension = strtolower((string) $value->guessExtension());
+
+        $allowed = array_map(function ($parameter) {
+            return strtolower((string) $parameter);
+        }, $parameters);
+
+        return $value->getPath() != '' && '' !== $extension && in_array(
+            $extension, $allowed, true
         );
     }
 
@@ -722,6 +1089,125 @@ trait ValidatesAttributes
             in_array($value->getMimeType(), $parameters) ||
             in_array(explode('/', $value->getMimeType())[0].'/*', $parameters)
         );
+    }
+
+    /**
+     * Validate that an attribute is a successfully uploaded file.
+     *
+     * @param  string $attribute
+     * @param  mixed  $value
+     * @return bool
+     */
+    protected function validateFile($attribute, $value)
+    {
+        return $this->isValidFileInstance($value);
+    }
+
+    /**
+     * Validate the size of an uploaded image, as in Laravel: width, height,
+     * min_width, max_width, min_height, max_height and ratio (1.5 or 3/2).
+     * An SVG passes; a file that is not an image fails.
+     *
+     * @param string $attribute
+     * @param mixed $value
+     * @param array $parameters
+     *
+     * @return bool
+     */
+    protected function validateDimensions($attribute, $value, $parameters)
+    {
+        if (!$this->isValidFileInstance($value) || !$value instanceof \SplFileInfo) {
+            return false;
+        }
+
+        $this->requireParameterCount(1, $parameters, 'dimensions');
+
+        // An SVG passes before it is measured: it scales, and PHP 8.5's
+        // getimagesize() reads its width and height where older ones can't.
+        if ($this->isSvg($value->getPathname())) {
+            return true;
+        }
+
+        $size = @getimagesize($value->getPathname());
+
+        if (!$size) {
+            return false;
+        }
+
+        [$width, $height] = $size;
+
+        $constraints = [];
+
+        foreach ($parameters as $parameter) {
+            [$name, $limit] = array_pad(explode('=', $parameter, 2), 2, null);
+            $constraints[trim($name)] = trim((string) $limit);
+        }
+
+        return !$this->failsBasicDimensionChecks($constraints, $width, $height)
+            && !$this->failsRatioCheck($constraints, $width, $height);
+    }
+
+    /**
+     * Whether a file's contents are an SVG image, which has no fixed size.
+     *
+     * @param string $path
+     *
+     * @return bool
+     */
+    protected function isSvg($path)
+    {
+        if (!function_exists('finfo_open')) {
+            return false;
+        }
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $type = $finfo ? finfo_file($finfo, $path) : false;
+
+        return in_array($type, ['image/svg+xml', 'image/svg'], true);
+    }
+
+    /**
+     * Whether the image fails the width and height constraints.
+     *
+     * @param array $constraints
+     * @param int $width
+     * @param int $height
+     *
+     * @return bool
+     */
+    protected function failsBasicDimensionChecks($constraints, $width, $height)
+    {
+        return (isset($constraints['width']) && $constraints['width'] != $width)
+            || (isset($constraints['min_width']) && $constraints['min_width'] > $width)
+            || (isset($constraints['max_width']) && $constraints['max_width'] < $width)
+            || (isset($constraints['height']) && $constraints['height'] != $height)
+            || (isset($constraints['min_height']) && $constraints['min_height'] > $height)
+            || (isset($constraints['max_height']) && $constraints['max_height'] < $height);
+    }
+
+    /**
+     * Whether the image fails the ratio constraint, given as 1.5 or 3/2, to
+     * within a pixel.
+     *
+     * @param array $constraints
+     * @param int $width
+     * @param int $height
+     *
+     * @return bool
+     */
+    protected function failsRatioCheck($constraints, $width, $height)
+    {
+        if (!isset($constraints['ratio'])) {
+            return false;
+        }
+
+        [$numerator, $denominator] = array_replace(
+            [1, 1], array_filter(sscanf($constraints['ratio'], '%f/%d'))
+        );
+
+        $precision = 1 / (max($width, $height) + 1);
+
+        return abs($numerator / $denominator - $width / $height) > $precision;
     }
 
     /**
@@ -784,7 +1270,9 @@ trait ValidatesAttributes
     {
         $this->requireParameterCount(1, $parameters, 'digits');
 
-        return $this->validateNumeric($attribute, $value) 
+        // Digits only: '1.5', '-12' and '1e2' are numbers but not digits.
+        return (is_int($value) || is_string($value))
+                    && preg_match('/[^0-9]/', (string) $value) !== 1
                     && strlen((string) $value) == $parameters[0];
     }
 
@@ -873,7 +1361,8 @@ trait ValidatesAttributes
             return count(array_diff($value, $parameters)) === 0;
         }
 
-        return !is_array($value) && in_array((string) $value, $parameters);
+        // Compared as strings, strictly: '01' is not 1.
+        return !is_array($value) && in_array((string) $value, $parameters, true);
     }
 
     /**

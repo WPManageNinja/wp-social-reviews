@@ -138,7 +138,7 @@ trait InputHelperMethodsTrait
      * Returns a sanitized integer.
      *
      * @param  string $key
-     * @param  string $default
+     * @param  int|null $default
      * @return int
      */
     public function getInt($key, $default = null)
@@ -198,7 +198,7 @@ trait InputHelperMethodsTrait
      * Returns boolean value.
      *
      * @param  string $key
-     * @param  string $default
+     * @param  bool|null $default
      * @return bool|null TRUE for "1", "true", "on", "yes"; FALSE for "0", "false", "off", "no"; NULL otherwise
      */
     public function getBool($key, $default = null)

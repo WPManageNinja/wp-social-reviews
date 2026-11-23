@@ -3,7 +3,7 @@
 namespace WPSocialReviews\Framework\Validator\Rules;
 
 use WPSocialReviews\Framework\Database\Orm\Model;
-use WPSocialReviews\Framework\Support\Conditionable;
+use WPSocialReviews\Framework\Support\Concerns\Conditionable;
 
 class Unique
 {

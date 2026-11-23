@@ -5,9 +5,9 @@ namespace WPSocialReviews\Framework\Database\Orm\Relations;
 use Closure;
 use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\Framework\Support\Helper;
-use WPSocialReviews\Framework\Support\ForwardsCalls;
-use WPSocialReviews\Framework\Support\MacroableTrait;
-use WPSocialReviews\Framework\Support\HelperFunctionsTrait;
+use WPSocialReviews\Framework\Support\Concerns\ForwardsCalls;
+use WPSocialReviews\Framework\Support\Concerns\MacroableTrait;
+use WPSocialReviews\Framework\Support\Concerns\HelperFunctionsTrait;
 use WPSocialReviews\Framework\Database\Orm\Model;
 use WPSocialReviews\Framework\Database\Orm\Builder;
 use WPSocialReviews\Framework\Database\Orm\Collection;
@@ -17,6 +17,8 @@ use WPSocialReviews\Framework\Database\MultipleRecordsFoundException;
 
 /**
  * @mixin \WPSocialReviews\Framework\Database\Orm\Builder
+ *
+ * @template TRelatedModel of \WPSocialReviews\Framework\Database\Orm\Model
  */
 abstract class Relation
 {

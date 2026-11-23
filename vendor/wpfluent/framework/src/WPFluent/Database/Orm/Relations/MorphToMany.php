@@ -7,6 +7,12 @@ use WPSocialReviews\Framework\Support\Collection;
 use WPSocialReviews\Framework\Database\Orm\Model;
 use WPSocialReviews\Framework\Database\Orm\Builder;
 
+/**
+ * @template TRelatedModel of \WPSocialReviews\Framework\Database\Orm\Model
+ * @template TDeclaringModel of \WPSocialReviews\Framework\Database\Orm\Model
+ *
+ * @extends BelongsToMany<TRelatedModel, TDeclaringModel>
+ */
 class MorphToMany extends BelongsToMany
 {
     /**

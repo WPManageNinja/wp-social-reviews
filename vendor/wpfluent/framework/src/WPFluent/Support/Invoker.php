@@ -72,6 +72,13 @@ use Closure;
 use ReflectionClass;
 use ReflectionMethod;
 
+/**
+ * Reads and changes private and protected members from outside a class.
+ *
+ * @deprecated 2.19.0 Use PHP's own Closure::bind() or Reflection, as the
+ *             upgrade guide shows. Support\Invoker will be removed in a
+ *             release after 2026-11-05.
+ */
 class Invoker
 {
     /**
@@ -83,7 +90,7 @@ class Invoker
      */
     public static function get($object, $property)
     {
-        return static::invoke($object, function () use ($property) {
+        return static::invokeIn($object, static::declaringClass($object, $property, 'property_exists'), function () use ($property) {
             // @phpstan-ignore-next-line
             return $this->$property;
         });
@@ -99,7 +106,7 @@ class Invoker
      */
     public static function set($object, $property, $value)
     {
-        static::invoke($object, function () use ($property, $value) {
+        static::invokeIn($object, static::declaringClass($object, $property, 'property_exists'), function () use ($property, $value) {
             // @phpstan-ignore-next-line
             $this->$property = $value;
         });
@@ -115,7 +122,7 @@ class Invoker
      */
     public static function call($object, $method, $args = [])
     {
-        return static::invoke($object, function () use ($method, $args) {
+        return static::invokeIn($object, static::declaringClass($object, $method, 'method_exists'), function () use ($method, $args) {
             // @phpstan-ignore-next-line
             return call_user_func_array([$this, $method], $args);
         });
@@ -131,9 +138,12 @@ class Invoker
      */
     public static function getStatic($class, $property)
     {
-        $ref = new ReflectionClass($class);
+        $ref = new ReflectionClass(static::declaringClass($class, $property, 'property_exists'));
         $prop = $ref->getProperty($property);
-        $prop->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $prop->setAccessible(true);
+        }
+
         return $prop->getValue();
     }
 
@@ -148,9 +158,12 @@ class Invoker
      */
     public static function setStatic($class, $property, $value)
     {
-        $ref = new ReflectionClass($class);
+        $ref = new ReflectionClass(static::declaringClass($class, $property, 'property_exists'));
         $prop = $ref->getProperty($property);
-        $prop->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $prop->setAccessible(true);
+        }
+
         $prop->setValue(null, $value);
     }
 
@@ -166,7 +179,10 @@ class Invoker
     public static function callStatic($class, $method, $args = [])
     {
         $ref = new ReflectionMethod($class, $method);
-        $ref->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $ref->setAccessible(true);
+        }
+
         return $ref->invokeArgs(null, $args);
     }
 
@@ -180,7 +196,47 @@ class Invoker
      */
     public static function invoke($object, $closure, ...$args)
     {
-        $bound = Closure::bind($closure, $object, get_class($object));
+        return static::invokeIn($object, get_class($object), $closure, ...$args);
+    }
+
+    /**
+     * Bind a closure to an object in the scope of the given class and
+     * invoke it.
+     *
+     * @param object  $object  The object to bind the closure to.
+     * @param string  $scope   The class whose private members it sees.
+     * @param Closure $closure The closure to bind and invoke.
+     * @param mixed   ...$args Optional arguments to pass to the closure.
+     * @return mixed           The result returned by the closure.
+     */
+    protected static function invokeIn($object, $scope, $closure, ...$args)
+    {
+        $bound = Closure::bind($closure, $object, $scope);
         return call_user_func_array($bound, $args);
+    }
+
+    /**
+     * The class a member is reached from: the object's own class, or the
+     * nearest parent that declares it. A parent's private member isn't
+     * visible from the child class, so it is reached from the parent.
+     * A member no class has is left to the object's class, which fails
+     * as PHP does.
+     *
+     * @param object|string $objectOrClass
+     * @param string        $member
+     * @param callable      $exists property_exists or method_exists.
+     * @return string
+     */
+    protected static function declaringClass($objectOrClass, $member, $exists)
+    {
+        $class = is_object($objectOrClass) ? get_class($objectOrClass) : $objectOrClass;
+
+        for ($scope = $class; $scope; $scope = get_parent_class($scope)) {
+            if ($exists($scope, $member)) {
+                return $scope;
+            }
+        }
+
+        return $class;
     }
 }

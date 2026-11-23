@@ -649,6 +649,43 @@ class Helper
         echo $string; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     }
 
+    /**
+     * Markup the admin-only frontend error box may contain.
+     */
+    public static function frontendErrorAllowedHtml()
+    {
+        return [
+            'div'    => ['class' => true],
+            'span'   => ['class' => true],
+            'strong' => [],
+            'br'     => [],
+            'a'      => ['href' => true, 'target' => true],
+        ];
+    }
+
+    /**
+     * Markup a feed template rendered by a filter callback may contain: post HTML plus the feed's icons and media.
+     */
+    public static function feedTemplateAllowedHtml()
+    {
+        $wpsr_allowed = wp_kses_allowed_html('post');
+
+        $wpsr_allowed['a']['tabindex'] = true;
+        $wpsr_allowed['svg'] = [
+            'class' => true, 'width' => true, 'height' => true, 'viewbox' => true, 'fill' => true, 'xmlns' => true,
+            'aria-hidden' => true, 'aria-label' => true, 'role' => true, 'focusable' => true,
+        ];
+        $wpsr_allowed['path'] = ['d' => true, 'fill' => true, 'fill-rule' => true, 'clip-rule' => true];
+        $wpsr_allowed['video'] = [
+            'class' => true, 'src' => true, 'poster' => true, 'controls' => true, 'loop' => true, 'muted' => true,
+            'autoplay' => true, 'playsinline' => true, 'webkit-playsinline' => true, 'preload' => true,
+            'width' => true, 'height' => true,
+        ];
+        $wpsr_allowed['source'] = ['src' => true, 'type' => true];
+
+        return $wpsr_allowed;
+    }
+
     public static function customEncodeEmoji($content) {
         $emoji = ['&#129655;'];
 
@@ -822,6 +859,35 @@ class Helper
     public static function isMaskedApiKey($value)
     {
         return is_string($value) && strpos($value, self::API_KEY_MASK_PREFIX) === 0;
+    }
+
+    /**
+     * Inline CSS variables that size feed carousel slides before Swiper starts, mirroring `carouselOptions()` in helper.js.
+     *
+     * @param array $slider_data
+     * @return string
+     */
+    public static function getSliderPreInitStyle($slider_data = [])
+    {
+        if (empty($slider_data)) {
+            return '';
+        }
+
+        $wpsr_slides = array(
+            'desktop' => absint(Arr::get($slider_data, 'responsive_slides_to_show.desktop', 1)),
+            'tablet'  => absint(Arr::get($slider_data, 'responsive_slides_to_show.tablet', 2)),
+            'mobile'  => absint(Arr::get($slider_data, 'responsive_slides_to_show.mobile', 1)),
+        );
+
+        $wpsr_style = '';
+        foreach ($wpsr_slides as $wpsr_device => $wpsr_count) {
+            $wpsr_style .= '--wpsr-slides-' . $wpsr_device . ':' . max(1, $wpsr_count) . ';';
+        }
+
+        $wpsr_gap = Arr::get($slider_data, 'spaceBetween');
+        $wpsr_style .= '--wpsr-slide-gap:' . ($wpsr_gap === '' || $wpsr_gap === null ? 20 : absint($wpsr_gap)) . 'px;';
+
+        return $wpsr_style;
     }
 
 }

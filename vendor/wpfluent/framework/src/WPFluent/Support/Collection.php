@@ -6,9 +6,12 @@ use stdClass;
 use ArrayAccess;
 use ArrayIterator;
 use WPSocialReviews\Framework\Support\Helper;
-use WPSocialReviews\Framework\Support\MacroableTrait;
-use WPSocialReviews\Framework\Support\EnumeratesValues;
-use WPSocialReviews\Framework\Support\CanBeEscapedWhenCastToString;
+use WPSocialReviews\Framework\Support\Concerns\MacroableTrait;
+use WPSocialReviews\Framework\Support\Concerns\EnumeratesValues;
+use WPSocialReviews\Framework\Support\Contracts\CanBeEscapedWhenCastToString;
+use WPSocialReviews\Framework\Support\Contracts\Enumerable;
+use WPSocialReviews\Framework\Support\Exceptions\ItemNotFoundException;
+use WPSocialReviews\Framework\Support\Exceptions\MultipleItemsFoundException;
 
 class Collection implements ArrayAccess, CanBeEscapedWhenCastToString, Enumerable
 {
@@ -1234,8 +1237,8 @@ class Collection implements ArrayAccess, CanBeEscapedWhenCastToString, Enumerabl
      * @param  mixed  $value
      * @return mixed
      *
-     * @throws \WPSocialReviews\Framework\Support\ItemNotFoundException
-     * @throws \WPSocialReviews\Framework\Support\MultipleItemsFoundException
+     * @throws \WPSocialReviews\Framework\Support\Exceptions\ItemNotFoundException
+     * @throws \WPSocialReviews\Framework\Support\Exceptions\MultipleItemsFoundException
      */
     public function sole($key = null, $operator = null, $value = null)
     {
@@ -1264,7 +1267,7 @@ class Collection implements ArrayAccess, CanBeEscapedWhenCastToString, Enumerabl
      * @param  mixed  $value
      * @return mixed
      *
-     * @throws \WPSocialReviews\Framework\Support\ItemNotFoundException
+     * @throws \WPSocialReviews\Framework\Support\Exceptions\ItemNotFoundException
      */
     public function firstOrFail($key = null, $operator = null, $value = null)
     {

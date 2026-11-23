@@ -6,6 +6,7 @@ use Closure;
 use InvalidArgumentException;
 use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\Framework\Support\Str;
+use WPSocialReviews\Framework\Support\DebugLog;
 use WPSocialReviews\Framework\Foundation\App;
 
 class Validator
@@ -61,6 +62,13 @@ class Validator
     protected $customMessages = [];
 
     /**
+     * The names the messages give the fields, keyed by field.
+     *
+     * @var array
+     */
+    protected $customAttributes = [];
+
+    /**
      * The validation rules that imply the field is required.
      *
      * @var array
@@ -96,17 +104,20 @@ class Validator
      * @param array $data
      * @param array $rules
      * @param array $messages
+     * @param array $attributes The names the messages give the fields.
      *
      * @return void
      */
     public function __construct(
-        array $data = [], array $rules = [], array $messages = []
+        array $data = [], array $rules = [], array $messages = [], array $attributes = []
     ) {
         $this->data = $data;
 
         $this->messages = [];
 
         $this->customMessages = $messages;
+
+        $this->customAttributes = $attributes;
 
         $this->setRules($rules);
     }
@@ -117,12 +128,14 @@ class Validator
      * @param array $data
      * @param array $rules
      * @param array $messages
+     * @param array $attributes The names the messages give the fields.
      *
      * @return \WPSocialReviews\Framework\Validator\Validator
      */
-    public static function make(array $data, array $rules = [], array $messages = [])
-    {
-        return new static($data, $rules, $messages);
+    public static function make(
+        array $data, array $rules = [], array $messages = [], array $attributes = []
+    ) {
+        return new static($data, $rules, $messages, $attributes);
     }
 
     /**
@@ -158,6 +171,8 @@ class Validator
             $rules = $this->filterExcludeables($attribute, $rules);
 
             if (empty($rules)) {
+                $this->keepSentValue($attribute);
+
                 continue;
             }
 
@@ -180,8 +195,17 @@ class Validator
      */
     protected function filterExcludeables(string $attribute, array $rules)
     {
-        if (in_array('nullable', $rules) && !$this->getValue($attribute)) {
-            return [];
+        // nullable: an empty value skips the rules, except the ones that
+        // say the field must be there (required, required_if..., present),
+        // as in Laravel.
+        if (in_array('nullable', $rules, true) && $this->isEmptyValue($attribute)) {
+            $rules = array_values(array_filter($rules, function ($rule) {
+                return $rule === 'sometimes' || $this->isImplicitRule($rule);
+            }));
+
+            if (empty(array_diff($rules, ['sometimes']))) {
+                return [];
+            }
         }
 
         $rules = $this->filterRequiredIf($attribute, $rules);
@@ -195,6 +219,36 @@ class Validator
         }
 
         return $rules;
+    }
+
+    /**
+     * Put a field whose rules were all skipped into the validated data,
+     * when it was sent. A nullable field sent empty must still reach
+     * validated(), or a PATCH could never clear it; a field that was not
+     * sent stays out. Laravel does the same.
+     *
+     * @param  string  $attribute
+     * @return void
+     */
+    protected function keepSentValue(string $attribute)
+    {
+        $key = str_replace(['[', ']'], ['.', ''], $attribute);
+
+        if (Arr::has($this->data, $key)) {
+            $this->setValidatedAttributeData($attribute, Arr::get($this->data, $key));
+        }
+    }
+
+    /**
+     * Check whether the attribute is missing, null or an empty string.
+     * '0' and 0 are values like any other.
+     *
+     * @param  string $attribute
+     * @return bool
+     */
+    protected function isEmptyValue(string $attribute)
+    {
+        return in_array($this->getValue($attribute), [null, ''], true);
     }
 
     /**
@@ -233,13 +287,22 @@ class Validator
 
             // Keep rule if any match
             foreach ($otherValues as $val) {
-                if (in_array($val, $expectedValues)) {
+                if ($this->matchesAnyValue($otherField, $val, $expectedValues)) {
                     return $rules;
                 }
             }
         }
 
-        return [];
+        // The condition is not met, so the field is optional, as if it were
+        // nullable: an empty value skips the rules, a real one is checked.
+        if ($this->isEmptyValue($attribute)) {
+            return [];
+        }
+
+        return array_values(array_filter($rules, function ($rule) {
+            return $rule instanceof Closure
+                || !str_starts_with($rule, 'required_if');
+        }));
     }
 
     /**
@@ -331,11 +394,13 @@ class Validator
                 );
             }
 
-            if (
-                $message = $rule(
-                    $attribute, $value, $this->rules, $this->data, ...$params
-                )
-            ) {
+            $message = $rule(
+                $attribute, $value, $this->rules, $this->data, ...$params
+            );
+
+            $this->warnAboutBooleanResult($message, null, $attribute);
+
+            if ($message) {
                 if (is_string($message)) {
                     $this->messages[$attribute][$key] = str_replace(
                         ':attribute', $attribute, $message
@@ -343,7 +408,7 @@ class Validator
                 }
             }
 
-            return $this->setValidatedAttributeData($attribute, $value);
+            return $this->keepSentValue($attribute);
         }
 
         $shouldValidate = $this->shouldValidate(
@@ -352,11 +417,55 @@ class Validator
 
         $method = 'validate'.$ruleCamelCase;
 
+        if (!$shouldValidate && $this->isUnknownRule($rule, $method)) {
+            DebugLog::warn(sprintf(
+                "The validation rule '%s' on %s doesn't exist; it is skipped while %s is missing and throws once it is sent.",
+                $rule, $attribute, $attribute
+            ));
+        }
+
         if ($shouldValidate && !$this->$method($attribute, $value, $parameters)) {
             $this->addFailure($attribute, $rule, $parameters, $originalRuleKey);
         }
 
-        $this->setValidatedAttributeData($attribute, $value);
+        $this->keepSentValue($attribute);
+    }
+
+    /**
+     * Whether a rule name is neither a built-in rule nor a custom one.
+     *
+     * @param  string  $rule  As written, without parameters.
+     * @param  string  $method  The validate… method it would call.
+     * @return bool
+     */
+    protected function isUnknownRule($rule, $method)
+    {
+        return $rule !== 'nullable'
+            && !method_exists($this, $method)
+            && !isset(static::$customRules[ucwords(Str::camel($rule))]);
+    }
+
+    /**
+     * A custom rule fails by returning a message; true and false are
+     * ignored, as Laravel-style rules would expect otherwise.
+     *
+     * @param  mixed  $result
+     * @param  string|null  $rule  The rule's name, or null for a closure.
+     * @param  string  $attribute
+     * @return void
+     */
+    protected function warnAboutBooleanResult($result, $rule, $attribute)
+    {
+        if (!is_bool($result)) {
+            return;
+        }
+
+        DebugLog::warn(sprintf(
+            'A custom validation rule %son %s returned %s, which is ignored: return an error message to fail, or nothing to pass.',
+            $rule === null ? '' : "'{$rule}' ",
+            $attribute,
+            $result ? 'true' : 'false'
+        ));
     }
 
     /**
@@ -501,6 +610,8 @@ class Validator
      */
     public function errors($key = null)
     {
+        $this->validateOnce();
+
         return $key ? Arr::get($this->messages, $key, function() use ($key) {
             throw new InvalidArgumentException("The {$key} doesn't exist.");
         }) : $this->messages;
@@ -523,21 +634,41 @@ class Validator
      */
     public function fails()
     {
-        if (!$this->isReady) {
-            $this->validate();
-        }
+        $this->validateOnce();
 
         return (bool) count($this->messages);
     }
 
     /**
-     * Get the valid data after validation has been passed.
+     * Run the validation unless it has run: validated(), errors(), fails()
+     * and passes() each run it on demand, as in Laravel.
+     *
+     * @return void
+     */
+    protected function validateOnce()
+    {
+        if (!$this->isReady) {
+            $this->validate();
+        }
+    }
+
+    /**
+     * Get the fields that passed their rules, running the validation if it
+     * hasn't run. After a failed validation, the fields that failed are left
+     * out; nothing is thrown, so check fails() first.
      *
      * @return array
      */
     public function validated()
     {
-        return (array) $this->validated;
+        $this->validateOnce();
+
+        $validated = (array) $this->validated;
+
+        // Only the fields that passed: one that failed a rule is left out.
+        Arr::forget($validated, array_keys($this->messages));
+
+        return $validated;
     }
 
     /**
@@ -624,6 +755,22 @@ class Validator
     }
 
     /**
+     * Whether a rule, as written (required_if:status,open), implies the
+     * attribute is required.
+     *
+     * @param  mixed  $rule
+     * @return bool
+     */
+    protected function isImplicitRule($rule)
+    {
+        if (!is_string($rule)) {
+            return false;
+        }
+
+        return $this->isImplicit(ucwords(Str::camel(explode(':', $rule, 2)[0])));
+    }
+
+    /**
      * Determine if a given rule implies the attribute is required.
      *
      * @param string $rule
@@ -694,7 +841,11 @@ class Validator
                 $callback = App::make($callback);
             }
 
-            if ($message = $callback($attribute, $value, $this->rules, $this->data, ...$params)) {
+            $message = $callback($attribute, $value, $this->rules, $this->data, ...$params);
+
+            $this->warnAboutBooleanResult($message, $rule, $attribute);
+
+            if ($message) {
 
                 is_string($message) && $this->messages[$attribute][$rule] = str_replace(
                     ':attribute', $attribute, $message

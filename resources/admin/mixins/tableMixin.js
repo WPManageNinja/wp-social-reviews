@@ -7,7 +7,7 @@ export const tableMixin = {
             page_number: this.$route.query.page ? parseInt(this.$route.query.page || null) : 1,
             total: 0,
             pageSizes: [5,10, 20, 30, 40, 50, 100, 200],
-            search_string: '',
+            search_string: this.$route.query.search || '',
             loading: false,
             show_delete_modal: false,
             show_duplicate_modal: false,
@@ -20,7 +20,7 @@ export const tableMixin = {
             feedPlatforms: ["twitter", "youtube", "instagram", "facebook_feed", "tiktok"],
             connectedPlatformSections: [],
             validPlatforms: [],
-            filter_value: null,
+            filter_value: this.$route.query.filter || null,
             total_items: 0,
             // total_items counts filtered rows, so a list page needs this to tell "no match" from "no items at all".
             lastFetchFiltered: false,
@@ -42,37 +42,39 @@ export const tableMixin = {
             this.per_page = val;
             this.page_number = 1;
 
-            const query = {
-                page: 1,
-                per_page: val
-            };
-
-            // Preserve statusFilter in route if it's not 'all'
-            if (this.statusFilter && this.statusFilter !== 'all') {
-                query.status = this.statusFilter;
-            }
-
-            this.$router.push({
-                query: query
-            }).catch(() => {});
+            this.syncListQuery();
             this.getItems();
         },
         handleCurrentChange(val) {
             this.page_number = val;
-
+            this.syncListQuery();
+            this.getItems();
+        },
+        // Mirrors list state into the URL so a reload restores it. replace(), not push(): nothing re-reads the
+        // query on Back, so extra history entries would leave the URL and the table out of sync.
+        syncListQuery() {
             const query = {
-                page: val,
+                ...this.$route.query,
+                page: this.page_number,
                 per_page: this.per_page
             };
-
-            // Preserve statusFilter in route if it's not 'all'
-            if (this.statusFilter && this.statusFilter !== 'all') {
-                query.status = this.statusFilter;
-            }
-
-            this.$router.push({
-                query: query
-            }).catch(() => {});
+            const optional = {
+                status: this.statusFilter && this.statusFilter !== 'all' ? this.statusFilter : '',
+                filter: this.filter_value && this.filter_value !== 'all' ? this.filter_value : '',
+                search: this.search_string || ''
+            };
+            Object.entries(optional).forEach(([key, value]) => {
+                if (value) {
+                    query[key] = value;
+                } else {
+                    delete query[key];
+                }
+            });
+            this.$router.replace({ query }).catch(() => {});
+        },
+        applyListFilters() {
+            this.page_number = 1;
+            this.syncListQuery();
             this.getItems();
         },
         handleDeleteClose() {
@@ -424,20 +426,7 @@ export const tableMixin = {
         changeStatusTab(tab) {
             this.statusFilter = tab;
             this.page_number = 1;
-
-            // Build query params
-            const query = {
-                page: 1,
-                per_page: this.per_page
-            };
-
-            // Add status to query if it's not 'all'
-            if (tab && tab !== 'all') {
-                query.status = tab;
-            }
-
-            // Update only the query params, not the path
-            this.$router.push({ query }).catch(() => {});
+            this.syncListQuery();
             this.getItems();
         },
         handleSwitchChange(row, newValue) {
@@ -531,7 +520,7 @@ export const tableMixin = {
         },
         handleClear() {
             this.search_string = '';
-            this.getItems();
+            this.applyListFilters();
         },
         handleSelectionChange(selection) {
             this.selectedItems = selection;

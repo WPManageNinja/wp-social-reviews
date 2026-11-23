@@ -29,7 +29,7 @@
                                 {{ ucFirst(item.type) }}
                             </span>
 
-                            <div v-if="item.status === 'error'" class="wpsr-account-error-message wpsr-accounts-secondary-label wpsr-secondary-label wpsr-body-regular-color">
+                            <div v-if="item.has_critical_error || item.encryption_error" class="wpsr-account-error-message wpsr-accounts-secondary-label wpsr-secondary-label wpsr-body-regular-color">
                                 <div class="wpsr-account-error-status">
                                     <span>
                                         <el-icon><InfoFilled /></el-icon>{{ $t('Source Invalid') }}

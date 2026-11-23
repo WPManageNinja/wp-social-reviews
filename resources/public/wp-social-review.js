@@ -6,7 +6,8 @@ jQuery(document).ready(function ($) {
         init() {
             let that = this;
 
-            $('.wpsr-loader').addClass('wpsr-loading');
+            // Sliders are laid out before JS runs, so covering them would only flash the posts away.
+            $('.wpsr-loader').not('.wpsr-facebook-feed-slider-activate .wpsr-loader, .wpsr-tiktok-feed-slider-activate .wpsr-loader').addClass('wpsr-loading');
             setTimeout(function(){
                 jQuery('.wpsr-loader').removeClass('wpsr-loading');
             }, 500);
@@ -348,11 +349,10 @@ jQuery(document).ready(function ($) {
                         swiper = new swipedUp(id + ' .swiper-container', sliderOptions);
                     }
 
-                    $('.wpsr-feed-wrap').addClass('wpsr-slider-before-init');
+                    // Slides are already laid out before Swiper starts, so the shimmer overlay has nothing left to hide.
+                    $('.wpsr-ig-post-media, .wpsr-yt-video-preview .wpsr-animated-background, .wpsr-tiktok-feed-image .wpsr-animated-background, .wpsr-fb-feed-image .wpsr-animated-background').removeClass('wpsr-animated-background');
 
-                    setTimeout(() => {
-                        $('.wpsr-ig-post-media, .wpsr-yt-video-preview .wpsr-animated-background, .wpsr-tiktok-feed-image .wpsr-animated-background, .wpsr-fb-feed-image .wpsr-animated-background').removeClass('wpsr-animated-background');
-                    }, 2000);
+                    $('.wpsr-feed-wrap').addClass('wpsr-slider-before-init');
 
                     if (sliderSettings.autoplay === 'true' && swiper) {
                         let container = $(id).find('.swiper-container');

@@ -59,7 +59,7 @@
             </div>
             <div class="wpsr-controls-filter">
               <el-select class="wpsr-select-field-primary" v-model="filter_value" placeholder="All Sources" size="default" clearable
-                         v-if="Object.entries(validPlatforms).length" @change="getItems" style="width: 220px;">
+                         v-if="Object.entries(validPlatforms).length" @change="applyListFilters" style="width: 220px;">
                 <el-option
                     v-for="item in validPlatforms"
                     :key="item.value"
@@ -76,11 +76,11 @@
                 placeholder="Search..."
                 size="default"
                 style="width: 200px;"
-                @keyup.enter="getItems()"
+                @keyup.enter="applyListFilters()"
                 @clear="handleClear"
                 clearable>
               <template #prefix>
-                <el-icon class="el-input__icon" @click="getItems()"><Search /></el-icon>
+                <el-icon class="el-input__icon" @click="applyListFilters()"><Search /></el-icon>
               </template>
             </el-input>
           </div>
@@ -96,16 +96,16 @@
             <el-table-column show-overflow-tooltip :label="$t('Sources')" min-width="200">
               <template #default="scope">
                 <div class="wpsr-item-group wpsr-d-flex wpsr-flex-align-center">
-                  <div @click.prevent="handleRowAction('edit', scope.row)" class="wpsr-item-editable wpsr-platform-cell wpsr-d-flex wpsr-flex-align-center">
+                  <router-link :to="getEditLink(scope.row)" class="wpsr-item-editable wpsr-platform-cell wpsr-d-flex wpsr-flex-align-center">
                     <img v-if="scope.row.logo" class="wpsr-cell-logo" :src="scope.row.logo" alt="">
                     <div v-else class="wpsr-mr-10 wpsr-cell-logo-secondary" v-html="getPlatformIconsHtml(scope.row.name)"></div>
 
-                    <div v-if="scope.row.title || scope.row.name" @click.prevent="handleRowAction('edit', scope.row)" :class="scope.row.logo ? 'wpsr-ml-10' : ''" class="wpsr-item-editable wpsr-cell-logo-secondary wpsr-item-title wpsr-d-flex wpsr-flex-align-center">
+                    <div v-if="scope.row.title || scope.row.name" :class="scope.row.logo ? 'wpsr-ml-10' : ''" class="wpsr-item-editable wpsr-cell-logo-secondary wpsr-item-title wpsr-d-flex wpsr-flex-align-center">
                       <span dir="auto">{{ $trimWords(scope.row.title || scope.row.name, 3, true) }}</span>
                       <el-icon class="wpsr-ml-5 wpsr-display-on-hover"><Edit /></el-icon>
                     </div>
                     
-                  </div>
+                  </router-link>
 
                 </div>
               </template>
@@ -148,11 +148,11 @@
                   <template #dropdown>
                     <el-dropdown-menu>
                       <el-dropdown-item command="edit">
-                        <el-icon><Edit /></el-icon> Edit
+                        <router-link class="wpsr-dropdown-link" :to="getEditLink(scope.row)" @click.stop><el-icon><Edit /></el-icon> Edit</router-link>
                       </el-dropdown-item>
                       <div v-if="scope.row.type === 'native_form' && scope.row.native_form_id">
                         <el-dropdown-item command="edit_native_form">
-                          <el-icon><Edit /></el-icon> Edit Review Form
+                          <router-link class="wpsr-dropdown-link" :to="{ name: 'review-form-edit', params: { id: scope.row.native_form_id } }" @click.stop><el-icon><Edit /></el-icon> Edit Review Form</router-link>
                         </el-dropdown-item>
                       </div>
                       <div v-if="scope.row.type === 'fluent_forms'">
@@ -463,6 +463,9 @@ export default {
     }
   },
   methods: {
+    getEditLink(row) {
+      return { name: 'edit-custom-source', params: { template_id: row.id } };
+    },
     installFF() {
       this.installing_ff = true;
       this.$post('platforms/addons', {
@@ -709,7 +712,7 @@ export default {
           window.open(row.ff_integration_url, '_blank');
           break;
         case 'edit':
-          this.$router.push({ name: 'edit-custom-source', params: { template_id: row.id } });
+          this.$router.push(this.getEditLink(row));
           break;
         case 'edit_native_form':
           this.$router.push({ name: 'review-form-edit', params: { id: row.native_form_id } });

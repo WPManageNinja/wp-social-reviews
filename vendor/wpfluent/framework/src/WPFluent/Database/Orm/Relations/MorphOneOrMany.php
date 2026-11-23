@@ -6,6 +6,11 @@ use WPSocialReviews\Framework\Support\Helper;
 use WPSocialReviews\Framework\Database\Orm\Model;
 use WPSocialReviews\Framework\Database\Orm\Builder;
 
+/**
+ * @template TRelatedModel of \WPSocialReviews\Framework\Database\Orm\Model
+ *
+ * @extends HasOneOrMany<TRelatedModel>
+ */
 abstract class MorphOneOrMany extends HasOneOrMany
 {
     /**

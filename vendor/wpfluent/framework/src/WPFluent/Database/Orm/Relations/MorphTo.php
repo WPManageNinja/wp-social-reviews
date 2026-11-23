@@ -5,10 +5,16 @@ namespace WPSocialReviews\Framework\Database\Orm\Relations;
 use BadMethodCallException;
 use WPSocialReviews\Framework\Support\Helper;
 use WPSocialReviews\Framework\Database\Orm\Model;
+use WPSocialReviews\Framework\Http\Request\CurrentUser;
 use WPSocialReviews\Framework\Database\Orm\Builder;
 use WPSocialReviews\Framework\Database\Orm\Collection;
 use WPSocialReviews\Framework\Database\Orm\Relations\Concerns\InteractsWithDictionary;
 
+/**
+ * @template TRelatedModel of \WPSocialReviews\Framework\Database\Orm\Model
+ *
+ * @extends BelongsTo<TRelatedModel>
+ */
 class MorphTo extends BelongsTo
 {
     use InteractsWithDictionary;
@@ -232,6 +238,10 @@ class MorphTo extends BelongsTo
      */
     public function associate($model)
     {
+        if ($model instanceof CurrentUser) {
+            $model = $model->forRelation();
+        }
+
         if ($model instanceof Model) {
             $foreignKey = $this->ownerKey && $model->{$this->ownerKey}
                             ? $this->ownerKey

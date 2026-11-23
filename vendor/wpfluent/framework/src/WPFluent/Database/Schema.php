@@ -2,18 +2,12 @@
 
 namespace WPSocialReviews\Framework\Database;
 
+use Exception;
 use WPSocialReviews\Framework\Database\Concerns\MaintainsDatabase;
 
 class Schema
 {
 	use MaintainsDatabase;
-
-	/**
-	 * Keep track of custom tables when unit testing
-	 * 
-	 * @var array
-	 */
-	public static $customTempTables = [];
 
 	/**
 	 * Get the global $wpdb instance
@@ -26,7 +20,9 @@ class Schema
 	}
 
 	/**
-	 * Get schema/db information
+	 * Get schema/db information. The database password is never part of
+	 * it, as in Laravel's db:show: information is for showing, and the
+	 * password must not end up on a screen, in a log or in a response.
 	 *
 	 * @return string|array
 	 */
@@ -40,7 +36,6 @@ class Schema
 			    'prefix' => $db->prefix,
 			    'dbhost' => '',
 			    'username' => '',
-			    'password' => '',
 			    'charset' => 'utf8',
 			    'collation' => '',
 			    'tables' => static::getTableList(),
@@ -57,14 +52,12 @@ class Schema
 		    'dbhost' => $db->dbhost,
 		    // @phpstan-ignore-next-line
 		    'username' => $db->dbuser,
-		    // @phpstan-ignore-next-line
-		    'password' => $db->dbpassword,
 		    'charset' => $db->charset,
 		    'collation' => $db->collate,
 		    'tables' => static::getTableList(),
 		];
 
-		return $key ? $info[$key] : $info;
+		return $key ? ($info[$key] ?? null) : $info;
 	}
 
 	/**
@@ -138,9 +131,17 @@ class Schema
 
 		$table = static::table($table);
 
-		$result = $wpdb->get_var("SHOW TABLES LIKE '" . $table . "'") == $table;
+		// The name is a value. LIKE reads _ in it as any character, and the
+		// SQLite drop-in's old engine ignores an escaped one, so the exact
+		// name is looked for among the tables that match.
+		$result = in_array($table, (array) $wpdb->get_col(
+			$wpdb->prepare('SHOW TABLES LIKE %s', $table)
+		), true);
 
-		if ($result) {
+		// On SQLite, SHOW TABLES lists temporary tables too, so the probe
+		// below is not needed; and the drop-in's MySQL engine (3.x) rolls
+		// back the open transaction on any failed query, which the probe is.
+		if ($result || static::isSqlite()) {
 			return $result;
 		}
 
@@ -206,6 +207,23 @@ class Schema
     }
 
     /**
+     * Swap the json column type for longtext, which is how SQLite stores it.
+     *
+     * @param  string $sql
+     * @return string
+     */
+    protected static function jsonToLongtext($sql)
+    {
+        // Only json used as a type: right after a column name (bare, or in
+        // ` or ") and spaces, as a whole word (\b), in any case. '`meta` JSON
+        // NULL' -> '`meta` longtext NULL', while a column named json ('`json`
+        // text') and names like json_data are left alone.
+        return preg_replace(
+            '/(`[^`]+`|"[^"]+"|\w+)(\s+)json\b/i', '$1$2longtext', $sql
+        );
+    }
+
+    /**
      * Clean the sql string by removing the comments.
      * 
      * @param  string $sql
@@ -215,19 +233,37 @@ class Schema
 	{
 	    $sql = static::sql($sql);
 
-	    // Remove inline -- comments
-	    $sql = preg_replace('/--.*$/m', '', $sql);
+	    // Remove comments: -- or # to the end of the line, and /* ... */
+	    // (.*? stops at the first */; /s lets it span lines). A quoted value
+	    // ('...', "..." or `...`, where \\. is an escaped character) is
+	    // matched first and put back as it is, so DEFAULT '#ffffff' keeps
+	    // its #.
+	    $sql = preg_replace_callback(
+	        '/(\'(?:[^\'\\\\]|\\\\.)*\'|"(?:[^"\\\\]|\\\\.)*"|`[^`]*`)|--[^\n]*|#[^\n]*|\/\*.*?\*\//s',
+	        function ($match) {
+	            return isset($match[1]) ? $match[1] : '';
+	        },
+	        $sql
+	    );
 
-	    // Remove inline # comments
-	    $sql = preg_replace('/#.*$/m', '', $sql);
-
-	    // Remove block /* ... */
-	    $sql = preg_replace('/\/\*.*?\*\//s', '', $sql);
+	    // Remove the lines left empty, such as those that held only a
+	    // comment: dbDelta() reads an empty line between the columns as an
+	    // index with no name, and sends a broken ALTER TABLE for it every
+	    // time it runs over an existing table. A quoted value is matched
+	    // first and put back as it is, so an empty line inside one stays.
+	    $sql = preg_replace_callback(
+	        '/(\'(?:[^\'\\\\]|\\\\.)*\'|"(?:[^"\\\\]|\\\\.)*"|`[^`]*`)|^[ \t]*\r?\n/m',
+	        function ($match) {
+	            return isset($match[1]) ? $match[1] : '';
+	        },
+	        $sql
+	    );
 
 	    // Collapse multiple spaces & newlines
 	    // $sql = preg_replace('/\s+/', ' ', $sql);
 
-	    // Remove dangling commas before closing parenthesis
+	    // Remove a comma left before a closing parenthesis, with any spaces
+	    // or newlines between: '(post_id, user_id, )' -> '(post_id, user_id)'.
 	    $sql = preg_replace('/,\s*\)/', ')', $sql);
 
 	    return trim($sql);
@@ -244,21 +280,35 @@ class Schema
 	 */
 	public static function createTable($table, $sql)
 	{
+		$name = $table;
+
 		$table = static::table($table);
 
 		$sql = static::cleanUp($sql);
 
 		if (static::isSqlite()) {
-            $sql = preg_replace('/\bjson\b/i', 'longtext', $sql);
+            $sql = static::jsonToLongtext($sql);
         }
 
         $collate = static::db()->get_charset_collate();
 
-        return static::callDBDelta(
-        	"CREATE TABLE $table (
+        $query = "CREATE TABLE $table (
         		".PHP_EOL.trim(trim($sql), ',').PHP_EOL."
-        	) $collate;"
-        );
+        	) $collate;";
+
+        $result = static::callDBDelta($query);
+
+        // dbDelta reports "Created table" even when the database refused
+        // the statement; the error is read before hasTable() queries again.
+        $error = static::db()->last_error;
+
+        if (!static::hasTable($name)) {
+            throw new QueryException($query, [], new Exception(
+                $error ?: "The database did not create the table {$table}."
+            ));
+        }
+
+        return $result;
 	}
 
 	/**
@@ -293,16 +343,18 @@ class Schema
 		$sql = static::cleanUp($sql);
 
 		if (static::isSqlite()) {
-            $sql = preg_replace('/\bjson\b/i', 'longtext', $sql);
+            $sql = static::jsonToLongtext($sql);
         }
 
 		$parts = array_filter(array_map('trim', static::splitAlterClauses($sql)));
 
 		if (static::isSqlite()) {
-			// SQLite only supports one ALTER TABLE operation per statement.
+			// SQLite only supports one ALTER TABLE operation per statement;
+			// false when any of them failed.
 			$result = null;
 			foreach ($parts as $part) {
-				$result = static::query("ALTER TABLE $table {$part};");
+				$partResult = static::query("ALTER TABLE $table {$part};");
+				$result = ($result === false || $partResult === false) ? false : $partResult;
 			}
 			return $result;
 		}
@@ -316,7 +368,8 @@ class Schema
 
 	/**
 	 * Split a comma-separated ALTER TABLE clause list, respecting parentheses
-	 * so that DECIMAL(10,2) and similar types are not split mid-definition.
+	 * so that DECIMAL(10,2) and similar types are not split mid-definition,
+	 * and quotes, so DEFAULT 'a, b' and a comment with a comma stay whole.
 	 *
 	 * @param  string $sql
 	 * @return string[]
@@ -326,10 +379,22 @@ class Schema
 		$parts = [];
 		$depth = 0;
 		$current = '';
+		$quote = null;
 
 		for ($i = 0, $len = strlen($sql); $i < $len; $i++) {
 			$char = $sql[$i];
-			if ($char === '(') {
+			if ($quote !== null) {
+				$current .= $char;
+				if ($char === '\\' && $i + 1 < $len) {
+					$current .= $sql[++$i];
+				} elseif ($char === $quote) {
+					$quote = null;
+				}
+				continue;
+			}
+			if ($char === "'" || $char === '"' || $char === '`') {
+				$quote = $char;
+			} elseif ($char === '(') {
 				$depth++;
 			} elseif ($char === ')') {
 				$depth--;
@@ -371,7 +436,7 @@ class Schema
 	    $sql = static::cleanUp($sql);
 
 	    if (static::isSqlite()) {
-            $sql = preg_replace('/\bjson\b/i', 'longtext', $sql);
+            $sql = static::jsonToLongtext($sql);
         }
 
 	    $columnsDefinitions = array_map('trim', static::splitAlterClauses($sql));
@@ -380,10 +445,16 @@ class Schema
 	    // Extract desired column names (skip constraint/index clauses)
 	    $columns = [];
 	    foreach ($columnsDefinitions as $definition) {
+	        // Skip index and constraint lines, which start with a keyword
+	        // such as PRIMARY KEY, UNIQUE KEY, KEY, INDEX or FOREIGN KEY, in
+	        // any case: 'PRIMARY KEY (id)' is skipped, 'email varchar(191)' is
+	        // not. \b means a whole word, so index_name is not taken for INDEX.
 	        if (preg_match('/^(?:PRIMARY\s+KEY|UNIQUE(?:(?:\s+KEY|\s+INDEX))?|KEY|INDEX|CONSTRAINT|FOREIGN\s+KEY|FULLTEXT|SPATIAL)\b/i', ltrim($definition))) {
 	            continue;
 	        }
 
+	        // Take the column name from the start of the line, with or without
+	        // backticks: '`email` varchar(191) NOT NULL' gives 'email'.
 	        if (preg_match('/^`?(\w+)`?\s+/i', $definition, $matches)) {
 	            $columns[$matches[1]] = $definition;
 	        }
@@ -514,7 +585,9 @@ class Schema
 			// SQLite translates TRUNCATE TABLE to DELETE FROM, which does NOT reset
 			// the auto-increment counter. Manually clear the sqlite_sequence row so
 			// that the next INSERT starts at id=1 (matching MySQL TRUNCATE behaviour).
-			static::db()->query("DELETE FROM sqlite_sequence WHERE name='{$table}'");
+			static::db()->query(
+				static::db()->prepare('DELETE FROM sqlite_sequence WHERE name = %s', $table)
+			);
 		}
 
 		return $result;
@@ -557,7 +630,11 @@ class Schema
 	public static function dropIndex($table, $index)
 	{
 		if (static::isSqlite()) {
+			// Backticks, so an index named after an SQL keyword (group)
+			// drops; WordPress's drop_index() adds its own on MySQL.
 			$tbl = static::table($table);
+			$index = '`' . str_replace('`', '``', trim($index, '`')) . '`';
+
 			return static::db()->query("ALTER TABLE {$tbl} DROP INDEX {$index}");
 		}
 
@@ -622,10 +699,17 @@ class Schema
 	 */
 	public static function query($query)
 	{
-		$query = preg_replace_callback('/(?<![\'"])%([a-zA-Z0-9_-]+)%(?![\'"])/', function ($matches) {
-			return static::table($matches[1]);
+		// Replace %name% with the full, prefixed table name: %posts% becomes
+		// wp_posts. The name may hold letters, digits, _ and -. A quoted
+		// value ('...' or "...", where \\. is an escaped character) is
+		// matched first and kept as it is, so LIKE '%news%' and
+		// LIKE 'A%size%B' are left alone.
+		$query = preg_replace_callback('/(\'(?:[^\'\\\\]|\\\\.)*\'|"(?:[^"\\\\]|\\\\.)*")|%([a-zA-Z0-9_-]+)%/', function ($matches) {
+			return isset($matches[2]) ? static::table($matches[2]) : $matches[1];
 		}, $query);
 
+		// Queries that start with SELECT, SHOW, DESCRIBE or EXPLAIN (any case,
+		// then a space) return rows; anything else is run as a statement.
 		if (preg_match('/^(SELECT|SHOW|DESCRIBE|EXPLAIN)\s+/i', trim($query))) {
 	        return static::db()->get_results($query, OBJECT);
 	    }
@@ -683,9 +767,13 @@ class Schema
 					'ordinal_position' => $pos + 1,
 					'column_default' => $col->Default,
 					'is_nullable' => ($col->Null === 'YES' ? 'YES' : 'NO'),
+					// The type without its size: everything from the first
+					// '(' is cut, so 'bigint(20) unsigned' gives 'bigint'.
 					'data_type' => strtolower(
 						preg_replace('/\(.*/', '', $col->Type)
 					),
+					// The number in brackets: 'varchar(191)' gives 191.
+					// Types like 'decimal(10,2)' do not match and give null.
 					'character_maximum_length' => preg_match(
 						'/\((\d+)\)/', $col->Type, $matches
 					) ? (int)$matches[1] : null,
@@ -714,7 +802,7 @@ class Schema
 		];
 
 		$sql = "SELECT " . implode(',', $fields) . " FROM INFORMATION_SCHEMA.COLUMNS";
-		$sql .= " WHERE TABLE_NAME = '".$table."' AND TABLE_SCHEMA = '".$db."'";
+		$sql .= static::db()->prepare(' WHERE TABLE_NAME = %s AND TABLE_SCHEMA = %s', $table, $db);
 
 		return array_map(function($i) {
 			$item = [];
@@ -747,9 +835,13 @@ class Schema
                 'ordinal_position' => null,
                 'column_default' => $col->Default,
                 'is_nullable' => ($col->Null === 'YES' ? 'YES' : 'NO'),
+                // The type without its size: everything from the first
+                // '(' is cut, so 'bigint(20) unsigned' gives 'bigint'.
                 'data_type' => strtolower(
                 	preg_replace('/\(.*/', '', $col->Type)
                 ),
+                // The number in brackets: 'varchar(191)' gives 191.
+                // Types like 'decimal(10,2)' do not match and give null.
                 'character_maximum_length' => preg_match(
                 	'/\((\d+)\)/', $col->Type, $matches
                 ) ? (int)$matches[1] : null,
@@ -784,14 +876,20 @@ class Schema
 
 	    if (static::isSqlite()) {
 	        // Parse foreign keys from the CREATE TABLE statement in sqlite_master
-	        // since PRAGMA queries cannot go through $wpdb.
+	        // since PRAGMA queries cannot go through $wpdb. `sql` in backticks:
+	        // the drop-in's MySQL engine reads SQL as MySQL, which takes a bare
+	        // sql for a keyword, fails the query and so the open transaction.
 	        $row = static::db()->get_row(
-	            "SELECT sql FROM sqlite_master WHERE type='table' AND name='{$table}'"
+	            static::db()->prepare("SELECT `sql` FROM sqlite_master WHERE type='table' AND name = %s", $table)
 	        );
 	        if (!$row || empty($row->sql)) {
 	            return [];
 	        }
 	        $fks = [];
+	        // Read every FOREIGN KEY (column) REFERENCES table (column), in
+	        // any case, with names bare or wrapped in ` or ". 'FOREIGN KEY
+	        // ("user_id") REFERENCES "wp_users" ("ID")' gives user_id,
+	        // wp_users and ID.
 	        if (preg_match_all(
 	            '/FOREIGN\s+KEY\s*\(\s*[`"]?(\w+)[`"]?\s*\)\s*REFERENCES\s+[`"]?(\w+)[`"]?\s*\(\s*[`"]?(\w+)[`"]?\s*\)/i',
 	            $row->sql, $matches, PREG_SET_ORDER
@@ -810,11 +908,15 @@ class Schema
 		// @phpstan-ignore-next-line
 	    $db = static::db()->dbname;
 
-	    $sql = "SELECT COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+	    $sql = static::db()->prepare(
+	        "SELECT COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
 	            FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-	            WHERE TABLE_NAME = '{$table}'
-	              AND TABLE_SCHEMA = '{$db}'
-	              AND REFERENCED_TABLE_NAME IS NOT NULL";
+	            WHERE TABLE_NAME = %s
+	              AND TABLE_SCHEMA = %s
+	              AND REFERENCED_TABLE_NAME IS NOT NULL",
+	        $table,
+	        $db
+	    );
 
 	    return array_map(function ($i) {
 	        return [
@@ -871,7 +973,7 @@ class Schema
 		// @phpstan-ignore-next-line
 		$dbname = $dbname ?: static::db()->dbname;
 		$sql = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES";
-		$sql .= " WHERE TABLE_SCHEMA = '".$dbname."'";
+		$sql .= static::db()->prepare(' WHERE TABLE_SCHEMA = %s', $dbname);
 
 		return array_map(function($i) {
 			return $i->TABLE_NAME;
@@ -897,7 +999,7 @@ class Schema
 		// @phpstan-ignore-next-line
 		$dbname = $dbname ?: static::db()->dbname;
 		$sql = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS";
-		$sql .= " WHERE TABLE_SCHEMA = '".$dbname."'";
+		$sql .= static::db()->prepare(' WHERE TABLE_SCHEMA = %s', $dbname);
 
 		return array_map(function ($i) {
 			return $i->TABLE_NAME;
@@ -915,7 +1017,7 @@ class Schema
 	{
 		if (static::isSqlite()) {
 			$result = static::db()->get_row(
-				"SELECT sql FROM sqlite_master WHERE type='view' AND name='".$name."'"
+				static::db()->prepare("SELECT `sql` FROM sqlite_master WHERE type='view' AND name = %s", $name)
 			);
 
 			return $result ? $result->sql : null;
@@ -924,9 +1026,11 @@ class Schema
 		// @phpstan-ignore-next-line
 		$dbname = $dbname ?: static::db()->dbname;
 		$result = static::db()->get_row(
-			"SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS"
-			. " WHERE TABLE_SCHEMA = '".$dbname."'"
-			. " AND TABLE_NAME = '".$name."'"
+			static::db()->prepare(
+				'SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s',
+				$dbname,
+				$name
+			)
 		);
 
 		return $result ? $result->VIEW_DEFINITION : null;
@@ -971,7 +1075,10 @@ class Schema
 		}
 
 		return static::db()->get_var(
-            'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = "' . static::table($table) . '"'
+            static::db()->prepare(
+                'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
+                static::table($table)
+            )
         );
 	}
 
@@ -987,16 +1094,7 @@ class Schema
 			require (ABSPATH . 'wp-admin/includes/upgrade.php');
 		}
 
-		$result = dbDelta($sql);
-
-		if (php_sapi_name() === 'cli') {
-			$key = array_key_first($result);
-			if ($key && !str_contains($key, '.')) {
-				static::$customTempTables[] = $key;
-			}
-		}
-
-		return $result;
+		return dbDelta($sql);
 	}
 
 	/**

@@ -651,6 +651,7 @@ class RecommendationsController extends Controller
             $approvedValue = 2;
 
             $message = sprintf(
+                // translators: %d is the number of reviews.
                 _n(
                     '%d review has been marked as spam',
                     '%d reviews have been marked as spam',
@@ -664,6 +665,7 @@ class RecommendationsController extends Controller
             $approvedValue = 0;
 
             $message = sprintf(
+                // translators: %d is the number of reviews.
                 _n(
                     '%d review has been unmarked as spam',
                     '%d reviews have been unmarked as spam',

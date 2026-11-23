@@ -104,7 +104,7 @@ export default class WPSocialReviews {
     }
 
     handleError(response) {
-        if (response.responseJSON) {
+        if (response && response.responseJSON) {
             response = response.responseJSON;
         }
         let errorMessage = '';
@@ -112,7 +112,7 @@ export default class WPSocialReviews {
             errorMessage = response;
         } else if (response && response.message) {
             errorMessage = response.message;
-        } else {
+        } else if (response) {
             errorMessage = this.convertToText(response);
         }
         if (!errorMessage) {

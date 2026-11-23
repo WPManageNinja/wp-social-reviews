@@ -2,7 +2,7 @@
 
 namespace WPSocialReviews\Framework\Validator\Rules;
 
-use WPSocialReviews\Framework\Support\Conditionable;
+use WPSocialReviews\Framework\Support\Concerns\Conditionable;
 
 class Exists
 {

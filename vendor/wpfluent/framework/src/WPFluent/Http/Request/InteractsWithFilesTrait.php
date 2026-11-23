@@ -4,7 +4,6 @@ namespace WPSocialReviews\Framework\Http\Request;
 
 use WPSocialReviews\Framework\Http\Request\File;
 use WPSocialReviews\Framework\Support\Helper;
-use WPSocialReviews\Framework\Support\Collection;
 
 trait InteractsWithFilesTrait
 {
@@ -154,55 +153,20 @@ trait InteractsWithFilesTrait
             $this->files = $this->prepareFiles($_FILES);
         }
 
-        return Helper::dataGet($this->files, $key, $this->files);
+        return is_null($key) ? $this->files : Helper::dataGet($this->files, $key);
     }
 
     /**
-     * Get the files as collection from the request.
+     * Get the uploaded files as a collection that can save them.
      *
-     * @return array
+     * @param  string|null $key
+     * @return \WPSocialReviews\Framework\Http\Request\FileCollection
      */
     public function fileCollection($key = null)
-    {   
-        $collection = Helper::collect(
-            Helper::dataGet($this->files, $key, $this->files)
-        );
-
-        if (!method_exists($collection, 'save')) {
-            $this->addSaveMethod($collection);
-        }
-
-        return $collection;
-    }
-
-    /**
-     * Add a save method on the runtime.
-     * 
-     * @param Collection &$files
-     * @return void
-     */
-    protected function addSaveMethod(Collection &$files)
     {
-        Collection::macro('save', function ($path = null) use ($files) {
-            return $files->map(function ($file) use ($path) {
-                // When developer will use the method without key name:
-                // i.e: $request->fileCollection(), an array of arrays
-                // ['images' => [0 => File, 1 => File]] will be
-                // returned, so $file will contain an array
-                // of File objects, [0 => File, 1 => File].
-                if (is_array($file)) {
-                    $savedFiles = [];
-                    foreach ($file as $fileObject) {
-                        $savedFiles[] = $fileObject->save($path);
-                    }
-                    return $savedFiles;
-                }
+        $files = $this->files($key) ?? [];
 
-                // For $request->fileCollection('images')
-                // [0 => File, 1 => File] will be returned.
-                return $file->save($path);
-            });
-        });
+        return new FileCollection($files instanceof File ? [$files] : $files);
     }
 
     /**

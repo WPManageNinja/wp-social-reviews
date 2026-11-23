@@ -7,8 +7,8 @@ use ArrayAccess;
 use JsonSerializable;
 use IteratorAggregate;
 use WPSocialReviews\Framework\Support\Collection;
-use WPSocialReviews\Framework\Support\JsonableInterface;
-use WPSocialReviews\Framework\Support\ArrayableInterface;
+use WPSocialReviews\Framework\Support\Contracts\JsonableInterface;
+use WPSocialReviews\Framework\Support\Contracts\ArrayableInterface;
 use WPSocialReviews\Framework\Pagination\PaginatorInterface;
 
 class Paginator extends AbstractPaginator implements ArrayableInterface, ArrayAccess, Countable, IteratorAggregate, JsonSerializable, JsonableInterface, PaginatorInterface

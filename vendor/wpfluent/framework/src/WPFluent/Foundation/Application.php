@@ -11,13 +11,18 @@
 
 namespace WPSocialReviews\Framework\Foundation;
 
+use Throwable;
 use InvalidArgumentException;
 use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\Framework\Support\Env;
 use WPSocialReviews\Framework\Http\Client;
+use WPSocialReviews\Framework\Http\Response\Response;
+use WPSocialReviews\Framework\Http\Response\FileResponse;
+use WPSocialReviews\Framework\Http\Request\CurrentUser;
 use WPSocialReviews\Framework\Foundation\Config;
 use WPSocialReviews\Framework\Container\Container;
 use WPSocialReviews\Framework\Foundation\ComponentBinder;
+use WPSocialReviews\Framework\Foundation\Exceptions\ExceptionHandler;
 use WPSocialReviews\Framework\Foundation\Concerns\FoundationTrait;
 
 /**
@@ -31,7 +36,7 @@ use WPSocialReviews\Framework\Foundation\Concerns\FoundationTrait;
  * @property \WPSocialReviews\Framework\Foundation\Config        $config
  * @property \WPSocialReviews\Framework\View\View                $view
  * @property \WPSocialReviews\Framework\Cache\Cache              $cache
- * @property \WPSocialReviews\Framework\Http\Router\Router       $router
+ * @property \WPSocialReviews\Framework\Http\Router              $router
  * @property \WPSocialReviews\Framework\Http\Request\Request     $request
  * @property \WPSocialReviews\Framework\Http\Response\Response   $response
  * @property \WPSocialReviews\Framework\Validator\Validator      $validator
@@ -90,6 +95,13 @@ class Application extends Container
      * @var string
      */
     protected $policyNamespace = null;
+
+    /**
+     * What user() gives.
+     *
+     * @var \WPSocialReviews\Framework\Http\Request\CurrentUser|null
+     */
+    protected $currentUser = null;
 
     /**
      * Composer JSON
@@ -208,8 +220,10 @@ class Application extends Container
         $this->registerMiddleware();
         $this->registerTextdomain();
         $this->bindCoreComponents();
+        $this->registerAsyncReceiver();
         $this->requireCommonFiles($this);
         $this->addRestApiInitAction($this);
+        CurrentUser::listenToWordPress();
     }
 
     /**
@@ -286,6 +300,8 @@ class Application extends Container
         }
 
         $this->instance('config', new Config([], $files));
+
+        $this->alias('config', Config::class);
     }
 
     /**
@@ -311,6 +327,19 @@ class Application extends Container
 
             return [];
         });
+    }
+
+    /**
+     * Report an exception your own code caught, through the plugin's
+     * exception handler: its reportable() rules run, the debug log gets
+     * it, and fluent_exception fires. Also App::report($e).
+     *
+     * @param  \Throwable $e
+     * @return void
+     */
+    public function report(Throwable $e)
+    {
+        $this->make(ExceptionHandler::class)->report($e, $this);
     }
 
     /**
@@ -376,6 +405,17 @@ class Application extends Container
     }
 
     /**
+     * Listen for the background requests Async sends. It runs only jobs
+     * this site signed, so it is safe to register for every plugin.
+     * 
+     * @return null
+     */
+    protected function registerAsyncReceiver()
+    {
+        Async::init($this);
+    }
+
+    /**
      * Load (include) the files where hooks are registered.
      * 
      * @param self $app
@@ -387,6 +427,16 @@ class Application extends Container
         $this->addFilter(
             'rest_pre_serve_request', [$this, 'preServeRequest'], 10, 4
         );
+
+        // A file response is streamed instead of printed as JSON.
+        $this->addFilter('rest_pre_serve_request', function (...$args) {
+            return FileResponse::serve(...$args);
+        }, 20, 4);
+
+        // Last, so the cookies go out just before WordPress sends headers.
+        $this->addFilter('rest_post_dispatch', function ($response) {
+            return $this->make(Response::class)->sendEachCookie($response);
+        }, PHP_INT_MAX);
 
         require_once $this->basePath . 'app/Hooks/actions.php';
         require_once $this->basePath . 'app/Hooks/filters.php';
@@ -411,19 +461,18 @@ class Application extends Container
             $route = $request->get_route();
             $slug = $this->config->get('app.slug');
             
-            if ($this->isRequestOfPlugin($route, $slug)) {
-                if ($this->isRequestForEndpoints($route)) {
-                    status_header(200);
-                    $result->set_status(200);
-                    // @phpstan-ignore-next-line
-                    $result->set_data($this->endpoints);
-                } else {
-                    $result->set_data(
-                        $this->customizeNotFoundResponse(
-                            $result, $request
-                        )
-                    );
-                }
+            // The map names every controller and policy class, so only a
+            // logged-in user gets it; anyone else gets the plugin's 404.
+            if ($this->isRequestForEndpoints($route) && is_user_logged_in()) {
+                status_header(200);
+                $result->set_status(200);
+                $result->set_data($this->router->endpoints());
+            } elseif ($this->isRequestOfPlugin($route, $slug)) {
+                $result->set_data(
+                    $this->customizeNotFoundResponse(
+                        $result, $request
+                    )
+                );
             }
         }
 
@@ -431,53 +480,73 @@ class Application extends Container
     }
 
     /**
-     * Determines whether the request is madse by plugin.
-     * 
-     * @param  string  $route (Rest route|Full URL)
-     * @param  string  $slug  (Plugin's slug)
+     * Determines whether a request is for the plugin: a REST route under
+     * its REST namespace, a web route under its slug, or its admin page.
+     *
+     * @param  string $route A REST route as WordPress gives it
+     *                       (/myplugin/v2/posts), a full URL, or '' for the
+     *                       current request.
+     * @param  string $slug  The slug its web routes and admin page use;
+     *                       app.slug by default.
      * @return bool
      */
     public function isRequestOfPlugin($route = '', $slug = '')
     {
         $slug = $slug ?: $this->config->get('app.slug');
 
-        if (!$route) {
-            if (get_option('permalink_structure')) {
-                $route = $this->request->url();
-            } else {
-                $route = $this->request->query('rest_route');
-            }
+        if (is_admin() && $this->request->query('page') === $slug) {
+            return true;
         }
 
-        // For web routing (If web-routing is installed)
-        if (!$route && !$this->request->isRest()) {
-            $route = $this->request->url();
+        if ($route && !str_contains($route, '://')) {
+            $restRoute = '/' . trim($route, '/');
+            $path = '';
+        } else {
+            $url = $route ?: null;
+            $restRoute = $this->request->restRoute($url);
+            $path = $this->request->sitePath($url);
         }
 
-        $parsedUrl = parse_url($route ?? '');
-        
-        $path = str_replace('/wp-json', '', $parsedUrl['path'] ?? '');
+        if ($restRoute !== '') {
+            return $this->isPathUnder(
+                $restRoute, $this->config->get('app.rest_namespace')
+            );
+        }
 
-        if (is_admin()) {
-            $page = $this->request->query('page');
-            if ($slug === $page) {
-                $path = $page;
-            }
-        } 
+        return $this->isPathUnder($path, $slug);
+    }
 
-        return str_starts_with(ltrim($path, '/'), $slug);
+    /**
+     * Whether a path is a segment or below it: /shop and /shop/cart are
+     * under shop, /shopping is not.
+     *
+     * @param  string $path
+     * @param  string $segment
+     * @return bool
+     */
+    protected function isPathUnder($path, $segment)
+    {
+        $segment = trim((string) $segment, '/');
+
+        if ($segment === '') {
+            return false;
+        }
+
+        $path = '/' . trim((string) $path, '/');
+
+        return $path === '/' . $segment
+            || str_starts_with($path, '/' . $segment . '/');
     }
 
     /**
      * Determines if the request is made for endpoints.
      * 
-     * @param  string  $route (Rest route|Full URL)
-
+     * @param  string  $route The REST route, e.g. /myplugin/v2/__endpoints.
      * @return bool
      */
     protected function isRequestForEndpoints($route)
     {
-        return str_ends_with($route, '__endpoints');
+        return $this->request->isForEndpoints($route);
     }
 
     /**
@@ -511,13 +580,14 @@ class Application extends Container
     }
 
     /**
-     * Check if running unit test.
-     * 
+     * Whether the plugin runs in its tests: env() is 'testing', as the test
+     * runner sets WPF_ENV.
+     *
      * @return boolean
      */
     public function isUnitTesting()
     {
-        return getenv('ENV') === 'testing';
+        return $this->env() === 'testing';
     }
 
     /**
@@ -527,13 +597,14 @@ class Application extends Container
      */
     protected function addRestApiInitAction($app)
     {
+        // A mistake in the route files goes to the exception handler, which
+        // logs it; answering here would end every request that loads the
+        // REST API, admin pages included.
         $this->addAction('rest_api_init', function($wpRestServer) use ($app) {
             try {
                 $this->registerRestRoutes($app->router);
             } catch (InvalidArgumentException $e) {
-                return $app->response->json([
-                    'message' => $e->getMessage()
-                ], $e->getCode() ?: 500);
+                $app->report($e);
             }
         });
     }

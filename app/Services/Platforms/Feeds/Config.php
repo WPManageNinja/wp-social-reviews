@@ -466,6 +466,7 @@ class Config
                     'includes_inputs'  => sanitize_text_field(Arr::get($settings,'filters.includes_inputs', '')),
                     'excludes_inputs'  => sanitize_text_field(Arr::get($settings,'filters.excludes_inputs', '')),
                     'hide_posts_by_id' => sanitize_text_field(Arr::get($settings,'filters.hide_posts_by_id', '')),
+                    'show_posts_by_id' => sanitize_text_field(Arr::get($settings,'filters.show_posts_by_id', '')),
                     'hide_shared_posts' => Arr::get($settings,'filters.hide_shared_posts', 'false'),
                     'date_range'       => Arr::get($settings,'filters.date_range', false),
                     'date_range_type'  => Arr::get($settings,'filters.date_range_type', 'specific_date'),

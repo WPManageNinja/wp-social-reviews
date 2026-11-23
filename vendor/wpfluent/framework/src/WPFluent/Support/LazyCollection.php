@@ -4,13 +4,16 @@ namespace WPSocialReviews\Framework\Support;
 
 use Closure;
 use stdClass;
+use Iterator;
 use ArrayIterator;
+use IteratorIterator;
 use DateTimeInterface;
 use IteratorAggregate;
 use WPSocialReviews\Framework\Support\Helper;
-use WPSocialReviews\Framework\Support\MacroableTrait;
-use WPSocialReviews\Framework\Support\EnumeratesValues;
-use WPSocialReviews\Framework\Support\CanBeEscapedWhenCastToString;
+use WPSocialReviews\Framework\Support\Concerns\MacroableTrait;
+use WPSocialReviews\Framework\Support\Concerns\EnumeratesValues;
+use WPSocialReviews\Framework\Support\Contracts\CanBeEscapedWhenCastToString;
+use WPSocialReviews\Framework\Support\Contracts\Enumerable;
 
 class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
 {
@@ -1091,8 +1094,8 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
      * @param  mixed  $value
      * @return mixed
      *
-     * @throws \WPSocialReviews\Framework\Support\ItemNotFoundException
-     * @throws \WPSocialReviews\Framework\Support\MultipleItemsFoundException
+     * @throws \WPSocialReviews\Framework\Support\Exceptions\ItemNotFoundException
+     * @throws \WPSocialReviews\Framework\Support\Exceptions\MultipleItemsFoundException
      */
     public function sole($key = null, $operator = null, $value = null)
     {
@@ -1116,7 +1119,7 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
      * @param  mixed  $value
      * @return mixed
      *
-     * @throws \WPSocialReviews\Framework\Support\ItemNotFoundException
+     * @throws \WPSocialReviews\Framework\Support\Exceptions\ItemNotFoundException
      */
     public function firstOrFail($key = null, $operator = null, $value = null)
     {
@@ -1502,7 +1505,7 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
     /**
      * Get the values iterator.
      *
-     * @return \Traversable
+     * @return \Iterator
      */
     #[\ReturnTypeWillChange]
     public function getIterator()
@@ -1529,12 +1532,19 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
      * Make an iterator from the given source.
      *
      * @param  mixed  $source
-     * @return \Traversable
+     * @return \Iterator
      */
     protected function makeIterator($source)
     {
         if ($source instanceof IteratorAggregate) {
-            return $source->getIterator();
+            $iterator = $source->getIterator();
+
+            // IteratorAggregate::getIterator() is only guaranteed to return a
+            // Traversable; wrap a bare one so callers always get a real Iterator
+            // (valid()/current()/next()/key()).
+            return $iterator instanceof Iterator
+                ? $iterator
+                : new IteratorIterator($iterator);
         }
 
         if (is_array($source)) {

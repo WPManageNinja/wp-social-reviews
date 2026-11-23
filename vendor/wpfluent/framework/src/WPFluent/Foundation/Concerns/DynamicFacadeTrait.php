@@ -5,6 +5,17 @@ namespace WPSocialReviews\Framework\Foundation\Concerns;
 use WPSocialReviews\Framework\Support\Facade;
 use RuntimeException;
 
+/**
+ * Facades made on the fly: a class in the plugin's Facade namespace that
+ * doesn't exist, such as MyPlugin\Facade\DB, is written to the uploads
+ * folder and loaded, calling the binding named after it.
+ *
+ * @deprecated 2.19.0 A facade must be a real class: one of the framework's
+ *             own in \WPSocialReviews\Framework\Support\Facades (DB, View, Route, Mail,
+ *             Config), or one that extends \WPSocialReviews\Framework\Support\Facade and
+ *             returns its binding from getFacadeAccessor(). Facades made
+ *             on the fly will be removed in a release after 2026-11-05.
+ */
 trait DynamicFacadeTrait
 {
     /**
@@ -38,13 +49,15 @@ trait DynamicFacadeTrait
      * Transforms the fully qualified facade class name to a service container
      * binding key (accessor) by stripping the facade namespace
      * and normalizing names.
-     * 
-     * Special cases (e.g. 'route' to 'router') are handled here.
+     *
+     * Special cases (e.g. 'route' to 'router') are handled here. The name is
+     * not checked against the container: the facade resolves it when it is
+     * called, so a facade loaded before its binding works once it is bound.
      *
      * @param  string $facade Facade namespace prefix (e.g., WPSocialReviews\Framework\Facade)
      * @param  string $class  Fully qualified facade class name
      * @param  \WPSocialReviews\Framework\Foundation\Application $app
-     * @return string|null The resolved accessor name if bound in the container.
+     * @return string The accessor name.
      */
     protected function resolveFacadeAccessor($facade, $class, $app)
     {
@@ -54,7 +67,7 @@ trait DynamicFacadeTrait
             $name = 'router';
         }
 
-        return $app->bound($name) ? $name : null;
+        return $name;
     }
 
     /**
@@ -80,15 +93,61 @@ trait DynamicFacadeTrait
 
         $facadeFile = $this->getFacadeFilePath($facadesDir, $class);
 
-        if (!file_exists($facadeFile)) {
-            $facadeCode = $this->populateFacadeStub(
-                $namespace, $baseClass, $accessor
-            );
+        $facadeCode = $this->populateFacadeStub(
+            $namespace, $baseClass, $accessor
+        );
 
+        // Rewritten when it differs, so a file from an older stub, or with
+        // another accessor, never outlives the code that wrote it.
+        $written = !file_exists($facadeFile)
+            || file_get_contents($facadeFile) !== $facadeCode;
+
+        if ($written) {
             file_put_contents($facadeFile, $facadeCode);
         }
 
         $this->loadFacadeClass($class, $facadeFile);
+
+        $this->deprecatedFacade($class, $accessor, $written);
+    }
+
+    /**
+     * Write a facade made on the fly to the debug log, once: when its file
+     * is written.
+     *
+     * No PHP notice and no deprecated_class_run: a plugin's error handler
+     * may turn a notice into an exception, and WordPress's test case fails
+     * a test on the action, while the facade must keep working until it
+     * is removed.
+     *
+     * @param  string $class
+     * @param  string $accessor
+     * @param  bool   $written
+     * @return void
+     */
+    protected function deprecatedFacade($class, $accessor, $written)
+    {
+        if (!$written || !defined('WP_DEBUG') || !WP_DEBUG) {
+            return;
+        }
+
+        $builtIn = Facade::class . 's\\' . $this->extractNamespaceAndClass($class)[1];
+
+        $instead = class_exists($builtIn)
+            ? "Use {$builtIn} instead"
+            : sprintf(
+                "Write a class of its own that extends %s and returns '%s' "
+                . 'from getFacadeAccessor()',
+                Facade::class,
+                $accessor
+            );
+
+        error_log(sprintf(
+            '[WPFluent] The facade %s is made on the fly, which is deprecated '
+            . 'and will be removed in a release after 2026-11-05. %s.',
+            $class,
+            $instead
+        ));
     }
 
     /**

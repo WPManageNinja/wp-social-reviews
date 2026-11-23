@@ -8,12 +8,12 @@ use JsonSerializable;
 use WPSocialReviews\Framework\Support\Arr;
 use WPSocialReviews\Framework\Support\Str;
 use WPSocialReviews\Framework\Support\Helper;
-use WPSocialReviews\Framework\Support\ForwardsCalls;
-use WPSocialReviews\Framework\Support\UrlRoutable;
-use WPSocialReviews\Framework\Support\JsonableInterface;
-use WPSocialReviews\Framework\Support\ArrayableInterface;
-use WPSocialReviews\Framework\Support\HelperFunctionsTrait;
-use WPSocialReviews\Framework\Support\CanBeEscapedWhenCastToString;
+use WPSocialReviews\Framework\Support\Concerns\ForwardsCalls;
+use WPSocialReviews\Framework\Support\Contracts\UrlRoutable;
+use WPSocialReviews\Framework\Support\Contracts\JsonableInterface;
+use WPSocialReviews\Framework\Support\Contracts\ArrayableInterface;
+use WPSocialReviews\Framework\Support\Concerns\HelperFunctionsTrait;
+use WPSocialReviews\Framework\Support\Contracts\CanBeEscapedWhenCastToString;
 use WPSocialReviews\Framework\Support\Collection as BaseCollection;
 use WPSocialReviews\Framework\Database\Schema;
 use WPSocialReviews\Framework\Database\Orm\Relations\Pivot;
@@ -23,6 +23,12 @@ use WPSocialReviews\Framework\Database\Orm\Relations\Concerns\AsPivot;
 use WPSocialReviews\Framework\Database\Orm\Collection as OrmCollection;
 use WPSocialReviews\Framework\Database\ConnectionResolverInterface as Resolver;
 
+/**
+ * Model forwards unknown instance/static calls to a new Orm Builder
+ * (see __call/__callStatic), which itself proxies to the Query Builder.
+ *
+ * @mixin \WPSocialReviews\Framework\Database\Orm\Builder<static>
+ */
 abstract class Model implements ArrayableInterface, ArrayAccess, CanBeEscapedWhenCastToString, JsonableInterface, JsonSerializable, UrlRoutable
 {
     use HelperFunctionsTrait;
@@ -883,6 +889,36 @@ abstract class Model implements ArrayableInterface, ArrayAccess, CanBeEscapedWhe
     }
 
     /**
+     * Increment a column's value by a given amount without raising any events.
+     *
+     * @param  string  $column
+     * @param  float|int  $amount
+     * @param  array  $extra
+     * @return int
+     */
+    protected function incrementQuietly($column, $amount = 1, array $extra = [])
+    {
+        return static::withoutEvents(
+            fn () => $this->incrementOrDecrement($column, $amount, $extra, 'increment')
+        );
+    }
+
+    /**
+     * Decrement a column's value by a given amount without raising any events.
+     *
+     * @param  string  $column
+     * @param  float|int  $amount
+     * @param  array  $extra
+     * @return int
+     */
+    protected function decrementQuietly($column, $amount = 1, array $extra = [])
+    {
+        return static::withoutEvents(
+            fn () => $this->incrementOrDecrement($column, $amount, $extra, 'decrement')
+        );
+    }
+
+    /**
      * Run the increment or decrement method on the model.
      *
      * @param  string  $column
@@ -966,6 +1002,16 @@ abstract class Model implements ArrayableInterface, ArrayAccess, CanBeEscapedWhe
         }
 
         return $this->fill($attributes)->saveQuietly($options);
+    }
+
+    /**
+     * Save the model and all of its relationships without raising any events.
+     *
+     * @return bool
+     */
+    public function pushQuietly()
+    {
+        return static::withoutEvents(fn () => $this->push());
     }
 
     /**
@@ -1131,8 +1177,10 @@ abstract class Model implements ArrayableInterface, ArrayAccess, CanBeEscapedWhe
     /**
      * Set the keys for a select query.
      *
-     * @param  \WPSocialReviews\Framework\Database\Orm\Builder  $query
-     * @return \WPSocialReviews\Framework\Database\Orm\Builder
+     * @template TBuilder of \WPSocialReviews\Framework\Database\Orm\Builder<*>
+     *
+     * @param  TBuilder  $query
+     * @return TBuilder
      */
     protected function setKeysForSelectQuery($query)
     {
@@ -1278,6 +1326,16 @@ abstract class Model implements ArrayableInterface, ArrayAccess, CanBeEscapedWhe
     }
 
     /**
+     * Delete the model from the database without raising any events.
+     *
+     * @return bool
+     */
+    public function deleteQuietly()
+    {
+        return static::withoutEvents(fn () => $this->delete());
+    }
+
+    /**
      * Delete the model from the database.
      *
      * @return bool|null
@@ -1363,7 +1421,7 @@ abstract class Model implements ArrayableInterface, ArrayAccess, CanBeEscapedWhe
     /**
      * Begin querying the model.
      *
-     * @return \WPSocialReviews\Framework\Database\Orm\Builder
+     * @return \WPSocialReviews\Framework\Database\Orm\Builder<static>
      */
     public static function query()
     {
@@ -1373,7 +1431,7 @@ abstract class Model implements ArrayableInterface, ArrayAccess, CanBeEscapedWhe
     /**
      * Get a new query builder for the model's table.
      *
-     * @return \WPSocialReviews\Framework\Database\Orm\Builder
+     * @return \WPSocialReviews\Framework\Database\Orm\Builder<static>
      */
     public function newQuery()
     {
@@ -1383,7 +1441,7 @@ abstract class Model implements ArrayableInterface, ArrayAccess, CanBeEscapedWhe
     /**
      * Get a new query builder that doesn't have any global scopes or eager loading.
      *
-     * @return \WPSocialReviews\Framework\Database\Orm\Builder|static
+     * @return \WPSocialReviews\Framework\Database\Orm\Builder<static>
      */
     public function newModelQuery()
     {
@@ -1420,7 +1478,7 @@ abstract class Model implements ArrayableInterface, ArrayAccess, CanBeEscapedWhe
     /**
      * Get a new query builder that doesn't have any global scopes.
      *
-     * @return \WPSocialReviews\Framework\Database\Orm\Builder|static
+     * @return \WPSocialReviews\Framework\Database\Orm\Builder<static>
      */
     public function newQueryWithoutScopes()
     {
@@ -1607,6 +1665,17 @@ abstract class Model implements ArrayableInterface, ArrayAccess, CanBeEscapedWhe
         $this->syncOriginal();
 
         return $this;
+    }
+
+    /**
+     * Clone the model into a new, non-existing instance without raising any events.
+     *
+     * @param  array|null  $except
+     * @return static
+     */
+    public function replicateQuietly(?array $except = null)
+    {
+        return static::withoutEvents(fn () => $this->replicate($except));
     }
 
     /**
@@ -2092,7 +2161,7 @@ abstract class Model implements ArrayableInterface, ArrayAccess, CanBeEscapedWhe
      */
     public function __call($method, $parameters)
     {
-        if (in_array($method, ['increment', 'decrement'])) {
+        if (in_array($method, ['increment', 'decrement', 'incrementQuietly', 'decrementQuietly'])) {
             return $this->$method(...$parameters);
         }
 

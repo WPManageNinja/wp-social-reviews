@@ -223,6 +223,19 @@ class WPUserProxy
     }
 
     /**
+     * The user's saved columns, without the password hash or the reset key.
+     *
+     * @return array
+     */
+    public function toArray()
+    {
+        return array_diff_key(
+            $this->wpUser()->to_array(),
+            array_flip(['user_pass', 'user_activation_key'])
+        );
+    }
+
+    /**
      * Check if the user is a super admin
      *
      * @return bool

@@ -4,7 +4,7 @@ namespace WPSocialReviews\Framework\Database\Orm\Casts;
 
 use JsonSerializable;
 USE WPSocialReviews\Framework\Support\Helper;
-use WPSocialReviews\Framework\Support\ArrayableInterface;
+use WPSocialReviews\Framework\Support\Contracts\ArrayableInterface;
 use ArrayObject as BaseArrayObject;
 
 class ArrayObject extends BaseArrayObject implements ArrayableInterface, JsonSerializable
